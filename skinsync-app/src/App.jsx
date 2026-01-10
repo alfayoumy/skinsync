@@ -54,60 +54,36 @@ const SkinSync = () => {
     setError('');
 
     try {
-      const response = await fetch('https://api.anthropic.com/v1/messages', {
+      // 1. Point to your Render Backend
+      // NOTE: Ensure this URL matches your deployed Render Service URL exactly
+      const API_URL = "https://skinsync-api.onrender.com/recommend";
+
+      // 2. Send request to Python
+      const response = await fetch(API_URL, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          model: 'claude-sonnet-4-20250514',
-          max_tokens: 1000,
-          messages: [{
-            role: 'user',
-            content: `You are helping with a skincare recommendation API. The user wants to find alternatives for: "${productSearch}" and their skin type is "${skinType}".
-
-Make a POST request to this endpoint with the exact product title:
-POST /recommend
-Body: {"product_title": "${productSearch}", "user_skin_type": "${skinType}"}
-
-Return ONLY a JSON object with this structure:
-{
-  "user_skin": "string",
-  "results": [
-    {
-      "title": "string",
-      "brand": "string",
-      "price": number,
-      "match_score": number,
-      "warnings": "string or null",
-      "url": "string"
-    }
-  ]
-}
-
-If the product is not found, return:
-{"error": "Product not found. Please check the spelling and try again."}`
-          }]
+          product_title: productSearch,
+          user_skin_type: skinType
         })
       });
 
-      const data = await response.json();
-      const text = data.content.find(c => c.type === 'text')?.text || '';
-      const cleanText = text.replace(/```json|```/g, '').trim();
-      const result = JSON.parse(cleanText);
-
-      if (result.error) {
-        setError(result.error);
-        setLoading(false);
-        return;
+      if (!response.ok) {
+        throw new Error('Product not found');
       }
 
-      setRecommendations(result);
+      const data = await response.json();
 
-      // Load images for each product
+      // 3. Set Data
+      setRecommendations(data);
+
+      // 4. Try to fetch images (Client-side scraping attempt)
       const images = {};
-      for (const product of result.results) {
+      for (const product of data.results) {
         if (product.url && (product.url.includes('sourcebeauty.com') || product.url.includes('feel22.com'))) {
+          // Note: This might fail in production due to CORS, but the app will still work (showing emojis)
           const img = await extractImageFromHTML(product.url);
           if (img) images[product.url] = img;
         }
@@ -115,10 +91,13 @@ If the product is not found, return:
       setProductImages(images);
 
       setStep(3);
+
     } catch (e) {
-      setError('Failed to get recommendations. Please try again.');
+      console.error(e);
+      setError('Product not found. Please check spelling or try another product.');
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   };
 
   const reset = () => {
