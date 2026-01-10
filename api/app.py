@@ -93,6 +93,22 @@ def recommend(request: ProductRequest):
     if not data: raise HTTPException(status_code=404, detail="Product not found")
     return {"user_skin": request.user_skin_type, "results": data}
 
+@app.get("/search")
+def search_products(query: str):
+    """
+    Returns a list of top 5 product titles matching the search query.
+    Case-insensitive.
+    """
+    if not query or len(query) < 2:
+        return []
+        
+    # Search for the text inside the title
+    # na=False handles any potential empty titles safely
+    matches = df[df['title'].str.contains(query, case=False, na=False)]
+    
+    # Return top 5 titles as a simple list
+    return matches['title'].head(5).tolist()
+    
 @app.get("/")
 def health_check():
     return {"status": "active", "products": len(df)}
