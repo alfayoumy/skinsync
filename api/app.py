@@ -7,6 +7,16 @@ import os
 
 app = FastAPI(title="Egyptian Skincare AI (Production)", version="3.0")
 
+from fastapi.middleware.cors import CORSMiddleware
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
 # 1. LOAD RESOURCES
 print("Loading Production Engine...")
 
@@ -17,7 +27,14 @@ with open('skincare_engine_v2.pkl', 'rb') as f:
 # Load the V4 Database (The one with "safety_warnings" and "score_sensitive")
 # We use this INSTEAD of the dataframe inside the pickle
 df = pd.read_csv('master_product_database_v4_production.csv')
+# RESTORE KEYS from the model (Cluster ID is critical for the logic)
+df['cluster_id'] = model_data['df']['cluster_id']
+
 cosine_sim = model_data['cosine_sim']
+
+# FIX: Truncate dataframe to match the model's cosine matrix size to prevent IndexError
+# The V4 CSV appears to have more rows than the trained model, causing crashes.
+df = df.iloc[:cosine_sim.shape[0]]
 
 print("Engine Live.")
 
@@ -73,16 +90,27 @@ def get_recommendations(title: str, skin_type: str):
     # SORT
     results = sorted(results, key=lambda x: x['final_score'], reverse=True)[:5]
     
+    # Helper functions for data cleaning
+    def clean_float(val):
+        if pd.isna(val) or np.isnan(val) or np.isinf(val):
+            return 0.0
+        return float(val)
+
+    def clean_str(val):
+        if pd.isna(val):
+            return ""
+        return str(val)
+
     output = []
     for r in results:
         row = df.iloc[r['index']]
         output.append({
-            "title": row['title'],
-            "brand": row['brand'],
-            "price": float(row['price_low']) if pd.notna(row['price_low']) else 0,
-            "match_score": round(r['final_score'], 1),
-            "warnings": r['warnings'], # UI can display this in RED
-            "url": row['url']
+            "title": clean_str(row['title']),
+            "brand": clean_str(row['brand']),
+            "price": clean_float(row['price_low']),
+            "match_score": round(clean_float(r['final_score']), 1),
+            "warnings": clean_str(r['warnings']) if r['warnings'] else None,
+            "url": clean_str(row['url'])
         })
         
     return output
@@ -91,6 +119,7 @@ def get_recommendations(title: str, skin_type: str):
 def recommend(request: ProductRequest):
     data = get_recommendations(request.product_title, request.user_skin_type)
     if not data: raise HTTPException(status_code=404, detail="Product not found")
+    # Sanitize user_skin too just in case? No, it comes from request.
     return {"user_skin": request.user_skin_type, "results": data}
 
 @app.get("/search")

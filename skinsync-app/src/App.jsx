@@ -31,20 +31,37 @@ const SkinSync = () => {
     try {
       const response = await fetch(url);
       const html = await response.text();
+      const parser = new DOMParser();
+      const doc = parser.parseFromString(html, 'text/html');
+
+      let imageUrl = null;
 
       if (url.includes('sourcebeauty.com')) {
-        const match = html.match(/src="([^"]*sourcebeauty\.com\/cdn\/shop\/files\/[^"]+)"/);
-        if (match) {
-          return match[1].startsWith('//') ? 'https:' + match[1] : match[1];
+        // Target: <motion-element class="product__media ..."> <img src="...">
+        const img = doc.querySelector('motion-element.product__media img');
+        if (img) {
+          imageUrl = img.getAttribute('src');
         }
       } else if (url.includes('feel22.com')) {
-        const match = html.match(/data-master="([^"]*feel22\.com\/cdn\/shop\/files\/[^"]+)"/);
-        if (match) {
-          return match[1].startsWith('//') ? 'https:' + match[1] : match[1];
+        // Target: <img data-master="..."> inside the product media container
+        // Based on snippet: <div class="t4s-product__media ..."> <img data-master="...">
+        const img = doc.querySelector('.t4s-product__media img[data-master]');
+        if (img) {
+          imageUrl = img.getAttribute('data-master');
         }
       }
+
+      if (imageUrl) {
+        // Fix protocol-relative URLs (starts with //)
+        if (imageUrl.startsWith('//')) {
+          return 'https:' + imageUrl;
+        }
+        return imageUrl;
+      }
+
       return null;
     } catch (e) {
+      console.warn('Failed to extract image from', url, e);
       return null;
     }
   };
@@ -74,7 +91,7 @@ const SkinSync = () => {
       setIsSearching(true);
       try {
         // Point to your Render Backend Search Endpoint
-        const API_URL = `https://skinsync-api.onrender.com/search?query=${encodeURIComponent(value)}`;
+        const API_URL = `http://127.0.0.1:8000/search?query=${encodeURIComponent(value)}`;
         const response = await fetch(API_URL);
         if (response.ok) {
           const data = await response.json();
@@ -107,7 +124,7 @@ const SkinSync = () => {
     setShowSuggestions(false); // Hide dropdown if open
 
     try {
-      const API_URL = "https://skinsync-api.onrender.com/recommend";
+      const API_URL = "http://127.0.0.1:8000/recommend";
 
       const response = await fetch(API_URL, {
         method: 'POST',
@@ -240,7 +257,7 @@ const SkinSync = () => {
 
                 {/* Autocomplete Dropdown */}
                 {showSuggestions && suggestions.length > 0 && (
-                  <div className="absolute w-full bg-white mt-2 rounded-xl shadow-2xl border border-gray-100 overflow-hidden z-50 text-left animate-in fade-in zoom-in-95 duration-200">
+                  <div className="absolute w-full bg-white mt-2 rounded-xl shadow-2xl border border-gray-100 overflow-hidden z-[100] text-left">
                     {suggestions.map((item, idx) => (
                       <button
                         key={idx}
