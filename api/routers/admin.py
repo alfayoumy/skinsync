@@ -395,15 +395,17 @@ def get_product_telemetry_forensics(product_id: int):
                 target_parsed = parsed_ings
                 target_actives = set(actives_list)
 
-                for r in rec_res["results"][:5]:
+                for r in rec_res["results"][:8]:
                     cand_id = r.get("id")
                     cand_parsed = []
                     cand_acts = set()
 
                     if cand_id:
-                        cur.execute("SELECT ingredients_parsed, ingredients_raw, actives FROM products WHERE id = ?;", (cand_id,))
+                        cur.execute("SELECT ingredients_parsed, ingredients_raw, actives, canonical_product_id FROM products WHERE id = ?;", (cand_id,))
                         c_row = cur.fetchone()
                         if c_row:
+                            if product.get("canonical_product_id") and c_row["canonical_product_id"] == product.get("canonical_product_id"):
+                                continue
                             if c_row["ingredients_parsed"]:
                                 try:
                                     cand_parsed = json.loads(c_row["ingredients_parsed"])

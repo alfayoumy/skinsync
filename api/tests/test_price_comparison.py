@@ -280,42 +280,30 @@ class TestDrDawoodMultiStoreClustering(unittest.TestCase):
         metrics = link_catalog_products(conn=self.conn)
         cur = self.conn.cursor()
 
-        # 1. Verify CeraVe Cream 177ml cluster links Dr. Dawood, Feel22, and Bloom Pharmacy
-        cur.execute("SELECT canonical_product_id FROM products WHERE id IN (101, 102, 103);")
-        c_cream_177_ids = {r[0] for r in cur.fetchall()}
-        self.assertEqual(len(c_cream_177_ids), 1, "Dr. Dawood 177Gm, Feel22 177ml, and Bloom unsized cream must share the same canonical ID")
+        # 1. Verify CeraVe Cream across all sizes (177g, 340g, 454g) and stores unify into ONE product entity
+        cur.execute("SELECT canonical_product_id FROM products WHERE id IN (101, 102, 103, 104, 105);")
+        c_cream_ids = {r[0] for r in cur.fetchall()}
+        self.assertEqual(len(c_cream_ids), 1, "All CeraVe cream size variants and store listings must share the same canonical ID")
 
-        cur.execute("SELECT store_count, min_price, max_price FROM canonical_products WHERE id = ?;", (list(c_cream_177_ids)[0],))
-        canon_177 = cur.fetchone()
-        self.assertEqual(canon_177["store_count"], 3)
-        self.assertEqual(canon_177["min_price"], 517.0)
-        self.assertEqual(canon_177["max_price"], 577.0)
+        cur.execute("SELECT store_count, min_price, max_price FROM canonical_products WHERE id = ?;", (list(c_cream_ids)[0],))
+        canon_cream = cur.fetchone()
+        self.assertEqual(canon_cream["store_count"], 3)
+        self.assertEqual(canon_cream["min_price"], 517.0)
+        self.assertEqual(canon_cream["max_price"], 1060.0)
 
-        # 2. Verify CeraVe Cream 340Gm and 454Gm are distinct size variants
-        cur.execute("SELECT canonical_product_id FROM products WHERE id = 104;")
-        canon_340_id = cur.fetchone()[0]
-        cur.execute("SELECT canonical_product_id FROM products WHERE id = 105;")
-        canon_454_id = cur.fetchone()[0]
+        # 2. Verify CeraVe Lotion across all sizes (236ml, 473ml) and stores unify into ONE product entity
+        cur.execute("SELECT canonical_product_id FROM products WHERE id IN (201, 202, 203, 204, 205);")
+        c_lotion_ids = {r[0] for r in cur.fetchall()}
+        self.assertEqual(len(c_lotion_ids), 1, "All CeraVe lotion size variants and store listings must link together")
 
-        self.assertNotEqual(canon_340_id, list(c_cream_177_ids)[0])
-        self.assertNotEqual(canon_454_id, list(c_cream_177_ids)[0])
-        self.assertNotEqual(canon_340_id, canon_454_id)
-
-        # 3. Verify CeraVe Lotion 236ml links all 4 stores: Dr. Dawood, Feel22, Bloom, Source Beauty
-        cur.execute("SELECT canonical_product_id FROM products WHERE id IN (201, 202, 203, 204);")
-        c_lotion_236_ids = {r[0] for r in cur.fetchall()}
-        self.assertEqual(len(c_lotion_236_ids), 1, "Dr. Dawood 236Ml, Feel22, Bloom, and Source Beauty lotions must link together")
-
-        cur.execute("SELECT store_count, min_price, max_price FROM canonical_products WHERE id = ?;", (list(c_lotion_236_ids)[0],))
+        cur.execute("SELECT store_count, min_price, max_price FROM canonical_products WHERE id = ?;", (list(c_lotion_ids)[0],))
         canon_lotion = cur.fetchone()
         self.assertEqual(canon_lotion["store_count"], 4)
         self.assertEqual(canon_lotion["min_price"], 601.6)
-        self.assertEqual(canon_lotion["max_price"], 669.0)
+        self.assertEqual(canon_lotion["max_price"], 1030.0)
 
-        # 4. Verify CeraVe Lotion 473ml is separated from 236ml
-        cur.execute("SELECT canonical_product_id FROM products WHERE id = 205;")
-        canon_lotion_473_id = cur.fetchone()[0]
-        self.assertNotEqual(canon_lotion_473_id, list(c_lotion_236_ids)[0])
+        # 3. Verify Cream and Lotion remain distinct product entities
+        self.assertNotEqual(list(c_cream_ids)[0], list(c_lotion_ids)[0])
 
 
 

@@ -157,7 +157,7 @@ def load_catalog_from_db():
     else:
         conn = sqlite3.connect(DB_PATH)
         df_cache = pd.read_sql_query("""
-        SELECT id, store_id, title, brand, category as std_category, price as price_low,
+        SELECT id, store_id, canonical_product_id, title, brand, category as std_category, price as price_low,
                compare_at_price as price_high, is_available, image_url, product_url as url,
                ingredients_raw as ingredients, ingredients_parsed, actives, ingredient_source,
                gate4_jev_status, inci_jev_score, gate4_gemini_status, inci_gemini_score,

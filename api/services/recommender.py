@@ -231,8 +231,17 @@ def get_recommendations(target_title: str, skin_type: str = "normal") -> Optiona
     candidate_records = candidates.to_dict('records')
     scored = []
 
+    target_canonical_id = target.get('canonical_product_id')
+    if pd.isna(target_canonical_id):
+        target_canonical_id = None
+
     for row in candidate_records:
         if row['id'] == target_id:
+            continue
+        # Sibling store listings of the same canonical product entity are not alternatives;
+        # they are store offers displayed under Multi-Store Pricing.
+        row_canon = row.get('canonical_product_id')
+        if target_canonical_id and row_canon and row_canon == target_canonical_id:
             continue
         cand_ings = row['parsed_ingredients']
         cand_actives = row['all_actives']

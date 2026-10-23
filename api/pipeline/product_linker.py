@@ -4,6 +4,7 @@ Cross-Source Product Entity Resolution & Canonical Linking Engine:
 2. Manages the `canonical_products` table and links store listings via `products.canonical_product_id`.
 3. Propagates ingredient lists from stores with rich HTML descriptions to stores lacking ingredients.
 4. Aggregates multi-source pricing for real-time price comparison and arbitrage tracking.
+5. Treats packaging volume/size strictly as a variant/pricing tier, never splitting genuine product entities.
 """
 
 import os
@@ -12,7 +13,7 @@ import re
 import json
 import sqlite3
 import unicodedata
-from typing import Dict, List, Any, Optional, Tuple
+from typing import Dict, List, Any, Optional, Tuple, Set
 from collections import defaultdict
 from datetime import datetime
 
@@ -25,6 +26,69 @@ from pipeline.logging_config import setup_logging, get_logger
 logger = get_logger("skincare_pipeline.linker")
 
 VOLUME_PATTERN = re.compile(r'\b(\d+(?:\.\d+)?)\s*(ml|g|gm|oz|fl\.?\s*oz|l|liter|litres?|kg)\b', re.IGNORECASE)
+
+BRAND_STOPWORDS = {
+    'eau', 'thermale', 'laboratoires', 'laboratoire', 'paris', 'cosmetics', 'cosmetique',
+    'pharmacy', 'pharma', 'derma', 'store', 'egypt', 'official', 'the', 'beauty', 'labs', 'laboratory'
+}
+
+STOP_MARKETING_WORDS = {
+    'daily', 'classic', 'essential', 'original', 'ultra', 'lightweight', 'rich',
+    'soothing', 'nourishing', 'advanced', 'pure', 'intensive', 'gentle'
+}
+
+FORMULATION_TYPES = {
+    'cream', 'lotion', 'gel', 'serum', 'balm', 'oil', 'foam', 'water', 'cleanser', 'wash', 'mist', 'fluid', 'paste'
+}
+
+CRITICAL_MODIFIERS = {
+    'am', 'pm', 'spf', 'hydrating', 'foaming', 'sa', 'smoothing', 'blemish', 'retinol', 'caffeine', 'brightening'
+}
+
+VOLUME_EQUIVALENCES = {
+    # 15ml / 0.5oz
+    '14ml': '15ml', '15g': '15ml', '15gm': '15ml', '0.5oz': '15ml',
+    # 30ml / 1oz
+    '28g': '30ml', '28gm': '30ml', '30g': '30ml', '30gm': '30ml', '1oz': '30ml',
+    # 50ml / 1.7oz
+    '40g': '40ml', '50g': '50ml', '50gm': '50ml', '1.7oz': '50ml',
+    # 52ml / 52g (CeraVe AM/PM)
+    '52ml': '52ml', '52g': '52ml', '52gm': '52ml',
+    # 100ml / 3.4oz
+    '100g': '100ml', '100gm': '100ml', '3.4oz': '100ml',
+    # 150ml / 5oz
+    '150g': '150ml', '150gm': '150ml', '5oz': '150ml',
+    # 177ml / 6oz / 177g (CeraVe)
+    '177g': '177ml', '177gm': '177ml', '6oz': '177ml',
+    # 200ml / 6.7oz
+    '200g': '200ml', '200gm': '200ml', '6.7oz': '200ml', '6.8oz': '200ml', '7oz': '200ml',
+    # 236ml / 8oz
+    '237ml': '236ml', '236g': '236ml', '236gm': '236ml', '8oz': '236ml',
+    # 250ml / 8.5oz
+    '250g': '250ml', '250gm': '250ml', '8.4oz': '250ml', '8.5oz': '250ml',
+    # 300ml / 10oz
+    '300g': '300ml', '300gm': '300ml', '10oz': '300ml',
+    # 340ml / 12oz / 340g (CeraVe)
+    '340g': '340ml', '340gm': '340ml', '355ml': '340ml', '12oz': '340ml',
+    # 400ml / 14oz
+    '400g': '400ml', '400gm': '400ml', '13.5oz': '400ml', '14oz': '400ml',
+    # 473ml / 16oz / 454g (CeraVe 16oz tub / pump)
+    '454g': '473ml', '454gm': '473ml', '16oz': '473ml',
+    # 500ml / 16.9oz
+    '500g': '500ml', '500gm': '500ml', '16.9oz': '500ml', '17oz': '500ml',
+    # 1000ml / 1L / 1kg
+    '1l': '1000ml', '1liter': '1000ml', '1000g': '1000ml', '1kg': '1000ml',
+}
+
+SKIN_TYPE_PATTERNS = [
+    r'\bfor\s+(?:dry|very\s+dry|normal|oily|combination|sensitive)\s+to\s+(?:dry|very\s+dry|normal|oily|combination|sensitive)\s+skin\b',
+    r'\bfor\s+(?:dry|very\s+dry|normal|oily|combination|sensitive)\s+skin\b',
+    r'\b(?:dry|very\s+dry|normal|oily|combination|sensitive)\s+to\s+(?:dry|very\s+dry|normal|oily|combination|sensitive)\s+skin\b',
+    r'\b(?:dry|very\s+dry|normal|oily|combination|sensitive)\s+skin\b',
+    r'\b(?:face\s+and\s+body|face\s+&\s+body|visage\s+et\s+corps)\b',
+    r'\b(?:normal\s+to\s+dry|dry\s+to\s+very\s+dry)\b',
+    r'\b(?:with\s+sunscreen)\b',
+]
 
 
 def init_linker_db(conn=None) -> None:
@@ -82,57 +146,6 @@ def init_linker_db(conn=None) -> None:
         conn.close()
 
 
-STOP_MARKETING_WORDS = {
-    'daily', 'classic', 'essential', 'original', 'ultra', 'lightweight', 'rich',
-    'soothing', 'nourishing', 'advanced', 'pure', 'intensive', 'gentle'
-}
-
-VOLUME_EQUIVALENCES = {
-    # 15ml / 0.5oz
-    '14ml': '15ml', '15g': '15ml', '15gm': '15ml', '0.5oz': '15ml',
-    # 30ml / 1oz
-    '28g': '30ml', '28gm': '30ml', '30g': '30ml', '30gm': '30ml', '1oz': '30ml',
-    # 50ml / 1.7oz
-    '40g': '40ml', '50g': '50ml', '50gm': '50ml', '1.7oz': '50ml',
-    # 52ml / 52g (CeraVe AM/PM)
-    '52ml': '52ml', '52g': '52ml', '52gm': '52ml',
-    # 100ml / 3.4oz
-    '100g': '100ml', '100gm': '100ml', '3.4oz': '100ml',
-    # 150ml / 5oz
-    '150g': '150ml', '150gm': '150ml', '5oz': '150ml',
-    # 177ml / 6oz / 177g (CeraVe)
-    '177g': '177ml', '177gm': '177ml', '6oz': '177ml',
-    # 200ml / 6.7oz
-    '200g': '200ml', '200gm': '200ml', '6.7oz': '200ml', '6.8oz': '200ml', '7oz': '200ml',
-    # 236ml / 8oz
-    '237ml': '236ml', '236g': '236ml', '236gm': '236ml', '8oz': '236ml',
-    # 250ml / 8.5oz
-    '250g': '250ml', '250gm': '250ml', '8.4oz': '250ml', '8.5oz': '250ml',
-    # 300ml / 10oz
-    '300g': '300ml', '300gm': '300ml', '10oz': '300ml',
-    # 340ml / 12oz / 340g (CeraVe)
-    '340g': '340ml', '340gm': '340ml', '355ml': '340ml', '12oz': '340ml',
-    # 400ml / 14oz
-    '400g': '400ml', '400gm': '400ml', '13.5oz': '400ml', '14oz': '400ml',
-    # 473ml / 16oz / 454g (CeraVe 16oz tub / pump)
-    '454g': '473ml', '454gm': '473ml', '16oz': '473ml',
-    # 500ml / 16.9oz
-    '500g': '500ml', '500gm': '500ml', '16.9oz': '500ml', '17oz': '500ml',
-    # 1000ml / 1L / 1kg
-    '1l': '1000ml', '1liter': '1000ml', '1000g': '1000ml', '1kg': '1000ml',
-}
-
-SKIN_TYPE_PATTERNS = [
-    r'\bfor\s+(?:dry|very\s+dry|normal|oily|combination|sensitive)\s+to\s+(?:dry|very\s+dry|normal|oily|combination|sensitive)\s+skin\b',
-    r'\bfor\s+(?:dry|very\s+dry|normal|oily|combination|sensitive)\s+skin\b',
-    r'\b(?:dry|very\s+dry|normal|oily|combination|sensitive)\s+to\s+(?:dry|very\s+dry|normal|oily|combination|sensitive)\s+skin\b',
-    r'\b(?:dry|very\s+dry|normal|oily|combination|sensitive)\s+skin\b',
-    r'\b(?:face\s+and\s+body|face\s+&\s+body|visage\s+et\s+corps)\b',
-    r'\b(?:normal\s+to\s+dry|dry\s+to\s+very\s+dry)\b',
-    r'\b(?:with\s+sunscreen)\b',
-]
-
-
 def canonicalize_volume(vol: str) -> str:
     """Maps cosmetic packaging volume strings to standardized equivalent volumes."""
     if not vol:
@@ -145,9 +158,7 @@ def clean_text_for_matching(text: str) -> str:
     """Strips invisible formatting marks (LTR/RTL/zero-width) and decomposes accents."""
     if not text:
         return ""
-    # Strip invisible formatting characters
     text = re.sub(r'[\u200e\u200f\u200b\u202a-\u202e\xa0]', ' ', text)
-    # Strip accents (NFKD decomposition: e.g. Sébium -> Sebium, Tolériane -> Toleriane)
     text = unicodedata.normalize('NFKD', text)
     text = ''.join(c for c in text if not unicodedata.combining(c))
     return text
@@ -176,22 +187,60 @@ def parse_volume(text: str) -> Tuple[str, str]:
     return vol_str, clean_t
 
 
+def canonicalize_brand(b: str) -> str:
+    """Normalizes brand strings into a canonical brand identifier."""
+    if not b:
+        return 'generic'
+    b_norm = unicodedata.normalize('NFKD', b).encode('ASCII', 'ignore').decode('utf-8').lower()
+    b_norm = re.sub(r'[^a-z0-9\s]', ' ', b_norm)
+    words = [w for w in b_norm.split() if w and w not in BRAND_STOPWORDS]
+    if not words:
+        words = [w for w in b_norm.split() if w]
+    return ''.join(words) if words else 'generic'
+
+
+def clean_and_tokenize(title: str, brand: str = "") -> Tuple[Set[str], List[str]]:
+    """
+    Cleans title by stripping packaging volume (since volume only affects pricing, not product identity),
+    normalizing French/US/UK synonyms, stripping marketing fluff, and extracting core cosmetic tokens.
+    """
+    t = unicodedata.normalize('NFKD', title or '').encode('ASCII', 'ignore').decode('utf-8').lower()
+    t = re.sub(r'[\u2013\u2014\-_/\\.,:;()!+]', ' ', t)
+    t = VOLUME_PATTERN.sub(' ', t)
+    t = re.sub(r'\bmoisturising\b', 'moisturizing', t)
+    t = re.sub(r'\bcreme\b', 'cream', t)
+    t = re.sub(r'\bcleansing\b', 'cleanse', t)
+    t = re.sub(r'\bnettoyant\b', 'cleanse', t)
+    t = re.sub(r'\bsoin\b', 'care', t)
+    t = re.sub(r'\byeux\b', 'eye', t)
+    t = re.sub(r'\baction\b', 'correction', t)
+    t = re.sub(r'\bh\.?a\b', 'hyaluronic', t)
+    t = re.sub(r'\bhyaluronic\s+acid\b', 'hyaluronic', t)
+    t = re.sub(r'\bsalicylic\s+acid\b', 'sa', t)
+    for pat in SKIN_TYPE_PATTERNS:
+        t = re.sub(pat, ' ', t)
+    if brand:
+        b_clean = unicodedata.normalize('NFKD', brand).encode('ASCII', 'ignore').decode('utf-8').lower()
+        for bw in b_clean.split():
+            if len(bw) >= 3:
+                t = re.sub(r'\b' + re.escape(bw) + r'\b', ' ', t)
+    words = [w for w in t.split() if w and len(w) > 1 and w not in STOP_MARKETING_WORDS and w not in ('routine', 'skin', 'care', 'effect', 'new')]
+    return set(words), sorted(words)
+
+
 def extract_volume_and_normalize(title: str, brand: str, handle: str = "") -> Tuple[str, str]:
     """
     Normalizes product title and extracts packaging volume for precise entity resolution.
-    Handles UK/US spellings, filler marketing adjectives, skin-type claims, and handle fallbacks.
-    e.g. 'CeraVe Moisturising Lotion For Dry To Very Dry Skin 236Ml.' -> ('lotion:moisturizing', '236ml')
+    Retained for backward compatibility with external callers and unit tests.
     """
     t = clean_text_for_matching(title or "").lower().replace('-', ' ')
     b_low = clean_text_for_matching(brand or "").lower().strip()
     h_clean = clean_text_for_matching(handle or "").lower().replace('-', ' ')
 
-    # 1. Extract volume (title first, then handle fallback)
     vol_str, t = parse_volume(t)
     if not vol_str and h_clean:
         vol_str, _ = parse_volume(h_clean)
 
-    # 2. Normalize UK to US spellings and cosmetic synonyms
     t = re.sub(r'\ba\.m\.?\b', 'am', t)
     t = re.sub(r'\bp\.m\.?\b', 'pm', t)
     t = re.sub(r'\bmoisturising\b', 'moisturizing', t)
@@ -200,11 +249,9 @@ def extract_volume_and_normalize(title: str, brand: str, handle: str = "") -> Tu
     t = re.sub(r'\bcolour\b', 'color', t)
     t = re.sub(r'\bsalicylic\s+acid\b', 'sa', t)
 
-    # 3. Strip skin type claims & formatting
     for pat in SKIN_TYPE_PATTERNS:
         t = re.sub(pat, ' ', t)
 
-    # 4. Strip brand name variants (with/without hyphens and spaces)
     if b_low:
         b_variants = {b_low, b_low.replace('-', ' '), b_low.replace('-', ''), b_low.replace(' ', '')}
         for bv in b_variants:
@@ -238,27 +285,37 @@ def build_cluster_key(
     gemini_status: Optional[str] = None,
     handle: str = ""
 ) -> str:
-    """
-    Constructs a deterministic canonical cluster key.
-    """
-    clean_b = clean_text_for_matching(brand or "").lower()
-    norm_b = re.sub(r'[^a-z0-9]', '', clean_b)
-
-    # Strategy 1: Shared verified INCI formulation
+    """Constructs a deterministic canonical cluster key without size partitioning."""
+    clean_b = canonicalize_brand(brand)
     if inci_matched_id and gemini_status in ('gemini_approved', None):
-        return f"inci:{norm_b}:{inci_matched_id}"
+        return f"inci:{clean_b}:{inci_matched_id}"
+    tokens_set, tokens_list = clean_and_tokenize(title, brand)
+    norm_t = ':'.join(tokens_list) if tokens_list else 'item'
+    return f"title:{clean_b}:{norm_t}"
 
-    # Strategy 2: Sorted base title tokens + canonical volume specification
-    base_t, vol = extract_volume_and_normalize(title, brand, handle=handle)
-    canon_vol = canonicalize_volume(vol)
-    norm_t = re.sub(r'[^a-z0-9:]', '', base_t)
-    return f"title:{norm_b}:{norm_t}:{canon_vol}"
+
+class UnionFind:
+    """Disjoint Set Union (DSU) with path compression for transitive entity resolution."""
+    def __init__(self, n: int):
+        self.parent = list(range(n))
+
+    def find(self, i: int) -> int:
+        if self.parent[i] == i:
+            return i
+        self.parent[i] = self.find(self.parent[i])
+        return self.parent[i]
+
+    def union(self, i: int, j: int) -> None:
+        root_i = self.find(i)
+        root_j = self.find(j)
+        if root_i != root_j:
+            self.parent[root_i] = root_j
 
 
 def link_catalog_products(conn=None, task_id: Optional[str] = None) -> Dict[str, Any]:
     """
-    Executes cross-source product clustering, canonical link creation, and ingredient propagation.
-    Uses a 2-pass variant alignment algorithm to unify un-sized listings with explicit volume variants.
+    Executes cross-source product clustering, canonical entity linking, and ingredient propagation.
+    Unifies identical products across stores into single canonical entities regardless of packaging size.
     """
     close_on_exit = False
     if conn is None:
@@ -270,7 +327,6 @@ def link_catalog_products(conn=None, task_id: Optional[str] = None) -> Dict[str,
 
     logger.info("Starting cross-source product clustering and canonical entity linking...")
 
-    # Fetch all catalog products with compatibility check for schema columns
     cur.execute("PRAGMA table_info(products);")
     p_cols = {r[1] for r in cur.fetchall()}
     handle_expr = "handle" if "handle" in p_cols else "'' AS handle"
@@ -287,96 +343,91 @@ def link_catalog_products(conn=None, task_id: Optional[str] = None) -> Dict[str,
     total_products = len(products)
     logger.info(f"Loaded {total_products} products for cross-store entity resolution.")
 
-    # Pass 1: Form initial sized clusters and index brand_base keys
-    clusters: Dict[str, List[Dict[str, Any]]] = defaultdict(list)
-    brand_base_to_keys: Dict[str, List[str]] = defaultdict(list)
-    unsized_items: Dict[str, List[Dict[str, Any]]] = defaultdict(list)
+    uf = UnionFind(total_products)
 
-    for p in products:
-        b = p["brand"] or "Generic"
-        t = p["title"] or ""
-        h = p.get("handle") or ""
-        inci_id = p["inci_matched_id"]
-        g_status = p["gate4_gemini_status"]
+    # Pre-process brand, category, and tokens
+    groups: Dict[Tuple[str, str], List[Tuple[int, Dict[str, Any]]]] = defaultdict(list)
+    for idx, p in enumerate(products):
+        cb = canonicalize_brand(p.get("brand") or "")
+        cc = p.get("category") or "Skincare"
+        tokens_set, tokens_list = clean_and_tokenize(p.get("title") or "", p.get("brand") or "")
+        p["tokens_set"] = tokens_set
+        p["tokens_list"] = tokens_list
+        p["canon_brand"] = cb
+        p["canon_cat"] = cc
+        groups[(cb, cc)].append((idx, p))
 
-        clean_b = clean_text_for_matching(b).lower()
-        norm_b = re.sub(r'[^a-z0-9]', '', clean_b)
+    # Evaluate pairwise matching within each (brand, category) group
+    for (cb, cc), items in groups.items():
+        n = len(items)
+        for i in range(n):
+            idx_i, p_i = items[i]
+            for j in range(i + 1, n):
+                idx_j, p_j = items[j]
 
-        if inci_id and g_status in ('gemini_approved', None):
-            key = f"inci:{norm_b}:{inci_id}"
-            clusters[key].append(p)
-        else:
-            base_t, vol = extract_volume_and_normalize(t, b, handle=h)
-            norm_t = re.sub(r'[^a-z0-9:]', '', base_t)
-            brand_base = f"title:{norm_b}:{norm_t}"
-            canon_vol = canonicalize_volume(vol)
-            if canon_vol:
-                sized_key = f"{brand_base}:{canon_vol}"
-                if sized_key not in clusters:
-                    brand_base_to_keys[brand_base].append(sized_key)
-                clusters[sized_key].append(p)
-            else:
-                unsized_items[brand_base].append(p)
-
-    # Pass 2: Align un-sized listings to sized clusters by price proximity
-    aligned_count = 0
-    for brand_base, u_list in unsized_items.items():
-        candidate_keys = brand_base_to_keys.get(brand_base, [])
-        unplaced = []
-        for u in u_list:
-            u_price = u.get("price")
-            u_store = u.get("store_id")
-            best_cand = None
-            best_diff = 999.0
-
-            if u_price and u_price > 0 and candidate_keys:
-                for cand_key in candidate_keys:
-                    c_items = clusters[cand_key]
-                    # Disallow multiple listings from the same store in one variant cluster
-                    if any(ci["store_id"] == u_store for ci in c_items):
+                # 1. Same verified INCI formulation match
+                if p_i.get("inci_matched_id") and p_i["inci_matched_id"] == p_j.get("inci_matched_id"):
+                    if p_i.get("gate4_gemini_status") != "gemini_rejected" and p_j.get("gate4_gemini_status") != "gemini_rejected":
+                        uf.union(idx_i, idx_j)
                         continue
-                    prices = [ci["price"] for ci in c_items if ci.get("price") and ci["price"] > 0]
-                    if not prices:
-                        continue
-                    avg_p = sum(prices) / len(prices)
-                    diff = abs(u_price - avg_p) / avg_p
-                    if diff <= 0.40 and diff < best_diff:
-                        best_diff = diff
-                        best_cand = cand_key
 
-            if best_cand:
-                clusters[best_cand].append(u)
-                aligned_count += 1
-            else:
-                unplaced.append(u)
+                set1 = p_i["tokens_set"]
+                set2 = p_j["tokens_set"]
+                if not set1 or not set2:
+                    continue
 
-        if unplaced:
-            clusters[f"{brand_base}:"].extend(unplaced)
+                # 2. Formulation vehicle safeguard (e.g. lotion vs cream vs gel)
+                types1 = set1.intersection(FORMULATION_TYPES)
+                types2 = set2.intersection(FORMULATION_TYPES)
+                if types1 and types2 and types1 != types2:
+                    continue
 
-    logger.info(f"Formed {len(clusters)} distinct canonical product clusters (Aligned {aligned_count} un-sized listings to physical size variants).")
+                # 3. Critical modifier safeguards (e.g. AM vs PM, hydrating vs foaming)
+                mods1 = set1.intersection(CRITICAL_MODIFIERS)
+                mods2 = set2.intersection(CRITICAL_MODIFIERS)
+                if ('am' in mods1 and 'pm' in mods2) or ('pm' in mods1 and 'am' in mods2):
+                    continue
+                if ('pm' in mods1) != ('pm' in mods2):
+                    continue
+                if ('am' in mods1) != ('am' in mods2):
+                    continue
+                if ('hydrating' in mods1 and 'foaming' in mods2) or ('foaming' in mods1 and 'hydrating' in mods2):
+                    continue
 
-    # 2. Process each cluster: assign/update canonical_product and propagate ingredients
+                # 4. Token Jaccard similarity & exact set match
+                inter = len(set1.intersection(set2))
+                union = len(set1.union(set2))
+                jacc = inter / union if union > 0 else 0.0
+
+                if set1 == set2 or jacc >= 0.60:
+                    uf.union(idx_i, idx_j)
+
+    # Form canonical clusters from UnionFind
+    clusters: Dict[int, List[Dict[str, Any]]] = defaultdict(list)
+    for idx, p in enumerate(products):
+        root = uf.find(idx)
+        clusters[root].append(p)
+
     canonical_created = 0
     multi_store_clusters = 0
     ingredients_propagated = 0
 
     cur.execute("BEGIN TRANSACTION;")
 
-    for key, items in clusters.items():
+    used_keys = set()
+
+    for root, items in clusters.items():
         is_multi_store = len(set(p["store_id"] for p in items)) > 1
         if is_multi_store:
             multi_store_clusters += 1
 
-        # Select best canonical title (longest, most descriptive)
         best_title = max(items, key=lambda x: len(x.get("title") or ""))["title"]
         best_brand = items[0]["brand"] or "Generic"
         best_category = items[0]["category"] or "Skincare"
         is_skin_cluster = 1 if any(p.get("is_skincare") == 1 for p in items) else 0
 
-        # Find primary image
         primary_img = next((p["image_url"] for p in items if p["image_url"]), None)
 
-        # Find highest quality ingredient list in the cluster
         best_ing_item = None
         for p in items:
             raw = p.get("ingredients_raw")
@@ -388,18 +439,24 @@ def link_catalog_products(conn=None, task_id: Optional[str] = None) -> Dict[str,
         best_parsed = best_ing_item["ingredients_parsed"] if best_ing_item else None
         best_acts = best_ing_item["actives"] if best_ing_item else None
         best_src = best_ing_item["ingredient_source"] if best_ing_item else None
-        best_inci_id = next((p["inci_matched_id"] for p in items if p["inci_matched_id"]), None)
+        best_inci_id = next((p["inci_matched_id"] for p in items if p.get("inci_matched_id")), None)
 
-        # Price calculations (prefer available listings)
-        avail_prices = [p["price"] for p in items if p["price"] and p["price"] > 0 and p["is_available"]]
-        all_prices = [p["price"] for p in items if p["price"] and p["price"] > 0]
+        avail_prices = [p["price"] for p in items if p.get("price") and p["price"] > 0 and p.get("is_available")]
+        all_prices = [p["price"] for p in items if p.get("price") and p["price"] > 0]
         prices_to_use = avail_prices if avail_prices else all_prices
 
         min_p = min(prices_to_use) if prices_to_use else 0.0
         max_p = max(prices_to_use) if prices_to_use else 0.0
         store_cnt = len(set(p["store_id"] for p in items))
 
-        # Check if canonical_products already has this key
+        # Generate unique canonical normalized key
+        all_tokens = set.union(*[p["tokens_set"] for p in items]) if items else set()
+        key_tokens = ':'.join(sorted(all_tokens)) if all_tokens else 'product'
+        key = f"{items[0]['canon_brand']}:{items[0]['canon_cat']}:{key_tokens}"
+        if key in used_keys:
+            key = f"{key}_{root}"
+        used_keys.add(key)
+
         cur.execute("SELECT id FROM canonical_products WHERE normalized_key = ?;", (key,))
         existing_row = cur.fetchone()
 
@@ -432,32 +489,38 @@ def link_catalog_products(conn=None, task_id: Optional[str] = None) -> Dict[str,
             canonical_id = cur.lastrowid
             canonical_created += 1
 
-        # Link all products to canonical_id and propagate ingredients if missing
         for p in items:
             pid = p["id"]
             curr_raw = p.get("ingredients_raw")
+            curr_inci = p.get("inci_matched_id")
+
+            update_fields = ["canonical_product_id = ?"]
+            update_values = [canonical_id]
 
             if (not curr_raw or len(curr_raw.strip()) < 15) and best_raw:
-                cur.execute("""
-                UPDATE products
-                SET canonical_product_id = ?,
-                    ingredients_raw = ?,
-                    ingredients_parsed = ?,
-                    actives = ?,
-                    ingredient_source = 'cross_store_linked',
-                    updated_at = CURRENT_TIMESTAMP
-                WHERE id = ?;
-                """, (canonical_id, best_raw, best_parsed, best_acts, pid))
+                update_fields.extend([
+                    "ingredients_raw = ?",
+                    "ingredients_parsed = ?",
+                    "actives = ?",
+                    "ingredient_source = 'cross_store_linked'"
+                ])
+                update_values.extend([best_raw, best_parsed, best_acts])
                 ingredients_propagated += 1
-            else:
-                cur.execute("""
-                UPDATE products
-                SET canonical_product_id = ?,
-                    updated_at = CURRENT_TIMESTAMP
-                WHERE id = ?;
-                """, (canonical_id, pid))
 
-    # Purge any deprecated canonical clusters not referenced by any products
+            if not curr_inci and best_inci_id:
+                update_fields.append("inci_matched_id = ?")
+                update_values.append(best_inci_id)
+
+            update_fields.append("updated_at = CURRENT_TIMESTAMP")
+            update_values.append(pid)
+
+            cur.execute(f"""
+            UPDATE products
+            SET {', '.join(update_fields)}
+            WHERE id = ?;
+            """, update_values)
+
+    # Purge deprecated canonical clusters not referenced by any products
     cur.execute("""
     DELETE FROM canonical_products
     WHERE id NOT IN (SELECT DISTINCT canonical_product_id FROM products WHERE canonical_product_id IS NOT NULL);
@@ -480,6 +543,13 @@ def link_catalog_products(conn=None, task_id: Optional[str] = None) -> Dict[str,
             level="INFO",
             conn=conn
         )
+
+    # Refresh in-memory catalog
+    try:
+        from services.catalog_service import load_catalog_from_db
+        load_catalog_from_db()
+    except Exception as e:
+        logger.warning(f"Could not reload in-memory cache: {e}")
 
     res = {
         "status": "success",
