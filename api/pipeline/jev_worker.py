@@ -12,7 +12,7 @@ import argparse
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
 from pipeline.db_manager import get_connection
-from pipeline.inci_matcher import verify_match_with_jev, verify_match_with_gemini, score_cross_encoder
+from pipeline.inci_matcher import verify_match_with_jev, score_cross_encoder
 try:
     from pipeline.config import cfg
 except ImportError:
@@ -87,44 +87,22 @@ def run_jev_verification_queue(limit: int = None):
             rejected += 1
             logger.info(f"[{idx}/{len(queue)}] [JEV REJECTED] '{title[:35]}' != '{cand_name[:35]}' (Quarantined)")
         else:
-            # 3. Fallback: Jev rate-limited (HTTP 429) or missing key -> Call Gemini 2.5 Flash-Lite
-            gemini_res = verify_match_with_gemini(title, cand_name)
-            if gemini_res is not None:
-                g_ok, g_conf = gemini_res
-                if g_ok:
-                    cur.execute("""
-                    UPDATE products
-                    SET gate4_jev_status = 'jev_rate_limited',
-                        gate4_gemini_status = 'gemini_approved', inci_gemini_score = ?,
-                        gate4_cross_status = ?, inci_cross_score = ?,
-                        updated_at = CURRENT_TIMESTAMP
-                    WHERE id = ?;
-                    """, (g_conf, cross_status, cross_score, pid))
-                    conn.commit()
-                    approved += 1
-                    logger.info(f"[{idx}/{len(queue)}] [GEMINI FALLBACK APPROVED] '{title[:35]}' == '{cand_name[:35]}' (Conf: {g_conf:.2f} | Cross: {cross_score:.2f})")
-                else:
-                    cur.execute("""
-                    UPDATE products
-                    SET gate4_jev_status = 'jev_rate_limited',
-                        gate4_gemini_status = 'gemini_rejected', inci_gemini_score = ?,
-                        gate4_cross_status = ?, inci_cross_score = ?,
-                        ingredients_raw = NULL, ingredients_parsed = NULL, actives = NULL,
-                        updated_at = CURRENT_TIMESTAMP
-                    WHERE id = ?;
-                    """, (g_conf, cross_status, cross_score, pid))
-                    conn.commit()
-                    rejected += 1
-                    logger.info(f"[{idx}/{len(queue)}] [GEMINI FALLBACK REJECTED] '{title[:35]}' != '{cand_name[:35]}' (Quarantined)")
-            else:
-                rate_limited += 1
-                cur.execute("""
-                UPDATE products
-                SET gate4_cross_status = ?, inci_cross_score = ?, updated_at = CURRENT_TIMESTAMP
-                WHERE id = ?;
-                """, (cross_status, cross_score, pid))
-                conn.commit()
-                logger.warning(f"[{idx}/{len(queue)}] [RATE LIMITED / SKIPPED] '{title[:35]}' remains in pending_jev (Cross-Encoder: {cross_score:.2f})")
+            # 3. Jev rate-limited (HTTP 429) or unavailable -> Mark as jev_rate_limited and queue for dedicated Gemini worker
+            rate_limited += 1
+            cur.execute("""
+            UPDATE products
+            SET gate4_jev_status = 'jev_rate_limited',
+                gate4_gemini_status = COALESCE(gate4_gemini_status, 'pending_gemini'),
+                gate4_cross_status = ?, inci_cross_score = ?,
+                updated_at = CURRENT_TIMESTAMP
+            WHERE id = ?;
+            """, (cross_status, cross_score, pid))
+            conn.commit()
+            logger.warning(f"[{idx}/{len(queue)}] [JEV RATE LIMITED / SKIPPED] '{title[:35]}' handed off to Gemini queue (pending_gemini). (Cross: {cross_score:.2f})")
+
+        # Pacing between Jev requests
+        if getattr(cfg, "JEV_REQUEST_INTERVAL_SECONDS", 2.0) > 0:
+            time.sleep(cfg.JEV_REQUEST_INTERVAL_SECONDS)
 
     conn.close()
     logger.info("=== Gate 4 Jev Worker Run Complete ===")

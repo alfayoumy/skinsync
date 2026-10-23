@@ -265,20 +265,36 @@ def verify_match_with_jev(store_title: str, candidate_title: str) -> Optional[bo
         logger.warning(f"Jev INCI verifier skipped: {e}")
         return None
 
-def verify_match_with_gemini(store_title: str, candidate_title: str) -> Optional[Tuple[bool, float]]:
+def verify_batch_with_gemini(items: List[Dict[str, Any]]) -> Optional[Dict[int, Tuple[bool, float, str]]]:
     """
-    Gate 4 Gemini Fallback Verifier: Calls Gemini 3.5 Flash-Lite when Jev is unavailable/rate-limited.
-    Adheres strictly to:
+    Gate 4 Gemini Batch Verifier:
+    Evaluates a batch of candidate pairs in a SINGLE Gemini 3.5 Flash-Lite API request.
+    This multiplies throughput by N (e.g. 10x) while strictly adhering to:
     - 15 Requests Per Minute (RPM) sliding window pacing
     - 1,500 Requests Per Day (RPD) persistent SQLite tracking
-    Returns (verdict_bool, confidence_float) or None.
+
+    items format:
+    [
+        {"id": 101, "store_title": "CeraVe Moisturizing Cream 50ml", "candidate_title": "CeraVe Moisturising Cream"},
+        ...
+    ]
+
+    Returns:
+    {
+        101: (is_same: bool, confidence: float, reasoning: str),
+        ...
+    } or None if rate limited / API error.
     """
+    if not items:
+        return {}
+
     _load_env()
     api_key = os.environ.get("GEMINI_API_KEY") or getattr(cfg, "GEMINI_API_KEY", "")
     if not api_key:
+        logger.warning("Gemini API key not configured. Skipping Gemini batch evaluation.")
         return None
 
-    # Check and acquire rate limit slot (enforces 15 RPM and 1,500 RPD)
+    # Check and acquire atomic rate limit slot (1 request consumed for the entire batch!)
     if not gemini_limiter.acquire():
         logger.warning("Gemini API call skipped due to daily quota exhaustion (1,500 RPD).")
         return None
@@ -289,15 +305,35 @@ def verify_match_with_gemini(store_title: str, candidate_title: str) -> Optional
     else:
         url = f"https://generativelanguage.googleapis.com/v1beta/models/{model_name}:generateContent?key={api_key}"
 
+    # Build formatted list of candidate pairs
+    pairs_text_list = []
+    for idx, item in enumerate(items, 1):
+        item_id = item["id"]
+        s_title = item.get("store_title") or item.get("title", "")
+        c_title = item.get("candidate_title") or item.get("inci_matched_name", "")
+        pairs_text_list.append(
+            f"{idx}. [ID: {item_id}]\n"
+            f"   Product A: \"{s_title}\"\n"
+            f"   Product B: \"{c_title}\""
+        )
+    formatted_pairs = "\n\n".join(pairs_text_list)
+
     prompt = (
-        f"You are a cosmetic chemistry and dermatology expert evaluating product formulations.\n"
-        f"Product A: \"{store_title}\"\n"
-        f"Product B: \"{candidate_title}\"\n\n"
-        f"Question: Do both product titles describe the exact same skincare cosmetic formulation? "
-        f"(Answer false if they have different active ingredients such as Salicylic Acid/SA, different SPF sun protection, "
-        f"different day/night versions, or different targeted skin lines like Sensibio vs Sebium).\n\n"
-        f"Respond ONLY with a JSON object in this exact format:\n"
-        f"{{\"is_exact_same_formula\": true, \"confidence\": 0.95}}"
+        f"You are a cosmetic chemistry and dermatology expert evaluating skincare product formulations.\n"
+        f"For each numbered pair below, determine if Product A and Product B describe the exact same skincare cosmetic formulation.\n\n"
+        f"EVALUATION CRITERIA:\n"
+        f"- Answer true ONLY if both titles represent the same formulation, brand, and product line (ignoring packaging volume variations like 50ml vs 200ml, minor spelling/accents, or translation variants).\n"
+        f"- Answer false if they differ in:\n"
+        f"  1. Active ingredients (e.g. Salicylic Acid/BHA vs Glycolic/AHA, or Retinol vs Niacinamide)\n"
+        f"  2. Targeted skin conditions (e.g. Bioderma Sensibio for sensitive skin vs Sebium for oily/acne skin)\n"
+        f"  3. Product format (e.g. Cleanser vs Gel vs Cream vs Balm)\n"
+        f"  4. Formula variant (e.g. AM vs PM, SPF vs non-SPF, Fragrance-Free vs Scented)\n\n"
+        f"Pairs to evaluate:\n"
+        f"{formatted_pairs}\n\n"
+        f"Respond ONLY with a JSON array containing an evaluation object for EVERY ID provided, in this exact format:\n"
+        f"[\n"
+        f"  {{\"id\": <int>, \"is_exact_same_formula\": <bool>, \"confidence\": <float 0.0-1.0>, \"reasoning\": \"<short sentence>\"}}\n"
+        f"]"
     )
 
     payload = {
@@ -315,18 +351,50 @@ def verify_match_with_gemini(store_title: str, candidate_title: str) -> Optional
             headers={"Content-Type": "application/json"},
             method="POST"
         )
-        with urllib.request.urlopen(req, timeout=getattr(cfg, "GEMINI_TIMEOUT_SECONDS", 6.0)) as resp:
+        with urllib.request.urlopen(req, timeout=getattr(cfg, "GEMINI_TIMEOUT_SECONDS", 35.0)) as resp:
             data = json.loads(resp.read().decode("utf-8"))
             candidates = data.get("candidates", [])
-            if candidates:
-                content = candidates[0].get("content", {}).get("parts", [{}])[0].get("text", "")
-                res_json = json.loads(content)
-                is_same = bool(res_json.get("is_exact_same_formula", False))
-                conf = float(res_json.get("confidence", 0.0))
-                return is_same, conf
+            if not candidates:
+                logger.warning("Gemini batch response contained no candidates.")
+                return None
+
+            content = candidates[0].get("content", {}).get("parts", [{}])[0].get("text", "")
+            res_array = json.loads(content)
+            if not isinstance(res_array, list):
+                if isinstance(res_array, dict):
+                    res_array = res_array.get("results", res_array.get("evaluations", [res_array]))
+                else:
+                    logger.warning(f"Unexpected Gemini response structure: {type(res_array)}")
+                    return None
+
+            results = {}
+            for entry in res_array:
+                if not isinstance(entry, dict):
+                    continue
+                pid = entry.get("id")
+                if pid is None:
+                    continue
+                try:
+                    pid = int(pid)
+                except ValueError:
+                    pass
+                is_same = bool(entry.get("is_exact_same_formula", False))
+                conf = float(entry.get("confidence", 0.0))
+                reason = str(entry.get("reasoning", "")).strip()
+                results[pid] = (is_same, conf, reason)
+
+            return results
     except Exception as e:
-        logger.warning(f"Gemini INCI fallback verifier error: {e}")
+        logger.warning(f"Gemini INCI batch verifier error: {e}")
         return None
+
+def verify_match_with_gemini(store_title: str, candidate_title: str) -> Optional[Tuple[bool, float]]:
+    """Single-pair convenience wrapper over verify_batch_with_gemini."""
+    res = verify_batch_with_gemini([{"id": 0, "store_title": store_title, "candidate_title": candidate_title}])
+    if res and 0 in res:
+        is_same, conf, _ = res[0]
+        return is_same, conf
+    return None
 
 # ==============================================================================
 # LOCAL ONNX CROSS-ENCODER RERANKER

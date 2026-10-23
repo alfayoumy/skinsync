@@ -690,6 +690,40 @@ def trigger_sync(background_tasks: BackgroundTasks):
         "message": "Daily synchronization job dispatched to background worker. Check /stats for progress."
     }
 
+def background_jev_task(limit: int):
+    try:
+        from pipeline.jev_worker import run_jev_verification_queue
+        run_jev_verification_queue(limit=limit)
+        load_catalog_from_db()
+    except Exception as e:
+        logger.error(f"Background Jev task error: {e}")
+
+@app.post("/admin/verify/jev")
+def trigger_jev_verification(background_tasks: BackgroundTasks, limit: int = 25):
+    """Triggers asynchronous Gate 4 Jev verification queue."""
+    background_tasks.add_task(background_jev_task, limit)
+    return {
+        "status": "accepted",
+        "message": f"Gate 4 Jev verification job dispatched for up to {limit} products. Check /stats for updates."
+    }
+
+def background_gemini_task(limit: int, batch_size: int, all_pending: bool):
+    try:
+        from pipeline.gemini_worker import run_gemini_verification_queue
+        run_gemini_verification_queue(limit=limit, batch_size=batch_size, all_pending=all_pending)
+        load_catalog_from_db()
+    except Exception as e:
+        logger.error(f"Background Gemini task error: {e}")
+
+@app.post("/admin/verify/gemini")
+def trigger_gemini_verification(background_tasks: BackgroundTasks, limit: int = 50, batch_size: int = 10, all_pending: bool = False):
+    """Triggers asynchronous Gate 4 Gemini batch verification queue."""
+    background_tasks.add_task(background_gemini_task, limit, batch_size, all_pending)
+    return {
+        "status": "accepted",
+        "message": f"Gate 4 Gemini batch verification job dispatched for up to {limit} products (batch size: {batch_size}). Check /stats for updates."
+    }
+
 class SynonymRequest(BaseModel):
     alias: str
     canonical_name: str

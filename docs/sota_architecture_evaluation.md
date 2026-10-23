@@ -101,8 +101,27 @@ The updated `GeminiRateLimiter`:
    ```
    If count $\ge 15$, calculates exact sleep time until the oldest timestamp exits the window.
 3. **Paced Inter-Request Delay:** Enforces a minimum spacing of **4.0 seconds** ($60\text{s} / 15\text{ RPM} = 4.0\text{s}$) between consecutive calls.
-4. **Lock-Free Sleeping:** Database transaction is rolled back and closed before `time.sleep()`, ensuring zero database locking across processes during backoff.
 5. **Atomic Daily Quota (1,500 RPD):** Checks daily usage within a `BEGIN IMMEDIATE` transaction. If count $\ge 1500$, immediately denies the slot without waiting.
+
+### 3.2 Worker Separation & Multi-Product Batching (`gemini_worker.py` & `verify_batch_with_gemini`)
+
+To maximize throughput while strictly honoring the 15 RPM / 1,500 RPD ceiling:
+1. **Decoupled Worker Roles:**
+   - **`jev_worker.py` (Primary):** Dedicated exclusively to Jev 1.13 Free (OpenCode Zen). Pulls `pending_jev` products. If rate-limited (HTTP 429), it sets `gate4_jev_status = 'jev_rate_limited'` and hands off the item to `gate4_gemini_status = 'pending_gemini'`. It makes zero direct calls to Gemini.
+   - **`gemini_worker.py` (Fallback & Batch Verifier):** Dedicated exclusively to Gemini 3.5 Flash-Lite batch verification. Pulls `pending_gemini` items and evaluates them in chunks of configurable batch size.
+2. **Multi-Product Prompt Batching:**
+   - Rather than sending 1 product candidate pair per HTTP request, `verify_batch_with_gemini` packages $B$ candidate pairs (configurable via `GEMINI_BATCH_SIZE`, default $10$) into a single structured prompt.
+   - Using Gemini's `responseMimeType: "application/json"`, the model returns a structured JSON array evaluating all $B$ pairs simultaneously:
+     ```json
+     [
+       {"id": 101, "is_exact_same_formula": true, "confidence": 0.95, "reasoning": "Matching volume variant"},
+       {"id": 102, "is_exact_same_formula": false, "confidence": 0.99, "reasoning": "Sensibio vs Sebium target clash"}
+     ]
+     ```
+3. **Throughput Scaling:**
+   - **1 API Call = 10 Products Evaluated.**
+   - At 15 RPM: evaluates up to **150 products per minute**.
+   - At 1,500 RPD: evaluates up to **15,000 products per day** (sufficient to verify the entire catalog in < 1 day while staying 100% within the free tier quota).
 
 ---
 

@@ -109,6 +109,8 @@ class PipelineConfig:
     GEMINI_MAX_RPM: int = _env_int("GEMINI_MAX_RPM", 15)
     GEMINI_MAX_RPD: int = _env_int("GEMINI_MAX_RPD", 1500)
     GEMINI_PACE_DELAY_SECONDS: float = _env_float("GEMINI_PACE_DELAY_SECONDS", 4.0)
+    GEMINI_BATCH_SIZE: int = _env_int("GEMINI_BATCH_SIZE", 10)
+    GEMINI_QUEUE_BATCH_SIZE: int = _env_int("GEMINI_QUEUE_BATCH_SIZE", 50)
 
     # -------------------------------------------------------------------------
     # 7. Crawler & Scraping Engine
