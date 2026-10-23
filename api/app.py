@@ -35,6 +35,13 @@ from pipeline.inci_matcher import (
 )
 from pipeline.safeguards import CosmeticCompatibilityValidator
 from pipeline.harvester import refresh_catalog, STORES
+from pipeline.task_tracker import (
+    create_task, complete_task, fail_task, cancel_task,
+    create_subtask, complete_subtask, fail_subtask,
+    update_task_progress, log_task_event,
+    get_task_details, list_tasks, get_task_subtasks, get_task_logs,
+    get_scrape_checkpoint, list_scrape_checkpoints
+)
 
 logger = logging.getLogger("skincare_engine")
 logging.basicConfig(level=logging.INFO)
@@ -789,44 +796,64 @@ class StoreRefreshRequest(BaseModel):
     max_pages: Optional[int] = 50
     background: bool = True
 
-def _run_refresh_catalog_task(store_id: Optional[str], fields: Optional[List[str]], max_pages: int):
+def _run_refresh_catalog_task(store_id: Optional[str], fields: Optional[List[str]], max_pages: int, task_id: Optional[str] = None):
     try:
-        res = refresh_catalog(store_id=store_id, fields=fields, max_pages=max_pages)
+        res = refresh_catalog(store_id=store_id, fields=fields, max_pages=max_pages, task_id=task_id)
         load_catalog_from_db()
         return res
     except Exception as e:
         logger.error(f"Catalog refresh error: {e}")
-        return {"status": "error", "message": str(e)}
+        if task_id:
+            fail_task(task_id, str(e))
+        return {"status": "error", "message": str(e), "task_id": task_id}
 
 @app.post("/products/refresh")
 def refresh_products_endpoint(req: CatalogRefreshRequest, background_tasks: BackgroundTasks):
     """
     Refreshes catalog products across a specific source or all sources,
     selectively updating specific fields ('price', 'stock', 'image', 'ingredients', or 'all').
+    Tracks execution and subtasks in pipeline control tables.
     """
+    task_id = create_task(
+        task_type="refresh_catalog",
+        target_source=req.store_id or "all",
+        fields=req.fields,
+        params={"max_pages": req.max_pages or 50},
+        auto_start=True
+    )
     if req.background:
-        background_tasks.add_task(_run_refresh_catalog_task, req.store_id, req.fields, req.max_pages or 50)
+        background_tasks.add_task(_run_refresh_catalog_task, req.store_id, req.fields, req.max_pages or 50, task_id)
         return {
             "status": "accepted",
-            "message": f"Catalog refresh dispatched to background worker (store: {req.store_id or 'all'}, fields: {req.fields or 'all'}). Check /stats for progress."
+            "task_id": task_id,
+            "message": f"Catalog refresh dispatched to background worker (store: {req.store_id or 'all'}, fields: {req.fields or 'all'}). Monitor progress at /tasks/{task_id}."
         }
-    return _run_refresh_catalog_task(req.store_id, req.fields, req.max_pages or 50)
+    return _run_refresh_catalog_task(req.store_id, req.fields, req.max_pages or 50, task_id)
 
 @app.post("/stores/{store_id}/refresh")
 def refresh_store_endpoint(store_id: str, background_tasks: BackgroundTasks, req: Optional[StoreRefreshRequest] = None):
     """
     Refreshes products for a specific source ID across selected or all fields.
+    Tracks execution and subtasks in pipeline control tables.
     """
     fields = req.fields if req else None
     max_pages = req.max_pages if req and req.max_pages else 50
     bg = req.background if req else True
+    task_id = create_task(
+        task_type="refresh_store",
+        target_source=store_id,
+        fields=fields,
+        params={"max_pages": max_pages},
+        auto_start=True
+    )
     if bg:
-        background_tasks.add_task(_run_refresh_catalog_task, store_id, fields, max_pages)
+        background_tasks.add_task(_run_refresh_catalog_task, store_id, fields, max_pages, task_id)
         return {
             "status": "accepted",
-            "message": f"Store refresh dispatched for store '{store_id}' (fields: {fields or 'all'})."
+            "task_id": task_id,
+            "message": f"Store refresh dispatched for store '{store_id}' (fields: {fields or 'all'}). Monitor progress at /tasks/{task_id}."
         }
-    return _run_refresh_catalog_task(store_id, fields, max_pages)
+    return _run_refresh_catalog_task(store_id, fields, max_pages, task_id)
 
 # ------------------------------------------------------------------------------
 # 7.2. INCI FORMULATION MATCHING ENDPOINTS
@@ -987,7 +1014,17 @@ class BatchInciMatchRequest(BaseModel):
     only_unmatched: bool = True
     background: bool = False
 
-def _run_batch_inci_match(req: BatchInciMatchRequest):
+def _run_batch_inci_match(req: BatchInciMatchRequest, task_id: Optional[str] = None):
+    own_task = False
+    if task_id is None:
+        task_id = create_task(
+            task_type="batch_match_inci",
+            target_source=req.store_id or "all",
+            params={"limit": req.limit, "scoring_mode": req.scoring_mode, "allow_obf": req.allow_obf, "only_unmatched": req.only_unmatched},
+            auto_start=True
+        )
+        own_task = True
+
     conn = get_connection()
     try:
         cur = conn.cursor()
@@ -1007,13 +1044,25 @@ def _run_batch_inci_match(req: BatchInciMatchRequest):
         cur.execute(query, params)
         rows = cur.fetchall()
 
+        update_task_progress(task_id, total_items=len(rows), current_stage="matching_inci_records", conn=conn)
+
         results = []
         matched_count = 0
-        for r in rows:
+        for idx, r in enumerate(rows, 1):
             pid = r["id"]
             brand = r["brand"]
             title = r["title"]
             curr_raw = r["ingredients_raw"]
+
+            subtask_id = create_subtask(
+                task_id=task_id,
+                step_name=f"match_product_{pid}",
+                step_index=idx,
+                total_steps=len(rows),
+                metadata={"product_id": pid, "brand": brand, "title": title},
+                conn=conn
+            )
+
             m_res = match_with_inci_db(brand, title, conn, allow_synchronous_jev=True, scoring_mode=req.scoring_mode, allow_obf=req.allow_obf)
             if m_res:
                 matched_count += 1
@@ -1041,18 +1090,42 @@ def _run_batch_inci_match(req: BatchInciMatchRequest):
                 u_params.append(pid)
                 cur.execute(update_sql, u_params)
                 conn.commit()
+
+                complete_subtask(subtask_id, items_count=1, items_succeeded=1, metadata={"matched": True, "matched_name": m_res.get("matched_name")}, conn=conn)
                 results.append({"id": pid, "title": title, "matched": True, "matched_name": m_res.get("matched_name")})
             else:
+                complete_subtask(subtask_id, items_count=1, items_succeeded=0, metadata={"matched": False}, conn=conn)
                 results.append({"id": pid, "title": title, "matched": False})
 
+            update_task_progress(
+                task_id=task_id,
+                processed_items=idx,
+                successful_items=matched_count,
+                current_stage=f"processed_item_{idx}_of_{len(rows)}",
+                conn=conn
+            )
+
         load_catalog_from_db()
+
+        if own_task:
+            complete_task(
+                task_id=task_id,
+                metadata={"total_processed": len(rows), "total_matched": matched_count, "scoring_mode": req.scoring_mode},
+                conn=conn
+            )
+
         return {
             "status": "success",
+            "task_id": task_id,
             "total_processed": len(rows),
             "total_matched": matched_count,
             "scoring_mode": req.scoring_mode,
             "details": results
         }
+    except Exception as e:
+        if own_task:
+            fail_task(task_id, str(e), conn=conn)
+        raise
     finally:
         conn.close()
 
@@ -1060,14 +1133,22 @@ def _run_batch_inci_match(req: BatchInciMatchRequest):
 def batch_match_inci_endpoint(req: BatchInciMatchRequest, background_tasks: BackgroundTasks):
     """
     Runs batch INCI matching across selected products or catalog items.
+    Tracks execution and subtasks in pipeline control tables.
     """
+    task_id = create_task(
+        task_type="batch_match_inci",
+        target_source=req.store_id or "all",
+        params={"limit": req.limit, "scoring_mode": req.scoring_mode, "allow_obf": req.allow_obf},
+        auto_start=True
+    )
     if req.background:
-        background_tasks.add_task(_run_batch_inci_match, req)
+        background_tasks.add_task(_run_batch_inci_match, req, task_id)
         return {
             "status": "accepted",
-            "message": f"Batch INCI matching job dispatched to background worker (mode: {req.scoring_mode}, limit: {req.limit})."
+            "task_id": task_id,
+            "message": f"Batch INCI matching job dispatched to background worker (mode: {req.scoring_mode}, limit: {req.limit}). Monitor progress at /tasks/{task_id}."
         }
-    return _run_batch_inci_match(req)
+    return _run_batch_inci_match(req, task_id)
 
 # ------------------------------------------------------------------------------
 # 7.3. PRODUCTS INGREDIENTS FILL ENDPOINTS
@@ -1169,7 +1250,17 @@ class BatchFillIngredientsRequest(BaseModel):
     limit: int = 50
     background: bool = False
 
-def _run_batch_fill_ingredients(req: BatchFillIngredientsRequest):
+def _run_batch_fill_ingredients(req: BatchFillIngredientsRequest, task_id: Optional[str] = None):
+    own_task = False
+    if task_id is None:
+        task_id = create_task(
+            task_type="batch_fill_ingredients",
+            target_source=req.store_id or "all",
+            params={"limit": req.limit, "source": req.source, "only_empty": req.only_empty, "overwrite": req.overwrite},
+            auto_start=True
+        )
+        own_task = True
+
     conn = get_connection()
     try:
         cur = conn.cursor()
@@ -1189,22 +1280,58 @@ def _run_batch_fill_ingredients(req: BatchFillIngredientsRequest):
         cur.execute(query, params)
         rows = cur.fetchall()
 
+        update_task_progress(task_id, total_items=len(rows), current_stage="filling_product_ingredients", conn=conn)
+
         results = []
         success_count = 0
-        for r in rows:
+        for idx, r in enumerate(rows, 1):
+            pid = r["id"]
+            subtask_id = create_subtask(
+                task_id=task_id,
+                step_name=f"fill_product_{pid}",
+                step_index=idx,
+                total_steps=len(rows),
+                metadata={"product_id": pid, "title": r["title"]},
+                conn=conn
+            )
             res = _fill_single_product_ingredients(r, req.source, req.overwrite, conn)
-            if res.get("status") == "success":
+            is_ok = (res.get("status") == "success")
+            if is_ok:
                 success_count += 1
-            results.append({"id": r["id"], "title": r["title"], "status": res.get("status"), "source": res.get("source_used")})
+                complete_subtask(subtask_id, items_count=1, items_succeeded=1, metadata=res, conn=conn)
+            else:
+                complete_subtask(subtask_id, items_count=1, items_succeeded=0, metadata=res, conn=conn)
+
+            results.append({"id": pid, "title": r["title"], "status": res.get("status"), "source": res.get("source_used")})
+            update_task_progress(
+                task_id=task_id,
+                processed_items=idx,
+                successful_items=success_count,
+                current_stage=f"processed_item_{idx}_of_{len(rows)}",
+                conn=conn
+            )
 
         load_catalog_from_db()
+
+        if own_task:
+            complete_task(
+                task_id=task_id,
+                metadata={"total_processed": len(rows), "total_filled": success_count, "source": req.source},
+                conn=conn
+            )
+
         return {
             "status": "success",
+            "task_id": task_id,
             "processed": len(rows),
             "filled": success_count,
             "source": req.source,
             "details": results
         }
+    except Exception as e:
+        if own_task:
+            fail_task(task_id, str(e), conn=conn)
+        raise
     finally:
         conn.close()
 
@@ -1212,14 +1339,22 @@ def _run_batch_fill_ingredients(req: BatchFillIngredientsRequest):
 def batch_fill_ingredients_endpoint(req: BatchFillIngredientsRequest, background_tasks: BackgroundTasks):
     """
     Batch populates missing product ingredients from store description or INCI reference.
+    Tracks execution and subtasks in pipeline control tables.
     """
+    task_id = create_task(
+        task_type="batch_fill_ingredients",
+        target_source=req.store_id or "all",
+        params={"limit": req.limit, "source": req.source},
+        auto_start=True
+    )
     if req.background:
-        background_tasks.add_task(_run_batch_fill_ingredients, req)
+        background_tasks.add_task(_run_batch_fill_ingredients, req, task_id)
         return {
             "status": "accepted",
-            "message": f"Batch ingredients fill job dispatched (source: {req.source}, limit: {req.limit})."
+            "task_id": task_id,
+            "message": f"Batch ingredients fill job dispatched (source: {req.source}, limit: {req.limit}). Monitor progress at /tasks/{task_id}."
         }
-    return _run_batch_fill_ingredients(req)
+    return _run_batch_fill_ingredients(req, task_id)
 
 # ------------------------------------------------------------------------------
 # 7.4. PRODUCT SIMILARITY SCORING ENDPOINT
@@ -1488,6 +1623,146 @@ def create_clinical_ingredient_endpoint(req: ClinicalIngredientCreateRequest):
         "message": f"Clinical ingredient '{req.inci}' persisted and clinical engine cache reloaded.",
         "ingredient": req.model_dump() if hasattr(req, "model_dump") else req.dict()
     }
+
+# ==============================================================================
+# 7.6. TASK PROGRESS TRACKING & SCRAPING CONTROL ENDPOINTS
+# ==============================================================================
+
+class CancelTaskRequest(BaseModel):
+    reason: Optional[str] = "User requested cancellation"
+
+@app.get("/tasks")
+def list_pipeline_tasks_endpoint(
+    status: Optional[str] = None,
+    task_type: Optional[str] = None,
+    target_source: Optional[str] = None,
+    limit: int = 50,
+    offset: int = 0
+):
+    """
+    Lists data scraping, ingestion, and catalog refresh pipeline tasks with pagination and filters.
+    """
+    tasks = list_tasks(
+        status=status,
+        task_type=task_type,
+        target_source=target_source,
+        limit=limit,
+        offset=offset
+    )
+    return {
+        "status": "success",
+        "total": len(tasks),
+        "limit": limit,
+        "offset": offset,
+        "tasks": tasks
+    }
+
+@app.get("/tasks/{task_id}")
+def get_pipeline_task_endpoint(
+    task_id: str,
+    include_subtasks: bool = True,
+    include_logs: bool = True,
+    log_limit: int = 50
+):
+    """
+    Retrieves real-time execution progress, item counters, subtask statuses, and logs for a pipeline task.
+    """
+    task = get_task_details(
+        task_id=task_id,
+        include_subtasks=include_subtasks,
+        include_logs=include_logs,
+        log_limit=log_limit
+    )
+    if not task:
+        raise HTTPException(status_code=404, detail=f"Pipeline task '{task_id}' not found.")
+    return task
+
+@app.get("/tasks/{task_id}/subtasks")
+def get_pipeline_subtasks_endpoint(
+    task_id: str,
+    limit: int = 100,
+    offset: int = 0
+):
+    """
+    Returns granular subtasks (e.g. per-page crawling, chunk batches) for a specific pipeline task.
+    """
+    task = get_task_details(task_id=task_id, include_subtasks=False, include_logs=False)
+    if not task:
+        raise HTTPException(status_code=404, detail=f"Pipeline task '{task_id}' not found.")
+    subtasks = get_task_subtasks(task_id=task_id, limit=limit, offset=offset)
+    return {
+        "task_id": task_id,
+        "total": len(subtasks),
+        "subtasks": subtasks
+    }
+
+@app.get("/tasks/{task_id}/logs")
+def get_pipeline_task_logs_endpoint(
+    task_id: str,
+    subtask_id: Optional[str] = None,
+    level: Optional[str] = None,
+    limit: int = 100,
+    offset: int = 0
+):
+    """
+    Returns chronological execution log events and diagnostic context for a pipeline task.
+    """
+    task = get_task_details(task_id=task_id, include_subtasks=False, include_logs=False)
+    if not task:
+        raise HTTPException(status_code=404, detail=f"Pipeline task '{task_id}' not found.")
+    logs = get_task_logs(task_id=task_id, subtask_id=subtask_id, level=level, limit=limit, offset=offset)
+    return {
+        "task_id": task_id,
+        "total": len(logs),
+        "logs": logs
+    }
+
+@app.post("/tasks/{task_id}/cancel")
+def cancel_pipeline_task_endpoint(task_id: str, req: Optional[CancelTaskRequest] = None):
+    """
+    Cancels a pending or running pipeline task.
+    """
+    task = get_task_details(task_id=task_id, include_subtasks=False, include_logs=False)
+    if not task:
+        raise HTTPException(status_code=404, detail=f"Pipeline task '{task_id}' not found.")
+    if task["status"] in ("completed", "failed", "cancelled"):
+        raise HTTPException(
+            status_code=400,
+            detail=f"Cannot cancel task '{task_id}' because its status is already '{task['status']}'."
+        )
+
+    reason = req.reason if (req and req.reason) else "User requested cancellation"
+    cancelled = cancel_task(task_id=task_id, reason=reason)
+    if not cancelled:
+        raise HTTPException(status_code=500, detail=f"Failed to cancel task '{task_id}'.")
+    return {
+        "status": "cancelled",
+        "task_id": task_id,
+        "message": f"Task '{task_id}' was successfully cancelled.",
+        "reason": reason
+    }
+
+@app.get("/scraping/checkpoints")
+def list_scraping_checkpoints_endpoint():
+    """
+    Lists store scrape checkpoints showing last scraped page, timestamp, and status.
+    """
+    checkpoints = list_scrape_checkpoints()
+    return {
+        "status": "success",
+        "total": len(checkpoints),
+        "checkpoints": checkpoints
+    }
+
+@app.get("/scraping/checkpoints/{store_id}")
+def get_store_scraping_checkpoint_endpoint(store_id: str):
+    """
+    Retrieves the current scrape checkpoint and sync cursor for a specific store.
+    """
+    cp = get_scrape_checkpoint(store_id=store_id)
+    if not cp:
+        raise HTTPException(status_code=404, detail=f"Scrape checkpoint for store '{store_id}' not found.")
+    return cp
 
 @app.get("/")
 def health_check():

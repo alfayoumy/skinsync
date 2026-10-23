@@ -15,6 +15,11 @@ from pipeline.inci_matcher import (
     match_with_inci_db
 )
 from pipeline.classifier import is_skincare_or_beauty, classify_product
+from pipeline.task_tracker import (
+    create_task, complete_task, fail_task,
+    create_subtask, complete_subtask, fail_subtask,
+    update_task_progress, log_task_event, update_scrape_checkpoint
+)
 try:
     from pipeline.config import cfg
 except ImportError:
@@ -95,11 +100,12 @@ def fetch_shopify_page(domain: str, page: int, retries: int = None) -> list:
 
     return []
 
-def sync_store(store_cfg: dict, max_pages: int = None, conn = None, fields: list = None) -> dict:
+def sync_store(store_cfg: dict, max_pages: int = None, conn=None, fields: list = None, task_id: str = None) -> dict:
     """
     Crawls and synchronizes a single Shopify store into the database.
     Optionally accepts a list of specific fields to refresh:
     e.g. ['price', 'stock', 'image', 'ingredients', 'title'] or 'all'.
+    Tracks progress and subtasks when task_id is provided.
     """
     if max_pages is None:
         max_pages = cfg.DEFAULT_MAX_PAGES_PER_STORE
@@ -135,6 +141,8 @@ def sync_store(store_cfg: dict, max_pages: int = None, conn = None, fields: list
     delay = store_cfg.get("rate_limit_delay", cfg.SHOPIFY_DEFAULT_DELAY_SECONDS)
 
     logger.info(f"--- Starting Sync for Store: {name} ({domain}) | Fields: {list(clean_fields) if clean_fields else 'all'} ---")
+    if task_id:
+        log_task_event(task_id, f"Initiating crawl for store '{name}' ({domain}) | Fields: {list(clean_fields) if clean_fields else 'all'}", level="INFO", conn=conn)
 
     # Start Sync Run Log
     cur.execute("""
@@ -152,12 +160,27 @@ def sync_store(store_cfg: dict, max_pages: int = None, conn = None, fields: list
 
     try:
         for page in range(1, max_pages + 1):
+            subtask_id = None
+            if task_id:
+                subtask_id = create_subtask(
+                    task_id=task_id,
+                    step_name=f"crawl_page_{page}_{store_id}",
+                    step_index=page,
+                    total_steps=max_pages,
+                    metadata={"store_id": store_id, "page": page, "domain": domain},
+                    conn=conn
+                )
+
             products = fetch_shopify_page(domain, page)
             if not products:
                 logger.info(f"Finished crawling {name} at page {page-1} (Total products fetched: {total_fetched})")
+                if subtask_id:
+                    complete_subtask(subtask_id, items_count=0, metadata={"message": "End of catalog reached"}, conn=conn)
                 break
 
             total_fetched += len(products)
+            page_added = 0
+            page_updated = 0
 
             for p in products:
                 title = str(p.get("title", "")).strip()
@@ -266,6 +289,7 @@ def sync_store(store_cfg: dict, max_pages: int = None, conn = None, fields: list
                             cur.execute(sql, tuple(upd_vals))
 
                     total_updated += 1
+                    page_updated += 1
                 else:
                     # Insert new product
                     cur.execute("""
@@ -280,8 +304,35 @@ def sync_store(store_cfg: dict, max_pages: int = None, conn = None, fields: list
                         body_html, raw_ings, json.dumps(parsed_ings), json.dumps(actives), ing_source
                     ))
                     total_added += 1
+                    page_added += 1
 
             conn.commit()
+
+            if task_id and subtask_id:
+                complete_subtask(
+                    subtask_id=subtask_id,
+                    items_count=len(products),
+                    items_succeeded=page_added + page_updated,
+                    metadata={"page": page, "added": page_added, "updated": page_updated},
+                    conn=conn
+                )
+                update_task_progress(
+                    task_id=task_id,
+                    processed_items=total_fetched,
+                    successful_items=total_added + total_updated,
+                    current_stage=f"crawled_{store_id}_page_{page}",
+                    conn=conn
+                )
+                update_scrape_checkpoint(
+                    store_id=store_id,
+                    task_id=task_id,
+                    page_scraped=page,
+                    products_count=len(products),
+                    is_success=True,
+                    status="in_progress",
+                    conn=conn
+                )
+
             time.sleep(delay)
 
         # Update store stats
@@ -305,6 +356,23 @@ def sync_store(store_cfg: dict, max_pages: int = None, conn = None, fields: list
         conn.commit()
         logger.info(f"Sync complete for {name}: Fetched {total_fetched}, Added {total_added}, Updated {total_updated}, Price Changes: {price_changes}")
 
+        if task_id:
+            update_scrape_checkpoint(
+                store_id=store_id,
+                task_id=task_id,
+                page_scraped=max_pages,
+                is_success=True,
+                status="idle",
+                conn=conn
+            )
+            log_task_event(
+                task_id=task_id,
+                message=f"Store '{name}' sync complete: {total_fetched} fetched, {total_added} added, {total_updated} updated, {price_changes} price changes.",
+                level="INFO",
+                context_data={"fetched": total_fetched, "added": total_added, "updated": total_updated, "price_changes": price_changes},
+                conn=conn
+            )
+
     except Exception as e:
         error_msg = str(e)
         logger.error(f"Sync failed for {name}: {e}")
@@ -314,6 +382,16 @@ def sync_store(store_cfg: dict, max_pages: int = None, conn = None, fields: list
         WHERE id = ?;
         """, (error_msg, sync_run_id))
         conn.commit()
+        if task_id:
+            update_scrape_checkpoint(
+                store_id=store_id,
+                task_id=task_id,
+                is_success=False,
+                status="error",
+                metadata={"error": error_msg},
+                conn=conn
+            )
+            log_task_event(task_id=task_id, message=f"Store '{name}' sync error: {error_msg}", level="ERROR", conn=conn)
     finally:
         if should_close:
             conn.close()
@@ -328,7 +406,7 @@ def sync_store(store_cfg: dict, max_pages: int = None, conn = None, fields: list
         "error": error_msg
     }
 
-def sync_all_stores(max_pages_per_store: int = None, fields: list = None) -> list:
+def sync_all_stores(max_pages_per_store: int = None, fields: list = None, task_id: str = None) -> list:
     """
     Runs full synchronization for all configured stores.
     """
@@ -337,15 +415,16 @@ def sync_all_stores(max_pages_per_store: int = None, fields: list = None) -> lis
     conn = get_connection()
     results = []
     for store_cfg in STORES:
-        res = sync_store(store_cfg, max_pages=max_pages_per_store, conn=conn, fields=fields)
+        res = sync_store(store_cfg, max_pages=max_pages_per_store, conn=conn, fields=fields, task_id=task_id)
         results.append(res)
     conn.close()
     return results
 
-def refresh_catalog(store_id: str = None, fields: list = None, max_pages: int = None) -> dict:
+def refresh_catalog(store_id: str = None, fields: list = None, max_pages: int = None, task_id: str = None) -> dict:
     """
     Refreshes catalog products across a specific store or all stores,
     selectively updating specific fields ('price', 'stock', 'image', 'ingredients', or 'all').
+    Tracks execution and subtasks via pipeline control tables.
     """
     if max_pages is None:
         max_pages = cfg.DEFAULT_MAX_PAGES_PER_STORE
@@ -360,6 +439,17 @@ def refresh_catalog(store_id: str = None, fields: list = None, max_pages: int = 
                 "message": f"Store ID '{store_id}' not found. Available stores: {[s['id'] for s in STORES]}"
             }
 
+    own_task = False
+    if task_id is None:
+        task_id = create_task(
+            task_type="refresh_catalog",
+            target_source=store_id or "all",
+            fields=fields,
+            params={"max_pages": max_pages, "store_count": len(target_stores)},
+            auto_start=True
+        )
+        own_task = True
+
     conn = get_connection()
     results = []
     total_fetched = 0
@@ -367,17 +457,73 @@ def refresh_catalog(store_id: str = None, fields: list = None, max_pages: int = 
     total_added = 0
     total_price_changes = 0
 
-    for s_cfg in target_stores:
-        res = sync_store(s_cfg, max_pages=max_pages, conn=conn, fields=fields)
-        results.append(res)
-        total_fetched += res.get("fetched", 0)
-        total_updated += res.get("updated", 0)
-        total_added += res.get("added", 0)
-        total_price_changes += res.get("price_changes", 0)
+    log_task_event(
+        task_id=task_id,
+        message=f"Starting catalog refresh for {len(target_stores)} stores: {[s['name'] for s in target_stores]} | Fields: {fields or 'all'}",
+        level="INFO",
+        conn=conn
+    )
 
-    conn.close()
+    try:
+        for idx, s_cfg in enumerate(target_stores, 1):
+            store_sub_id = create_subtask(
+                task_id=task_id,
+                step_name=f"sync_store_{s_cfg['id']}",
+                step_index=idx,
+                total_steps=len(target_stores),
+                metadata={"store_id": s_cfg["id"], "store_name": s_cfg["name"]},
+                conn=conn
+            )
+            res = sync_store(s_cfg, max_pages=max_pages, conn=conn, fields=fields, task_id=task_id)
+            results.append(res)
+            fetched_s = res.get("fetched", 0)
+            updated_s = res.get("updated", 0)
+            added_s = res.get("added", 0)
+            price_changes_s = res.get("price_changes", 0)
+
+            total_fetched += fetched_s
+            total_updated += updated_s
+            total_added += added_s
+            total_price_changes += price_changes_s
+
+            complete_subtask(
+                subtask_id=store_sub_id,
+                items_count=fetched_s,
+                items_succeeded=added_s + updated_s,
+                items_failed=1 if res.get("status") == "failed" else 0,
+                metadata=res,
+                conn=conn
+            )
+            update_task_progress(
+                task_id=task_id,
+                processed_items=total_fetched,
+                successful_items=total_added + total_updated,
+                current_stage=f"finished_store_{s_cfg['id']}",
+                progress_percent=round((idx / len(target_stores)) * 100.0, 2),
+                conn=conn
+            )
+
+        if own_task:
+            complete_task(
+                task_id=task_id,
+                metadata={
+                    "total_fetched": total_fetched,
+                    "total_updated": total_updated,
+                    "total_added": total_added,
+                    "price_changes": total_price_changes
+                },
+                conn=conn
+            )
+    except Exception as e:
+        if own_task:
+            fail_task(task_id, str(e), conn=conn)
+        raise
+    finally:
+        conn.close()
+
     return {
         "status": "success",
+        "task_id": task_id,
         "stores_processed": [s["name"] for s in target_stores],
         "fields_refreshed": fields or ["all"],
         "total_fetched": total_fetched,

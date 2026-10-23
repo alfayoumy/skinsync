@@ -329,6 +329,99 @@ def init_db(db_path=DB_PATH):
     """)
     cur.execute("CREATE INDEX IF NOT EXISTS idx_clinical_ingredients_inci ON clinical_ingredients(inci);")
 
+    # 9. Control Table: Pipeline Tasks (Scraping, Ingestion, Refreshes, Batch Jobs)
+    cur.execute("""
+    CREATE TABLE IF NOT EXISTS pipeline_tasks (
+        task_id TEXT PRIMARY KEY,
+        task_type TEXT NOT NULL,
+        target_source TEXT,
+        status TEXT NOT NULL DEFAULT 'pending',
+        fields TEXT,
+        params TEXT,
+        total_items INTEGER DEFAULT 0,
+        processed_items INTEGER DEFAULT 0,
+        successful_items INTEGER DEFAULT 0,
+        failed_items INTEGER DEFAULT 0,
+        skipped_items INTEGER DEFAULT 0,
+        progress_percent REAL DEFAULT 0.0,
+        current_stage TEXT,
+        error_message TEXT,
+        metadata TEXT,
+        started_at TIMESTAMP,
+        completed_at TIMESTAMP,
+        duration_seconds REAL,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    );
+    """)
+    cur.execute("CREATE INDEX IF NOT EXISTS idx_pipeline_tasks_status ON pipeline_tasks(status);")
+    cur.execute("CREATE INDEX IF NOT EXISTS idx_pipeline_tasks_type ON pipeline_tasks(task_type);")
+    cur.execute("CREATE INDEX IF NOT EXISTS idx_pipeline_tasks_target ON pipeline_tasks(target_source);")
+    cur.execute("CREATE INDEX IF NOT EXISTS idx_pipeline_tasks_created ON pipeline_tasks(created_at);")
+
+    # 10. Control Table: Pipeline Subtasks (Task Steps / Page-by-Page Progress)
+    cur.execute("""
+    CREATE TABLE IF NOT EXISTS pipeline_subtasks (
+        subtask_id TEXT PRIMARY KEY,
+        task_id TEXT NOT NULL,
+        step_name TEXT NOT NULL,
+        step_index INTEGER DEFAULT 0,
+        total_steps INTEGER DEFAULT 1,
+        status TEXT NOT NULL DEFAULT 'pending',
+        items_count INTEGER DEFAULT 0,
+        items_succeeded INTEGER DEFAULT 0,
+        items_failed INTEGER DEFAULT 0,
+        error_message TEXT,
+        metadata TEXT,
+        started_at TIMESTAMP,
+        completed_at TIMESTAMP,
+        duration_seconds REAL,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (task_id) REFERENCES pipeline_tasks(task_id) ON DELETE CASCADE
+    );
+    """)
+    cur.execute("CREATE INDEX IF NOT EXISTS idx_pipeline_subtasks_task ON pipeline_subtasks(task_id);")
+    cur.execute("CREATE INDEX IF NOT EXISTS idx_pipeline_subtasks_status ON pipeline_subtasks(status);")
+
+    # 11. Control Table: Task Progress & Execution Logs
+    cur.execute("""
+    CREATE TABLE IF NOT EXISTS pipeline_task_logs (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        task_id TEXT NOT NULL,
+        subtask_id TEXT,
+        level TEXT NOT NULL DEFAULT 'INFO',
+        message TEXT NOT NULL,
+        context_data TEXT,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (task_id) REFERENCES pipeline_tasks(task_id) ON DELETE CASCADE,
+        FOREIGN KEY (subtask_id) REFERENCES pipeline_subtasks(subtask_id) ON DELETE SET NULL
+    );
+    """)
+    cur.execute("CREATE INDEX IF NOT EXISTS idx_pipeline_task_logs_task ON pipeline_task_logs(task_id);")
+    cur.execute("CREATE INDEX IF NOT EXISTS idx_pipeline_task_logs_level ON pipeline_task_logs(level);")
+    cur.execute("CREATE INDEX IF NOT EXISTS idx_pipeline_task_logs_created ON pipeline_task_logs(created_at);")
+
+    # 12. Control Table: Scraping State & Checkpoints (Incremental / Resumable Crawls)
+    cur.execute("""
+    CREATE TABLE IF NOT EXISTS scrape_checkpoints (
+        store_id TEXT PRIMARY KEY,
+        last_task_id TEXT,
+        last_page_scraped INTEGER DEFAULT 0,
+        total_pages_detected INTEGER DEFAULT 0,
+        total_products_scraped INTEGER DEFAULT 0,
+        last_scraped_at TIMESTAMP,
+        last_successful_sync_at TIMESTAMP,
+        sync_cursor TEXT,
+        status TEXT DEFAULT 'idle',
+        metadata TEXT,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (store_id) REFERENCES stores(id) ON DELETE CASCADE,
+        FOREIGN KEY (last_task_id) REFERENCES pipeline_tasks(task_id) ON DELETE SET NULL
+    );
+    """)
+    cur.execute("CREATE INDEX IF NOT EXISTS idx_scrape_checkpoints_status ON scrape_checkpoints(status);")
+
     # Indexes for sub-millisecond query performance
     cur.execute("CREATE INDEX IF NOT EXISTS idx_products_category ON products(category);")
     cur.execute("CREATE INDEX IF NOT EXISTS idx_products_brand ON products(brand);")
@@ -352,6 +445,10 @@ def init_db(db_path=DB_PATH):
         INSERT OR IGNORE INTO stores (id, name, domain, platform)
         VALUES (?, ?, ?, ?);
         """, (s_id, s_name, s_dom, s_plat))
+        cur.execute("""
+        INSERT OR IGNORE INTO scrape_checkpoints (store_id, status)
+        VALUES (?, 'idle');
+        """, (s_id,))
 
     # Seed Default Synonyms
     for alias, canon, cat in DEFAULT_SYNONYMS:
