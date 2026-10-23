@@ -20,6 +20,7 @@ from app import app
 from pipeline.db_manager import get_connection
 from pipeline.product_linker import (
     extract_volume_and_normalize,
+    canonicalize_volume,
     init_linker_db,
     link_catalog_products
 )
@@ -62,6 +63,44 @@ class TestVolumeNormalization(unittest.TestCase):
         norm_b, vol_b = extract_volume_and_normalize("CeraVe Facial Lotion PM 52ml", "CeraVe")
         self.assertEqual(vol_a, vol_b)
         self.assertEqual(norm_a, norm_b)
+
+    def test_drdawood_volume_formats(self):
+        # Grams capitalization and abbreviations
+        norm_title, vol = extract_volume_and_normalize("Cerave Moisturising Cream 177Gm", "Cerave")
+        self.assertEqual(vol, "177g")
+        self.assertEqual(canonicalize_volume(vol), "177ml")
+
+        # Trailing period and milliliter capitalization
+        norm_title, vol = extract_volume_and_normalize("Cerave Moisturising Lotion For Dry To Very Dry Skin 236Ml.", "Cerave")
+        self.assertEqual(vol, "236ml")
+        self.assertEqual(canonicalize_volume(vol), "236ml")
+
+        # Invisible RTL unicode characters (e.g. \u200f)
+        norm_title, vol = extract_volume_and_normalize("Cerave Oil Control Moisturizing Gel-Cream 52Ml\u200f", "Cerave")
+        self.assertEqual(vol, "52ml")
+        self.assertEqual(canonicalize_volume(vol), "52ml")
+
+    def test_handle_volume_fallback(self):
+        # When user-facing title omits size, extract from Shopify handle
+        norm_title, vol = extract_volume_and_normalize(
+            "CeraVe Moisturising Cream",
+            "CeraVe",
+            handle="cerave-moisturising-cream-177ml"
+        )
+        self.assertEqual(vol, "177ml")
+
+    def test_canonicalize_volume_equivalences(self):
+        # Grams and milliliters equivalence in cosmetic tubs
+        self.assertEqual(canonicalize_volume("177g"), "177ml")
+        self.assertEqual(canonicalize_volume("177gm"), "177ml")
+        self.assertEqual(canonicalize_volume("6oz"), "177ml")
+        self.assertEqual(canonicalize_volume("236g"), "236ml")
+        self.assertEqual(canonicalize_volume("8oz"), "236ml")
+        self.assertEqual(canonicalize_volume("340g"), "340ml")
+        self.assertEqual(canonicalize_volume("12oz"), "340ml")
+        self.assertEqual(canonicalize_volume("454g"), "473ml")
+        self.assertEqual(canonicalize_volume("16oz"), "473ml")
+
 
 
 class TestIsolatedClusteringAndPropagation(unittest.TestCase):
@@ -163,6 +202,121 @@ class TestIsolatedClusteringAndPropagation(unittest.TestCase):
         self.assertEqual(canon["min_price"], 580.0)
         self.assertEqual(canon["max_price"], 650.0)
         self.assertEqual(canon["store_count"], 2)
+
+
+class TestDrDawoodMultiStoreClustering(unittest.TestCase):
+    def setUp(self):
+        self.conn = sqlite3.connect(":memory:")
+        self.conn.row_factory = sqlite3.Row
+        cur = self.conn.cursor()
+
+        cur.execute("""
+        CREATE TABLE stores (
+            id TEXT PRIMARY KEY,
+            name TEXT NOT NULL,
+            domain TEXT NOT NULL,
+            platform TEXT NOT NULL DEFAULT 'shopify'
+        );
+        """)
+        cur.execute("""
+        CREATE TABLE products (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            store_id TEXT NOT NULL,
+            handle TEXT,
+            title TEXT NOT NULL,
+            brand TEXT NOT NULL,
+            category TEXT NOT NULL,
+            price REAL NOT NULL DEFAULT 0.0,
+            compare_at_price REAL DEFAULT 0.0,
+            is_available INTEGER NOT NULL DEFAULT 1,
+            image_url TEXT,
+            product_url TEXT NOT NULL UNIQUE,
+            description_html TEXT,
+            ingredients_raw TEXT,
+            ingredients_parsed TEXT,
+            actives TEXT,
+            ingredient_source TEXT,
+            inci_matched_id INTEGER,
+            gate4_gemini_status TEXT,
+            canonical_product_id INTEGER,
+            is_skincare INTEGER DEFAULT 1,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        );
+        """)
+
+        cur.execute("INSERT INTO stores (id, name, domain) VALUES ('drdawood', 'Dr. Dawood', 'drdawood.com');")
+        cur.execute("INSERT INTO stores (id, name, domain) VALUES ('feel22', 'Feel22', 'feel22.com');")
+        cur.execute("INSERT INTO stores (id, name, domain) VALUES ('bloompharmacy', 'Bloom Pharmacy', 'bloompharmacy.com');")
+        cur.execute("INSERT INTO stores (id, name, domain) VALUES ('sourcebeauty', 'Source Beauty', 'sourcebeauty.com');")
+
+        # Insert CeraVe cream items with varying size notations & un-sized listings
+        cur.execute("""
+        INSERT INTO products (id, store_id, handle, title, brand, category, price, product_url)
+        VALUES
+        (101, 'drdawood', 'cerave-moisturising-cream-177gm', 'Cerave Moisturising Cream 177Gm', 'Cerave', 'Moisturizer', 550.0, 'https://drdawood.com/c177'),
+        (102, 'feel22', 'cerave-moisturising-cream-177ml', 'CeraVe Moisturising Cream', 'CeraVe', 'Moisturizer', 577.0, 'https://feel22.com/c177'),
+        (103, 'bloompharmacy', 'cerave-moisturising-cream', 'Cerave Moisturising Cream', 'Cerave', 'Moisturizer', 517.0, 'https://bloom.com/c'),
+        (104, 'drdawood', 'cera-ve-cream-340gm', 'Cerave Moisturising Cream 340Gm', 'Cerave', 'Moisturizer', 830.0, 'https://drdawood.com/c340'),
+        (105, 'drdawood', 'cera-ve-cream-454gm', 'Cerave Moisturising Cream 454Gm', 'Cerave', 'Moisturizer', 1060.0, 'https://drdawood.com/c454');
+        """)
+
+        # Insert CeraVe lotion items (4 stores all aligning to 236ml, while 473ml stays separate)
+        cur.execute("""
+        INSERT INTO products (id, store_id, handle, title, brand, category, price, product_url)
+        VALUES
+        (201, 'drdawood', 'cera-ve-moisturizing-lotion-236ml', 'Cerave Moisturising Lotion For Dry To Very Dry Skin 236Ml.', 'Cerave', 'Lotion', 640.0, 'https://drdawood.com/l236'),
+        (202, 'feel22', 'cerave-daily-moisturizing-lotion', 'CeraVe Daily Moisturizing Lotion', 'CeraVe', 'Lotion', 669.0, 'https://feel22.com/lotion'),
+        (203, 'bloompharmacy', 'cerave-moisturizing-lotion', 'Cerave Moisturizing Lotion', 'Cerave', 'Lotion', 601.6, 'https://bloom.com/lotion'),
+        (204, 'sourcebeauty', 'cerave-daily-moisturizing-lotion', 'Cerave Daily Moisturizing Lotion', 'Cerave', 'Lotion', 640.0, 'https://sourcebeauty.com/lotion'),
+        (205, 'drdawood', 'cera-ve-moisturizing-lotion-473ml', 'Cerave Moisturising Lotion For Dry To Very Dry Skin 473Ml.', 'Cerave', 'Lotion', 1030.0, 'https://drdawood.com/l473');
+        """)
+        self.conn.commit()
+
+    def tearDown(self):
+        self.conn.close()
+
+    def test_drdawood_cross_store_clustering_and_variant_separation(self):
+        metrics = link_catalog_products(conn=self.conn)
+        cur = self.conn.cursor()
+
+        # 1. Verify CeraVe Cream 177ml cluster links Dr. Dawood, Feel22, and Bloom Pharmacy
+        cur.execute("SELECT canonical_product_id FROM products WHERE id IN (101, 102, 103);")
+        c_cream_177_ids = {r[0] for r in cur.fetchall()}
+        self.assertEqual(len(c_cream_177_ids), 1, "Dr. Dawood 177Gm, Feel22 177ml, and Bloom unsized cream must share the same canonical ID")
+
+        cur.execute("SELECT store_count, min_price, max_price FROM canonical_products WHERE id = ?;", (list(c_cream_177_ids)[0],))
+        canon_177 = cur.fetchone()
+        self.assertEqual(canon_177["store_count"], 3)
+        self.assertEqual(canon_177["min_price"], 517.0)
+        self.assertEqual(canon_177["max_price"], 577.0)
+
+        # 2. Verify CeraVe Cream 340Gm and 454Gm are distinct size variants
+        cur.execute("SELECT canonical_product_id FROM products WHERE id = 104;")
+        canon_340_id = cur.fetchone()[0]
+        cur.execute("SELECT canonical_product_id FROM products WHERE id = 105;")
+        canon_454_id = cur.fetchone()[0]
+
+        self.assertNotEqual(canon_340_id, list(c_cream_177_ids)[0])
+        self.assertNotEqual(canon_454_id, list(c_cream_177_ids)[0])
+        self.assertNotEqual(canon_340_id, canon_454_id)
+
+        # 3. Verify CeraVe Lotion 236ml links all 4 stores: Dr. Dawood, Feel22, Bloom, Source Beauty
+        cur.execute("SELECT canonical_product_id FROM products WHERE id IN (201, 202, 203, 204);")
+        c_lotion_236_ids = {r[0] for r in cur.fetchall()}
+        self.assertEqual(len(c_lotion_236_ids), 1, "Dr. Dawood 236Ml, Feel22, Bloom, and Source Beauty lotions must link together")
+
+        cur.execute("SELECT store_count, min_price, max_price FROM canonical_products WHERE id = ?;", (list(c_lotion_236_ids)[0],))
+        canon_lotion = cur.fetchone()
+        self.assertEqual(canon_lotion["store_count"], 4)
+        self.assertEqual(canon_lotion["min_price"], 601.6)
+        self.assertEqual(canon_lotion["max_price"], 669.0)
+
+        # 4. Verify CeraVe Lotion 473ml is separated from 236ml
+        cur.execute("SELECT canonical_product_id FROM products WHERE id = 205;")
+        canon_lotion_473_id = cur.fetchone()[0]
+        self.assertNotEqual(canon_lotion_473_id, list(c_lotion_236_ids)[0])
+
 
 
 class TestPriceComparisonService(unittest.TestCase):
