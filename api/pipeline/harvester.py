@@ -18,10 +18,7 @@ from pipeline.classifier import is_skincare_or_beauty, classify_product
 try:
     from pipeline.config import cfg
 except ImportError:
-    try:
-        from repo.api.pipeline.config import cfg
-    except ImportError:
-        from config import cfg
+    from config import cfg
 
 logger = logging.getLogger("skincare_pipeline.harvester")
 

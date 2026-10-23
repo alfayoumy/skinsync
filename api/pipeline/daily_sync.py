@@ -9,10 +9,7 @@ from pipeline.db_manager import get_connection
 try:
     from pipeline.config import cfg
 except ImportError:
-    try:
-        from repo.api.pipeline.config import cfg
-    except ImportError:
-        from config import cfg
+    from config import cfg
 
 logger = logging.getLogger("skincare_pipeline.daily_sync")
 

@@ -17,10 +17,7 @@ from pipeline.inci_matcher import match_with_inci_db, parse_and_normalize_ingred
 try:
     from pipeline.config import cfg
 except ImportError:
-    try:
-        from repo.api.pipeline.config import cfg
-    except ImportError:
-        from config import cfg
+    from config import cfg
 
 logger = logging.getLogger("skincare_pipeline.match_pending_inci")
 
@@ -86,9 +83,11 @@ def run_inci_backfill(limit: int = None, category_filter: str = None):
                 ingredient_source = ?,
                 inci_matched_id = ?, inci_matched_name = ?,
                 inci_vector_score = ?, inci_token_score = ?,
-                inci_hybrid_score = ?, inci_jev_score = ?,
+                inci_hybrid_score = ?, inci_cross_score = ?,
+                inci_jev_score = ?, inci_gemini_score = ?,
                 gate1_quality_status = ?, gate2_safeguard_status = ?,
-                gate3_active_status = ?, gate4_jev_status = ?,
+                gate3_active_status = ?, gate4_cross_status = ?,
+                gate4_jev_status = ?, gate4_gemini_status = ?,
                 inci_safeguard_log = ?, updated_at = CURRENT_TIMESTAMP
             WHERE id = ?;
             """, (
@@ -96,9 +95,11 @@ def run_inci_backfill(limit: int = None, category_filter: str = None):
                 match_res.get("source", "skinsafe_matched"),
                 match_res.get("matched_id"), match_res.get("matched_name"),
                 match_res.get("vector_score"), match_res.get("token_score"),
-                match_res.get("hybrid_score"), match_res.get("inci_jev_score"),
+                match_res.get("hybrid_score"), match_res.get("inci_cross_score"),
+                match_res.get("inci_jev_score"), match_res.get("inci_gemini_score"),
                 match_res.get("gate1_quality_status"), match_res.get("gate2_safeguard_status"),
-                match_res.get("gate3_active_status"), match_res.get("gate4_jev_status"),
+                match_res.get("gate3_active_status"), match_res.get("gate4_cross_status"),
+                match_res.get("gate4_jev_status"), match_res.get("gate4_gemini_status"),
                 match_res.get("safeguard_log"), pid
             ))
             conn.commit()

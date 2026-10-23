@@ -31,18 +31,22 @@ import numpy as np
 try:
     from pipeline.safeguards import CosmeticCompatibilityValidator
 except ImportError:
-    try:
-        from repo.api.pipeline.safeguards import CosmeticCompatibilityValidator
-    except ImportError:
-        from safeguards import CosmeticCompatibilityValidator
+    from safeguards import CosmeticCompatibilityValidator
 
 try:
     from pipeline.config import cfg
 except ImportError:
-    try:
-        from repo.api.pipeline.config import cfg
-    except ImportError:
-        from config import cfg
+    from config import cfg
+
+try:
+    from pipeline.rate_limiter import gemini_limiter
+except ImportError:
+    from rate_limiter import gemini_limiter
+
+try:
+    from pipeline.db_manager import load_synonyms_from_db
+except ImportError:
+    from db_manager import load_synonyms_from_db
 
 logger = logging.getLogger("skincare_pipeline.inci_matcher")
 
@@ -63,7 +67,19 @@ KEY_ACTIVES = {
     'squalane': ['squalane', 'squalene'],
     'tea_tree': ['tea tree', 'melaleuca alternifolia'],
     'collagen': ['hydrolyzed collagen', 'marine collagen', 'collagen'],
-    'aloe_vera': ['aloe barbadensis', 'aloe vera']
+    'aloe_vera': ['aloe barbadensis', 'aloe vera'],
+    'tranexamic_acid': ['tranexamic acid', 'tranexamic'],
+    'kojic_acid': ['kojic acid', 'kojic dipalmitate'],
+    'bakuchiol': ['bakuchiol'],
+    'urea': ['urea', 'hydroxyethyl urea'],
+    'benzoyl_peroxide': ['benzoyl peroxide'],
+    'sulfur': ['sulfur', 'colloidal sulfur'],
+    'ectoin': ['ectoin'],
+    'pha': ['gluconolactone', 'lactobionic acid', 'pha'],
+    'ferulic_acid': ['ferulic acid', 'ferulic'],
+    'licorice': ['glycyrrhiza glabra', 'licorice', 'dipotassium glycyrrhizate', 'glabridin'],
+    'snail_mucin': ['snail secretion filtrate', 'snail mucin'],
+    'ferment': ['galactomyces', 'bifida ferment', 'saccharomyces', 'ferment lysate']
 }
 
 ACTIVE_MARKERS = {
@@ -75,19 +91,42 @@ ACTIVE_MARKERS = {
     'glycolic': ['glycolic', 'aha'],
     'centella': ['centella', 'madecassoside', 'asiaticoside', 'cica'],
     'ceramide': ['ceramide'],
-    'sunscreen': ['homosalate', 'octocrylene', 'ethylhexyl', 'avobenzone', 'tinosorb', 'mexoryl', 'zinc oxide', 'titanium dioxide', 'octisalate', 'uvmune', 'uv', 'spf']
+    'sunscreen': ['homosalate', 'octocrylene', 'ethylhexyl', 'avobenzone', 'tinosorb', 'mexoryl', 'zinc oxide', 'titanium dioxide', 'octisalate', 'uvmune', 'uv', 'spf'],
+    'tranexamic': ['tranexamic'],
+    'kojic': ['kojic'],
+    'bakuchiol': ['bakuchiol'],
+    'urea': ['urea'],
+    'benzoyl peroxide': ['benzoyl peroxide'],
+    'azelaic': ['azelaic'],
+    'arbutin': ['arbutin']
 }
 
-SYNONYMS = {
-    'aqua': 'water', 'eau': 'water', 'purified water': 'water', 'deionized water': 'water',
-    'parfum': 'fragrance', 'perfume': 'fragrance', 'fragrance (parfum)': 'fragrance',
-    'alcohol denat.': 'alcohol denat', 'alcohol denat': 'alcohol denat',
-    'sodium lauryl sulfate': 'sls', 'sodium laureth sulfate': 'sles',
-    'cocos nucifera (coconut) oil': 'coconut oil', 'coconut oil': 'coconut oil',
-    'theobroma cacao (cocoa) seed butter': 'cocoa butter', 'cocoa butter': 'cocoa butter',
-    'butyrospermum parkii (shea) butter': 'shea butter', 'shea butter': 'shea butter',
-    'simmondsia chinensis (jojoba) seed oil': 'jojoba oil', 'jojoba oil': 'jojoba oil'
-}
+SYNONYMS: Dict[str, str] = load_synonyms_from_db()
+
+def reload_synonyms() -> Dict[str, str]:
+    """Reloads ingredient synonyms from the database into the global SYNONYMS dictionary."""
+    global SYNONYMS
+    SYNONYMS = load_synonyms_from_db()
+    return SYNONYMS
+
+def clean_product_title(title: str) -> str:
+    """Strips packaging volume and noise to avoid artificial dissimilarities."""
+    if not title or not isinstance(title, str):
+        return ""
+    # Strip volumes like 50ml, 1.7 oz, 30g, 200 ml, 400ml
+    t = re.sub(r'\b\d+(\.\d+)?\s*(?:ml|g|oz|fl\s*oz|kg|ltr)\b', ' ', title, flags=re.IGNORECASE)
+    t = re.sub(r'[\[\]\(\)\+*#]', ' ', t)
+    return re.sub(r'\s+', ' ', t).strip()
+
+def normalize_brand(brand: str) -> str:
+    """Canonicalizes brand string by removing punctuation, accents, and company suffixes."""
+    if not brand or not isinstance(brand, str):
+        return ""
+    b = brand.lower().strip()
+    b = re.sub(r'[\'\"’\-\.,/]', ' ', b)
+    suffixes = {'laboratoires', 'laboratoire', 'paris', 'cosmetics', 'dermatologie', 'dermatologique', 'skincare', 'egypt', 'pharma', 'derma'}
+    tokens = [t for t in b.split() if t not in suffixes]
+    return ' '.join(tokens) if tokens else b
 
 def extract_ingredients_from_html(body_html: str) -> Optional[str]:
     """Extracts ingredient block from Shopify product body_html using common headings."""
@@ -142,7 +181,6 @@ def _load_env():
     candidates = [
         os.path.join(os.path.dirname(os.path.dirname(__file__)), ".env"),
         os.path.join(os.getcwd(), ".env"),
-        os.path.join(os.getcwd(), "repo", "api", ".env"),
     ]
     for c in candidates:
         if os.path.exists(c):
@@ -226,6 +264,101 @@ def verify_match_with_jev(store_title: str, candidate_title: str) -> Optional[bo
     except Exception as e:
         logger.warning(f"Jev INCI verifier skipped: {e}")
         return None
+
+def verify_match_with_gemini(store_title: str, candidate_title: str) -> Optional[Tuple[bool, float]]:
+    """
+    Gate 4 Gemini Fallback Verifier: Calls Gemini 3.5 Flash-Lite when Jev is unavailable/rate-limited.
+    Adheres strictly to:
+    - 15 Requests Per Minute (RPM) sliding window pacing
+    - 1,500 Requests Per Day (RPD) persistent SQLite tracking
+    Returns (verdict_bool, confidence_float) or None.
+    """
+    _load_env()
+    api_key = os.environ.get("GEMINI_API_KEY") or getattr(cfg, "GEMINI_API_KEY", "")
+    if not api_key:
+        return None
+
+    # Check and acquire rate limit slot (enforces 15 RPM and 1,500 RPD)
+    if not gemini_limiter.acquire():
+        logger.warning("Gemini API call skipped due to daily quota exhaustion (1,500 RPD).")
+        return None
+
+    model_name = os.environ.get("GEMINI_MODEL_NAME") or getattr(cfg, "GEMINI_MODEL_NAME", "gemini-3.5-flash-lite")
+    if model_name.startswith("models/"):
+        url = f"https://generativelanguage.googleapis.com/v1beta/{model_name}:generateContent?key={api_key}"
+    else:
+        url = f"https://generativelanguage.googleapis.com/v1beta/models/{model_name}:generateContent?key={api_key}"
+
+    prompt = (
+        f"You are a cosmetic chemistry and dermatology expert evaluating product formulations.\n"
+        f"Product A: \"{store_title}\"\n"
+        f"Product B: \"{candidate_title}\"\n\n"
+        f"Question: Do both product titles describe the exact same skincare cosmetic formulation? "
+        f"(Answer false if they have different active ingredients such as Salicylic Acid/SA, different SPF sun protection, "
+        f"different day/night versions, or different targeted skin lines like Sensibio vs Sebium).\n\n"
+        f"Respond ONLY with a JSON object in this exact format:\n"
+        f"{{\"is_exact_same_formula\": true, \"confidence\": 0.95}}"
+    )
+
+    payload = {
+        "contents": [{"parts": [{"text": prompt}]}],
+        "generationConfig": {
+            "temperature": 0.0,
+            "responseMimeType": "application/json"
+        }
+    }
+
+    try:
+        req = urllib.request.Request(
+            url,
+            data=json.dumps(payload).encode("utf-8"),
+            headers={"Content-Type": "application/json"},
+            method="POST"
+        )
+        with urllib.request.urlopen(req, timeout=getattr(cfg, "GEMINI_TIMEOUT_SECONDS", 6.0)) as resp:
+            data = json.loads(resp.read().decode("utf-8"))
+            candidates = data.get("candidates", [])
+            if candidates:
+                content = candidates[0].get("content", {}).get("parts", [{}])[0].get("text", "")
+                res_json = json.loads(content)
+                is_same = bool(res_json.get("is_exact_same_formula", False))
+                conf = float(res_json.get("confidence", 0.0))
+                return is_same, conf
+    except Exception as e:
+        logger.warning(f"Gemini INCI fallback verifier error: {e}")
+        return None
+
+# ==============================================================================
+# LOCAL ONNX CROSS-ENCODER RERANKER
+# ==============================================================================
+
+_CROSS_ENCODER = None
+
+def get_cross_encoder():
+    """Singleton getter for FastEmbed ONNX Cross-Encoder reranker."""
+    global _CROSS_ENCODER
+    if _CROSS_ENCODER is None and getattr(cfg, "ENABLE_CROSS_ENCODER", True):
+        try:
+            from fastembed.rerank.cross_encoder import TextCrossEncoder
+            _CROSS_ENCODER = TextCrossEncoder(model_name=getattr(cfg, "CROSS_ENCODER_MODEL_NAME", "Xenova/ms-marco-MiniLM-L-6-v2"))
+            logger.info("FastEmbed ONNX Cross-Encoder loaded successfully.")
+        except Exception as e:
+            logger.warning(f"Could not load Cross-Encoder: {e}")
+            _CROSS_ENCODER = False
+    return _CROSS_ENCODER if _CROSS_ENCODER is not False else None
+
+def score_cross_encoder(query: str, doc: str) -> float:
+    """Computes joint cross-encoder similarity with sigmoid calibration to [0.0, 1.0]."""
+    ce = get_cross_encoder()
+    if not ce:
+        return 0.5
+    try:
+        raw_score = list(ce.rerank(query, [doc]))[0]
+        # Sigmoid calibration: 1 / (1 + exp(-x))
+        return float(1.0 / (1.0 + np.exp(-float(raw_score))))
+    except Exception as e:
+        logger.debug(f"Cross-encoder scoring error: {e}")
+        return 0.5
 
 # ==============================================================================
 # PER-GATE VALIDATORS
@@ -325,6 +458,7 @@ def match_with_inci_db(brand: str, title: str, conn, allow_synchronous_jev: bool
         return None
 
     cur = conn.cursor()
+    cur = conn.cursor()
     # Search within the same brand first (bidirectional)
     cur.execute("""
     SELECT id, product_name, ingredients, embedding FROM inci_reference
@@ -334,6 +468,27 @@ def match_with_inci_db(brand: str, title: str, conn, allow_synchronous_jev: bool
     """, (brand, brand, brand))
 
     candidates = cur.fetchall()
+
+    # Flaw 1 Fix: Fallback to canonical normalized brand matching if direct query yielded 0
+    if not candidates:
+        norm_b = normalize_brand(brand)
+        if norm_b:
+            cur.execute("SELECT DISTINCT brand FROM inci_reference WHERE brand IS NOT NULL;")
+            all_db_brands = [r[0] for r in cur.fetchall()]
+            matched_b = None
+            for db_b in all_db_brands:
+                if normalize_brand(db_b) == norm_b:
+                    matched_b = db_b
+                    break
+            if not matched_b and HAS_RAPIDFUZZ:
+                db_norm_map = {normalize_brand(b): b for b in all_db_brands if b}
+                best_res = process.extractOne(norm_b, list(db_norm_map.keys()), scorer=fuzz.token_sort_ratio)
+                if best_res and best_res[1] >= 85:
+                    matched_b = db_norm_map[best_res[0]]
+
+            if matched_b:
+                cur.execute("SELECT id, product_name, ingredients, embedding FROM inci_reference WHERE brand = ?;", (matched_b,))
+                candidates = cur.fetchall()
 
     # Strategy B: Open Beauty Facts API fallback if local candidates absent
     if not candidates:
@@ -353,17 +508,22 @@ def match_with_inci_db(brand: str, title: str, conn, allow_synchronous_jev: bool
                 "vector_score": 0.85,
                 "token_score": 0.85,
                 "hybrid_score": 0.85,
+                "inci_cross_score": 0.85,
                 "gate1_quality_status": "passed_obf_verified",
                 "gate2_safeguard_status": "passed_direct",
                 "gate3_active_status": "passed_active_verified",
+                "gate4_cross_status": "passed_obf_verified",
                 "gate4_jev_status": "pending_jev",
                 "inci_jev_score": None,
+                "gate4_gemini_status": None,
+                "inci_gemini_score": None,
                 "safeguard_log": "OBF live API verified via Gates 1, 2, 3",
                 "source": "openbeautyfacts"
             }
         return None
 
     model = get_embedding_model()
+    cleaned_q = clean_product_title(title)
 
     # --- 1. DENSE VECTOR RETRIEVAL (FastEmbed + NumPy SQLite BLOB) ---
     if model is not None:
@@ -385,7 +545,7 @@ def match_with_inci_db(brand: str, title: str, conn, allow_synchronous_jev: bool
                 logger.warning(f"FastEmbed batch embedding failed: {e}")
 
         try:
-            q_emb = list(model.embed([title]))[0]
+            q_emb = list(model.embed([cleaned_q or title]))[0]
             q_vec = q_emb / np.linalg.norm(q_emb)
 
             db_vecs = np.array([np.frombuffer(r['embedding'], dtype=np.float32) for r in candidates])
@@ -399,20 +559,25 @@ def match_with_inci_db(brand: str, title: str, conn, allow_synchronous_jev: bool
     else:
         dense_sims = None
 
-    # --- 2. HYBRID CANDIDATE SCORING ---
+    # --- 2. HYBRID CANDIDATE SCORING (Calibrated Vector + Dual Token Ratio) ---
     scored_candidates = []
     for idx, cand in enumerate(candidates):
         cand_name = cand['product_name']
+        cand_clean = clean_product_title(cand_name)
         v_sim = float(dense_sims[idx]) if dense_sims is not None else 0.0
         
         if HAS_RAPIDFUZZ:
-            t_sim = float(fuzz.token_sort_ratio(title, cand_name)) / 100.0
+            t_sort = float(fuzz.token_sort_ratio(cleaned_q, cand_clean)) / 100.0
+            t_set = float(fuzz.token_set_ratio(cleaned_q, cand_clean)) / 100.0
+            t_sim = 0.5 * t_sort + 0.5 * t_set
         else:
-            matcher = difflib.SequenceMatcher(None, title.lower(), cand_name.lower())
+            matcher = difflib.SequenceMatcher(None, cleaned_q.lower(), cand_clean.lower())
             t_sim = matcher.ratio()
 
         if dense_sims is not None:
-            hybrid_score = cfg.DENSE_VECTOR_WEIGHT * v_sim + cfg.SPARSE_TOKEN_WEIGHT * t_sim
+            # Calibrate BGE vector cosine similarity to full [0.0, 1.0] span
+            v_calibrated = max(0.0, min(1.0, (v_sim - 0.50) / 0.50))
+            hybrid_score = cfg.DENSE_VECTOR_WEIGHT * v_calibrated + cfg.SPARSE_TOKEN_WEIGHT * t_sim
         else:
             hybrid_score = t_sim
 
@@ -469,9 +634,14 @@ def match_with_inci_db(brand: str, title: str, conn, allow_synchronous_jev: bool
     cand_name = best_compatible['name']
     safeguard_log = "; ".join(bypassed_notes) if bypassed_notes else "Clean direct match"
 
-    # --- GATE 4: JEV DECOUPLED STATE EVALUATION ---
-    # Case A: Very High Confidence Match (>= AUTO_APPROVE_HYBRID_THRESHOLD) -> Auto-approved with 0 LLM calls
-    if h_score >= cfg.AUTO_APPROVE_HYBRID_THRESHOLD:
+    # Joint Cross-Encoder Evaluation on top compatible candidate
+    cross_score = score_cross_encoder(title, cand_name)
+    cross_threshold = getattr(cfg, "CROSS_ENCODER_CONFIDENCE_THRESHOLD", 0.70)
+    cross_status = "cross_approved" if cross_score >= cross_threshold else "cross_ambiguous"
+
+    # --- GATE 4: JEV + GEMINI FALLBACK EVALUATION ---
+    # Case A: Very High Confidence Match -> Auto-approved with 0 LLM calls
+    if h_score >= cfg.AUTO_APPROVE_HYBRID_THRESHOLD or (cross_score >= 0.92 and h_score >= 0.85):
         return {
             "ingredients": best_compatible['ingredients'],
             "matched_id": best_compatible['id'],
@@ -479,38 +649,59 @@ def match_with_inci_db(brand: str, title: str, conn, allow_synchronous_jev: bool
             "vector_score": best_compatible['vector_sim'],
             "token_score": best_compatible['token_sim'],
             "hybrid_score": h_score,
+            "inci_cross_score": cross_score,
             "gate1_quality_status": g1_status,
             "gate2_safeguard_status": g2_status,
             "gate3_active_status": g3_status,
+            "gate4_cross_status": cross_status,
             "gate4_jev_status": "auto_approved_high_confidence",
             "inci_jev_score": None,
+            "gate4_gemini_status": None,
+            "inci_gemini_score": None,
             "safeguard_log": safeguard_log,
             "source": "skinsafe_matched"
         }
 
-    # Case B: Ambiguity Zone (AMBIGUITY_ZONE_LOW_THRESHOLD - AUTO_APPROVE_HYBRID_THRESHOLD) -> Marked for Decoupled Jev Processing!
+    # Case B: Ambiguity Zone (AMBIGUITY_ZONE_LOW_THRESHOLD - AUTO_APPROVE_HYBRID_THRESHOLD)
     if h_score >= cfg.AMBIGUITY_ZONE_LOW_THRESHOLD:
+        jev_status = "pending_jev"
+        jev_score = None
+        gemini_status = None
+        gemini_score = None
+
         if allow_synchronous_jev:
+            # 1. Primary: Try Jev 1.13
             jev_ok = verify_match_with_jev(title, cand_name)
-            jev_status = "jev_approved" if jev_ok is True else ("jev_rejected" if jev_ok is False else "jev_skipped")
-            jev_score = 0.95 if jev_ok is True else (0.15 if jev_ok is False else None)
-        else:
-            # DECOUPLED: Mark as pending_jev without stalling ingestion!
-            jev_status = "pending_jev"
-            jev_score = None
+            if jev_ok is not None:
+                jev_status = "jev_approved" if jev_ok is True else "jev_rejected"
+                jev_score = 0.95 if jev_ok is True else 0.15
+            else:
+                # 2. Fallback: Jev rate-limited (HTTP 429) or unavailable -> Fallback to Gemini 2.5 Flash-Lite!
+                jev_status = "jev_rate_limited"
+                gemini_res = verify_match_with_gemini(title, cand_name)
+                if gemini_res is not None:
+                    g_ok, g_conf = gemini_res
+                    gemini_status = "gemini_approved" if g_ok else "gemini_rejected"
+                    gemini_score = g_conf
+
+        is_rejected = (jev_status == "jev_rejected" or gemini_status == "gemini_rejected")
 
         return {
-            "ingredients": best_compatible['ingredients'] if jev_status != "jev_rejected" else None,
+            "ingredients": best_compatible['ingredients'] if not is_rejected else None,
             "matched_id": best_compatible['id'],
             "matched_name": cand_name,
             "vector_score": best_compatible['vector_sim'],
             "token_score": best_compatible['token_sim'],
             "hybrid_score": h_score,
+            "inci_cross_score": cross_score,
             "gate1_quality_status": g1_status,
             "gate2_safeguard_status": g2_status,
             "gate3_active_status": g3_status,
+            "gate4_cross_status": cross_status,
             "gate4_jev_status": jev_status,
             "inci_jev_score": jev_score,
+            "gate4_gemini_status": gemini_status,
+            "inci_gemini_score": gemini_score,
             "safeguard_log": safeguard_log,
             "source": "skinsafe_matched"
         }
