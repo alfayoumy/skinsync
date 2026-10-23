@@ -135,5 +135,21 @@ class PipelineConfig:
     INCI_BACKFILL_BATCH_SIZE: int = _env_int("INCI_BACKFILL_BATCH_SIZE", 50)
     JEV_QUEUE_BATCH_SIZE: int = _env_int("JEV_QUEUE_BATCH_SIZE", 25)
 
+    # -------------------------------------------------------------------------
+    # 10. Centralized Rotational Logging Configuration
+    # -------------------------------------------------------------------------
+    LOG_LEVEL: str = _env_str("LOG_LEVEL", "INFO")
+    LOG_DIR: str = _env_str("LOG_DIR", os.path.join(os.path.dirname(os.path.dirname(__file__)), "logs"))
+    LOG_FILE_NAME: str = _env_str("LOG_FILE_NAME", "skincare.log")
+    LOG_ERROR_FILE_NAME: str = _env_str("LOG_ERROR_FILE_NAME", "error.log")
+    LOG_MAX_BYTES: int = _env_int("LOG_MAX_BYTES", 10 * 1024 * 1024)  # 10 MB per log file
+    LOG_BACKUP_COUNT: int = _env_int("LOG_BACKUP_COUNT", 5)           # Keep 5 rotated archives
+    LOG_ROTATION_TYPE: str = _env_str("LOG_ROTATION_TYPE", "size")     # 'size' or 'time'
+    LOG_TIME_INTERVAL: str = _env_str("LOG_TIME_INTERVAL", "midnight") # for time-based rotation
+    LOG_TIME_BACKUP_DAYS: int = _env_int("LOG_TIME_BACKUP_DAYS", 14)  # 14 days retention
+    LOG_TO_CONSOLE: bool = _env_bool("LOG_TO_CONSOLE", True)
+    LOG_TO_FILE: bool = _env_bool("LOG_TO_FILE", True)
+    LOG_JSON_FORMAT: bool = _env_bool("LOG_JSON_FORMAT", False)
+
 # Global singleton configuration instance
 cfg = PipelineConfig()

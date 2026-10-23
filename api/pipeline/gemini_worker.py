@@ -19,7 +19,8 @@ try:
 except ImportError:
     from config import cfg
 
-logger = logging.getLogger("skincare_pipeline.gemini_worker")
+from pipeline.logging_config import setup_logging, get_logger
+logger = get_logger("skincare_pipeline.gemini_worker")
 
 def chunk_list(lst: List[Any], chunk_size: int) -> List[List[Any]]:
     """Splits a list into chunks of at most chunk_size items."""
@@ -189,7 +190,7 @@ def run_gemini_verification_queue(limit: Optional[int] = None, batch_size: Optio
     }
 
 if __name__ == "__main__":
-    logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(name)s: %(message)s")
+    setup_logging()
     parser = argparse.ArgumentParser(description="Run asynchronous Gate 4 Gemini batch verification worker")
     parser.add_argument("--limit", type=int, default=getattr(cfg, "GEMINI_QUEUE_BATCH_SIZE", 50), help="Total products to verify (default: from config)")
     parser.add_argument("--batch-size", type=int, default=getattr(cfg, "GEMINI_BATCH_SIZE", 10), help="Number of products evaluated per Gemini prompt (default: from config)")

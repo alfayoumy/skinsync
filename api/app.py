@@ -42,9 +42,13 @@ from pipeline.task_tracker import (
     get_task_details, list_tasks, get_task_subtasks, get_task_logs,
     get_scrape_checkpoint, list_scrape_checkpoints
 )
+from pipeline.logging_config import (
+    setup_logging, get_logger, rotate_logs,
+    get_log_files, read_recent_logs, log_context
+)
 
-logger = logging.getLogger("skincare_engine")
-logging.basicConfig(level=logging.INFO)
+setup_logging()
+logger = get_logger("skincare_engine")
 
 # ==============================================================================
 # 1. LOAD .ENV CONFIGURATION
@@ -91,6 +95,7 @@ def load_env_file():
         logger.info("Loaded JEV_API_KEY / TYPESAFE_API_KEY from environment.")
 
 load_env_file()
+setup_logging(force_reconfigure=True)
 
 app = FastAPI(
     title="Egyptian Skincare AI Production Engine",
@@ -797,15 +802,16 @@ class StoreRefreshRequest(BaseModel):
     background: bool = True
 
 def _run_refresh_catalog_task(store_id: Optional[str], fields: Optional[List[str]], max_pages: int, task_id: Optional[str] = None):
-    try:
-        res = refresh_catalog(store_id=store_id, fields=fields, max_pages=max_pages, task_id=task_id)
-        load_catalog_from_db()
-        return res
-    except Exception as e:
-        logger.error(f"Catalog refresh error: {e}")
-        if task_id:
-            fail_task(task_id, str(e))
-        return {"status": "error", "message": str(e), "task_id": task_id}
+    with log_context(task_id=task_id):
+        try:
+            res = refresh_catalog(store_id=store_id, fields=fields, max_pages=max_pages, task_id=task_id)
+            load_catalog_from_db()
+            return res
+        except Exception as e:
+            logger.error(f"Catalog refresh error: {e}")
+            if task_id:
+                fail_task(task_id, str(e))
+            return {"status": "error", "message": str(e), "task_id": task_id}
 
 @app.post("/products/refresh")
 def refresh_products_endpoint(req: CatalogRefreshRequest, background_tasks: BackgroundTasks):
@@ -1763,6 +1769,52 @@ def get_store_scraping_checkpoint_endpoint(store_id: str):
     if not cp:
         raise HTTPException(status_code=404, detail=f"Scrape checkpoint for store '{store_id}' not found.")
     return cp
+
+# ==============================================================================
+# 7.7. CENTRALIZED ROTATIONAL LOGGING & MONITORING ENDPOINTS
+# ==============================================================================
+
+@app.get("/logs/files")
+def list_log_files_endpoint():
+    """
+    Returns an inventory of all active and rotated log files, sizes, and timestamps.
+    """
+    files = get_log_files()
+    return {
+        "status": "success",
+        "total": len(files),
+        "log_directory": cfg.LOG_DIR,
+        "files": files
+    }
+
+@app.get("/logs/recent")
+def get_recent_logs_endpoint(
+    file_name: Optional[str] = None,
+    limit: int = 100,
+    level: Optional[str] = None
+):
+    """
+    Reads the most recent log entries from the primary or error rotational log file.
+    Supports filtering by log level (INFO, WARNING, ERROR, DEBUG).
+    """
+    logs = read_recent_logs(file_name=file_name, lines=limit, level=level)
+    return {
+        "status": "success",
+        "file_name": file_name or cfg.LOG_FILE_NAME,
+        "total": len(logs),
+        "limit": limit,
+        "level_filter": level,
+        "logs": logs
+    }
+
+@app.post("/logs/rotate")
+def rotate_logs_endpoint():
+    """
+    Manually forces rotation of all active file handlers (e.g. for maintenance, backups, or testing).
+    """
+    res = rotate_logs()
+    logger.info("Manual log rotation triggered via API.")
+    return res
 
 @app.get("/")
 def health_check():

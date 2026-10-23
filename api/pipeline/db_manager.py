@@ -5,7 +5,11 @@ import logging
 from datetime import datetime
 from typing import List, Dict, Any, Optional, Tuple
 
-logger = logging.getLogger("skincare_pipeline.db")
+try:
+    from pipeline.logging_config import setup_logging, get_logger
+    logger = get_logger("skincare_pipeline.db")
+except ImportError:
+    logger = logging.getLogger("skincare_pipeline.db")
 
 DB_PATH = os.path.join(os.path.dirname(os.path.dirname(__file__)), "skincare.db")
 

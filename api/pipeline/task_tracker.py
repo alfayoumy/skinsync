@@ -15,7 +15,8 @@ from typing import Optional, List, Dict, Any, Union
 
 from pipeline.db_manager import get_connection
 
-logger = logging.getLogger("skincare_pipeline.task_tracker")
+from pipeline.logging_config import setup_logging, get_logger
+logger = get_logger("skincare_pipeline.task_tracker")
 
 def _now_iso() -> str:
     return datetime.now(timezone.utc).isoformat()

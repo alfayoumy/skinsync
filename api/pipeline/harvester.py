@@ -25,7 +25,8 @@ try:
 except ImportError:
     from config import cfg
 
-logger = logging.getLogger("skincare_pipeline.harvester")
+from pipeline.logging_config import setup_logging, get_logger
+logger = get_logger("skincare_pipeline.harvester")
 
 STORES = [
     {
@@ -534,7 +535,7 @@ def refresh_catalog(store_id: str = None, fields: list = None, max_pages: int = 
     }
 
 if __name__ == "__main__":
-    logging.basicConfig(level=logging.INFO)
+    setup_logging()
     print("Testing sync on Bashrety (fast test)...")
     test_cfg = next(s for s in STORES if s["id"] == "bashrety")
     res = sync_store(test_cfg, max_pages=2)

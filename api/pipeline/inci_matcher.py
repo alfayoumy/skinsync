@@ -48,7 +48,11 @@ try:
 except ImportError:
     from db_manager import load_synonyms_from_db
 
-logger = logging.getLogger("skincare_pipeline.inci_matcher")
+try:
+    from pipeline.logging_config import setup_logging, get_logger
+    logger = get_logger("skincare_pipeline.inci_matcher")
+except ImportError:
+    logger = logging.getLogger("skincare_pipeline.inci_matcher")
 
 KEY_ACTIVES = {
     'hyaluronic_acid': ['hyaluronic acid', 'sodium hyaluronate', 'hydrolyzed hyaluronic', 'hyaluronate', 'hayluronic'],

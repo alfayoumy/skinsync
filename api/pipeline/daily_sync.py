@@ -14,7 +14,8 @@ try:
 except ImportError:
     from config import cfg
 
-logger = logging.getLogger("skincare_pipeline.daily_sync")
+from pipeline.logging_config import setup_logging, get_logger
+logger = get_logger("skincare_pipeline.daily_sync")
 
 def run_daily_sync(max_pages_per_store: int = None, task_id: str = None):
     """
@@ -84,7 +85,7 @@ def run_daily_sync(max_pages_per_store: int = None, task_id: str = None):
         raise
 
 if __name__ == "__main__":
-    logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(name)s: %(message)s")
+    setup_logging()
     import argparse
     parser = argparse.ArgumentParser(description="SkinSync Daily Multi-Store Catalog Synchronizer")
     parser.add_argument("--pages", type=int, default=cfg.DEFAULT_MAX_PAGES_PER_STORE, help=f"Max pages to crawl per store (default: {cfg.DEFAULT_MAX_PAGES_PER_STORE}, full catalog)")

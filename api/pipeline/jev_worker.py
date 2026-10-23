@@ -18,7 +18,8 @@ try:
 except ImportError:
     from config import cfg
 
-logger = logging.getLogger("skincare_pipeline.jev_worker")
+from pipeline.logging_config import setup_logging, get_logger
+logger = get_logger("skincare_pipeline.jev_worker")
 
 def run_jev_verification_queue(limit: int = None):
     """
@@ -116,7 +117,7 @@ def run_jev_verification_queue(limit: int = None):
     }
 
 if __name__ == "__main__":
-    logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(name)s: %(message)s")
+    setup_logging()
     parser = argparse.ArgumentParser(description="Run asynchronous Gate 4 Jev verification queue")
     parser.add_argument("--limit", type=int, default=cfg.JEV_QUEUE_BATCH_SIZE, help=f"Number of pending products to verify (default: {cfg.JEV_QUEUE_BATCH_SIZE})")
     args = parser.parse_args()
