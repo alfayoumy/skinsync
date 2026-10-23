@@ -1698,29 +1698,105 @@ const AdminObservatory = ({ onBackToApp }) => {
                           </div>
 
                           {/* Flagged Ingredients */}
-                          <div>
-                            <div className="font-bold text-gray-700 mb-2 uppercase text-[10px] tracking-wider">
+                          <div className="space-y-3">
+                            <div className="font-bold text-gray-700 uppercase text-[10px] tracking-wider">
                               Comedogenic & Irritating Ingredients Flagged
                             </div>
-                            <div className="space-y-2">
-                              {telemetry.clinical_dermatology.comedogenic_ingredients.length > 0 && (
-                                <div className="p-3 bg-amber-50 rounded-xl border border-amber-200">
-                                  <span className="font-bold text-amber-800">Comedogenic: </span>
-                                  <span className="text-amber-900">{telemetry.clinical_dermatology.comedogenic_ingredients.join(', ')}</span>
+                            
+                            {/* Comedogenic Ingredients */}
+                            {telemetry.clinical_dermatology.comedogenic_ingredients && telemetry.clinical_dermatology.comedogenic_ingredients.length > 0 && (
+                              <div className="p-4 bg-amber-50/70 rounded-xl border border-amber-200 space-y-2">
+                                <div className="flex items-center justify-between">
+                                  <span className="font-bold text-amber-900 text-xs flex items-center gap-1.5">
+                                    <span>⚠️</span>
+                                    <span>Comedogenic / Pore-Clogging Agents ({telemetry.clinical_dermatology.comedogenic_ingredients.length})</span>
+                                  </span>
+                                  <span className="text-[10px] text-amber-700 font-semibold">Scale: 1 (Low) – 5 (High)</span>
                                 </div>
-                              )}
-                              {telemetry.clinical_dermatology.irritating_ingredients.length > 0 && (
-                                <div className="p-3 bg-rose-50 rounded-xl border border-rose-200">
-                                  <span className="font-bold text-rose-800">Irritants: </span>
-                                  <span className="text-rose-900">{telemetry.clinical_dermatology.irritating_ingredients.join(', ')}</span>
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-1">
+                                  {telemetry.clinical_dermatology.comedogenic_ingredients.map((item, idx) => {
+                                    const name = typeof item === 'string' ? item : (item.canonical_inci || item.ingredient || item.common_name);
+                                    const common = typeof item === 'object' && item.common_name && item.common_name !== name ? item.common_name : null;
+                                    const score = typeof item === 'object' && item.comedogenicity ? item.comedogenicity : null;
+                                    const note = typeof item === 'object' ? (item.notes || item.evidence) : null;
+                                    return (
+                                      <div key={idx} className="p-2.5 bg-white rounded-lg border border-amber-200/90 shadow-2xs space-y-1">
+                                        <div className="flex items-start justify-between gap-2">
+                                          <div>
+                                            <span className="font-extrabold text-xs text-amber-950 capitalize">{name}</span>
+                                            {common && <span className="text-[11px] text-gray-500 block">{common}</span>}
+                                          </div>
+                                          {score !== null && (
+                                            <span className={`px-2 py-0.5 rounded text-[10px] font-black shrink-0 ${
+                                              score >= 4 ? 'bg-rose-100 text-rose-800' : score >= 3 ? 'bg-amber-100 text-amber-800' : 'bg-yellow-100 text-yellow-800'
+                                            }`}>
+                                              Rating: {score}/5
+                                            </span>
+                                          )}
+                                        </div>
+                                        {note && (
+                                          <p className="text-[10px] text-gray-600 italic leading-snug line-clamp-2" title={note}>
+                                            {note}
+                                          </p>
+                                        )}
+                                      </div>
+                                    );
+                                  })}
                                 </div>
-                              )}
-                              {telemetry.clinical_dermatology.comedogenic_ingredients.length === 0 && telemetry.clinical_dermatology.irritating_ingredients.length === 0 && (
-                                <div className="p-4 bg-emerald-50 text-emerald-800 rounded-xl border border-emerald-200 font-semibold">
-                                  ✓ Clean formulation: No severe clinical irritants or high pore-clogging agents flagged.
+                              </div>
+                            )}
+
+                            {/* Irritating Ingredients */}
+                            {telemetry.clinical_dermatology.irritating_ingredients && telemetry.clinical_dermatology.irritating_ingredients.length > 0 && (
+                              <div className="p-4 bg-rose-50/70 rounded-xl border border-rose-200 space-y-2">
+                                <div className="flex items-center justify-between">
+                                  <span className="font-bold text-rose-900 text-xs flex items-center gap-1.5">
+                                    <span>🛑</span>
+                                    <span>Sensitizing & Irritating Ingredients ({telemetry.clinical_dermatology.irritating_ingredients.length})</span>
+                                  </span>
+                                  <span className="text-[10px] text-rose-700 font-semibold">Scale: 1 (Mild) – 5 (Severe)</span>
                                 </div>
-                              )}
-                            </div>
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-1">
+                                  {telemetry.clinical_dermatology.irritating_ingredients.map((item, idx) => {
+                                    const name = typeof item === 'string' ? item : (item.canonical_inci || item.ingredient || item.common_name);
+                                    const common = typeof item === 'object' && item.common_name && item.common_name !== name ? item.common_name : null;
+                                    const score = typeof item === 'object' && item.irritancy ? item.irritancy : null;
+                                    const note = typeof item === 'object' ? (item.notes || item.evidence) : null;
+                                    return (
+                                      <div key={idx} className="p-2.5 bg-white rounded-lg border border-rose-200/90 shadow-2xs space-y-1">
+                                        <div className="flex items-start justify-between gap-2">
+                                          <div>
+                                            <span className="font-extrabold text-xs text-rose-950 capitalize">{name}</span>
+                                            {common && <span className="text-[11px] text-gray-500 block">{common}</span>}
+                                          </div>
+                                          {score !== null && (
+                                            <span className={`px-2 py-0.5 rounded text-[10px] font-black shrink-0 ${
+                                              score >= 4 ? 'bg-rose-100 text-rose-800' : 'bg-amber-100 text-amber-800'
+                                            }`}>
+                                              Irritancy: {score}/5
+                                            </span>
+                                          )}
+                                        </div>
+                                        {note && (
+                                          <p className="text-[10px] text-gray-600 italic leading-snug line-clamp-2" title={note}>
+                                            {note}
+                                          </p>
+                                        )}
+                                      </div>
+                                    );
+                                  })}
+                                </div>
+                              </div>
+                            )}
+
+                            {/* Clean Formulation Notice */}
+                            {(!telemetry.clinical_dermatology.comedogenic_ingredients || telemetry.clinical_dermatology.comedogenic_ingredients.length === 0) &&
+                             (!telemetry.clinical_dermatology.irritating_ingredients || telemetry.clinical_dermatology.irritating_ingredients.length === 0) && (
+                              <div className="p-4 bg-emerald-50 text-emerald-800 rounded-xl border border-emerald-200 font-semibold flex items-center gap-2">
+                                <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                                <span>Clean formulation: No severe clinical irritants or high pore-clogging agents flagged.</span>
+                              </div>
+                            )}
                           </div>
                         </>
                       ) : (
