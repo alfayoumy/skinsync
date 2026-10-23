@@ -104,23 +104,47 @@ def get_admin_overview():
         conn.close()
 
 
+@router.get("/brands")
+def list_admin_brands(limit: int = Query(200, ge=10, le=1000, description="Max brands to return")):
+    """Returns distinct brands with product counts across active and suppressed catalog."""
+    conn = get_connection()
+    try:
+        cur = conn.cursor()
+        cur.execute("""
+        SELECT brand, COUNT(*) as count, COUNT(*) as total_listings,
+               SUM(CASE WHEN is_skincare = 1 THEN 1 ELSE 0 END) as skincare_count
+        FROM products
+        WHERE brand IS NOT NULL AND TRIM(brand) != ''
+        GROUP BY brand
+        ORDER BY count DESC
+        LIMIT ?;
+        """, (limit,))
+        return [dict(r) for r in cur.fetchall()]
+    finally:
+        conn.close()
+
+
 @router.get("/products")
 def list_admin_products(
     q: Optional[str] = Query(None, description="Search keyword in title, brand, handle or URL"),
     store_id: Optional[str] = Query(None, description="Filter by retail store ID"),
+    brand: Optional[str] = Query(None, description="Filter by brand name"),
     is_skincare: Optional[bool] = Query(None, description="Filter active skincare (true) vs suppressed non-skincare (false)"),
     category: Optional[str] = Query(None, description="Filter by product category"),
+    is_available: Optional[bool] = Query(None, description="Filter by availability: true (in stock) or false (out of stock)"),
     has_ingredients: Optional[bool] = Query(None, description="Filter products with/without full ingredients"),
     ingredient_source: Optional[str] = Query(None, description="Filter by ingredient source"),
     is_multi_store: Optional[bool] = Query(None, description="Filter products with offers in multiple stores"),
     gate_status: Optional[str] = Query(None, description="Filter by INCI match gate status"),
-    sort_by: str = Query("id", description="Field to sort by: id, price, title, updated_at, inci_hybrid_score"),
+    min_price: Optional[float] = Query(None, ge=0, description="Minimum price in EGP"),
+    max_price: Optional[float] = Query(None, ge=0, description="Maximum price in EGP"),
+    sort_by: str = Query("id", description="Field to sort by: id, price, title, updated_at, inci_hybrid_score, store_count"),
     order: str = Query("asc", description="Sort order: asc or desc"),
-    limit: int = Query(25, ge=1, le=100, description="Items per page"),
+    limit: int = Query(25, ge=1, le=500, description="Items per page"),
     offset: int = Query(0, ge=0, description="Page offset")
 ):
     """
-    Paginated, multi-filter search across all 22,768 catalog listings with INCI, cluster, and skincare suppression metadata.
+    Paginated, multi-filter search across all 22,800 catalog listings with INCI, cluster, and skincare suppression metadata.
     """
     conn = get_connection()
     try:
@@ -137,6 +161,10 @@ def list_admin_products(
             where_clauses.append("p.store_id = ?")
             params.append(store_id)
 
+        if brand:
+            where_clauses.append("LOWER(p.brand) = LOWER(?)")
+            params.append(brand.strip())
+
         if is_skincare is True:
             where_clauses.append("p.is_skincare = 1")
         elif is_skincare is False:
@@ -145,6 +173,11 @@ def list_admin_products(
         if category:
             where_clauses.append("p.category = ?")
             params.append(category)
+
+        if is_available is True:
+            where_clauses.append("p.is_available = 1")
+        elif is_available is False:
+            where_clauses.append("p.is_available = 0")
 
         if has_ingredients is True:
             where_clauses.append("(p.ingredients_raw IS NOT NULL AND LENGTH(p.ingredients_raw) >= 15)")
@@ -159,6 +192,14 @@ def list_admin_products(
             where_clauses.append("(c.store_count > 1)")
         elif is_multi_store is False:
             where_clauses.append("(c.store_count <= 1 OR c.store_count IS NULL)")
+
+        if min_price is not None:
+            where_clauses.append("p.price >= ?")
+            params.append(min_price)
+
+        if max_price is not None:
+            where_clauses.append("p.price <= ?")
+            params.append(max_price)
 
         if gate_status:
             where_clauses.append("""
@@ -177,7 +218,8 @@ def list_admin_products(
             "price": "p.price",
             "title": "p.title",
             "updated_at": "p.updated_at",
-            "inci_hybrid_score": "p.inci_hybrid_score"
+            "inci_hybrid_score": "p.inci_hybrid_score",
+            "store_count": "COALESCE(c.store_count, 1)"
         }
         sort_col = allowed_sorts.get(sort_by, "p.id")
         order_dir = "DESC" if order.lower() == "desc" else "ASC"
@@ -414,6 +456,8 @@ def get_product_telemetry_forensics(product_id: int):
                 "clean_title": product.get("clean_title"),
                 "brand": product.get("brand"),
                 "category": product.get("category"),
+                "is_skincare": int(product.get("is_skincare") if product.get("is_skincare") is not None else 0),
+                "canonical_product_id": product.get("canonical_product_id"),
                 "price": product.get("price"),
                 "compare_at_price": product.get("compare_at_price"),
                 "is_available": bool(product.get("is_available")),
@@ -464,3 +508,74 @@ def get_product_telemetry_forensics(product_id: int):
         }
     finally:
         conn.close()
+
+
+class ClassificationUpdate(BaseModel):
+    is_skincare: Optional[int] = None
+    category: Optional[str] = None
+
+
+@router.patch("/products/{product_id}/classification")
+def update_product_classification(product_id: int, update: ClassificationUpdate):
+    """
+    Manual override control: Updates a product's skincare status (1=active, 0=suppressed) and category.
+    Refreshes the in-memory catalog cache dynamically.
+    """
+    conn = get_connection()
+    try:
+        cur = conn.cursor()
+        cur.execute("SELECT id, title, is_skincare, category FROM products WHERE id = ?;", (product_id,))
+        row = cur.fetchone()
+        if not row:
+            raise HTTPException(status_code=404, detail=f"Product #{product_id} not found.")
+
+        sets = []
+        params = []
+        if update.is_skincare is not None:
+            val = 1 if update.is_skincare in (1, True, "1", "true") else 0
+            sets.append("is_skincare = ?")
+            params.append(val)
+        if update.category is not None and update.category.strip():
+            sets.append("category = ?")
+            params.append(update.category.strip())
+
+        if not sets:
+            raise HTTPException(status_code=400, detail="No fields provided for classification update.")
+
+        sets.append("updated_at = CURRENT_TIMESTAMP")
+        params.append(product_id)
+
+        cur.execute(f"UPDATE products SET {', '.join(sets)} WHERE id = ?;", params)
+        conn.commit()
+
+        # Fetch updated record
+        cur.execute("SELECT id, title, is_skincare, category, updated_at FROM products WHERE id = ?;", (product_id,))
+        updated = dict(cur.fetchone())
+
+        # Reload in-memory catalog index
+        try:
+            from services.catalog_service import load_catalog_from_db
+            load_catalog_from_db()
+        except Exception as e:
+            logger.warning(f"Could not reload in-memory cache: {e}")
+
+        logger.info(f"Classification updated for Product #{product_id}: is_skincare={updated['is_skincare']}, category={updated['category']}")
+        return {"status": "success", "product": updated}
+    finally:
+        conn.close()
+
+
+@router.post("/pipeline/trigger-linker")
+def trigger_product_linker():
+    """Triggers the cross-source product clustering and variant alignment pipeline."""
+    from pipeline.product_linker import link_catalog_products
+    metrics = link_catalog_products()
+    return metrics
+
+
+@router.post("/pipeline/trigger-classifier")
+def trigger_catalog_classifier():
+    """Triggers the taxonomy classifier and skincare suppression pipeline."""
+    from pipeline.classifier import classify_catalog_products
+    metrics = classify_catalog_products()
+    return metrics
