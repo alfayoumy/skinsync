@@ -217,18 +217,9 @@ def sync_store(store_cfg: dict, max_pages: int = None, conn=None, fields: list =
                 canonical_title, _, _ = enrich_product_title(title, handle=handle, brand=vendor, url=product_url)
                 title = canonical_title
 
-                # Extract ingredients from store HTML description if present
+                # Extract authentic ingredients from store HTML description if present (strictly validated)
                 raw_ings = extract_ingredients_from_html(body_html)
                 ing_source = 'store_description' if raw_ings else None
-
-                # Strategy A: Auto-enrich central inci_reference so other stores can reuse this formulation
-                if raw_ings and len(raw_ings) >= cfg.MIN_STORE_ENRICH_LEN and vendor and vendor.lower() not in ('unknown', 'general'):
-                    try:
-                        cur.execute("SELECT id FROM inci_reference WHERE LOWER(brand) = LOWER(?) AND LOWER(product_name) = LOWER(?);", (vendor, title))
-                        if not cur.fetchone():
-                            cur.execute("INSERT INTO inci_reference (brand, product_name, ingredients, source) VALUES (?, ?, ?, 'store_verified');", (vendor, title, raw_ings))
-                    except Exception:
-                        pass
 
                 parsed_ings, actives = parse_and_normalize_ingredients(raw_ings or "")
 

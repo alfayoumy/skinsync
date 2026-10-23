@@ -132,8 +132,63 @@ def normalize_brand(brand: str) -> str:
     tokens = [t for t in b.split() if t not in suffixes]
     return ' '.join(tokens) if tokens else b
 
+MARKETING_NON_INCI_TRIGGERS = {
+    'application', 'revitaliz', 'results', 'benefits', 'suitable for', 'contour',
+    'reduced', 'enhanced', 'women', 'wrinkles', 'fine lines', 'dark circles',
+    'morning savior', 'smooth cream', 'patent', 'texture', 'hypoallergen',
+    'photostable', 'white cast', 'ideal for', 'all hair types', 'all skin types',
+    'years', 'features', 'directions', 'how to use', 'apply daily', 'warning',
+    'precautions', 'is moisturized', 'appears lifted', 'visibly', 'sensorial',
+    'clinically proven', 'dermatologist tested', 'free from', 'paraben free',
+    'cruelty free', 'our secret', 'revolutionary', 'daily routine', 'day after day'
+}
+
+COMMON_INCI_MARKERS = {
+    'aqua', 'water', 'eau', 'glycerin', 'extract', 'acid', 'oil', 'alcohol',
+    'glycol', 'stearate', 'sulfate', 'tocopherol', 'dimethicone', 'parfum',
+    'fragrance', 'oxide', 'copolymer', 'palmitate', 'glucoside', 'triglyceride',
+    'caprylyl', 'sodium', 'potassium', 'cetearyl', 'phenoxyethanol', 'squalane'
+}
+
+def is_valid_inci_list(text: str) -> bool:
+    """
+    Validates whether a candidate string is an authentic, full cosmetic INCI list.
+    Rejects marketing sentences, feature bullet points, and partial active callouts.
+    """
+    if not text or not isinstance(text, str):
+        return False
+    clean = text.strip()
+    if len(clean) < 30:
+        return False
+    
+    lower = clean.lower()
+    
+    # 1. Prohibit narrative marketing claims
+    for trigger in MARKETING_NON_INCI_TRIGGERS:
+        if trigger in lower:
+            return False
+            
+    # 2. Reject bullet-pointed feature lists with sentences
+    if re.search(r'[\n\r][\-•⦁\*]\s*[A-Z][a-z]+(?:\s+[a-z]+){2,}', clean):
+        return False
+
+    # 3. Must have standard cosmetic comma separation (minimum 4 distinct tokens)
+    commas = clean.count(',')
+    if commas < 3:
+        return False
+        
+    # 4. Must contain at least two canonical cosmetic base formulation markers
+    inci_match_count = sum(1 for marker in COMMON_INCI_MARKERS if marker in lower)
+    if inci_match_count < 2:
+        return False
+        
+    return True
+
 def extract_ingredients_from_html(body_html: str) -> Optional[str]:
-    """Extracts ingredient block from Shopify product body_html using common headings."""
+    """
+    Extracts authentic ingredient block from product body_html.
+    Strictly avoids marketing callouts (e.g. 'active ingredients: ...') and verifies INCI validity.
+    """
     if not body_html or not isinstance(body_html, str):
         return None
 
@@ -142,16 +197,22 @@ def extract_ingredients_from_html(body_html: str) -> Optional[str]:
     text = re.sub(r'<[^>]+>', ' ', text)
     text = html.unescape(text)
 
+    # Strictly target full formulation headings; NEVER match "active ingredients" or "key ingredients" as full formulations
     patterns = [
-        r'(?:ingredients|key ingredients|active ingredients|composition|formula|المكونات)\s*[:：\n]([\s\S]+?)(?=\n\s*(?:how to use|directions|benefits|warning|precautions|features|size|volume|suitable for|$))',
-        r'(?:ingredients|key ingredients)\s*[:：\n]([\s\S]+)',
+        r'(?:full\s+ingredients|ingredients\s*\(inci\)|ingredients\s*list|list\s+of\s+ingredients|all\s+ingredients|قائمة\s+المكونات)\s*[:：\n]([\s\S]+?)(?=\n\s*(?:how\s+to\s+use|directions|benefits|warning|precautions|features|size|volume|suitable\s+for|$))',
+        r'(?:^|\n|\>)\s*(?:ingredients|composition|المكونات)\s*[:：\n]([\s\S]+?)(?=\n\s*(?:how\s+to\s+use|directions|benefits|warning|precautions|features|size|volume|suitable\s+for|$))'
     ]
 
     for pat in patterns:
         m = re.search(pat, text, re.IGNORECASE)
         if m:
             candidate = m.group(1).strip()
-            if len(candidate) >= cfg.MIN_INGREDIENT_RAW_LEN and (',' in candidate or len(candidate.split()) >= cfg.MIN_INGREDIENT_COUNT):
+            # Stop if text transitions into bullet sentences
+            bullet_split = re.split(r'[\n\r][\-•⦁\*]', candidate)
+            if len(bullet_split) > 1 and not (',' in bullet_split[0] and len(bullet_split[0]) > 40):
+                candidate = bullet_split[0].strip()
+
+            if is_valid_inci_list(candidate):
                 return candidate[:cfg.MAX_INGREDIENT_RAW_LEN]
 
     return None
