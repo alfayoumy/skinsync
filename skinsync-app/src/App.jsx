@@ -782,7 +782,7 @@ const SkinSync = () => {
                 </div>
 
                 <div className="p-6 text-center">
-                  <h3 className="font-bold text-lg text-gray-800 mb-2 leading-tight">
+                  <h3 title={recommendations.source_product.title} className="font-bold text-lg text-gray-800 mb-2 leading-tight cursor-default">
                     {recommendations.source_product.title}
                   </h3>
                   <p className="text-purple-500 font-semibold mb-4 text-sm uppercase tracking-wider">
@@ -816,7 +816,10 @@ const SkinSync = () => {
 
                   {/* Product Info */}
                   <div className="p-6">
-                    <h3 className="font-bold text-lg text-gray-800 mb-2 line-clamp-2 min-h-[3.5rem] leading-tight group-hover:text-purple-600 transition-colors">
+                    <h3 
+                      title={product.title}
+                      className="font-bold text-lg text-gray-800 mb-2 line-clamp-2 min-h-[3.5rem] leading-tight group-hover:text-purple-600 transition-colors cursor-default"
+                    >
                       {product.title}
                     </h3>
                     <p className="text-purple-500 font-semibold mb-4 text-sm uppercase tracking-wider">{product.brand}</p>

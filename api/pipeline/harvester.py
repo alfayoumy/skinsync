@@ -20,6 +20,7 @@ from pipeline.task_tracker import (
     create_subtask, complete_subtask, fail_subtask,
     update_task_progress, log_task_event, update_scrape_checkpoint
 )
+from pipeline.title_enricher import enrich_product_title
 try:
     from pipeline.config import cfg
 except ImportError:
@@ -212,6 +213,10 @@ def sync_store(store_cfg: dict, max_pages: int = None, conn=None, fields: list =
                 # Construct clean canonical product URL
                 product_url = f"https://{domain}/products/{handle}"
 
+                # Reconcile and enrich product title with brand and handle qualifiers
+                canonical_title, _, _ = enrich_product_title(title, handle=handle, brand=vendor, url=product_url)
+                title = canonical_title
+
                 # Extract ingredients from store HTML description if present
                 raw_ings = extract_ingredients_from_html(body_html)
                 ing_source = 'store_description' if raw_ings else None
@@ -249,20 +254,21 @@ def sync_store(store_cfg: dict, max_pages: int = None, conn=None, fields: list =
                         if not existing["ingredients_raw"] and raw_ings:
                             cur.execute("""
                             UPDATE products
-                            SET price = ?, compare_at_price = ?, is_available = ?, image_url = ?,
-                                ingredients_raw = ?, ingredients_parsed = ?, actives = ?,
-                                ingredient_source = ?, updated_at = CURRENT_TIMESTAMP
+                            SET title = ?, brand = ?, category = ?, price = ?, compare_at_price = ?,
+                                is_available = ?, image_url = ?, ingredients_raw = ?,
+                                ingredients_parsed = ?, actives = ?, ingredient_source = ?,
+                                updated_at = CURRENT_TIMESTAMP
                             WHERE id = ?;
-                            """, (price, compare_price, is_available, image_url,
+                            """, (title, vendor, category, price, compare_price, is_available, image_url,
                                   raw_ings, json.dumps(parsed_ings), json.dumps(actives),
                                   ing_source, pid))
                         else:
                             cur.execute("""
                             UPDATE products
-                            SET price = ?, compare_at_price = ?, is_available = ?, image_url = ?,
-                                updated_at = CURRENT_TIMESTAMP
+                            SET title = ?, brand = ?, category = ?, price = ?, compare_at_price = ?,
+                                is_available = ?, image_url = ?, updated_at = CURRENT_TIMESTAMP
                             WHERE id = ?;
-                            """, (price, compare_price, is_available, image_url, pid))
+                            """, (title, vendor, category, price, compare_price, is_available, image_url, pid))
                     else:
                         # Granular field updates
                         upd_cols = []
@@ -504,7 +510,7 @@ def refresh_catalog(store_id: str = None, fields: list = None, max_pages: int = 
                 conn=conn
             )
 
-        if own_task:
+        if task_id:
             complete_task(
                 task_id=task_id,
                 metadata={
@@ -516,7 +522,7 @@ def refresh_catalog(store_id: str = None, fields: list = None, max_pages: int = 
                 conn=conn
             )
     except Exception as e:
-        if own_task:
+        if task_id:
             fail_task(task_id, str(e), conn=conn)
         raise
     finally:

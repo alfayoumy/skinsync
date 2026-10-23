@@ -35,6 +35,7 @@ from pipeline.inci_matcher import (
 )
 from pipeline.safeguards import CosmeticCompatibilityValidator
 from pipeline.harvester import refresh_catalog, STORES
+from pipeline.title_enricher import run_title_enrichment
 from pipeline.task_tracker import (
     create_task, complete_task, fail_task, cancel_task,
     create_subtask, complete_subtask, fail_subtask,
@@ -860,6 +861,51 @@ def refresh_store_endpoint(store_id: str, background_tasks: BackgroundTasks, req
             "message": f"Store refresh dispatched for store '{store_id}' (fields: {fields or 'all'}). Monitor progress at /tasks/{task_id}."
         }
     return _run_refresh_catalog_task(store_id, fields, max_pages, task_id)
+
+# ------------------------------------------------------------------------------
+# 7.1.1. PRODUCT TITLE ENRICHMENT ENDPOINTS
+# ------------------------------------------------------------------------------
+class TitleEnrichmentRequest(BaseModel):
+    dry_run: bool = False
+    background: bool = True
+
+def _run_title_enrichment_task(dry_run: bool, task_id: Optional[str] = None):
+    with log_context(task_id=task_id):
+        try:
+            res = run_title_enrichment(dry_run=dry_run, task_id=task_id)
+            if not dry_run:
+                load_catalog_from_db()
+            return res
+        except Exception as e:
+            logger.error(f"Title enrichment error: {e}")
+            if task_id:
+                fail_task(task_id, str(e))
+            return {"status": "error", "message": str(e), "task_id": task_id}
+
+@app.post("/products/enrich-titles")
+def enrich_product_titles_endpoint(background_tasks: BackgroundTasks, req: Optional[TitleEnrichmentRequest] = None):
+    """
+    Enriches product titles across the catalog by reconciling curated titles,
+    extracting qualifiers from URL handles, and prefixing bare brand names.
+    Supports dry-run preview and asynchronous task tracking.
+    """
+    dry_run = req.dry_run if req else False
+    bg = req.background if req else True
+    task_id = create_task(
+        task_type="title_enrichment",
+        target_source="catalog",
+        params={"dry_run": dry_run},
+        auto_start=True
+    )
+    if bg:
+        background_tasks.add_task(_run_title_enrichment_task, dry_run, task_id)
+        return {
+            "status": "accepted",
+            "task_id": task_id,
+            "dry_run": dry_run,
+            "message": f"Title enrichment dispatched to background worker (dry_run: {dry_run}). Monitor progress at /tasks/{task_id}."
+        }
+    return _run_title_enrichment_task(dry_run, task_id)
 
 # ------------------------------------------------------------------------------
 # 7.2. INCI FORMULATION MATCHING ENDPOINTS
