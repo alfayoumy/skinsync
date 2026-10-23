@@ -11,9 +11,9 @@
 This document provides a comprehensive technical reference for all enhancements, architectural reorganizations, and API operations implemented across the SkinSync platform.
 
 ### Summary of Major Architectural Changes
-1. **Monolithic Decomposition of `app.py`:** Reduced `api/app.py` from 1,872 lines to 118 lines by decoupling the application into a modular architecture:
+1. **Monolithic Decomposition of `app.py`:** Reduced `api/app.py` from 1,872 lines to 121 lines by decoupling the application into a modular architecture:
    - **`api/services/`**: In-memory catalog caching (`catalog_service.py`), formulation similarity and SOTA recommendation algorithms (`recommender.py`), multi-store price comparisons and arbitrage deal tracking (`price_service.py`).
-   - **`api/routers/`**: 9 functional domain routers implementing standard FastAPI `APIRouter` controllers.
+   - **`api/routers/`**: 10 functional domain routers implementing standard FastAPI `APIRouter` controllers.
 2. **Database-Backed Clinical Rules & Synonyms:** Replaced hardcoded lists with relational database tables (`ingredient_synonyms` and `clinical_ingredients`) in `skincare.db` with dynamic REST endpoints and real-time cache reloading.
 3. **Decoupled AI Workers with Batching:** Separated `jev_worker.py` from `gemini_worker.py`. Implemented structured Gemini batching (`run_gemini_verification_queue`) with configurable batch sizes to stay strictly under RPM (15) and RPD (1,500) limits.
 4. **Pipeline Control Tables & Checkpoints:** Created thread-safe control tables (`pipeline_tasks`, `pipeline_subtasks`, `pipeline_task_logs`, `scrape_checkpoints`) providing atomic progress tracking, subtask decomposition, and granular diagnostics.
@@ -28,6 +28,9 @@ This document provides a comprehensive technical reference for all enhancements,
    - **Entity Resolution Engine (`pipeline/product_linker.py`):** Clustered 22,768 store listings into 21,680 canonical products with packaging volume extraction (`extract_volume_and_normalize`) to prevent distinct container sizes from collapsing.
    - **Cross-Source Ingredient Propagation:** Propagated verified formulations across stores, expanding products with full ingredients to **3,492 listings** (+273 listings).
    - **Real-Time Price Comparison & Arbitrage Engine (`services/price_service.py`, `routers/prices.py`):** Uncovered 930 multi-store clusters with price arbitrage spreads up to 62.5% savings across Egyptian retailers.
+10. **Admin Observatory & Deep Forensic Telemetry Portal:**
+   - **Observatory Router (`routers/admin.py`):** Exposes `/admin/overview`, `/admin/products`, and `/admin/products/{id}/telemetry` for complete visibility into scraped HTML descriptions, ingredient token trees, 4-gate INCI decision scores, multi-store pricing tables, and clinical safety ratings.
+   - **Interactive Admin UI (`skinsync-app/src/AdminObservatory.jsx`):** Seamless toggle between consumer matching and forensic catalog explorer with 6-tab inspection drawers and multi-filter criteria.
 
 ---
 
@@ -37,7 +40,7 @@ This document provides a comprehensive technical reference for all enhancements,
 skincare/
 ├── repo/
 │   ├── api/
-│   │   ├── app.py                      # Main entrypoint: loads env, initializes logging, mounts 9 routers (118 lines)
+│   │   ├── app.py                      # Main entrypoint: loads env, initializes logging, mounts 10 routers (121 lines)
 │   │   ├── skincare.db                 # SQLite database in WAL mode (22,768 listings, 21,680 canonical products)
 │   │   ├── dermo_data.py               # Clinical dermatological database, comedogenicity/irritancy models
 │   │   ├── simple_db.py                # JSON database adapter for user onboarding
@@ -59,7 +62,8 @@ skincare/
 │   │   │   ├── dermo.py                # /dermo/score, /products/{id}/dermo-score, /dermo/ingredients
 │   │   │   ├── tasks.py                # /tasks, /tasks/{id}, /tasks/{id}/cancel, /tasks/{id}/subtasks, /checkpoints
 │   │   │   ├── logs.py                 # /logs/files, /logs/recent, /logs/rotate
-│   │   │   └── prices.py               # /products/{id}/price-comparison, /canonical-products/{id}/offers, /products/price-deals, /products/link-clusters
+│   │   │   ├── prices.py               # /products/{id}/price-comparison, /canonical-products/{id}/offers, /products/price-deals, /products/link-clusters
+│   │   │   └── admin.py                # /admin/overview, /admin/products, /admin/products/{id}/telemetry
 │   │   │
 │   │   ├── pipeline/                   # Data Ingestion, Scraping, AI Workers & Infrastructure
 │   │   │   ├── config.py               # Centralized configuration & environment constants
@@ -80,17 +84,19 @@ skincare/
 │   │   │   ├── skincare_pipeline.log   # Active application log (rotating at 10MB, up to 5 backups)
 │   │   │   └── skincare_error.log      # Active error log (rotating at 5MB, up to 3 backups)
 │   │   │
-│   │   └── tests/                      # Automated Test Suite (60 Unit & Integration Tests, 100% OK)
+│   │   └── tests/                      # Automated Test Suite (65 Unit & Integration Tests, 100% OK)
 │   │       ├── test_api_operations.py
 │   │       ├── test_control_tables.py
 │   │       ├── test_evaluation_benchmark.py
 │   │       ├── test_rotational_logging.py
 │   │       ├── test_title_enrichment.py
 │   │       ├── test_workers.py
-│   │       └── test_price_comparison.py
+│   │       ├── test_price_comparison.py
+│   │       └── test_admin_router.py
 │   │
 │   ├── skinsync-app/                   # React + Vite + Tailwind Frontend
-│   │   └── src/App.jsx                 # Search, recommendation cards, and full-title tooltips
+│   │   ├── src/App.jsx                 # Search, recommendation cards, full-title tooltips, and deals modal
+│   │   └── src/AdminObservatory.jsx    # Full Admin Observatory & Telemetry Forensics Portal
 │   │
 │   └── docs/                           # Engineering Documentation
 │       ├── README.md
@@ -487,6 +493,59 @@ Triggers cross-source product entity resolution, canonical clustering, and ingre
 
 ---
 
+### 4.10. Admin Observatory & Forensic Telemetry Router (`/admin`)
+Provides real-time visibility into scraped raw source data, ingredient token trees, 4-gate INCI matching scores, multi-store pricing tables, and clinical safety ratings.
+
+#### `GET /admin/overview`
+Returns high-level system vitals, catalog health metrics, per-store ingestion distributions, and recent background pipeline executions.
+- **Example Response:**
+  ```json
+  {
+    "vitals": {
+      "total_listings": 22768,
+      "canonical_products": 21680,
+      "multi_store_clusters": 930,
+      "products_with_ingredients": 3493,
+      "inci_matched_products": 413,
+      "ai_verified_products": 57
+    },
+    "stores": [
+      { "store_id": "sourcebeauty", "store_name": "Source Beauty", "total_products": 7058, "with_ingredients": 1820 },
+      { "store_id": "drdawood", "store_name": "Dr Dawood", "total_products": 5691, "with_ingredients": 412 },
+      { "store_id": "feel22", "store_name": "Feel22 Egypt", "total_products": 4885, "with_ingredients": 890 },
+      { "store_id": "bloompharmacy", "store_name": "Bloom Pharmacy", "total_products": 4613, "with_ingredients": 320 },
+      { "store_id": "bashrety", "store_name": "Bashrety", "total_products": 403, "with_ingredients": 41 },
+      { "store_id": "rawafrican", "store_name": "Raw African", "total_products": 118, "with_ingredients": 10 }
+    ],
+    "recent_tasks": [
+      { "task_id": "task_20261023_...", "task_name": "full_pipeline_sync", "status": "COMPLETED", "progress_pct": 100 }
+    ]
+  }
+  ```
+
+#### `GET /admin/products?q={query}&store_id={id}&has_ingredients={bool}&ingredient_source={src}&is_multi_store={bool}&gate_status={status}&page={page}&page_size={size}`
+Paginated forensic product browser with multi-dimensional filtering.
+- **Query Parameters:**
+  - `q`: Search keyword across product titles and handles.
+  - `store_id`: Filter by specific retail pharmacy (`bloompharmacy`, `drdawood`, `feel22`, `sourcebeauty`, `bashrety`, `rawafrican`).
+  - `has_ingredients`: Boolean (`true`/`false`) filtering products with populated ingredient lists.
+  - `ingredient_source`: Provenance filter (`store_description`, `cross_store_linked`, `skinsafe_matched`, `curated`).
+  - `is_multi_store`: Filter products that have matching listings in other competitor stores.
+  - `gate_status`: Filter by INCI gate decision status (`auto_approved`, `pending_gemini`, `rejected`, etc.).
+  - `page`: Page index (default 1).
+  - `page_size`: Products per page (default 20, max 100).
+
+#### `GET /admin/products/{product_id}/telemetry`
+Returns the complete forensic telemetry dossier for a specific product listing:
+1. **Source & Scraping:** Raw scraped HTML, source store URL, handle, live inventory status, price, and compare-at price.
+2. **Ingredients & Actives Provenance:** Raw ingredient text, parsed normalized tokens, identified active ingredients, and provenance source badges (`store_description`, `cross_store_linked`, `skinsafe_matched`).
+3. **4-Gate INCI Telemetry:** Matched reference formulation ID, reference product title, dense vector similarity (ONNX BGE-small), RapidFuzz token match ratio, hybrid score, MiniLM cross-encoder score, Jev/Gemini decision statuses, Gate 1-4 decision logs, and cosmetic safeguard evaluations.
+4. **Cross-Store Linking & Price Comparison:** Canonical cluster ID, normalized clustering key, price spread, maximum savings percentage, and all competitor offers with current prices, in-stock badges, best deal indicators, and direct store URLs.
+5. **Clinical Dermatological Safety:** Comedogenicity score (0-10 scale), irritancy score (0-10 scale), and any clinical safety warnings or contraindications.
+6. **Top 5 Similar Products / Dupes:** Match score %, cross-encoder score %, shared active ingredients, differing active ingredients, formula weighted Jaccard index, and plain-language match rationale.
+
+---
+
 ## 5. Data Quality: Title Enrichment & Truncation Remediation
 
 ### 4-Tier Remediation Strategy
@@ -540,7 +599,7 @@ Implemented in [`pipeline/title_enricher.py`](file:///mnt/windows/Users/AmrAlfay
 
 ## 7. Automated Test Suite & Verification
 
-The test suite contains **60 comprehensive unit and integration tests** verifying all layers of the platform:
+The test suite contains **65 comprehensive unit and integration tests** verifying all layers of the platform:
 
 ```bash
 python3 -m unittest discover -s tests -p "test_*.py"
@@ -553,7 +612,8 @@ python3 -m unittest discover -s tests -p "test_*.py"
 | `tests/test_title_enrichment.py` | Brand detection, SPF preservation, handle reconciliation, API endpoints | **Passed (10/10)** |
 | `tests/test_control_tables.py` | Task creation, subtasks, event logging, checkpoints, cancellation | **Passed (8/8)** |
 | `tests/test_rotational_logging.py` | File rotation, size triggers, level filtering, log context injection | **Passed (6/6)** |
+| `tests/test_admin_router.py` | Admin observatory overview, high-speed multi-filter product search, full-depth forensic telemetry | **Passed (5/5)** |
 | `tests/test_workers.py` | Jev worker, Gemini batch processing, queue handoffs | **Passed (4/4)** |
 | `tests/test_evaluation_benchmark.py` | SOTA benchmark accuracy, cross-encoder latency | **Passed (2/2)** |
-| **Total** | **60 Comprehensive Tests** | **100% OK** |
+| **Total** | **65 Comprehensive Tests** | **100% OK** |
 

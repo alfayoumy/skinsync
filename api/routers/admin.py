@@ -1,0 +1,446 @@
+"""
+Admin & Observatory Router: Full catalog inspection, product telemetry forensics,
+cross-store linking audit, INCI matching gate logs, and similar product breakdown.
+"""
+
+import json
+import sqlite3
+from typing import Dict, List, Any, Optional
+from fastapi import APIRouter, HTTPException, Query
+from pydantic import BaseModel
+
+from pipeline.db_manager import get_connection
+from pipeline.logging_config import get_logger
+from services.catalog_service import parse_and_clean_ingredients, extract_actives_from_title
+from services.recommender import compute_weighted_jaccard, get_recommendations
+from dermo_data import evaluate_product_dermo
+
+logger = get_logger("skincare_engine.routers.admin")
+
+router = APIRouter(prefix="/admin", tags=["Admin & Observatory"])
+
+
+@router.get("/overview")
+def get_admin_overview():
+    """
+    Returns high-level system vitals, catalog counters, store breakdown,
+    and recent pipeline execution tasks.
+    """
+    conn = get_connection()
+    try:
+        cur = conn.cursor()
+
+        # Catalog Totals
+        cur.execute("SELECT COUNT(*) FROM products;")
+        total_products = cur.fetchone()[0]
+
+        cur.execute("SELECT COUNT(*) FROM canonical_products;")
+        total_canonical = cur.fetchone()[0]
+
+        cur.execute("SELECT COUNT(*) FROM canonical_products WHERE store_count > 1;")
+        multi_store_clusters = cur.fetchone()[0]
+
+        cur.execute("SELECT COUNT(*) FROM products WHERE ingredients_raw IS NOT NULL AND LENGTH(ingredients_raw) >= 15;")
+        products_with_ingredients = cur.fetchone()[0]
+
+        cur.execute("SELECT COUNT(*) FROM products WHERE inci_matched_id IS NOT NULL;")
+        inci_matched_count = cur.fetchone()[0]
+
+        cur.execute("""
+        SELECT COUNT(*) FROM products 
+        WHERE gate4_gemini_status = 'gemini_approved' 
+           OR gate4_cross_status = 'auto_approved'
+           OR gate4_jev_status = 'passed_jev';
+        """)
+        ai_verified_count = cur.fetchone()[0]
+
+        # Store Breakdown
+        cur.execute("""
+        SELECT s.id, s.name, s.domain, s.platform, s.is_active, s.last_sync_at,
+               COUNT(p.id) as total_products,
+               SUM(CASE WHEN p.ingredients_raw IS NOT NULL AND LENGTH(p.ingredients_raw) >= 15 THEN 1 ELSE 0 END) as with_ingredients,
+               SUM(CASE WHEN p.canonical_product_id IS NOT NULL THEN 1 ELSE 0 END) as linked_products,
+               ROUND(AVG(p.price), 2) as avg_price
+        FROM stores s
+        LEFT JOIN products p ON p.store_id = s.id
+        GROUP BY s.id
+        ORDER BY total_products DESC;
+        """)
+        stores_breakdown = [dict(r) for r in cur.fetchall()]
+
+        # Recent Tasks
+        cur.execute("""
+        SELECT task_id, task_type, target_source, status, progress_percent,
+               total_items, processed_items, duration_seconds, started_at, completed_at
+        FROM pipeline_tasks
+        ORDER BY created_at DESC
+        LIMIT 6;
+        """)
+        recent_tasks = [dict(r) for r in cur.fetchall()]
+
+        return {
+            "catalog_vitals": {
+                "total_store_listings": total_products,
+                "canonical_entities": total_canonical,
+                "multi_store_clusters": multi_store_clusters,
+                "products_with_ingredients": products_with_ingredients,
+                "inci_matched_products": inci_matched_count,
+                "ai_verified_products": ai_verified_count,
+                "coverage_percent": round((products_with_ingredients / total_products * 100.0), 1) if total_products else 0.0
+            },
+            "stores": stores_breakdown,
+            "recent_tasks": recent_tasks
+        }
+    finally:
+        conn.close()
+
+
+@router.get("/products")
+def list_admin_products(
+    q: Optional[str] = Query(None, description="Search keyword in title, brand, handle or URL"),
+    store_id: Optional[str] = Query(None, description="Filter by retail store ID"),
+    has_ingredients: Optional[bool] = Query(None, description="Filter products with/without full ingredients"),
+    ingredient_source: Optional[str] = Query(None, description="Filter by ingredient source"),
+    is_multi_store: Optional[bool] = Query(None, description="Filter products with offers in multiple stores"),
+    gate_status: Optional[str] = Query(None, description="Filter by INCI match gate status"),
+    sort_by: str = Query("id", description="Field to sort by: id, price, title, updated_at, inci_hybrid_score"),
+    order: str = Query("asc", description="Sort order: asc or desc"),
+    limit: int = Query(25, ge=1, le=100, description="Items per page"),
+    offset: int = Query(0, ge=0, description="Page offset")
+):
+    """
+    Paginated, multi-filter search across all 22,768 catalog listings with INCI and cluster metadata.
+    """
+    conn = get_connection()
+    try:
+        cur = conn.cursor()
+        where_clauses = []
+        params = []
+
+        if q:
+            term = f"%{q.strip()}%"
+            where_clauses.append("(p.title LIKE ? OR p.brand LIKE ? OR p.handle LIKE ? OR p.product_url LIKE ?)")
+            params.extend([term, term, term, term])
+
+        if store_id:
+            where_clauses.append("p.store_id = ?")
+            params.append(store_id)
+
+        if has_ingredients is True:
+            where_clauses.append("(p.ingredients_raw IS NOT NULL AND LENGTH(p.ingredients_raw) >= 15)")
+        elif has_ingredients is False:
+            where_clauses.append("(p.ingredients_raw IS NULL OR LENGTH(p.ingredients_raw) < 15)")
+
+        if ingredient_source:
+            where_clauses.append("p.ingredient_source = ?")
+            params.append(ingredient_source)
+
+        if is_multi_store is True:
+            where_clauses.append("(c.store_count > 1)")
+        elif is_multi_store is False:
+            where_clauses.append("(c.store_count <= 1 OR c.store_count IS NULL)")
+
+        if gate_status:
+            where_clauses.append("""
+            (p.gate4_gemini_status = ? 
+             OR p.gate4_cross_status = ? 
+             OR p.gate4_jev_status = ? 
+             OR p.gate2_safeguard_status = ?)
+            """)
+            params.extend([gate_status, gate_status, gate_status, gate_status])
+
+        where_sql = ("WHERE " + " AND ".join(where_clauses)) if where_clauses else ""
+
+        # Validate sorting
+        allowed_sorts = {
+            "id": "p.id",
+            "price": "p.price",
+            "title": "p.title",
+            "updated_at": "p.updated_at",
+            "inci_hybrid_score": "p.inci_hybrid_score"
+        }
+        sort_col = allowed_sorts.get(sort_by, "p.id")
+        order_dir = "DESC" if order.lower() == "desc" else "ASC"
+
+        # Count total
+        count_sql = f"""
+        SELECT COUNT(*)
+        FROM products p
+        LEFT JOIN canonical_products c ON c.id = p.canonical_product_id
+        {where_sql};
+        """
+        cur.execute(count_sql, params)
+        total = cur.fetchone()[0]
+
+        # Fetch records
+        query_sql = f"""
+        SELECT p.id, p.store_id, s.name as store_name, p.title, p.clean_title, p.brand, p.category,
+               p.price, p.compare_at_price, p.is_available, p.image_url, p.product_url,
+               p.ingredient_source,
+               CASE WHEN p.ingredients_raw IS NOT NULL AND LENGTH(p.ingredients_raw) >= 15 THEN 1 ELSE 0 END as has_ingredients,
+               p.canonical_product_id, c.canonical_title, COALESCE(c.store_count, 1) as store_count,
+               c.min_price, c.max_price,
+               p.inci_matched_id, p.inci_matched_name, p.inci_hybrid_score, p.inci_cross_score,
+               p.gate1_quality_status, p.gate2_safeguard_status, p.gate4_cross_status, p.gate4_gemini_status,
+               p.updated_at
+        FROM products p
+        LEFT JOIN stores s ON s.id = p.store_id
+        LEFT JOIN canonical_products c ON c.id = p.canonical_product_id
+        {where_sql}
+        ORDER BY {sort_col} {order_dir}
+        LIMIT ? OFFSET ?;
+        """
+        cur.execute(query_sql, params + [limit, offset])
+        items = [dict(r) for r in cur.fetchall()]
+
+        return {
+            "total": total,
+            "limit": limit,
+            "offset": offset,
+            "count": len(items),
+            "products": items
+        }
+    finally:
+        conn.close()
+
+
+@router.get("/products/{product_id}/telemetry")
+def get_product_telemetry_forensics(product_id: int):
+    """
+    Comprehensive forensic audit trail for a single product listing:
+    1. Raw store scraping details & HTML descriptions.
+    2. Parsed ingredient tokens, actives, and source history.
+    3. Multi-gate INCI matching telemetry, dense vector similarity, and decision logs.
+    4. Cross-store canonical entity resolution, sibling store offers, and price arbitrage.
+    5. Clinical dermatological analysis (comedogenicity, irritancy).
+    6. Live top 5 formulation alternatives and similarity matching breakdown.
+    """
+    conn = get_connection()
+    try:
+        cur = conn.cursor()
+
+        # 1. Fetch Master Product Row
+        cur.execute("""
+        SELECT p.*, s.name as store_name, s.domain as store_domain
+        FROM products p
+        LEFT JOIN stores s ON s.id = p.store_id
+        WHERE p.id = ?;
+        """, (product_id,))
+        row = cur.fetchone()
+
+        if not row:
+            raise HTTPException(status_code=404, detail=f"Product with ID {product_id} not found.")
+
+        product = dict(row)
+
+        # 2. Parse Ingredients & Actives
+        raw_ings = product.get("ingredients_raw") or ""
+        parsed_ings = []
+        if product.get("ingredients_parsed"):
+            try:
+                parsed_ings = json.loads(product["ingredients_parsed"])
+            except Exception:
+                pass
+        if not parsed_ings and raw_ings:
+            parsed_ings, _ = parse_and_clean_ingredients(raw_ings)
+
+        actives_list = []
+        if product.get("actives"):
+            try:
+                actives_list = json.loads(product["actives"])
+            except Exception:
+                pass
+        if not actives_list:
+            acts = extract_actives_from_title(product.get("title", ""))
+            if raw_ings:
+                _, p_acts = parse_and_clean_ingredients(raw_ings)
+                acts = acts.union(p_acts)
+            actives_list = sorted(list(acts))
+
+        # 3. Reference INCI Information
+        reference_info = None
+        if product.get("inci_matched_id"):
+            cur.execute("""
+            SELECT id, brand, product_name, ingredients, source
+            FROM inci_reference
+            WHERE id = ?;
+            """, (product["inci_matched_id"],))
+            ref_row = cur.fetchone()
+            if ref_row:
+                ref_dict = dict(ref_row)
+                ref_parsed, ref_acts = parse_and_clean_ingredients(ref_dict["ingredients"])
+                reference_info = {
+                    "id": ref_dict["id"],
+                    "brand": ref_dict["brand"],
+                    "product_name": ref_dict["product_name"],
+                    "ingredients_raw": ref_dict["ingredients"],
+                    "source": ref_dict["source"],
+                    "parsed_tokens_count": len(ref_parsed),
+                    "actives": list(ref_acts)
+                }
+
+        # 4. Cross-Store Canonical Offers & Price Arbitrage
+        canonical_info = None
+        sibling_offers = []
+        if product.get("canonical_product_id"):
+            cur.execute("""
+            SELECT id, canonical_title, brand, category, normalized_key,
+                   min_price, max_price, store_count, primary_image_url
+            FROM canonical_products
+            WHERE id = ?;
+            """, (product["canonical_product_id"],))
+            canon_row = cur.fetchone()
+            if canon_row:
+                canonical_info = dict(canon_row)
+                price_diff = round(max(0.0, canonical_info["max_price"] - canonical_info["min_price"]), 2)
+                savings_pct = round((price_diff / canonical_info["max_price"] * 100.0), 1) if canonical_info["max_price"] > 0 else 0.0
+                canonical_info["price_difference_egp"] = price_diff
+                canonical_info["savings_percent"] = savings_pct
+
+                # Sibling store listings
+                cur.execute("""
+                SELECT p.id as product_id, p.store_id, s.name as store_name, p.title as store_title,
+                       p.price, p.compare_at_price, p.is_available, p.product_url, p.image_url,
+                       p.ingredient_source
+                FROM products p
+                LEFT JOIN stores s ON s.id = p.store_id
+                WHERE p.canonical_product_id = ?
+                ORDER BY p.price ASC;
+                """, (product["canonical_product_id"],))
+                listings = [dict(r) for r in cur.fetchall()]
+
+                # Mark best deal
+                in_stock_offers = [o for o in listings if o["is_available"] and o["price"] > 0]
+                best_deal = in_stock_offers[0] if in_stock_offers else (listings[0] if listings else None)
+                for o in listings:
+                    o["is_best_deal"] = (best_deal is not None and o["product_id"] == best_deal["product_id"])
+                    o["is_current_product"] = (o["product_id"] == product_id)
+                sibling_offers = listings
+
+        # 5. Clinical Dermatological Evaluation
+        dermo_eval = None
+        if parsed_ings or raw_ings:
+            try:
+                dermo_eval = evaluate_product_dermo(parsed_ings or raw_ings, skin_type="acne_prone")
+            except Exception as e:
+                logger.warning(f"Clinical dermo evaluation failed for product {product_id}: {e}")
+
+        # 6. Top Similar Products & Match Breakdown
+        similar_alternatives = []
+        try:
+            rec_res = get_recommendations(target_title=product["title"], skin_type="normal")
+            if rec_res and "results" in rec_res:
+                target_parsed = parsed_ings
+                target_actives = set(actives_list)
+
+                for r in rec_res["results"][:5]:
+                    cand_id = r.get("id")
+                    cand_parsed = []
+                    cand_acts = set()
+
+                    if cand_id:
+                        cur.execute("SELECT ingredients_parsed, ingredients_raw, actives FROM products WHERE id = ?;", (cand_id,))
+                        c_row = cur.fetchone()
+                        if c_row:
+                            if c_row["ingredients_parsed"]:
+                                try:
+                                    cand_parsed = json.loads(c_row["ingredients_parsed"])
+                                except Exception:
+                                    pass
+                            if not cand_parsed and c_row["ingredients_raw"]:
+                                cand_parsed, _ = parse_and_clean_ingredients(c_row["ingredients_raw"])
+
+                            if c_row["actives"]:
+                                try:
+                                    cand_acts = set(json.loads(c_row["actives"]))
+                                except Exception:
+                                    pass
+                            if not cand_acts and cand_parsed:
+                                _, p_a = parse_and_clean_ingredients(c_row["ingredients_raw"] or "")
+                                cand_acts = p_a
+
+                    shared_acts = sorted(list(target_actives.intersection(cand_acts)))
+                    diff_acts = sorted(list(cand_acts.difference(target_actives)))
+                    formula_jaccard = round(compute_weighted_jaccard(target_parsed, cand_parsed) * 100.0, 1) if target_parsed and cand_parsed else None
+
+                    similar_alternatives.append({
+                        "id": cand_id,
+                        "title": r.get("title"),
+                        "brand": r.get("brand"),
+                        "price": r.get("price"),
+                        "url": r.get("url"),
+                        "image_url": r.get("image_url"),
+                        "match_score": r.get("match_score"),
+                        "cross_encoder_score": r.get("cross_score"),
+                        "ai_provider": r.get("ai_provider"),
+                        "shared_actives": shared_acts,
+                        "differing_actives": diff_acts,
+                        "formula_similarity_percent": formula_jaccard,
+                        "match_summary": f"Shares {len(shared_acts)} key active(s): {', '.join(shared_acts) if shared_acts else 'Base formulation compatibility'}"
+                    })
+        except Exception as e:
+            logger.warning(f"Similar alternatives generation failed for {product_id}: {e}")
+
+        # Assemble Full Telemetry Response
+        return {
+            "product": {
+                "id": product["id"],
+                "store_id": product["store_id"],
+                "store_name": product.get("store_name"),
+                "store_domain": product.get("store_domain"),
+                "store_product_id": product.get("store_product_id"),
+                "handle": product.get("handle"),
+                "title": product.get("title"),
+                "clean_title": product.get("clean_title"),
+                "brand": product.get("brand"),
+                "category": product.get("category"),
+                "price": product.get("price"),
+                "compare_at_price": product.get("compare_at_price"),
+                "is_available": bool(product.get("is_available")),
+                "product_url": product.get("product_url"),
+                "image_url": product.get("image_url"),
+                "description_html": product.get("description_html"),
+                "created_at": product.get("created_at"),
+                "updated_at": product.get("updated_at")
+            },
+            "ingredients_forensics": {
+                "has_ingredients": bool(raw_ings and len(raw_ings) >= 15),
+                "ingredient_source": product.get("ingredient_source") or "none",
+                "ingredients_raw": raw_ings,
+                "parsed_tokens_count": len(parsed_ings),
+                "ingredients_parsed": parsed_ings,
+                "actives": actives_list
+            },
+            "inci_matching_telemetry": {
+                "inci_matched_id": product.get("inci_matched_id"),
+                "inci_matched_name": product.get("inci_matched_name"),
+                "reference_knowledge_base": reference_info,
+                "scores": {
+                    "vector_similarity": product.get("inci_vector_score"),
+                    "token_similarity": product.get("inci_token_score"),
+                    "hybrid_score": product.get("inci_hybrid_score"),
+                    "cross_encoder_score": product.get("inci_cross_score"),
+                    "jev_score": product.get("inci_jev_score"),
+                    "gemini_score": product.get("inci_gemini_score")
+                },
+                "gates": {
+                    "gate1_quality_status": product.get("gate1_quality_status"),
+                    "gate2_safeguard_status": product.get("gate2_safeguard_status"),
+                    "gate3_active_status": product.get("gate3_active_status"),
+                    "gate4_cross_status": product.get("gate4_cross_status"),
+                    "gate4_jev_status": product.get("gate4_jev_status"),
+                    "gate4_gemini_status": product.get("gate4_gemini_status")
+                },
+                "safeguard_log": product.get("inci_safeguard_log")
+            },
+            "cross_store_linking": {
+                "canonical_product_id": product.get("canonical_product_id"),
+                "canonical_entity": canonical_info,
+                "total_store_offers": len(sibling_offers),
+                "sibling_offers": sibling_offers
+            },
+            "clinical_dermatology": dermo_eval,
+            "similar_formulation_matches": similar_alternatives
+        }
+    finally:
+        conn.close()

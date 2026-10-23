@@ -1,7 +1,11 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Sparkles, ArrowRight, Search, AlertTriangle, ExternalLink, RotateCcw, Loader2, X, Store, BadgePercent, TrendingDown, Check } from 'lucide-react';
+import { Sparkles, ArrowRight, Search, AlertTriangle, ExternalLink, RotateCcw, Loader2, X, Store, BadgePercent, TrendingDown, Check, ShieldCheck } from 'lucide-react';
+import AdminObservatory from './AdminObservatory';
 
 const SkinSync = () => {
+  // Main View Navigation ('app' or 'admin')
+  const [viewMode, setViewMode] = useState('app');
+
   // Onboarding & Flow State
   const [step, setStep] = useState(1);
   const [isReturningUser, setIsReturningUser] = useState(false); // Toggle for Step 1
@@ -349,6 +353,10 @@ const SkinSync = () => {
     });
   };
 
+  if (viewMode === 'admin') {
+    return <AdminObservatory onBackToApp={() => setViewMode('app')} />;
+  }
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-50 via-pink-50 to-blue-50 font-sans">
       {/* Header */}
@@ -367,6 +375,13 @@ const SkinSync = () => {
           </div>
 
           <div className="flex items-center gap-3">
+            <button
+              onClick={() => setViewMode('admin')}
+              className="flex items-center gap-1.5 bg-gray-900 hover:bg-purple-900 text-white font-bold text-xs uppercase px-4 py-2.5 rounded-xl shadow-md hover:shadow-lg hover:scale-105 active:scale-95 transition-all cursor-pointer"
+            >
+              <ShieldCheck className="w-4 h-4 text-purple-400" />
+              <span>Admin Portal</span>
+            </button>
             <button
               onClick={handleOpenDeals}
               className="flex items-center gap-2 bg-gradient-to-r from-amber-500 to-pink-500 text-white font-bold text-xs uppercase px-4 py-2.5 rounded-xl shadow-md hover:shadow-lg hover:scale-105 active:scale-95 transition-all cursor-pointer"
