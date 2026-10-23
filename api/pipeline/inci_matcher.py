@@ -596,6 +596,12 @@ def match_with_inci_db(brand: str, title: str, conn, allow_synchronous_jev: bool
 
     model = get_embedding_model()
     cleaned_q = clean_product_title(title)
+    norm_brand = (brand or "").strip()
+    # Bottleneck 1: Ensure query contains the brand name if brand is specified and not already in title
+    if norm_brand and norm_brand.lower() not in cleaned_q.lower():
+        cleaned_q_with_brand = f"{norm_brand} {cleaned_q}".strip()
+    else:
+        cleaned_q_with_brand = cleaned_q
 
     # --- 1. DENSE VECTOR RETRIEVAL (FastEmbed + NumPy SQLite BLOB) ---
     sim_map = {}
@@ -615,7 +621,7 @@ def match_with_inci_db(brand: str, title: str, conn, allow_synchronous_jev: bool
         valid_candidates = [r for r in candidates if r.get('embedding') is not None]
         if valid_candidates:
             try:
-                q_emb = list(model.embed([cleaned_q or title]))[0]
+                q_emb = list(model.embed([cleaned_q_with_brand or title]))[0]
                 q_norm = np.linalg.norm(q_emb)
                 q_vec = q_emb / q_norm if q_norm > 0 else q_emb
 
@@ -632,18 +638,30 @@ def match_with_inci_db(brand: str, title: str, conn, allow_synchronous_jev: bool
 
     # --- 2. HYBRID CANDIDATE SCORING (Calibrated Vector + Dual Token Ratio) ---
     scored_candidates = []
+    q_low = cleaned_q.lower()
+    q_b_low = cleaned_q_with_brand.lower()
+
     for idx, cand in enumerate(candidates):
         cand_name = cand['product_name']
         cand_clean = clean_product_title(cand_name)
+        c_low = cand_clean.lower()
         v_sim = sim_map.get(cand['id'], 0.0)
         
         if HAS_RAPIDFUZZ:
-            t_sort = float(fuzz.token_sort_ratio(cleaned_q, cand_clean)) / 100.0
-            t_set = float(fuzz.token_set_ratio(cleaned_q, cand_clean)) / 100.0
-            t_sim = 0.5 * t_sort + 0.5 * t_set
+            # Case-insensitive RapidFuzz evaluating both raw and brand-prefixed query
+            t_sort_raw = float(fuzz.token_sort_ratio(q_low, c_low)) / 100.0
+            t_set_raw = float(fuzz.token_set_ratio(q_low, c_low)) / 100.0
+            t_sim_raw = 0.5 * t_sort_raw + 0.5 * t_set_raw
+
+            t_sort_b = float(fuzz.token_sort_ratio(q_b_low, c_low)) / 100.0
+            t_set_b = float(fuzz.token_set_ratio(q_b_low, c_low)) / 100.0
+            t_sim_b = 0.5 * t_sort_b + 0.5 * t_set_b
+
+            t_sim = max(t_sim_raw, t_sim_b)
         else:
-            matcher = difflib.SequenceMatcher(None, cleaned_q.lower(), cand_clean.lower())
-            t_sim = matcher.ratio()
+            m1 = difflib.SequenceMatcher(None, q_low, c_low).ratio()
+            m2 = difflib.SequenceMatcher(None, q_b_low, c_low).ratio()
+            t_sim = max(m1, m2)
 
         if cand['id'] in sim_map:
             # Calibrate BGE vector cosine similarity to full [0.0, 1.0] span
@@ -670,8 +688,10 @@ def match_with_inci_db(brand: str, title: str, conn, allow_synchronous_jev: bool
     g1_status = "passed_quality_skinsafe"
     g2_status = "passed_direct"
     g3_status = "passed_active_verified"
+    top_candidate_lacked_ingredients = False
+    top_candidate_score = scored_candidates[0]['hybrid_score'] if scored_candidates else 0.0
 
-    for cand in scored_candidates[:cfg.TOP_K_CANDIDATES]:
+    for rank, cand in enumerate(scored_candidates[:cfg.TOP_K_CANDIDATES]):
         cand_name = cand['name']
         cand_ings = cand['ingredients']
 
@@ -679,7 +699,17 @@ def match_with_inci_db(brand: str, title: str, conn, allow_synchronous_jev: bool
         g1_ok, g1_res = verify_gate1_data_quality(cand_ings, "skinsafe")
         if not g1_ok:
             bypassed_notes.append(f"Bypassed '{cand_name}' (Gate 1: {g1_res})")
+            # If top candidate was an exact or strong match (>= 0.70) but lacked ingredients in DB,
+            # prevent distant low-scoring siblings from winning
+            if rank == 0 and cand['hybrid_score'] >= 0.70:
+                top_candidate_lacked_ingredients = True
             continue
+
+        # If top direct match was bypassed due to missing reference ingredients,
+        # do not accept a distant sibling that scores significantly lower
+        if top_candidate_lacked_ingredients and (top_candidate_score - cand['hybrid_score'] > 0.15):
+            bypassed_notes.append(f"Rejected sibling '{cand_name}' because top candidate lacked ingredients")
+            break
 
         # Gate 2: Rule Safeguard (Cosmetic Incompatibilities)
         g2_ok, rej_reason = CosmeticCompatibilityValidator.validate_pair(title, cand_name)

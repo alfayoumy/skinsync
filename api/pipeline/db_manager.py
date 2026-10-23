@@ -211,6 +211,7 @@ def init_db(db_path=DB_PATH):
         gate4_cross_status TEXT,
         gate4_jev_status TEXT,
         gate4_gemini_status TEXT,
+        canonical_product_id INTEGER,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         FOREIGN KEY (store_id) REFERENCES stores(id)
@@ -237,7 +238,8 @@ def init_db(db_path=DB_PATH):
         ('gate3_active_status', 'TEXT'),
         ('gate4_cross_status', 'TEXT'),
         ('gate4_jev_status', 'TEXT'),
-        ('gate4_gemini_status', 'TEXT')
+        ('gate4_gemini_status', 'TEXT'),
+        ('canonical_product_id', 'INTEGER')
     ]
     for col_name, col_type in telemetry_cols:
         if col_name not in existing_cols:
@@ -425,6 +427,31 @@ def init_db(db_path=DB_PATH):
     );
     """)
     cur.execute("CREATE INDEX IF NOT EXISTS idx_scrape_checkpoints_status ON scrape_checkpoints(status);")
+
+    # 13. Canonical Products (Cross-Source Product Entity Resolution & Price Comparison)
+    cur.execute("""
+    CREATE TABLE IF NOT EXISTS canonical_products (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        canonical_title TEXT NOT NULL,
+        brand TEXT NOT NULL,
+        category TEXT NOT NULL,
+        normalized_key TEXT NOT NULL UNIQUE,
+        ingredients_raw TEXT,
+        ingredients_parsed TEXT,
+        actives TEXT,
+        ingredient_source TEXT,
+        inci_matched_id INTEGER,
+        min_price REAL DEFAULT 0.0,
+        max_price REAL DEFAULT 0.0,
+        store_count INTEGER DEFAULT 1,
+        primary_image_url TEXT,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    );
+    """)
+    cur.execute("CREATE INDEX IF NOT EXISTS idx_canonical_normalized ON canonical_products(normalized_key);")
+    cur.execute("CREATE INDEX IF NOT EXISTS idx_canonical_brand ON canonical_products(brand);")
+    cur.execute("CREATE INDEX IF NOT EXISTS idx_products_canonical ON products(canonical_product_id);")
 
     # Indexes for sub-millisecond query performance
     cur.execute("CREATE INDEX IF NOT EXISTS idx_products_category ON products(category);")

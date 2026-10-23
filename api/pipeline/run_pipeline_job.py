@@ -218,14 +218,30 @@ def run_full_pipeline(
         logger.info(f"Phase 4 Complete: Gemini evaluated {gemini_res.get('processed', 0)} items | Approved: {gemini_res.get('approved', 0)} | Rejected: {gemini_res.get('rejected', 0)} | Batches: {gemini_res.get('api_calls', 0)}")
 
         # =====================================================================
-        # PHASE 5: REAL-TIME CATALOG CACHE RELOAD & METRICS
+        # PHASE 5: CROSS-SOURCE PRODUCT LINKING & INGREDIENT PROPAGATION
         # =====================================================================
-        logger.info("\n>>> PHASE 5: Reloading in-memory catalog cache...")
+        logger.info("\n>>> PHASE 5: Linking cross-source products & propagating ingredients...")
+        update_task_progress(master_task_id, current_stage="linking_canonical_products", conn=conn)
+
+        from pipeline.product_linker import link_catalog_products
+        link_res = link_catalog_products(conn=conn, task_id=master_task_id)
+        logger.info(f"Phase 5 Complete: {link_res.get('multi_store_clusters', 0)} multi-store clusters linked, {link_res.get('ingredients_propagated', 0)} ingredient lists propagated across stores.")
+
+        # =====================================================================
+        # PHASE 6: REAL-TIME CATALOG CACHE RELOAD & METRICS
+        # =====================================================================
+        logger.info("\n>>> PHASE 6: Reloading in-memory catalog cache...")
         load_catalog_from_db()
 
         # Telemetry counts
         cur.execute("SELECT COUNT(*) FROM products;")
         final_total_prods = cur.fetchone()[0]
+
+        cur.execute("SELECT COUNT(*) FROM canonical_products;")
+        final_canonical_prods = cur.fetchone()[0]
+
+        cur.execute("SELECT COUNT(*) FROM canonical_products WHERE store_count > 1;")
+        final_multi_store = cur.fetchone()[0]
 
         cur.execute("SELECT COUNT(*) FROM products WHERE ingredients_raw IS NOT NULL AND LENGTH(ingredients_raw) >= 15;")
         final_with_ings = cur.fetchone()[0]
