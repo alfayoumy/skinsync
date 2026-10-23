@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Sparkles, ArrowRight, Search, AlertTriangle, ExternalLink, RotateCcw, Loader2, X } from 'lucide-react';
+import { Sparkles, ArrowRight, Search, AlertTriangle, ExternalLink, RotateCcw, Loader2, X, Store, BadgePercent, TrendingDown, Check } from 'lucide-react';
 
 const SkinSync = () => {
   // Onboarding & Flow State
@@ -27,6 +27,13 @@ const SkinSync = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [productImages, setProductImages] = useState({});
+
+  // Multi-Store Price Comparison & Arbitrage Deals States
+  const [priceModalData, setPriceModalData] = useState(null);
+  const [priceModalLoading, setPriceModalLoading] = useState(false);
+  const [showDealsModal, setShowDealsModal] = useState(false);
+  const [dealsList, setDealsList] = useState([]);
+  const [dealsLoading, setDealsLoading] = useState(false);
 
   // Debounce helper to avoid calling API on every single keystroke
   const searchTimeoutRef = useRef(null);
@@ -228,6 +235,41 @@ const SkinSync = () => {
     setSuggestions([]);
     setShowSuggestions(false);
   };
+
+  const handleComparePrice = async (productId, e) => {
+    if (e) e.stopPropagation();
+    setPriceModalLoading(true);
+    try {
+      const res = await fetch(`http://127.0.0.1:8000/products/${productId}/price-comparison`);
+      if (res.ok) {
+        const data = await res.json();
+        setPriceModalData(data);
+      } else {
+        alert("This product has not yet been linked to a multi-store price cluster.");
+      }
+    } catch (err) {
+      console.error("Price comparison lookup failed", err);
+      alert("Failed to load price comparison.");
+    } finally {
+      setPriceModalLoading(false);
+    }
+  };
+
+  const handleOpenDeals = async () => {
+    setShowDealsModal(true);
+    setDealsLoading(true);
+    try {
+      const res = await fetch('http://127.0.0.1:8000/products/price-deals?limit=15&min_savings=25');
+      if (res.ok) {
+        const data = await res.json();
+        setDealsList(data.deals || []);
+      }
+    } catch (err) {
+      console.error("Failed to fetch price deals", err);
+    } finally {
+      setDealsLoading(false);
+    }
+  };
   // -------------------------------
 
   const handleProductSearch = async () => {
@@ -322,6 +364,25 @@ const SkinSync = () => {
               </h1>
               <p className="text-xs text-gray-500 font-medium tracking-wide">EGYPTIAN SKINCARE AI</p>
             </div>
+          </div>
+
+          <div className="flex items-center gap-3">
+            <button
+              onClick={handleOpenDeals}
+              className="flex items-center gap-2 bg-gradient-to-r from-amber-500 to-pink-500 text-white font-bold text-xs uppercase px-4 py-2.5 rounded-xl shadow-md hover:shadow-lg hover:scale-105 active:scale-95 transition-all cursor-pointer"
+            >
+              <BadgePercent className="w-4 h-4" />
+              <span>Pharmacy Deals</span>
+            </button>
+            {step > 1 && (
+              <button
+                onClick={() => setStep(6)}
+                className="hidden sm:flex items-center gap-1.5 text-xs font-bold text-purple-700 bg-purple-50 hover:bg-purple-100 px-3.5 py-2.5 rounded-xl border border-purple-200 transition-all cursor-pointer"
+              >
+                <Search className="w-3.5 h-3.5" />
+                <span>Search</span>
+              </button>
+            )}
           </div>
         </div>
       </div>
@@ -479,13 +540,22 @@ const SkinSync = () => {
                     Continue <ArrowRight className="inline w-4 h-4 ml-2" />
                   </button>
 
-                  <div className="text-center mt-6">
+                  <div className="text-center mt-6 space-y-3">
                     <button
                       onClick={() => setIsReturningUser(true)}
-                      className="text-purple-600 font-bold hover:underline"
+                      className="text-purple-600 font-bold hover:underline block mx-auto text-sm"
                     >
                       Returning user?
                     </button>
+                    <div className="pt-2 border-t border-gray-100">
+                      <button
+                        onClick={() => { setSkinType('dry'); setStep(7); }}
+                        className="text-sm font-semibold text-gray-500 hover:text-purple-600 transition flex items-center justify-center gap-1.5 mx-auto"
+                      >
+                        <span>⚡ Direct Product Search & Compare</span>
+                        <ArrowRight className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
                   </div>
                 </div>
               </>
@@ -770,11 +840,12 @@ const SkinSync = () => {
                 </div>
 
                 <div className="relative h-64 bg-gradient-to-br from-purple-50 to-pink-50 flex items-center justify-center p-6">
-                  {productImages[recommendations.source_product.url] ? (
+                  {(recommendations.source_product.image_url || productImages[recommendations.source_product.url]) ? (
                     <img
-                      src={productImages[recommendations.source_product.url]}
+                      src={recommendations.source_product.image_url || productImages[recommendations.source_product.url]}
                       alt={recommendations.source_product.title}
                       className="w-full h-full object-contain mix-blend-multiply"
+                      onError={(e) => { e.target.style.display = 'none'; }}
                     />
                   ) : (
                     <div className="text-6xl">🧴</div>
@@ -800,11 +871,12 @@ const SkinSync = () => {
                 <div key={idx} className="bg-white rounded-2xl shadow-xl overflow-hidden hover:shadow-2xl hover:-translate-y-1 transition-all duration-300 border border-gray-100 group">
                   {/* Product Image */}
                   <div className="relative h-64 bg-gradient-to-br from-purple-50 to-pink-50 flex items-center justify-center p-6 group-hover:from-purple-100 group-hover:to-pink-100 transition-colors">
-                    {productImages[product.url] ? (
+                    {(product.image_url || productImages[product.url]) ? (
                       <img
-                        src={productImages[product.url]}
+                        src={product.image_url || productImages[product.url]}
                         alt={product.title}
                         className="w-full h-full object-contain mix-blend-multiply drop-shadow-sm transition-transform duration-500 group-hover:scale-110"
+                        onError={(e) => { e.target.style.display = 'none'; }}
                       />
                     ) : (
                       <div className="text-6xl animate-bounce-slow">🧴</div>
@@ -828,6 +900,15 @@ const SkinSync = () => {
                       <span className="text-xl font-bold text-gray-800">
                         {product.price > 0 ? `${product.price} EGP` : 'Price N/A'}
                       </span>
+                      {product.id && (
+                        <button
+                          onClick={(e) => handleComparePrice(product.id, e)}
+                          className="text-xs bg-purple-100 hover:bg-purple-200 text-purple-800 font-bold px-3 py-1.5 rounded-lg flex items-center gap-1.5 transition-all shadow-sm cursor-pointer"
+                        >
+                          <Store className="w-3.5 h-3.5" />
+                          <span>Compare Stores</span>
+                        </button>
+                      )}
                     </div>
 
                     {product.warnings && (
@@ -852,6 +933,190 @@ const SkinSync = () => {
           </div>
         )}
       </div>
+
+      {/* PRICE COMPARISON MODAL */}
+      {priceModalData && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[100] flex items-center justify-center p-4 animate-fadeIn">
+          <div className="bg-white rounded-3xl max-w-xl w-full shadow-2xl overflow-hidden border border-purple-100">
+            {/* Modal Header */}
+            <div className="bg-gradient-to-r from-purple-600 to-pink-600 p-6 text-white relative">
+              <button
+                onClick={() => setPriceModalData(null)}
+                className="absolute top-5 right-5 text-white/80 hover:text-white bg-white/10 hover:bg-white/20 p-2 rounded-full transition-all cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+              <div className="flex items-center gap-2 text-xs uppercase tracking-wider font-bold bg-white/20 w-fit px-3 py-1 rounded-full mb-2">
+                <Store className="w-3.5 h-3.5" /> Multi-Store Price Comparison
+              </div>
+              <h3 className="text-xl font-bold leading-tight">{priceModalData.title}</h3>
+              <p className="text-purple-100 text-sm">{priceModalData.brand} • {priceModalData.category}</p>
+            </div>
+
+            {/* Price Stats Banner */}
+            <div className="p-6 bg-purple-50/50 border-b border-purple-100 grid grid-cols-3 gap-4 text-center">
+              <div className="bg-white p-3 rounded-xl shadow-sm border border-purple-100/50">
+                <div className="text-xs text-gray-500 font-semibold mb-1">Best Offer</div>
+                <div className="text-xl font-extrabold text-emerald-600">{priceModalData.min_price} EGP</div>
+              </div>
+              <div className="bg-white p-3 rounded-xl shadow-sm border border-purple-100/50">
+                <div className="text-xs text-gray-500 font-semibold mb-1">Max Offer</div>
+                <div className="text-xl font-extrabold text-gray-700">{priceModalData.max_price} EGP</div>
+              </div>
+              <div className="bg-white p-3 rounded-xl shadow-sm border border-purple-100/50">
+                <div className="text-xs text-gray-500 font-semibold mb-1">You Save</div>
+                <div className="text-xl font-extrabold text-pink-600">
+                  {priceModalData.price_difference_egp > 0 ? `${priceModalData.savings_percent}%` : '0%'}
+                </div>
+              </div>
+            </div>
+
+            {/* Offers List */}
+            <div className="p-6 max-h-80 overflow-y-auto space-y-3">
+              <h4 className="text-xs font-bold text-gray-500 uppercase tracking-wider">
+                Available at {priceModalData.store_count} Egyptian Stores
+              </h4>
+              {priceModalData.offers.map((offer, i) => (
+                <div
+                  key={i}
+                  className={`flex items-center justify-between p-4 rounded-xl border transition-all ${
+                    offer.is_best_deal
+                      ? 'border-emerald-300 bg-emerald-50/40 shadow-sm'
+                      : 'border-gray-200 bg-white hover:border-purple-200'
+                  }`}
+                >
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <span className="font-bold text-gray-800">{offer.store_name || offer.store_id}</span>
+                      {offer.is_best_deal && (
+                        <span className="bg-emerald-600 text-white text-[10px] uppercase font-extrabold px-2 py-0.5 rounded-full">
+                          Best Deal
+                        </span>
+                      )}
+                      {!offer.is_available && (
+                        <span className="bg-gray-200 text-gray-600 text-[10px] uppercase font-bold px-2 py-0.5 rounded-full">
+                          Out of Stock
+                        </span>
+                      )}
+                    </div>
+                    <p className="text-xs text-gray-500 truncate max-w-[280px]">{offer.store_title}</p>
+                  </div>
+
+                  <div className="flex items-center gap-3">
+                    <div className="text-right">
+                      <div className="font-extrabold text-lg text-gray-900">{offer.price} EGP</div>
+                      {offer.compare_at_price > offer.price && (
+                        <div className="text-xs text-gray-400 line-through">{offer.compare_at_price} EGP</div>
+                      )}
+                    </div>
+                    <a
+                      href={offer.product_url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="bg-gray-900 hover:bg-purple-600 text-white text-xs font-bold px-3 py-2 rounded-lg flex items-center gap-1 transition-colors"
+                    >
+                      Buy <ExternalLink className="w-3 h-3" />
+                    </a>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            <div className="p-4 bg-gray-50 text-center border-t border-gray-100">
+              <button
+                onClick={() => setPriceModalData(null)}
+                className="px-6 py-2.5 bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold text-sm rounded-xl transition-colors cursor-pointer"
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* PHARMACY DEALS MODAL */}
+      {showDealsModal && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[100] flex items-center justify-center p-4 animate-fadeIn">
+          <div className="bg-white rounded-3xl max-w-2xl w-full shadow-2xl overflow-hidden border border-purple-100">
+            {/* Modal Header */}
+            <div className="bg-gradient-to-r from-amber-500 to-pink-500 p-6 text-white relative">
+              <button
+                onClick={() => setShowDealsModal(false)}
+                className="absolute top-5 right-5 text-white/80 hover:text-white bg-white/10 hover:bg-white/20 p-2 rounded-full transition-all cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+              <div className="flex items-center gap-2 text-xs uppercase tracking-wider font-bold bg-white/20 w-fit px-3 py-1 rounded-full mb-2">
+                <BadgePercent className="w-3.5 h-3.5" /> Live Price Arbitrage Deals
+              </div>
+              <h3 className="text-2xl font-bold">Top Multi-Store Pharmacy Deals</h3>
+              <p className="text-amber-100 text-sm">Products sold across multiple Egyptian stores with high price differences</p>
+            </div>
+
+            {/* Deals Content */}
+            <div className="p-6 max-h-96 overflow-y-auto space-y-3">
+              {dealsLoading ? (
+                <div className="py-12 text-center text-gray-500 flex flex-col items-center justify-center gap-3">
+                  <Loader2 className="w-8 h-8 animate-spin text-pink-500" />
+                  <span>Scanning Egyptian retail stores...</span>
+                </div>
+              ) : dealsList.length === 0 ? (
+                <div className="py-12 text-center text-gray-500">No multi-store price differences found exceeding threshold.</div>
+              ) : (
+                dealsList.map((deal, i) => (
+                  <div
+                    key={i}
+                    className="p-4 rounded-xl border border-gray-200 bg-white hover:border-pink-300 hover:shadow-md transition-all flex items-center justify-between"
+                  >
+                    <div className="max-w-[340px]">
+                      <span className="text-xs uppercase font-bold text-pink-600">{deal.brand}</span>
+                      <h4 className="font-bold text-gray-800 text-sm leading-snug truncate" title={deal.title}>
+                        {deal.title}
+                      </h4>
+                      <div className="text-xs text-gray-500 mt-1 flex items-center gap-3">
+                        <span>Sold at {deal.store_count} stores</span>
+                        <span className="text-gray-300">•</span>
+                        <span>Range: {deal.min_price} – {deal.max_price} EGP</span>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-3">
+                      <div className="text-right">
+                        <span className="bg-pink-100 text-pink-700 text-xs font-extrabold px-2.5 py-1 rounded-full flex items-center gap-1">
+                          <TrendingDown className="w-3.5 h-3.5" /> Save {deal.savings_egp} EGP
+                        </span>
+                        <div className="text-[11px] text-gray-400 mt-1">{deal.savings_percent}% difference</div>
+                      </div>
+
+                      <button
+                        onClick={async () => {
+                          const res = await fetch(`http://127.0.0.1:8000/canonical-products/${deal.canonical_product_id}/offers`);
+                          if (res.ok) {
+                            const d = await res.json();
+                            setPriceModalData(d);
+                          }
+                        }}
+                        className="bg-purple-600 hover:bg-purple-700 text-white text-xs font-bold px-3 py-2 rounded-lg shadow-sm transition-all cursor-pointer"
+                      >
+                        Offers
+                      </button>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+
+            <div className="p-4 bg-gray-50 text-center border-t border-gray-100">
+              <button
+                onClick={() => setShowDealsModal(false)}
+                className="px-6 py-2.5 bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold text-sm rounded-xl transition-colors cursor-pointer"
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       <style>{`
         @keyframes fadeIn {
