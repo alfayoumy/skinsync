@@ -43,6 +43,12 @@ def get_admin_overview():
         cur.execute("SELECT COUNT(*) FROM products WHERE ingredients_raw IS NOT NULL AND LENGTH(ingredients_raw) >= 15;")
         products_with_ingredients = cur.fetchone()[0]
 
+        cur.execute("SELECT COUNT(*) FROM products WHERE is_skincare = 1;")
+        active_skincare_count = cur.fetchone()[0]
+
+        cur.execute("SELECT COUNT(*) FROM products WHERE is_skincare = 0;")
+        suppressed_non_skincare_count = cur.fetchone()[0]
+
         cur.execute("SELECT COUNT(*) FROM products WHERE inci_matched_id IS NOT NULL;")
         inci_matched_count = cur.fetchone()[0]
 
@@ -58,6 +64,7 @@ def get_admin_overview():
         cur.execute("""
         SELECT s.id, s.name, s.domain, s.platform, s.is_active, s.last_sync_at,
                COUNT(p.id) as total_products,
+               SUM(CASE WHEN p.is_skincare = 1 THEN 1 ELSE 0 END) as skincare_products,
                SUM(CASE WHEN p.ingredients_raw IS NOT NULL AND LENGTH(p.ingredients_raw) >= 15 THEN 1 ELSE 0 END) as with_ingredients,
                SUM(CASE WHEN p.canonical_product_id IS NOT NULL THEN 1 ELSE 0 END) as linked_products,
                ROUND(AVG(p.price), 2) as avg_price
@@ -83,6 +90,8 @@ def get_admin_overview():
                 "total_store_listings": total_products,
                 "canonical_entities": total_canonical,
                 "multi_store_clusters": multi_store_clusters,
+                "active_skincare_products": active_skincare_count,
+                "suppressed_non_skincare": suppressed_non_skincare_count,
                 "products_with_ingredients": products_with_ingredients,
                 "inci_matched_products": inci_matched_count,
                 "ai_verified_products": ai_verified_count,
@@ -99,6 +108,8 @@ def get_admin_overview():
 def list_admin_products(
     q: Optional[str] = Query(None, description="Search keyword in title, brand, handle or URL"),
     store_id: Optional[str] = Query(None, description="Filter by retail store ID"),
+    is_skincare: Optional[bool] = Query(None, description="Filter active skincare (true) vs suppressed non-skincare (false)"),
+    category: Optional[str] = Query(None, description="Filter by product category"),
     has_ingredients: Optional[bool] = Query(None, description="Filter products with/without full ingredients"),
     ingredient_source: Optional[str] = Query(None, description="Filter by ingredient source"),
     is_multi_store: Optional[bool] = Query(None, description="Filter products with offers in multiple stores"),
@@ -109,7 +120,7 @@ def list_admin_products(
     offset: int = Query(0, ge=0, description="Page offset")
 ):
     """
-    Paginated, multi-filter search across all 22,768 catalog listings with INCI and cluster metadata.
+    Paginated, multi-filter search across all 22,768 catalog listings with INCI, cluster, and skincare suppression metadata.
     """
     conn = get_connection()
     try:
@@ -125,6 +136,15 @@ def list_admin_products(
         if store_id:
             where_clauses.append("p.store_id = ?")
             params.append(store_id)
+
+        if is_skincare is True:
+            where_clauses.append("p.is_skincare = 1")
+        elif is_skincare is False:
+            where_clauses.append("p.is_skincare = 0")
+
+        if category:
+            where_clauses.append("p.category = ?")
+            params.append(category)
 
         if has_ingredients is True:
             where_clauses.append("(p.ingredients_raw IS NOT NULL AND LENGTH(p.ingredients_raw) >= 15)")
@@ -182,7 +202,7 @@ def list_admin_products(
                c.min_price, c.max_price,
                p.inci_matched_id, p.inci_matched_name, p.inci_hybrid_score, p.inci_cross_score,
                p.gate1_quality_status, p.gate2_safeguard_status, p.gate4_cross_status, p.gate4_gemini_status,
-               p.updated_at
+               p.is_skincare, p.updated_at
         FROM products p
         LEFT JOIN stores s ON s.id = p.store_id
         LEFT JOIN canonical_products c ON c.id = p.canonical_product_id

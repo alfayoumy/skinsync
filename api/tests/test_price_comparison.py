@@ -34,22 +34,34 @@ class TestVolumeNormalization(unittest.TestCase):
     def test_volume_extraction_milliliters(self):
         norm_title, vol = extract_volume_and_normalize("CeraVe Moisturizing Cream 50ml", "CeraVe")
         self.assertEqual(vol, "50ml")
-        self.assertIn("moisturizing cream", norm_title)
+        self.assertIn("moisturizing", norm_title)
+        self.assertIn("cream", norm_title)
 
     def test_volume_extraction_with_spaces_and_grams(self):
         norm_title, vol = extract_volume_and_normalize("La Roche-Posay Cicaplast Baume B5+ 100 g", "La Roche-Posay")
         self.assertEqual(vol, "100g")
-        self.assertIn("cicaplast baume b5+", norm_title)
+        self.assertIn("cicaplast", norm_title)
+        self.assertIn("baume", norm_title)
+        self.assertIn("b5", norm_title)
 
     def test_volume_extraction_fluid_ounces(self):
         norm_title, vol = extract_volume_and_normalize("Cetaphil Gentle Skin Cleanser 16 fl oz", "Cetaphil")
         self.assertEqual(vol, "16oz")
-        self.assertIn("gentle skin cleanser", norm_title)
+        self.assertIn("cleanser", norm_title)
+        self.assertIn("skin", norm_title)
 
     def test_no_volume_present(self):
         norm_title, vol = extract_volume_and_normalize("Bioderma Sensibio H2O Micellar Water", "Bioderma")
         self.assertEqual(vol, "")
-        self.assertIn("sensibio h2o micellar water", norm_title)
+        self.assertIn("sensibio", norm_title)
+        self.assertIn("h2o", norm_title)
+        self.assertIn("water", norm_title)
+
+    def test_word_order_and_spelling_invariance(self):
+        norm_a, vol_a = extract_volume_and_normalize("CeraVe PM Facial Moisturizing Lotion 52ml", "CeraVe")
+        norm_b, vol_b = extract_volume_and_normalize("CeraVe Facial Lotion PM 52ml", "CeraVe")
+        self.assertEqual(vol_a, vol_b)
+        self.assertEqual(norm_a, norm_b)
 
 
 class TestIsolatedClusteringAndPropagation(unittest.TestCase):

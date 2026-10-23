@@ -161,8 +161,9 @@ def load_catalog_from_db():
                compare_at_price as price_high, is_available, image_url, product_url as url,
                ingredients_raw as ingredients, ingredients_parsed, actives, ingredient_source,
                gate4_jev_status, inci_jev_score, gate4_gemini_status, inci_gemini_score,
-               gate4_cross_status, inci_cross_score
-        FROM products;
+               gate4_cross_status, inci_cross_score, is_skincare
+        FROM products
+        WHERE is_skincare = 1;
         """, conn)
         conn.close()
 

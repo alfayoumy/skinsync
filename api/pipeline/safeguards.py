@@ -41,7 +41,13 @@ class CosmeticCompatibilityValidator:
         return " " + re.sub(r"[^a-z0-9%+\.]", " ", text) + " "
 
     @classmethod
-    def validate_pair(cls, title_a: str, title_b: str) -> Tuple[bool, Optional[str]]:
+    def validate_pair(
+        cls,
+        title_a: str,
+        title_b: str,
+        brand_a: Optional[str] = None,
+        brand_b: Optional[str] = None
+    ) -> Tuple[bool, Optional[str]]:
         """
         Validates whether title_a and title_b can physically and chemically describe
         the exact same product formulation.
@@ -52,8 +58,37 @@ class CosmeticCompatibilityValidator:
         if not title_a or not title_b:
             return False, "Empty title provided"
 
+        # -------------------------------------------------------------
+        # 0. BRAND COMPATIBILITY SAFEGUARD
+        # -------------------------------------------------------------
+        if brand_a and brand_b:
+            ba_clean = re.sub(r'[^a-z0-9]', '', cls.strip_accents(str(brand_a)).lower())
+            bb_clean = re.sub(r'[^a-z0-9]', '', cls.strip_accents(str(brand_b)).lower())
+            if ba_clean and bb_clean and ba_clean != bb_clean:
+                # Disallow if neither is a close prefix or difference is significant
+                if not (ba_clean.startswith(bb_clean) or bb_clean.startswith(ba_clean)) or abs(len(ba_clean) - len(bb_clean)) > 2:
+                    return False, f"Impossible Brand: Store brand '{brand_a}' cannot match reference brand '{brand_b}'"
+
         a = cls.normalize(title_a)
         b = cls.normalize(title_b)
+
+        # -------------------------------------------------------------
+        # 0.1 DEODORANT & ANTIPERSPIRANT SAFEGUARD
+        # -------------------------------------------------------------
+        deo_kws = r"\b(deodorant|antiperspirant|anti-perspirant|roll-on|roll\s*on|sweat\s*control|transpirant|spirial|deo\b|deo-)\b"
+        is_deo_a = bool(re.search(deo_kws, a))
+        is_deo_b = bool(re.search(deo_kws, b))
+        if is_deo_a != is_deo_b:
+            return False, "Impossible Category: Deodorant/Antiperspirant cannot match Cream/Lotion/Skincare formulation"
+
+        # -------------------------------------------------------------
+        # 0.2 FRAGRANCE & PERFUMERY SAFEGUARD
+        # -------------------------------------------------------------
+        frag_kws = r"\b(eau\s*de\s*parfum|eau\s*de\s*toilette|edp\b|edt\b|perfume|parfum|cologne|body\s*splash|body\s*mist)\b"
+        is_frag_a = bool(re.search(frag_kws, a))
+        is_frag_b = bool(re.search(frag_kws, b))
+        if is_frag_a != is_frag_b:
+            return False, "Impossible Category: Perfume/Fragrance cannot match Skincare treatment"
 
         # -------------------------------------------------------------
         # 1. ANATOMICAL TARGET CONFLICTS (e.g. Hair Mask vs Face Mask)

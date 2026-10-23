@@ -31,6 +31,16 @@ This document provides a comprehensive technical reference for all enhancements,
 10. **Admin Observatory & Deep Forensic Telemetry Portal:**
    - **Observatory Router (`routers/admin.py`):** Exposes `/admin/overview`, `/admin/products`, and `/admin/products/{id}/telemetry` for complete visibility into scraped HTML descriptions, ingredient token trees, 4-gate INCI decision scores, multi-store pricing tables, and clinical safety ratings.
    - **Interactive Admin UI (`skinsync-app/src/AdminObservatory.jsx`):** Seamless toggle between consumer matching and forensic catalog explorer with 6-tab inspection drawers and multi-filter criteria.
+11. **Taxonomy Classification & Phase 1 Non-Skincare Suppression:**
+   - **Deterministic Taxonomy Engine (`pipeline/classifier.py`):** Establishes 10 active core skincare categories (`Cleanser`, `Moisturizer`, `Serum`, `Sunscreen`, `Toner`, `Exfoliator`, `Eye Care`, `Mask`, `Lip Care`, `Treatment`) and 9 non-skincare categories (`Deodorant`, `Fragrance`, `Hair Care`, `Makeup`, `Body Care`, `Oral Care`, `Tools & Accessories`, `Set`, `Other Non-Skincare`).
+   - **Phase 1 Consumer Suppression:** All non-skincare listings are preserved in `skincare.db` (`is_skincare = 0`) for Phase 2 beauty expansion, but strictly suppressed from in-memory recommendation cache (`df_cache`), autocomplete search, price arbitrage, and INCI formulation matching. Catalog stands at **7,413 active skincare listings** and **15,358 suppressed beauty items**.
+12. **Automated Brand Enrichment in Product Titles:**
+   - **Title Enricher Overhaul (`pipeline/title_enricher.py`):** Removed word-count restrictions and added Unicode NFD accent normalization (`strip_accents`) to ensure that all store listings lacking brand names (notably 72.1% of Source Beauty and 56.8% of Bashrety) are systematically prefixed with their canonical brand name (e.g. `"DermaActive SWEAT CONTROL ACTI-WHITE"`). Enriched **5,575 listings**.
+13. **Hard Cross-Encoder Rejection Gate & Safeguard Rules:**
+   - **Cosmetic Compatibility Validator (`pipeline/safeguards.py`):** Enforces strict brand clash checks (`brand_a` vs `brand_b`) and category incompatibility rules blocking deodorants, perfumes, and hair care from matching facial lotions, creams, serums, or sunscreens.
+   - **Deterministic Rejection Gate (`pipeline/inci_matcher.py`):** Candidates with `cross_score < 0.35` or `token_sim < 0.25` are immediately flagged with `gate4_cross_status = 'cross_rejected'` and `gate4_gemini_status = 'rejected'`, eliminating false positives like `"SWEAT CONTROL ACTI-WHITE"` matching `"Derma: B Daily Moisture Body Lotion"` and consuming zero Gemini LLM quota.
+14. **Token-Sorted Canonical Clustering:**
+   - **Word-Order and Spelling Invariance (`pipeline/product_linker.py`):** Decomposes titles into normalized, sorted core tokens (`extract_volume_and_normalize`), neutralizing differences between UK/US spellings (`moisturising` vs `moisturizing`), filler adjectives (`daily`, `classic`), and word order permutations (`pm facial moisturizing lotion` vs `facial lotion pm`). Successfully linked previously separated CeraVe Moisturizing Lotions across Bloom Pharmacy, Feel22, and Source Beauty into unified cluster ID `22961`.
 
 ---
 
@@ -599,7 +609,7 @@ Implemented in [`pipeline/title_enricher.py`](file:///mnt/windows/Users/AmrAlfay
 
 ## 7. Automated Test Suite & Verification
 
-The test suite contains **65 comprehensive unit and integration tests** verifying all layers of the platform:
+The test suite contains **66 comprehensive unit and integration tests** verifying all layers of the platform:
 
 ```bash
 python3 -m unittest discover -s tests -p "test_*.py"
@@ -608,12 +618,12 @@ python3 -m unittest discover -s tests -p "test_*.py"
 | Test Module | Coverage | Status |
 | :--- | :--- | :--- |
 | `tests/test_api_operations.py` | Catalog refresh, INCI match, ingredients fill, similarity score, dermo score | **Passed (15/15)** |
-| `tests/test_price_comparison.py` | Entity resolution, volume normalization, price comparison, arbitrage deals, cross-store ingredient propagation | **Passed (15/15)** |
+| `tests/test_price_comparison.py` | Entity resolution, volume normalization, word-order invariance, price comparison, arbitrage deals, cross-store ingredient propagation | **Passed (16/16)** |
 | `tests/test_title_enrichment.py` | Brand detection, SPF preservation, handle reconciliation, API endpoints | **Passed (10/10)** |
 | `tests/test_control_tables.py` | Task creation, subtasks, event logging, checkpoints, cancellation | **Passed (8/8)** |
 | `tests/test_rotational_logging.py` | File rotation, size triggers, level filtering, log context injection | **Passed (6/6)** |
 | `tests/test_admin_router.py` | Admin observatory overview, high-speed multi-filter product search, full-depth forensic telemetry | **Passed (5/5)** |
 | `tests/test_workers.py` | Jev worker, Gemini batch processing, queue handoffs | **Passed (4/4)** |
 | `tests/test_evaluation_benchmark.py` | SOTA benchmark accuracy, cross-encoder latency | **Passed (2/2)** |
-| **Total** | **65 Comprehensive Tests** | **100% OK** |
+| **Total** | **66 Comprehensive Tests** | **100% OK** |
 

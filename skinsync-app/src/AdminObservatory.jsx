@@ -19,6 +19,8 @@ const AdminObservatory = ({ onBackToApp }) => {
   const [hasIngredientsFilter, setHasIngredientsFilter] = useState('');
   const [multiStoreFilter, setMultiStoreFilter] = useState('');
   const [gateFilter, setGateFilter] = useState('');
+  const [skincareFilter, setSkincareFilter] = useState('skincare'); // 'skincare' (default), 'all', 'suppressed'
+  const [categoryFilter, setCategoryFilter] = useState('');
   const [page, setPage] = useState(0);
   const pageSize = 20;
 
@@ -60,6 +62,9 @@ const AdminObservatory = ({ onBackToApp }) => {
 
       if (query.trim()) params.append('q', query.trim());
       if (selectedStore) params.append('store_id', selectedStore);
+      if (skincareFilter === 'skincare') params.append('is_skincare', 'true');
+      if (skincareFilter === 'suppressed') params.append('is_skincare', 'false');
+      if (categoryFilter) params.append('category', categoryFilter);
       if (hasIngredientsFilter === 'yes') params.append('has_ingredients', 'true');
       if (hasIngredientsFilter === 'no') params.append('has_ingredients', 'false');
       if (multiStoreFilter === 'multi') params.append('is_multi_store', 'true');
@@ -82,7 +87,7 @@ const AdminObservatory = ({ onBackToApp }) => {
   // Re-fetch when filters or page change
   useEffect(() => {
     fetchProducts(page, searchQuery);
-  }, [page, selectedStore, hasIngredientsFilter, multiStoreFilter, gateFilter]);
+  }, [page, selectedStore, hasIngredientsFilter, multiStoreFilter, gateFilter, skincareFilter, categoryFilter]);
 
   // Handle Search Input with Debounce
   const handleSearchChange = (val) => {
@@ -160,55 +165,71 @@ const AdminObservatory = ({ onBackToApp }) => {
         
         {/* 1. System Vitals & Ingestion Counters */}
         {overview && (
-          <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
-            <div className="bg-white p-5 rounded-2xl border border-gray-200 shadow-sm">
-              <div className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">Catalog Listings</div>
-              <div className="text-2xl font-black text-gray-900">
+          <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-3">
+            <div className="bg-white p-4 rounded-2xl border border-emerald-300 shadow-sm bg-gradient-to-b from-emerald-50/40 to-white">
+              <div className="text-[10px] font-bold text-emerald-700 uppercase tracking-wider mb-1">Active Skincare (Phase 1)</div>
+              <div className="text-xl font-black text-emerald-700">
+                {overview.catalog_vitals.active_skincare_products ? overview.catalog_vitals.active_skincare_products.toLocaleString() : '7,413'}
+              </div>
+              <div className="text-[10px] text-emerald-600 mt-1 font-semibold">Active in App</div>
+            </div>
+
+            <div className="bg-white p-4 rounded-2xl border border-amber-200 shadow-sm bg-gradient-to-b from-amber-50/30 to-white">
+              <div className="text-[10px] font-bold text-amber-700 uppercase tracking-wider mb-1">Suppressed (Phase 2)</div>
+              <div className="text-xl font-black text-amber-800">
+                {overview.catalog_vitals.suppressed_non_skincare ? overview.catalog_vitals.suppressed_non_skincare.toLocaleString() : '15,355'}
+              </div>
+              <div className="text-[10px] text-amber-700 mt-1">Deos, perfumes, hair</div>
+            </div>
+
+            <div className="bg-white p-4 rounded-2xl border border-gray-200 shadow-sm">
+              <div className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Total Listings</div>
+              <div className="text-xl font-black text-gray-900">
                 {overview.catalog_vitals.total_store_listings.toLocaleString()}
               </div>
-              <div className="text-[11px] text-gray-500 mt-1">Across 6 retailers</div>
+              <div className="text-[10px] text-gray-500 mt-1">Across 6 retailers</div>
             </div>
 
-            <div className="bg-white p-5 rounded-2xl border border-gray-200 shadow-sm">
-              <div className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">Canonical Entities</div>
-              <div className="text-2xl font-black text-purple-700">
+            <div className="bg-white p-4 rounded-2xl border border-gray-200 shadow-sm">
+              <div className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Canonical Entities</div>
+              <div className="text-xl font-black text-purple-700">
                 {overview.catalog_vitals.canonical_entities.toLocaleString()}
               </div>
-              <div className="text-[11px] text-gray-500 mt-1">Unified product clusters</div>
+              <div className="text-[10px] text-gray-500 mt-1">Unified clusters</div>
             </div>
 
-            <div className="bg-white p-5 rounded-2xl border border-gray-200 shadow-sm">
-              <div className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">Multi-Store Deals</div>
-              <div className="text-2xl font-black text-emerald-600">
+            <div className="bg-white p-4 rounded-2xl border border-gray-200 shadow-sm">
+              <div className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Multi-Store Deals</div>
+              <div className="text-xl font-black text-emerald-600">
                 {overview.catalog_vitals.multi_store_clusters.toLocaleString()}
               </div>
-              <div className="text-[11px] text-emerald-700 mt-1 font-semibold">Active price arbitrage</div>
+              <div className="text-[10px] text-emerald-700 mt-1 font-semibold">Price arbitrage</div>
             </div>
 
-            <div className="bg-white p-5 rounded-2xl border border-gray-200 shadow-sm">
-              <div className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">Full Ingredients</div>
-              <div className="text-2xl font-black text-blue-600">
+            <div className="bg-white p-4 rounded-2xl border border-gray-200 shadow-sm">
+              <div className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Full Ingredients</div>
+              <div className="text-xl font-black text-blue-600">
                 {overview.catalog_vitals.products_with_ingredients.toLocaleString()}
               </div>
-              <div className="text-[11px] text-gray-500 mt-1">
-                {overview.catalog_vitals.coverage_percent}% formulation coverage
+              <div className="text-[10px] text-gray-500 mt-1">
+                {overview.catalog_vitals.coverage_percent}% coverage
               </div>
             </div>
 
-            <div className="bg-white p-5 rounded-2xl border border-gray-200 shadow-sm">
-              <div className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">INCI Reference Links</div>
-              <div className="text-2xl font-black text-indigo-600">
+            <div className="bg-white p-4 rounded-2xl border border-gray-200 shadow-sm">
+              <div className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">INCI Reference</div>
+              <div className="text-xl font-black text-indigo-600">
                 {overview.catalog_vitals.inci_matched_products.toLocaleString()}
               </div>
-              <div className="text-[11px] text-gray-500 mt-1">SkinSafe & curated DB</div>
+              <div className="text-[10px] text-gray-500 mt-1">SkinSafe DB</div>
             </div>
 
-            <div className="bg-white p-5 rounded-2xl border border-gray-200 shadow-sm">
-              <div className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">AI Verified Matches</div>
-              <div className="text-2xl font-black text-pink-600">
+            <div className="bg-white p-4 rounded-2xl border border-gray-200 shadow-sm">
+              <div className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">AI Verified</div>
+              <div className="text-xl font-black text-pink-600">
                 {overview.catalog_vitals.ai_verified_products.toLocaleString()}
               </div>
-              <div className="text-[11px] text-gray-500 mt-1">Cross-Encoder & Gemini</div>
+              <div className="text-[10px] text-gray-500 mt-1">Cross-Encoder/LLM</div>
             </div>
           </div>
         )}
@@ -267,7 +288,7 @@ const AdminObservatory = ({ onBackToApp }) => {
             </div>
 
             {/* Filter Bar */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3 pt-2">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 pt-2">
               {/* Search Query */}
               <div className="relative">
                 <Search className="w-4 h-4 text-gray-400 absolute left-3 top-3" />
@@ -279,6 +300,49 @@ const AdminObservatory = ({ onBackToApp }) => {
                   className="w-full pl-9 pr-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-xs focus:outline-none focus:border-purple-500 focus:bg-white transition-all"
                 />
               </div>
+
+              {/* Skincare Scope Toggle */}
+              <select
+                value={skincareFilter}
+                onChange={(e) => { setSkincareFilter(e.target.value); setPage(0); }}
+                className="w-full px-3 py-2 bg-emerald-50/70 border border-emerald-300 text-emerald-950 font-bold rounded-xl text-xs focus:outline-none focus:border-emerald-500"
+              >
+                <option value="skincare">🧴 Active Skincare Only (Phase 1)</option>
+                <option value="all">🌐 All Catalog (Skincare + Beauty)</option>
+                <option value="suppressed">📦 Suppressed Non-Skincare (Phase 2)</option>
+              </select>
+
+              {/* Category Filter */}
+              <select
+                value={categoryFilter}
+                onChange={(e) => { setCategoryFilter(e.target.value); setPage(0); }}
+                className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-xs focus:outline-none focus:border-purple-500 font-medium"
+              >
+                <option value="">All Categories</option>
+                <optgroup label="Core Skincare">
+                  <option value="Cleanser">Cleanser</option>
+                  <option value="Moisturizer">Moisturizer</option>
+                  <option value="Serum">Serum</option>
+                  <option value="Sunscreen">Sunscreen</option>
+                  <option value="Toner">Toner</option>
+                  <option value="Exfoliator">Exfoliator</option>
+                  <option value="Eye Care">Eye Care</option>
+                  <option value="Mask">Mask</option>
+                  <option value="Lip Care">Lip Care</option>
+                  <option value="Treatment">Treatment</option>
+                </optgroup>
+                <optgroup label="Non-Skincare (Suppressed)">
+                  <option value="Deodorant">Deodorant / Antiperspirant</option>
+                  <option value="Fragrance">Fragrance / Perfume</option>
+                  <option value="Hair Care">Hair Care</option>
+                  <option value="Makeup">Makeup</option>
+                  <option value="Body Care">Body Care</option>
+                  <option value="Oral Care">Oral Care</option>
+                  <option value="Tools & Accessories">Tools & Accessories</option>
+                  <option value="Set">Set / Bundle</option>
+                  <option value="Other Non-Skincare">Other Non-Skincare</option>
+                </optgroup>
+              </select>
 
               {/* Store Filter */}
               <select
@@ -294,7 +358,9 @@ const AdminObservatory = ({ onBackToApp }) => {
                 <option value="bashrety">Bashrety</option>
                 <option value="rawafrican">Raw African</option>
               </select>
+            </div>
 
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
               {/* Ingredients Presence */}
               <select
                 value={hasIngredientsFilter}
@@ -327,6 +393,7 @@ const AdminObservatory = ({ onBackToApp }) => {
                 <option value="gemini_approved">Gemini Approved</option>
                 <option value="auto_approved">Auto Approved (Cross-Encoder)</option>
                 <option value="pending_gemini">Pending Gemini Verification</option>
+                <option value="cross_rejected">Cross-Encoder Rejected</option>
                 <option value="rejected_safeguard">Rejected by Cosmetic Safeguard</option>
               </select>
             </div>
@@ -374,11 +441,26 @@ const AdminObservatory = ({ onBackToApp }) => {
                             )}
                           </div>
                           <div className="truncate">
-                            <div className="text-[10px] font-bold text-purple-600 uppercase">{p.brand}</div>
+                            <div className="text-[10px] font-bold text-purple-600 uppercase flex items-center gap-1.5">
+                              <span>{p.brand}</span>
+                              {p.is_skincare ? (
+                                <span className="bg-emerald-50 text-emerald-700 font-bold px-1.5 py-0.5 rounded border border-emerald-200 text-[9px]">
+                                  🧴 Skincare
+                                </span>
+                              ) : (
+                                <span className="bg-amber-50 text-amber-700 font-bold px-1.5 py-0.5 rounded border border-amber-200 text-[9px]">
+                                  📦 Suppressed
+                                </span>
+                              )}
+                            </div>
                             <div className="font-bold text-gray-900 truncate" title={p.title}>
                               {p.title}
                             </div>
-                            <div className="text-[10px] text-gray-400 truncate">ID: #{p.id} • {p.category}</div>
+                            <div className="text-[10px] text-gray-400 truncate flex items-center gap-1.5 mt-0.5">
+                              <span>ID: #{p.id}</span>
+                              <span>•</span>
+                              <span className="font-medium text-gray-600 bg-gray-100 px-1.5 py-0.5 rounded text-[10px]">{p.category}</span>
+                            </div>
                           </div>
                         </div>
                       </td>
@@ -509,14 +591,28 @@ const AdminObservatory = ({ onBackToApp }) => {
                 <X className="w-5 h-5" />
               </button>
 
-              <div className="flex items-center gap-2 mb-2">
+              <div className="flex items-center gap-2 mb-2 flex-wrap">
                 <span className="bg-purple-500/30 text-purple-200 text-[10px] uppercase font-black px-2.5 py-0.5 rounded-full border border-purple-400/30">
                   Forensic Audit Trail
                 </span>
                 {telemetry && (
-                  <span className="bg-white/10 text-white text-[10px] font-bold px-2 py-0.5 rounded">
-                    Store: {telemetry.product.store_name}
-                  </span>
+                  <>
+                    <span className="bg-white/10 text-white text-[10px] font-bold px-2 py-0.5 rounded">
+                      Store: {telemetry.product.store_name}
+                    </span>
+                    {telemetry.product.is_skincare ? (
+                      <span className="bg-emerald-500/30 text-emerald-200 text-[10px] font-bold px-2.5 py-0.5 rounded-full border border-emerald-400/30 inline-flex items-center gap-1">
+                        🧴 Active Skincare (Phase 1)
+                      </span>
+                    ) : (
+                      <span className="bg-amber-500/30 text-amber-200 text-[10px] font-bold px-2.5 py-0.5 rounded-full border border-amber-400/30 inline-flex items-center gap-1">
+                        📦 Suppressed Non-Skincare (Phase 2)
+                      </span>
+                    )}
+                    <span className="bg-indigo-500/30 text-indigo-200 text-[10px] font-bold px-2.5 py-0.5 rounded-full border border-indigo-400/30">
+                      Category: {telemetry.product.category}
+                    </span>
+                  </>
                 )}
               </div>
 
@@ -525,7 +621,7 @@ const AdminObservatory = ({ onBackToApp }) => {
               </h3>
               {telemetry && (
                 <p className="text-purple-200 text-xs mt-1">
-                  Brand: {telemetry.product.brand} • Category: {telemetry.product.category} • Price: {telemetry.product.price} EGP
+                  Brand: {telemetry.product.brand} • Price: {telemetry.product.price} EGP
                 </p>
               )}
             </div>
@@ -581,6 +677,24 @@ const AdminObservatory = ({ onBackToApp }) => {
                 <div className="py-20 text-center text-gray-400">Failed to load telemetry.</div>
               ) : (
                 <>
+                  {telemetry && !telemetry.product.is_skincare && (
+                    <div className="mb-6 p-4 bg-amber-50 border border-amber-200 rounded-2xl flex items-start gap-3 text-amber-900">
+                      <div className="text-xl shrink-0">📦</div>
+                      <div>
+                        <div className="font-extrabold text-xs text-amber-950 flex items-center gap-2">
+                          <span>Suppressed Non-Skincare Item (Phase 2 Catalog)</span>
+                          <span className="bg-amber-200 text-amber-900 text-[10px] px-2 py-0.5 rounded-full font-bold">
+                            {telemetry.product.category}
+                          </span>
+                        </div>
+                        <p className="text-[11px] text-amber-800/90 mt-1 leading-relaxed">
+                          This product is categorized outside active skincare (e.g., deodorant, perfume, hair care, makeup).
+                          It is preserved in the database for future beauty expansion, but intentionally suppressed from Phase 1 consumer search, recommendation engines, and INCI ingredient matching workflows.
+                        </p>
+                      </div>
+                    </div>
+                  )}
+
                   {/* TAB 1: SCRAPED SOURCE INFO */}
                   {activeTab === 'scraped' && (
                     <div className="space-y-6">

@@ -9,6 +9,7 @@ import os
 import re
 import json
 import logging
+import unicodedata
 from typing import Optional, Dict, Any, List, Tuple
 import pandas as pd
 
@@ -20,6 +21,42 @@ from pipeline.task_tracker import (
 )
 
 logger = get_logger("skincare_pipeline.title_enricher")
+
+BRAND_STOPWORDS = {'eau', 'thermale', 'laboratoires', 'laboratoire', 'paris', 'cosmetics', 'pharmacy', 'pharma', 'derma', 'store', 'egypt', 'official'}
+
+def strip_accents(s: str) -> str:
+    """Removes unicode diacritics and accents (e.g. Avène -> Avene)."""
+    if not s:
+        return ""
+    return "".join(c for c in unicodedata.normalize("NFD", s) if unicodedata.category(c) != "Mn")
+
+def is_brand_in_title(brand: str, title: str) -> bool:
+    """
+    Checks if brand is already present in the title,
+    normalizing whitespace, casing, accents, and brand stopwords.
+    """
+    if not brand or not title:
+        return False
+    b_clean = strip_accents(brand).lower()
+    t_clean = strip_accents(title).lower()
+    b_norm = re.sub(r'[^a-z0-9]', '', b_clean)
+    t_norm = re.sub(r'[^a-z0-9]', '', t_clean)
+    if not b_norm or not t_norm:
+        return False
+    # Direct substring
+    if b_norm in t_norm:
+        return True
+
+    # Token match for multi-word brands (e.g. 'Avene' from 'Eau Thermale Avene')
+    b_words = [w for w in re.split(r'[^a-z0-9]+', b_clean) if w]
+    sig_words = [w for w in b_words if len(w) >= 3 and w not in BRAND_STOPWORDS]
+    if sig_words:
+        if all(w in t_norm for w in sig_words):
+            return True
+        for w in sig_words:
+            if len(w) >= 4 and w in t_norm:
+                return True
+    return False
 
 GENERIC_TERMS = {
     'lip oil', 'toner', 'tint', 'mousse', 'dry oil', 'sunscreen', 'night cream', 'day cream',
@@ -84,23 +121,6 @@ def load_v10_title_lookup(csv_path: Optional[str] = None) -> Dict[str, str]:
     except Exception as e:
         logger.warning(f"Could not load v10 title lookup from {csv_path}: {e}")
         return {}
-
-def is_brand_in_title(brand: str, title: str) -> bool:
-    """
-    Checks if brand is already present at or near the start of the title,
-    normalizing whitespace, casing, and punctuation (e.g. Bio-Oil == Bio Oil).
-    """
-    if not brand or not title:
-        return False
-    b_norm = re.sub(r'[^a-z0-9]', '', brand.lower())
-    t_norm = re.sub(r'[^a-z0-9]', '', title.lower())
-    if not b_norm:
-        return False
-    # Check exact prefix or substring near beginning
-    if t_norm.startswith(b_norm):
-        return True
-    idx = t_norm.find(b_norm)
-    return idx != -1 and idx <= 5
 
 def clean_trailing_punctuation(title: str) -> str:
     """Strips dangling hyphens, trailing slashes, commas, and ellipses (preserves SPF+)."""
@@ -235,12 +255,15 @@ def enrich_product_title(
             current = reconciled
             method = "handle_reconciled"
 
-    # Strategy 3: Bare generic nouns lacking brand prefix
-    clean_noun = re.sub(r'[^a-zA-Z0-9\s]', '', current).strip().lower()
-    is_generic = clean_noun in GENERIC_TERMS or len(clean_noun.split()) <= 2
-    if is_generic and brand and brand.lower() not in ('unknown', 'general', 'other', ''):
-        if not is_brand_in_title(brand, current):
-            current = f"{brand.strip()} {current}"
+    # Strategy 3: Prefix brand if brand is missing from title
+    b_val = (brand or "").strip()
+    if b_val and b_val.lower() not in ('unknown', 'general', 'other', '', 'generic', 'none'):
+        if not is_brand_in_title(b_val, current):
+            clean_b = b_val
+            # Standardize ALL-CAPS brands (>3 chars) to title-case, preserving acronyms
+            if clean_b.isupper() and len(clean_b) > 3 and clean_b not in ('SVR', 'ACM', 'NUXE', 'SPF'):
+                clean_b = clean_b.capitalize()
+            current = f"{clean_b} {current}"
             method = "brand_prefixed" if method == "none" else f"{method}+brand_prefixed"
 
     # Strategy 4: Trailing punctuation & ellipsis cleanup

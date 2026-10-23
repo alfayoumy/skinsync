@@ -130,6 +130,7 @@ def get_price_arbitrage_deals(limit: int = 20, min_savings_egp: float = 20.0, co
                store_count, primary_image_url
         FROM canonical_products
         WHERE store_count > 1
+          AND is_skincare = 1
           AND min_price > 0
           AND (max_price - min_price) >= ?
         ORDER BY diff DESC

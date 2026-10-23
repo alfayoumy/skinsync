@@ -50,6 +50,7 @@ def init_linker_db(conn=None) -> None:
         max_price REAL DEFAULT 0.0,
         store_count INTEGER DEFAULT 1,
         primary_image_url TEXT,
+        is_skincare INTEGER DEFAULT 0,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     );
@@ -58,29 +59,55 @@ def init_linker_db(conn=None) -> None:
     cur.execute("CREATE INDEX IF NOT EXISTS idx_canonical_normalized ON canonical_products(normalized_key);")
     cur.execute("CREATE INDEX IF NOT EXISTS idx_canonical_brand ON canonical_products(brand);")
 
-    # Add canonical_product_id column to products table if missing
+    # Add canonical_product_id and is_skincare columns to products table if missing
     cur.execute("PRAGMA table_info(products);")
     existing_cols = {r[1] for r in cur.fetchall()}
     if "canonical_product_id" not in existing_cols:
         cur.execute("ALTER TABLE products ADD COLUMN canonical_product_id INTEGER REFERENCES canonical_products(id);")
+    if "is_skincare" not in existing_cols:
+        cur.execute("ALTER TABLE products ADD COLUMN is_skincare INTEGER DEFAULT 0;")
+
+    cur.execute("PRAGMA table_info(canonical_products);")
+    existing_can_cols = {r[1] for r in cur.fetchall()}
+    if "is_skincare" not in existing_can_cols:
+        cur.execute("ALTER TABLE canonical_products ADD COLUMN is_skincare INTEGER DEFAULT 0;")
 
     cur.execute("CREATE INDEX IF NOT EXISTS idx_products_canonical ON products(canonical_product_id);")
+    cur.execute("CREATE INDEX IF NOT EXISTS idx_products_is_skincare ON products(is_skincare);")
+    cur.execute("CREATE INDEX IF NOT EXISTS idx_canonical_is_skincare ON canonical_products(is_skincare);")
     conn.commit()
 
     if close_on_exit:
         conn.close()
 
 
+STOP_MARKETING_WORDS = {
+    'daily', 'classic', 'essential', 'original', 'ultra', 'lightweight', 'rich',
+    'soothing', 'nourishing', 'advanced', 'pure', 'intensive', 'gentle'
+}
+
+SKIN_TYPE_PATTERNS = [
+    r'\bfor\s+(?:dry|very\s+dry|normal|oily|combination|sensitive)\s+to\s+(?:dry|very\s+dry|normal|oily|combination|sensitive)\s+skin\b',
+    r'\bfor\s+(?:dry|very\s+dry|normal|oily|combination|sensitive)\s+skin\b',
+    r'\b(?:dry|very\s+dry|normal|oily|combination|sensitive)\s+to\s+(?:dry|very\s+dry|normal|oily|combination|sensitive)\s+skin\b',
+    r'\b(?:dry|very\s+dry|normal|oily|combination|sensitive)\s+skin\b',
+    r'\b(?:face\s+and\s+body|face\s+&\s+body|visage\s+et\s+corps)\b',
+    r'\b(?:normal\s+to\s+dry|dry\s+to\s+very\s+dry)\b',
+    r'\b(?:with\s+sunscreen)\b',
+]
+
+
 def extract_volume_and_normalize(title: str, brand: str) -> Tuple[str, str]:
     """
     Normalizes product title and extracts packaging volume for precise entity resolution.
-    e.g. 'CeraVe Moisturizing Cream 50ml' -> ('moisturizing cream', '50ml')
+    Handles UK/US spellings, filler marketing adjectives, and skin-type claims.
+    e.g. 'CeraVe Moisturising Lotion For Dry To Very Dry Skin 236Ml.' -> ('lotion:moisturizing', '236ml')
     """
-    clean_t = title.lower()
+    t = title.lower()
     b_low = (brand or "").lower().strip()
 
-    # Extract volume
-    vol_match = VOLUME_PATTERN.search(clean_t)
+    # 1. Extract volume
+    vol_match = VOLUME_PATTERN.search(t)
     if vol_match:
         qty = vol_match.group(1)
         unit = vol_match.group(2).lower()
@@ -91,21 +118,39 @@ def extract_volume_and_normalize(title: str, brand: str) -> Tuple[str, str]:
         elif 'oz' in unit:
             unit = 'oz'
         vol_str = f"{qty}{unit}"
+        t = t[:vol_match.start()] + ' ' + t[vol_match.end():]
     else:
         vol_str = ""
 
-    # Remove volume from title for base key
-    clean_base = VOLUME_PATTERN.sub('', clean_t)
+    # 2. Normalize UK to US spellings
+    t = re.sub(r'\bmoisturising\b', 'moisturizing', t)
+    t = re.sub(r'\bcleansing\b', 'cleanse', t)
+    t = re.sub(r'\bcreme\b', 'cream', t)
+    t = re.sub(r'\bcolour\b', 'color', t)
 
-    # Strip brand prefix if present
-    if b_low and clean_base.startswith(b_low):
-        clean_base = clean_base[len(b_low):].strip()
+    # 3. Strip skin type claims & formatting
+    for pat in SKIN_TYPE_PATTERNS:
+        t = re.sub(pat, ' ', t)
 
-    # Clean punctuation and extra spaces
-    clean_base = re.sub(r'[^a-z0-9\s+]', ' ', clean_base)
-    clean_base = re.sub(r'\s+', ' ', clean_base).strip()
+    # 4. Strip brand name prefix/suffix
+    if b_low:
+        t = re.sub(r'\b' + re.escape(b_low) + r'\b', ' ', t)
 
-    return clean_base, vol_str
+    words = [re.sub(r'[^a-z0-9]', '', w) for w in t.split()]
+    has_timing = any(w in ('pm', 'am') for w in words)
+    has_vehicle = any(w in ('lotion', 'cream', 'gel') for w in words)
+
+    meaningful = []
+    for w in words:
+        if not w or len(w) <= 1 or w in STOP_MARKETING_WORDS:
+            continue
+        if w == 'moisturizing' and has_timing and has_vehicle:
+            continue
+        meaningful.append(w)
+
+    sorted_tokens = sorted(meaningful)
+    base_key = ':'.join(sorted_tokens) if sorted_tokens else re.sub(r'[^a-z0-9]', '', t)
+    return base_key, vol_str
 
 
 def build_cluster_key(brand: str, title: str, inci_matched_id: Optional[int], gemini_status: Optional[str]) -> str:
@@ -118,9 +163,9 @@ def build_cluster_key(brand: str, title: str, inci_matched_id: Optional[int], ge
     if inci_matched_id and gemini_status in ('gemini_approved', None):
         return f"inci:{norm_b}:{inci_matched_id}"
 
-    # Strategy 2: Clean base title + volume specification
+    # Strategy 2: Sorted base title tokens + volume specification
     base_t, vol = extract_volume_and_normalize(title, brand)
-    norm_t = re.sub(r'[^a-z0-9]', '', base_t)
+    norm_t = re.sub(r'[^a-z0-9:]', '', base_t)
     return f"title:{norm_b}:{norm_t}:{vol}"
 
 
@@ -142,7 +187,7 @@ def link_catalog_products(conn=None, task_id: Optional[str] = None) -> Dict[str,
     cur.execute("""
     SELECT id, store_id, title, brand, category, price, is_available, image_url,
            ingredients_raw, ingredients_parsed, actives, ingredient_source,
-           inci_matched_id, gate4_gemini_status
+           inci_matched_id, gate4_gemini_status, is_skincare
     FROM products
     ORDER BY id ASC;
     """)
@@ -179,6 +224,7 @@ def link_catalog_products(conn=None, task_id: Optional[str] = None) -> Dict[str,
         best_title = max(items, key=lambda x: len(x.get("title") or ""))["title"]
         best_brand = items[0]["brand"] or "Generic"
         best_category = items[0]["category"] or "Skincare"
+        is_skin_cluster = 1 if any(p.get("is_skincare") == 1 for p in items) else 0
 
         # Find primary image
         primary_img = next((p["image_url"] for p in items if p["image_url"]), None)
@@ -222,19 +268,20 @@ def link_catalog_products(conn=None, task_id: Optional[str] = None) -> Dict[str,
                 inci_matched_id = COALESCE(?, inci_matched_id),
                 min_price = ?, max_price = ?, store_count = ?,
                 primary_image_url = COALESCE(?, primary_image_url),
+                is_skincare = ?,
                 updated_at = CURRENT_TIMESTAMP
             WHERE id = ?;
             """, (best_title, best_brand, best_category, best_raw, best_parsed, best_acts,
-                  best_src, best_inci_id, min_p, max_p, store_cnt, primary_img, canonical_id))
+                  best_src, best_inci_id, min_p, max_p, store_cnt, primary_img, is_skin_cluster, canonical_id))
         else:
             cur.execute("""
             INSERT INTO canonical_products (
                 canonical_title, brand, category, normalized_key,
                 ingredients_raw, ingredients_parsed, actives, ingredient_source,
-                inci_matched_id, min_price, max_price, store_count, primary_image_url
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
+                inci_matched_id, min_price, max_price, store_count, primary_image_url, is_skincare
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
             """, (best_title, best_brand, best_category, key, best_raw, best_parsed, best_acts,
-                  best_src, best_inci_id, min_p, max_p, store_cnt, primary_img))
+                  best_src, best_inci_id, min_p, max_p, store_cnt, primary_img, is_skin_cluster))
             canonical_id = cur.lastrowid
             canonical_created += 1
 
@@ -262,6 +309,12 @@ def link_catalog_products(conn=None, task_id: Optional[str] = None) -> Dict[str,
                     updated_at = CURRENT_TIMESTAMP
                 WHERE id = ?;
                 """, (canonical_id, pid))
+
+    # Purge any deprecated canonical clusters not referenced by any products
+    cur.execute("""
+    DELETE FROM canonical_products
+    WHERE id NOT IN (SELECT DISTINCT canonical_product_id FROM products WHERE canonical_product_id IS NOT NULL);
+    """)
 
     conn.commit()
 

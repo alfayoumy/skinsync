@@ -529,18 +529,23 @@ def match_with_inci_db(brand: str, title: str, conn, allow_synchronous_jev: bool
     if not brand or not title:
         return None
 
+    # Check if category is non-skincare: suppress INCI matching for non-skincare products
+    from pipeline.classifier import classify_and_tag
+    _, is_skin = classify_and_tag(title, brand=brand)
+    if not is_skin:
+        logger.debug(f"Suppressed INCI matching for non-skincare product: '{brand}' - '{title}'")
+        return None
+
     cur = conn.cursor()
-    # Search within the same brand first (bidirectional)
+    # Search within the exact same brand first
     cur.execute("""
-    SELECT id, product_name, ingredients, embedding FROM inci_reference
-    WHERE LOWER(brand) = LOWER(?) 
-       OR LOWER(?) LIKE '%' || LOWER(brand) || '%'
-       OR LOWER(brand) LIKE '%' || LOWER(?) || '%';
-    """, (brand, brand, brand))
+    SELECT id, product_name, ingredients, embedding, brand FROM inci_reference
+    WHERE LOWER(TRIM(brand)) = LOWER(TRIM(?));
+    """, (brand,))
 
     candidates = [dict(r) for r in cur.fetchall()]
 
-    # Flaw 1 Fix: Fallback to canonical normalized brand matching if direct query yielded 0
+    # Fallback to normalized brand matching if direct query yielded 0
     if not candidates:
         norm_b = normalize_brand(brand)
         if norm_b:
@@ -554,11 +559,11 @@ def match_with_inci_db(brand: str, title: str, conn, allow_synchronous_jev: bool
             if not matched_b and HAS_RAPIDFUZZ:
                 db_norm_map = {normalize_brand(b): b for b in all_db_brands if b}
                 best_res = process.extractOne(norm_b, list(db_norm_map.keys()), scorer=fuzz.token_sort_ratio)
-                if best_res and best_res[1] >= 85:
+                if best_res and best_res[1] >= 90:
                     matched_b = db_norm_map[best_res[0]]
 
             if matched_b:
-                cur.execute("SELECT id, product_name, ingredients, embedding FROM inci_reference WHERE brand = ?;", (matched_b,))
+                cur.execute("SELECT id, product_name, ingredients, embedding, brand FROM inci_reference WHERE brand = ?;", (matched_b,))
                 candidates = [dict(r) for r in cur.fetchall()]
 
     # Strategy B: Open Beauty Facts API fallback if local candidates absent and OBF allowed
@@ -711,8 +716,10 @@ def match_with_inci_db(brand: str, title: str, conn, allow_synchronous_jev: bool
             bypassed_notes.append(f"Rejected sibling '{cand_name}' because top candidate lacked ingredients")
             break
 
-        # Gate 2: Rule Safeguard (Cosmetic Incompatibilities)
-        g2_ok, rej_reason = CosmeticCompatibilityValidator.validate_pair(title, cand_name)
+        # Gate 2: Rule Safeguard (Cosmetic Incompatibilities & Brand Verification)
+        g2_ok, rej_reason = CosmeticCompatibilityValidator.validate_pair(
+            title, cand_name, brand_a=brand, brand_b=cand.get('brand')
+        )
         if not g2_ok:
             bypassed_notes.append(f"Bypassed '{cand_name}' (Gate 2: {rej_reason})")
             continue
@@ -739,6 +746,28 @@ def match_with_inci_db(brand: str, title: str, conn, allow_synchronous_jev: bool
     cross_score = score_cross_encoder(title, cand_name)
     cross_threshold = getattr(cfg, "CROSS_ENCODER_CONFIDENCE_THRESHOLD", 0.85)
     cross_status = "cross_approved" if cross_score >= cross_threshold else "cross_ambiguous"
+
+    # --- HARD REJECTION GATE: Zero LLM Calls for Clear Mismatches ---
+    if cross_score < 0.35 or best_compatible['token_sim'] < 0.25:
+        return {
+            "ingredients": None,
+            "matched_id": None,
+            "matched_name": None,
+            "vector_score": best_compatible['vector_sim'],
+            "token_score": best_compatible['token_sim'],
+            "hybrid_score": h_score,
+            "inci_cross_score": cross_score,
+            "gate1_quality_status": g1_status,
+            "gate2_safeguard_status": g2_status,
+            "gate3_active_status": g3_status,
+            "gate4_cross_status": "cross_rejected",
+            "gate4_jev_status": "rejected",
+            "inci_jev_score": cross_score,
+            "gate4_gemini_status": "rejected",
+            "inci_gemini_score": None,
+            "safeguard_log": f"Hard rejected: cross_score {cross_score:.5f} < 0.35 or token_sim {best_compatible['token_sim']:.2f} < 0.25",
+            "source": None
+        }
 
     # --- GATE 4: JEV + GEMINI FALLBACK EVALUATION ---
     # Case A: Very High Confidence Match -> Auto-approved with 0 LLM calls
@@ -776,9 +805,18 @@ def match_with_inci_db(brand: str, title: str, conn, allow_synchronous_jev: bool
             if mode == "local":
                 # Local only: evaluate via local Cross-Encoder + deterministic gates, 0 LLM network calls
                 is_local_approved = (cross_score >= cross_threshold and h_score >= 0.75)
-                jev_status = "local_approved" if is_local_approved else "local_ambiguous"
-                jev_score = cross_score
-                gemini_status = None if is_local_approved else "pending_gemini"
+                if is_local_approved:
+                    jev_status = "local_approved"
+                    jev_score = cross_score
+                    gemini_status = None
+                elif cross_score < 0.35:
+                    jev_status = "local_rejected"
+                    jev_score = cross_score
+                    gemini_status = "rejected"
+                else:
+                    jev_status = "local_ambiguous"
+                    jev_score = cross_score
+                    gemini_status = "pending_gemini"
             elif mode == "jev":
                 # Jev only: no Gemini fallback
                 jev_ok = verify_match_with_jev(title, cand_name)
