@@ -73,37 +73,98 @@ from rapidfuzz import process, fuzz, utils
 
 # --- Helper utilities --------------------------------------------------------
 
-# Cache for fuzzy results to speed up repeated lookups
+try:
+    from pipeline.db_manager import load_synonyms_from_db
+except ImportError:
+    try:
+        from db_manager import load_synonyms_from_db
+    except ImportError:
+        def load_synonyms_from_db():
+            return {}
+
+# Cache for fuzzy results and normalized lookup
 _FUZZY_CACHE = {}
+_LOOKUP_CACHE = {}
+
+def reload_dermo_lookup_cache():
+    """Clears cached lookup tables so database updates take effect immediately."""
+    global _FUZZY_CACHE, _LOOKUP_CACHE
+    _FUZZY_CACHE.clear()
+    _LOOKUP_CACHE.clear()
+
+def _build_lookup(db: Dict[str, Ingredient]) -> Dict[str, Ingredient]:
+    import re
+    lookup = {}
+    for k, v in db.items():
+        k_lower = k.lower().strip()
+        lookup[k_lower] = v
+        lookup[k_lower.rstrip('.')] = v
+        if v.inci:
+            inci_lower = v.inci.lower().strip()
+            lookup[inci_lower] = v
+            lookup[inci_lower.rstrip('.')] = v
+        if v.common_name:
+            cn_lower = v.common_name.lower().strip()
+            lookup[cn_lower] = v
+            lookup[cn_lower.rstrip('.')] = v
+            c = re.sub(r'\(.*?\)', '', cn_lower).strip()
+            if c:
+                lookup[c] = v
+                lookup[c.rstrip('.')] = v
+
+    db_synonyms = load_synonyms_from_db()
+    for alias, target in db_synonyms.items():
+        a = alias.lower().strip()
+        t = target.lower().strip()
+        if target in db:
+            lookup[a] = db[target]
+        elif t in lookup:
+            lookup[a] = lookup[t]
+        elif a in lookup and t not in lookup:
+            lookup[t] = lookup[a]
+
+    return lookup
 
 def _get_ingredient_fuzzy(unci_name: str, db: Dict[str, Ingredient]) -> Optional[Ingredient]:
     """
-    Tries to find an ingredient in the DB using exact match, then fuzzy match (threshold 90).
+    Finds an ingredient using exact match, normalized alias/common-name match,
+    and fuzzy matching with threshold 85.
     """
-    unci_name = unci_name.strip()
-    if not unci_name:
+    if not unci_name or not isinstance(unci_name, str):
         return None
-        
-    # 1. Exact match
-    if unci_name in db:
-        return db[unci_name]
-        
-    # 2. Check cache
-    if unci_name in _FUZZY_CACHE:
-        match_key = _FUZZY_CACHE[unci_name]
-        return db.get(match_key)
-        
-    # 3. Fuzzy match
-    # limit=1 returns [(match, score, index)]
-    result = process.extractOne(unci_name, db.keys(), scorer=fuzz.token_sort_ratio, processor=utils.default_process)
+    raw_name = unci_name.strip()
+    if not raw_name:
+        return None
+
+    # 1. Exact match on raw DB key
+    if raw_name in db:
+        return db[raw_name]
+
+    clean_key = raw_name.lower().rstrip('.')
+
+    # 2. Check normalized alias/common-name table
+    db_id = id(db)
+    if db_id not in _LOOKUP_CACHE:
+        _LOOKUP_CACHE[db_id] = _build_lookup(db)
+    lookup = _LOOKUP_CACHE[db_id]
+
+    if clean_key in lookup:
+        return lookup[clean_key]
+
+    # 3. Check fuzzy cache
+    if clean_key in _FUZZY_CACHE:
+        match_key = _FUZZY_CACHE[clean_key]
+        return lookup.get(match_key) if match_key else None
+
+    # 4. Fuzzy match against normalized lookup keys
+    result = process.extractOne(clean_key, lookup.keys(), scorer=fuzz.token_sort_ratio, processor=utils.default_process)
     if result:
         match_key, score, _ = result
-        if score >= 90:
-            _FUZZY_CACHE[unci_name] = match_key
-            return db[match_key]
-            
-    # Cache failure too to avoid re-scanning
-    _FUZZY_CACHE[unci_name] = None
+        if score >= 85:
+            _FUZZY_CACHE[clean_key] = match_key
+            return lookup[match_key]
+
+    _FUZZY_CACHE[clean_key] = None
     return None
 
 def _validate_rating(value: Union[Comedogenicity, int, str]) -> Union[Comedogenicity, int]:

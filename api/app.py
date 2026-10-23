@@ -13,6 +13,17 @@ import logging
 import sqlite3
 import sys
 
+from dermo_data import INGREDIENT_DB, Comedogenicity, Irritancy, _get_ingredient_fuzzy
+from pipeline.config import cfg
+from pipeline.db_manager import load_synonyms_from_db, add_synonym_to_db
+from pipeline.inci_matcher import (
+    get_cross_encoder,
+    score_cross_encoder,
+    verify_match_with_gemini,
+    clean_product_title,
+    normalize_brand
+)
+
 logger = logging.getLogger("skincare_engine")
 logging.basicConfig(level=logging.INFO)
 
@@ -83,52 +94,66 @@ DB_PATH = os.path.join(os.path.dirname(__file__), "skincare.db")
 
 KEY_ACTIVES = {
     'hyaluronic_acid': ['hyaluronic acid', 'sodium hyaluronate', 'hydrolyzed hyaluronic', 'hyaluronate'],
-    'vitamin_b5': ['panthenol', 'd-panthenol', 'pro-vitamin b5'],
+    'vitamin_b5': ['panthenol', 'd-panthenol', 'pro-vitamin b5', 'pantothenic acid'],
     'niacinamide': ['niacinamide', 'nicotinamide', 'vitamin b3'],
     'vitamin_c': ['ascorbic acid', 'l-ascorbic', 'ethyl ascorbic', 'magnesium ascorbyl', 'sodium ascorbyl', 'ascorbyl glucoside', 'vitamin c'],
-    'retinoid': ['retinol', 'retinyl palmitate', 'retinal', 'hydroxypinacolone retinoate', 'adapalene'],
+    'retinoid': ['retinol', 'retinyl palmitate', 'retinal', 'hydroxypinacolone retinoate', 'adapalene', 'tretinoin', 'retinyl'],
     'salicylic_acid': ['salicylic acid', 'bha', 'betaine salicylate', 'willow bark'],
-    'aha': ['glycolic acid', 'lactic acid', 'mandelic acid', 'malic acid', 'citric acid'],
-    'ceramides': ['ceramide np', 'ceramide ap', 'ceramide eop', 'ceramide 3', 'ceramide', 'phytosphingosine'],
-    'centella': ['centella asiatica', 'madecassoside', 'asiaticoside', 'asiatic acid', 'madecassic acid', 'cica'],
-    'peptides': ['peptide', 'matrixyl', 'copper tripeptide', 'palmitoyl', 'argireline', 'oligopeptide'],
+    'aha': ['glycolic acid', 'lactic acid', 'mandelic acid', 'malic acid', 'citric acid', 'tartaric acid'],
+    'ceramides': ['ceramide np', 'ceramide ap', 'ceramide eop', 'ceramide 3', 'ceramide', 'phytosphingosine', 'sphingosine'],
+    'centella': ['centella asiatica', 'madecassoside', 'asiaticoside', 'asiatic acid', 'madecassic acid', 'cica', 'gotu kola'],
+    'peptides': ['peptide', 'matrixyl', 'copper tripeptide', 'palmitoyl', 'argireline', 'oligopeptide', 'acetyl hexapeptide'],
     'azelaic_acid': ['azelaic acid', 'potassium azeloyl diglycinate'],
-    'arbutin': ['alpha-arbutin', 'arbutin', 'alpha arbutin'],
+    'arbutin': ['alpha-arbutin', 'arbutin', 'alpha arbutin', 'beta-arbutin'],
     'zinc': ['zinc pca', 'zinc oxide', 'zinc gluconate'],
     'squalane': ['squalane', 'squalene'],
     'tea_tree': ['tea tree', 'melaleuca alternifolia'],
     'collagen': ['hydrolyzed collagen', 'marine collagen', 'collagen'],
-    'aloe_vera': ['aloe barbadensis', 'aloe vera']
+    'aloe_vera': ['aloe barbadensis', 'aloe vera'],
+    'tranexamic_acid': ['tranexamic acid', 'txa', 'cetyl tranexamate'],
+    'kojic_acid': ['kojic acid', 'kojic dipalmitate'],
+    'bakuchiol': ['bakuchiol'],
+    'urea': ['urea', 'hydroxyethyl urea'],
+    'benzoyl_peroxide': ['benzoyl peroxide', 'bpo'],
+    'sulfur': ['sulfur', 'colloidal sulfur'],
+    'ectoin': ['ectoin'],
+    'pha': ['gluconolactone', 'lactobionic acid', 'galactose', 'maltobionic acid'],
+    'ferulic_acid': ['ferulic acid'],
+    'licorice': ['glycyrrhiza glabra', 'licorice root', 'dipotassium glycyrrhizate', 'glabridin'],
+    'snail_mucin': ['snail secretion filtrate', 'snail mucin'],
+    'ferments': ['galactomyces', 'bifida ferment', 'saccharomyces', 'lactobacillus ferment']
 }
 
-SYNONYMS = {
-    'aqua': 'water', 'eau': 'water', 'purified water': 'water', 'deionized water': 'water',
-    'parfum': 'fragrance', 'perfume': 'fragrance', 'fragrance (parfum)': 'fragrance',
-    'alcohol denat.': 'alcohol denat', 'alcohol denat': 'alcohol denat',
-    'sodium lauryl sulfate': 'sls', 'sodium laureth sulfate': 'sles',
-    'cocos nucifera (coconut) oil': 'coconut oil', 'coconut oil': 'coconut oil',
-    'theobroma cacao (cocoa) seed butter': 'cocoa butter', 'cocoa butter': 'cocoa butter',
-    'butyrospermum parkii (shea) butter': 'shea butter', 'shea butter': 'shea butter',
-    'simmondsia chinensis (jojoba) seed oil': 'jojoba oil', 'jojoba oil': 'jojoba oil'
-}
+# Database-backed ingredient synonyms (loaded from ingredient_synonyms table)
+SYNONYMS = load_synonyms_from_db()
 
 SKIN_BENEFITS = {
-    'oily': {'salicylic_acid': 3.0, 'niacinamide': 2.5, 'zinc': 2.5, 'tea_tree': 2.0, 'centella': 1.5},
-    'dry': {'hyaluronic_acid': 3.0, 'ceramides': 3.0, 'squalane': 2.5, 'vitamin_b5': 2.0, 'collagen': 1.5},
-    'sensitive': {'centella': 3.0, 'vitamin_b5': 2.5, 'ceramides': 2.5, 'aloe_vera': 2.0}
+    'oily': {
+        'salicylic_acid': 3.0, 'niacinamide': 2.5, 'zinc': 2.5, 'tea_tree': 2.0,
+        'centella': 1.5, 'benzoyl_peroxide': 3.0, 'sulfur': 2.5, 'tranexamic_acid': 1.5
+    },
+    'dry': {
+        'hyaluronic_acid': 3.0, 'ceramides': 3.0, 'squalane': 2.5, 'vitamin_b5': 2.0,
+        'collagen': 1.5, 'urea': 3.0, 'ectoin': 2.5, 'snail_mucin': 2.0, 'ferments': 2.0
+    },
+    'sensitive': {
+        'centella': 3.0, 'vitamin_b5': 2.5, 'ceramides': 2.5, 'aloe_vera': 2.0,
+        'ectoin': 3.0, 'licorice': 2.5, 'snail_mucin': 2.0, 'pha': 1.5, 'bakuchiol': 1.5
+    }
 }
 
 SKIN_RISKS = {
     'oily': {
         'coconut oil': 4.0, 'cocoa butter': 3.5, 'isopropyl myristate': 5.0, 
-        'isopropyl palmitate': 5.0, 'ethylhexyl palmitate': 4.0, 'wheat germ oil': 5.0
+        'isopropyl palmitate': 5.0, 'ethylhexyl palmitate': 4.0, 'wheat germ oil': 5.0,
+        'myristyl myristate': 5.0, 'isostearyl isostearate': 4.0
     },
     'dry': {
         'alcohol denat': 4.0, 'sls': 3.5, 'salicylic_acid': 1.5
     },
     'sensitive': {
         'fragrance': 4.0, 'alcohol denat': 4.0, 'sls': 3.5, 'aha': 2.5,
-        'retinoid': 2.0, 'salicylic_acid': 2.0
+        'retinoid': 2.0, 'salicylic_acid': 2.0, 'benzoyl_peroxide': 2.5
     }
 }
 
@@ -164,7 +189,8 @@ def extract_actives_from_title(title):
 df_cache = None
 
 def load_catalog_from_db():
-    global df_cache
+    global df_cache, SYNONYMS
+    SYNONYMS = load_synonyms_from_db()
     if not os.path.exists(DB_PATH):
         logger.warning(f"Database not found at {DB_PATH}. Using fallback CSV.")
         csv_fallback = os.path.join(os.path.dirname(__file__), "master_product_database_v10_final.csv")
@@ -175,7 +201,9 @@ def load_catalog_from_db():
         df_cache = pd.read_sql_query("""
         SELECT id, store_id, title, brand, category as std_category, price as price_low,
                compare_at_price as price_high, is_available, image_url, product_url as url,
-               ingredients_raw as ingredients, ingredients_parsed, actives, ingredient_source
+               ingredients_raw as ingredients, ingredients_parsed, actives, ingredient_source,
+               gate4_jev_status, inci_jev_score, gate4_gemini_status, inci_gemini_score,
+               gate4_cross_status, inci_cross_score
         FROM products;
         """, conn)
         conn.close()
@@ -199,44 +227,119 @@ load_catalog_from_db()
 # ==============================================================================
 # 3. ADVANCED SIMILARITY & DERMATOLOGY RULES
 # ==============================================================================
+def get_inci_concentration_weight(idx: int, ingredient_name: str) -> float:
+    """
+    3-Zone concentration weight reflecting FDA/EU cosmetic labeling regulations:
+    - Zone 1 Carrier (i=0): Discount ubiquitous water/solvent (0.25) to avoid false similarity.
+    - Zone 1 Descending (1 <= i <= 5): Exponential decay for primary ingredients > 1%.
+    - Zone 2 Plateau (6 <= i <= 15): Flat plateau (0.30) for sub-1% threshold where ordering is arbitrary.
+    - Zone 3 Micro-additives (i > 15): Baseline trace weight (0.10).
+    """
+    ing_lower = str(ingredient_name).lower().strip()
+    if idx == 0:
+        if ing_lower in {'water', 'aqua', 'eau', 'purified water', 'deionized water'}:
+            return 0.25
+        return 0.90
+    if 1 <= idx <= 5:
+        return float(np.exp(-0.22 * (idx - 1)) * 0.90)
+    if 6 <= idx <= 15:
+        return 0.30
+    return 0.10
+
 def compute_weighted_jaccard(list_a, list_b):
     if not list_a or not list_b:
         return 0.0
-    weights_a = {ing: 1.0 / np.sqrt(i + 1) for i, ing in enumerate(list_a)}
-    weights_b = {ing: 1.0 / np.sqrt(i + 1) for i, ing in enumerate(list_b)}
+    weights_a = {ing: get_inci_concentration_weight(i, ing) for i, ing in enumerate(list_a)}
+    weights_b = {ing: get_inci_concentration_weight(i, ing) for i, ing in enumerate(list_b)}
     all_keys = set(weights_a.keys()).union(weights_b.keys())
     inter_w = sum(min(weights_a.get(k, 0.0), weights_b.get(k, 0.0)) for k in all_keys)
     union_w = sum(max(weights_a.get(k, 0.0), weights_b.get(k, 0.0)) for k in all_keys)
     return (inter_w / union_w) if union_w > 0 else 0.0
 
 def compute_title_sim(t1, t2):
-    w1 = set(re.findall(r'\w+', str(t1).lower()))
-    w2 = set(re.findall(r'\w+', str(t2).lower()))
-    stop = {'the', 'and', 'with', 'for', 'skin', 'ml', 'g', 'in', 'of', 'face'}
+    c1 = clean_product_title(str(t1))
+    c2 = clean_product_title(str(t2))
+    w1 = set(re.findall(r'\w+', c1.lower()))
+    w2 = set(re.findall(r'\w+', c2.lower()))
+    stop = {'the', 'and', 'with', 'for', 'skin', 'in', 'of', 'face', 'cream', 'serum', 'lotion'}
     w1 = w1 - stop
     w2 = w2 - stop
-    if not w1 or not w2: return 0.0
+    if not w1 or not w2:
+        return 0.0
     return len(w1.intersection(w2)) / len(w1.union(w2))
 
 def evaluate_skin_safety(parsed_ings, actives, skin_type):
-    if skin_type not in SKIN_BENEFITS:
-        return 75.0, []
-    benefit_pts = sum(SKIN_BENEFITS[skin_type].get(act, 0.0) for act in actives)
-    risk_pts = 0.0
+    """
+    Dermatological safety evaluator integrating clinical metadata from dermo_data.py
+    (comedogenicity 0-5, irritancy 0-5, contraindications) with position concentration weighting.
+    """
     warnings = []
-    risks = SKIN_RISKS[skin_type]
-    for ing in parsed_ings:
-        for r_name, r_val in risks.items():
-            if r_name in ing:
-                risk_pts += r_val
-                warnings.append(f"Contains {r_name.title()} ({skin_type} skin flag)")
-                break
-    safety_score = 75.0 + min(25.0, benefit_pts * 4.0) - min(50.0, risk_pts * 10.0)
-    safety_score = max(20.0, min(100.0, safety_score))
-    return safety_score, list(set(warnings))
+    comedogenic_load = 0.0
+    irritancy_load = 0.0
+    total_weight = 0.0
+
+    for idx, ing in enumerate(parsed_ings):
+        w = get_inci_concentration_weight(idx, ing)
+        total_weight += w
+
+        # Clinical DB lookup (fuzzy match against dermo_data.INGREDIENT_DB)
+        entry = _get_ingredient_fuzzy(ing, INGREDIENT_DB)
+        if entry:
+            c_val = (
+                entry.comedogenicity.value
+                if isinstance(entry.comedogenicity, Comedogenicity) and entry.comedogenicity != Comedogenicity.VARIABLE
+                else 2.0 if entry.comedogenicity == Comedogenicity.VARIABLE
+                else int(entry.comedogenicity)
+            )
+            comedogenic_load += c_val * w
+
+            i_val = int(entry.irritancy) if isinstance(entry.irritancy, Irritancy) else int(entry.irritancy or 0)
+            irritancy_load += i_val * w
+
+            if skin_type in ('oily', 'acne_prone') and c_val >= 3:
+                name_display = entry.common_name or entry.inci
+                warnings.append(f"Contains {name_display} (comedogenic rating {c_val}/5)")
+            if skin_type == 'sensitive' and i_val >= 3:
+                name_display = entry.common_name or entry.inci
+                warnings.append(f"Contains {name_display} (irritant rating {i_val}/5)")
+            if entry.contraindications:
+                for c in entry.contraindications:
+                    warnings.append(f"Caution: {c} precaution ({entry.common_name or entry.inci})")
+
+    # Secondary classical skin risks check
+    if skin_type in SKIN_RISKS:
+        for ing in parsed_ings:
+            for r_name, r_val in SKIN_RISKS[skin_type].items():
+                if r_name in ing:
+                    flag_msg = f"Contains {r_name.title()} ({skin_type} skin flag)"
+                    if flag_msg not in warnings:
+                        warnings.append(flag_msg)
+                    break
+
+    benefit_pts = 0.0
+    if skin_type in SKIN_BENEFITS:
+        benefit_pts = sum(SKIN_BENEFITS[skin_type].get(act, 0.0) for act in actives)
+
+    norm_c = (comedogenic_load / total_weight) if total_weight > 0 else 0.0
+    norm_i = (irritancy_load / total_weight) if total_weight > 0 else 0.0
+
+    if skin_type in ('oily', 'acne_prone'):
+        risk_penalty = (norm_c * 8.0) + (norm_i * 4.0)
+    elif skin_type == 'sensitive':
+        risk_penalty = (norm_i * 10.0) + (norm_c * 3.0)
+    elif skin_type == 'dry':
+        risk_penalty = (norm_i * 5.0)
+    else:
+        risk_penalty = (norm_c * 3.0) + (norm_i * 3.0)
+
+    safety_score = 75.0 + min(25.0, benefit_pts * 4.0) - min(50.0, risk_penalty * 3.0)
+    safety_score = max(20.0, min(100.0, float(safety_score)))
+
+    unique_warnings = list(dict.fromkeys(warnings))
+    return safety_score, unique_warnings
 
 # ==============================================================================
-# 4. JEV 1.13 FREE DECISION MODEL (OPENCODE ZEN)
+# 4. JEV 1.13 DECISION MODEL & GEMINI 3.5 FLASH-LITE FALLBACK
 # ==============================================================================
 def call_jev_reranker(source_title, candidate_title, candidate_ings, skin_type):
     opencode_key = os.environ.get("OPENCODE_API_KEY")
@@ -244,7 +347,7 @@ def call_jev_reranker(source_title, candidate_title, candidate_ings, skin_type):
     if opencode_key:
         api_key = opencode_key
         url = "https://opencode.ai/zen/v1/systemone"
-        model_name = "jev-1.13-free"
+        model_name = cfg.JEV_MODEL_NAME or "jev-1.13-free"
     elif typesafe_key:
         api_key = typesafe_key
         url = "https://api.typesafe.ai/v1/systemone"
@@ -272,7 +375,7 @@ def call_jev_reranker(source_title, candidate_title, candidate_ings, skin_type):
                 "User-Agent": "Mozilla/5.0 (compatible; SkincareAI/2.0)"
             }
         )
-        with urllib.request.urlopen(req, timeout=3.5) as resp:
+        with urllib.request.urlopen(req, timeout=cfg.JEV_TIMEOUT_SECONDS) as resp:
             data = json.loads(resp.read().decode('utf-8'))
             answers = data.get("answers", {})
             dupe_info = answers.get("is_effective_dupe", {})
@@ -282,11 +385,28 @@ def call_jev_reranker(source_title, candidate_title, candidate_ings, skin_type):
                 return float(dupe_info)
             return None
     except Exception as e:
-        logger.warning(f"Jev API call skipped/timed out: {e}")
+        logger.warning(f"Jev API call skipped/failed: {e}")
+        return None
+
+def call_gemini_reranker(source_title, candidate_title, candidate_ings, skin_type):
+    gemini_key = os.environ.get("GEMINI_API_KEY") or cfg.GEMINI_API_KEY
+    if not gemini_key:
+        return None
+    try:
+        res = verify_match_with_gemini(
+            store_title=source_title,
+            candidate_title=candidate_title
+        )
+        if res is not None:
+            is_same, conf = res
+            return float(conf) if is_same else float(conf * 0.3)
+        return None
+    except Exception as e:
+        logger.warning(f"Gemini fallback reranker call failed: {e}")
         return None
 
 # ==============================================================================
-# 5. CORE RECOMMENDATION ENGINE
+# 5. CORE RECOMMENDATION ENGINE (SOTA HYBRID + CROSS-ENCODER)
 # ==============================================================================
 def get_recommendations(target_title: str, skin_type: str = "normal"):
     df = df_cache
@@ -297,18 +417,23 @@ def get_recommendations(target_title: str, skin_type: str = "normal"):
         return None
 
     target = matches.iloc[0]
-    target_idx = target.name
+    target_id = target['id']
     target_cat = target['std_category']
     target_ings = target['parsed_ingredients']
     target_actives = target['all_actives']
+    target_clean_title = clean_product_title(str(target['title']))
+    target_ings_str = ", ".join(target_ings[:8]) if target_ings else ""
 
     candidates = df[df['std_category'] == target_cat].copy()
     if len(candidates) < 6:
         candidates = df.copy()
 
+    # Convert candidates to list of dicts for 10x-20x faster iteration (Flaw 5 fix)
+    candidate_records = candidates.to_dict('records')
     scored = []
-    for idx, row in candidates.iterrows():
-        if idx == target_idx:
+
+    for row in candidate_records:
+        if row['id'] == target_id:
             continue
         cand_ings = row['parsed_ingredients']
         cand_actives = row['all_actives']
@@ -340,29 +465,73 @@ def get_recommendations(target_title: str, skin_type: str = "normal"):
         final_match = float(round(min(98.5, max(30.0, final_match)), 1))
 
         scored.append({
-            'index': int(idx),
+            'id': int(row['id']),
             'title': str(row['title']),
             'brand': str(row['brand']),
             'price': float(row['price_low']),
             'match_score': float(final_match),
+            'formula_sim': float(formula_sim),
             'image_url': str(row['image_url']) if pd.notna(row['image_url']) else None,
             'warnings': "; ".join(warnings) if warnings else None,
-            'url': str(row['url'])
+            'url': str(row['url']),
+            'ingredients': row.get('ingredients') or "",
+            'parsed_ingredients': cand_ings,
+            'gate4_jev_status': row.get('gate4_jev_status'),
+            'inci_jev_score': row.get('inci_jev_score'),
+            'gate4_gemini_status': row.get('gate4_gemini_status'),
+            'inci_gemini_score': row.get('inci_gemini_score'),
+            'cross_score': None,
+            'ai_verified': False,
+            'ai_confidence': None,
+            'ai_provider': None
         })
 
-    scored = sorted(scored, key=lambda x: x['match_score'], reverse=True)[:5]
+    # Take top 10 candidates for FastEmbed Cross-Encoder reranking (Flaw 9 fix)
+    scored = sorted(scored, key=lambda x: x['match_score'], reverse=True)[:10]
 
-    # Optional Jev AI calibration
-    has_jev_key = os.environ.get("OPENCODE_API_KEY") or os.environ.get("JEV_API_KEY") or os.environ.get("TYPESAFE_API_KEY")
-    if has_jev_key:
+    if cfg.ENABLE_CROSS_ENCODER and scored:
+        target_pair_text = f"{target['brand']} {target_clean_title}. Actives: {', '.join(sorted(target_actives)) if target_actives else 'N/A'}. Ingredients: {target_ings_str}"
         for cand in scored:
-            row_cand = df.iloc[cand['index']]
-            dupe_prob = call_jev_reranker(target['title'], cand['title'], row_cand['ingredients'], skin_type)
-            if dupe_prob is not None:
-                cand['ai_verified'] = True
-                cand['ai_confidence'] = float(round(dupe_prob * 100, 1))
-                cand['match_score'] = float(round((cand['match_score'] * 0.65) + (dupe_prob * 100 * 0.35), 1))
+            cand_clean_title = clean_product_title(cand['title'])
+            cand_ings_sub = ", ".join(cand['parsed_ingredients'][:8]) if cand['parsed_ingredients'] else ""
+            cand_pair_text = f"{cand['brand']} {cand_clean_title}. Ingredients: {cand_ings_sub}"
+            try:
+                cross_score = score_cross_encoder(target_pair_text, cand_pair_text)
+                cand['cross_score'] = float(round(cross_score, 4))
+                # Calibrate match_score with cross_score: blend 75% formula + 25% cross-encoder
+                cand['match_score'] = float(round((cand['match_score'] * 0.75) + (cross_score * 100 * 0.25), 1))
+            except Exception as e:
+                logger.warning(f"Cross-encoder scoring skipped: {e}")
+                cand['cross_score'] = None
         scored = sorted(scored, key=lambda x: x['match_score'], reverse=True)
+
+    # Take top 5 candidates
+    scored = scored[:5]
+
+    # Pre-computed Gate 4 AI Telemetry & Local Cross-Encoder Verification (Non-blocking: <25ms SLA)
+    for cand in scored:
+        jev_st = cand.get('gate4_jev_status')
+        jev_sc = cand.get('inci_jev_score')
+        gem_st = cand.get('gate4_gemini_status')
+        gem_sc = cand.get('inci_gemini_score')
+        cross_sc = cand.get('cross_score')
+
+        if jev_st == 'jev_approved' and jev_sc is not None:
+            cand['ai_verified'] = True
+            cand['ai_confidence'] = float(round(jev_sc * 100, 1))
+            cand['ai_provider'] = "jev-1.13"
+            cand['match_score'] = float(round((cand['match_score'] * 0.70) + (jev_sc * 100 * 0.30), 1))
+        elif gem_st == 'gemini_approved' and gem_sc is not None:
+            cand['ai_verified'] = True
+            cand['ai_confidence'] = float(round(gem_sc * 100, 1))
+            cand['ai_provider'] = "gemini-3.5-flash-lite"
+            cand['match_score'] = float(round((cand['match_score'] * 0.70) + (gem_sc * 100 * 0.30), 1))
+        elif cross_sc is not None and cross_sc >= cfg.CROSS_ENCODER_CONFIDENCE_THRESHOLD:
+            cand['ai_verified'] = True
+            cand['ai_confidence'] = float(round(cross_sc * 100, 1))
+            cand['ai_provider'] = "local-cross-encoder"
+
+    scored = sorted(scored, key=lambda x: x['match_score'], reverse=True)
 
     target_safety, target_warnings = evaluate_skin_safety(target_ings, target_actives, skin_type)
     source_prod = {
@@ -375,7 +544,25 @@ def get_recommendations(target_title: str, skin_type: str = "normal"):
         "url": str(target['url'])
     }
 
-    return {"source": source_prod, "results": scored}
+    # Clean up internal fields for clean API response
+    clean_results = []
+    for c in scored:
+        clean_results.append({
+            "id": c["id"],
+            "title": c["title"],
+            "brand": c["brand"],
+            "price": c["price"],
+            "match_score": c["match_score"],
+            "cross_score": c.get("cross_score"),
+            "ai_verified": c.get("ai_verified", False),
+            "ai_confidence": c.get("ai_confidence"),
+            "ai_provider": c.get("ai_provider"),
+            "image_url": c["image_url"],
+            "warnings": c["warnings"],
+            "url": c["url"]
+        })
+
+    return {"source": source_prod, "results": clean_results}
 
 # ==============================================================================
 # 6. FASTAPI ENDPOINTS & BACKGROUND AUTOMATION
@@ -502,6 +689,41 @@ def trigger_sync(background_tasks: BackgroundTasks):
         "status": "accepted",
         "message": "Daily synchronization job dispatched to background worker. Check /stats for progress."
     }
+
+class SynonymRequest(BaseModel):
+    alias: str
+    canonical_name: str
+    category: Optional[str] = "general"
+
+@app.get("/synonyms")
+def list_synonyms():
+    """Returns all active ingredient synonyms from the database."""
+    return load_synonyms_from_db()
+
+@app.post("/synonyms")
+def create_or_update_synonym(req: SynonymRequest):
+    """Dynamically adds or updates an ingredient synonym in the database and updates cache."""
+    global SYNONYMS
+    ok = add_synonym_to_db(req.alias, req.canonical_name, req.category)
+    if ok:
+        SYNONYMS = load_synonyms_from_db()
+        try:
+            from pipeline.inci_matcher import reload_synonyms
+            reload_synonyms()
+        except ImportError:
+            pass
+        try:
+            from dermo_data import reload_dermo_lookup_cache
+            reload_dermo_lookup_cache()
+        except ImportError:
+            pass
+        return {
+            "status": "success",
+            "alias": req.alias.lower().strip(),
+            "canonical_name": req.canonical_name.strip(),
+            "category": req.category
+        }
+    raise HTTPException(status_code=500, detail="Failed to persist synonym in database.")
 
 @app.get("/")
 def health_check():
