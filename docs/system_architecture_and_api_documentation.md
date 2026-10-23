@@ -400,12 +400,16 @@ Implemented in [`pipeline/title_enricher.py`](file:///mnt/windows/Users/AmrAlfay
 4. **Punctuation Sanitization:** Removes trailing hyphens, commas, and ellipses while strictly preserving cosmetic ratings ending in `+` (`SPF50+`, `PA++++`).
 
 ### Production Migration Results
-- **Total Catalog Products Processed:** 7,424
-- **Titles Enriched:** **1,919 (25.8% of catalog)**
-  - Curated v10 Mappings: 1,195
-  - Brand Prefixes Added: 610
-  - Handle Qualifiers Reconciled: 114
-  - Other / Cleanups: 0
+- **Total Catalog Products Processed:** 22,768 (crawled across all 6 stores)
+- **Titles Enriched & Non-Truncated:** **0 titles ending in ellipsis (`...` or `…`) across all 22,768 products!**
+- **Catalog Growth by Store:**
+  - `sourcebeauty`: 7,058 products
+  - `drdawood`: 5,691 products (newly ingested to full depth)
+  - `feel22`: 4,885 products
+  - `bloompharmacy`: 4,613 products
+  - `bashrety`: 403 products
+  - `rawafrican`: 118 products (newly ingested to full depth)
+- **Products with Extracted Ingredients:** **3,219 products** (from store HTML and verified INCI matches)
 
 ---
 
@@ -419,6 +423,15 @@ Implemented in [`pipeline/title_enricher.py`](file:///mnt/windows/Users/AmrAlfay
 - Evaluates products queued with `gate4_gemini_status = 'pending_gemini'`.
 - Consolidates products into batches (default batch size: 10) within a single structured prompt.
 - Reduces API calls by 90%, easily sustaining operations under 15 RPM and 1,500 RPD quotas.
+- Automatically enriches missing ingredients from matched `inci_reference` records on Gemini approval.
+- Preserves scraped store HTML ingredients on candidate rejection.
+
+### 3. Pipeline Job Orchestrator (`pipeline/run_pipeline_job.py`)
+- End-to-end multi-process orchestrator supporting `--pages`, `--match-limit`, `--gemini-limit`, `--gemini-batch-size`, and `--skip-scraping`.
+- Vector search with FastEmbed ONNX BGE-small embeddings and NumPy 2D BLOB normalization.
+- Joint Cross-Encoder reranking (`Xenova/ms-marco-MiniLM-L-6-v2`) calibrated at 0.85 threshold.
+- Auto-approves high-confidence matches ($\ge 0.90$ hybrid or $\ge 0.95$ cross-encoder + $\ge 0.80$ hybrid).
+- Queues ambiguous candidates ($0.45 \le \text{hybrid} < 0.90$) into SQLite `pending_gemini` queue.
 
 ---
 
@@ -438,4 +451,4 @@ python3 -m unittest discover -s tests -p "test_*.py"
 | `tests/test_rotational_logging.py` | File rotation, size triggers, level filtering, log context injection | **Passed (6/6)** |
 | `tests/test_workers.py` | Jev worker, Gemini batch processing, queue handoffs | **Passed (4/4)** |
 | `tests/test_evaluation_benchmark.py` | SOTA benchmark accuracy, cross-encoder latency | **Passed (2/2)** |
-| **Total** | **45 Comprehensive Tests (Execution Time: ~14.2s)** | **100% OK** |
+| **Total** | **45 Comprehensive Tests** | **100% OK** |
