@@ -7,6 +7,11 @@ import {
   Layers, Settings2
 } from 'lucide-react';
 
+const SKINCARE_CATEGORIES = [
+  'Cleanser', 'Moisturizer', 'Serum', 'Sunscreen', 'Tanning',
+  'Body Care', 'Toner', 'Exfoliator', 'Eye Skincare', 'Mask', 'Lip Care', 'Treatment'
+];
+
 const AdminObservatory = ({ onBackToApp }) => {
   // Overview stats
   const [overview, setOverview] = useState(null);
@@ -46,6 +51,11 @@ const AdminObservatory = ({ onBackToApp }) => {
   const [telemetry, setTelemetry] = useState(null);
   const [loadingTelemetry, setLoadingTelemetry] = useState(false);
   const [activeTab, setActiveTab] = useState('scraped'); // 'scraped', 'ingredients', 'inci', 'pricing', 'dermo', 'similar'
+  
+  // Similar Alternatives Filter States
+  const [altCategoryMode, setAltCategoryMode] = useState('same_category'); // 'same_category', 'cross_category', 'specific'
+  const [altSelectedCategory, setAltSelectedCategory] = useState('');
+  const [loadingAlternatives, setLoadingAlternatives] = useState(false);
 
   const searchDebounceRef = useRef(null);
 
@@ -279,6 +289,8 @@ const AdminObservatory = ({ onBackToApp }) => {
   const handleOpenTelemetry = async (productId) => {
     setSelectedProductId(productId);
     setActiveTab('scraped');
+    setAltCategoryMode('same_category');
+    setAltSelectedCategory('');
     setLoadingTelemetry(true);
     setTelemetry(null);
     try {
@@ -295,6 +307,32 @@ const AdminObservatory = ({ onBackToApp }) => {
       setLoadingTelemetry(false);
     }
   };
+
+  // Fetch updated alternatives dynamically based on category mode filter
+  const fetchAlternatives = async (productId, mode, specificCat = '') => {
+    if (!productId) return;
+    try {
+      setLoadingAlternatives(true);
+      const params = new URLSearchParams();
+      params.append('category_mode', mode);
+      if (mode === 'specific' && specificCat) {
+        params.append('target_category', specificCat);
+      }
+      const res = await fetch(`http://127.0.0.1:8000/admin/products/${productId}/alternatives?${params.toString()}`);
+      if (res.ok) {
+        const data = await res.json();
+        setTelemetry(prev => prev ? {
+          ...prev,
+          similar_formulation_matches: data.results || []
+        } : prev);
+      }
+    } catch (err) {
+      console.error('Failed to fetch filtered alternatives:', err);
+    } finally {
+      setLoadingAlternatives(false);
+    }
+  };
+
 
   const totalPages = Math.ceil(totalProducts / pageSize);
 
@@ -1819,9 +1857,93 @@ const AdminObservatory = ({ onBackToApp }) => {
                         </div>
                       </div>
 
-                      {telemetry.similar_formulation_matches.length === 0 ? (
+                      {/* Mode & Category Filter Controls */}
+                      <div className="bg-gray-50 border border-gray-200 rounded-2xl p-3 space-y-2.5">
+                        <div className="flex flex-wrap items-center justify-between gap-2">
+                          <div className="text-[11px] font-bold text-gray-700 flex items-center gap-1.5">
+                            <SlidersHorizontal className="w-3.5 h-3.5 text-purple-600" />
+                            <span>Alternative Recommendation Scope:</span>
+                            <span className="text-gray-400 font-normal">Switch between same category vs cross-category</span>
+                          </div>
+                          {loadingAlternatives && (
+                            <div className="flex items-center gap-1.5 text-[11px] text-purple-600 font-bold animate-pulse">
+                              <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                              <span>Reranking alternatives...</span>
+                            </div>
+                          )}
+                        </div>
+
+                        <div className="flex flex-wrap items-center gap-2">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setAltCategoryMode('same_category');
+                              setAltSelectedCategory('');
+                              fetchAlternatives(telemetry.product.id, 'same_category');
+                            }}
+                            className={`px-3 py-1.5 rounded-xl font-bold text-xs transition cursor-pointer flex items-center gap-1.5 ${
+                              altCategoryMode === 'same_category'
+                                ? 'bg-purple-600 text-white shadow-sm'
+                                : 'bg-white text-gray-700 border border-gray-200 hover:bg-gray-100'
+                            }`}
+                          >
+                            <span>🧴 Same Category</span>
+                            <span className="opacity-80 font-normal">({telemetry.product.category || 'Standard'})</span>
+                          </button>
+
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setAltCategoryMode('cross_category');
+                              setAltSelectedCategory('');
+                              fetchAlternatives(telemetry.product.id, 'cross_category');
+                            }}
+                            className={`px-3 py-1.5 rounded-xl font-bold text-xs transition cursor-pointer flex items-center gap-1.5 ${
+                              altCategoryMode === 'cross_category'
+                                ? 'bg-purple-600 text-white shadow-sm'
+                                : 'bg-white text-gray-700 border border-gray-200 hover:bg-gray-100'
+                            }`}
+                          >
+                            <span>🌐 Cross-Category</span>
+                            <span className="opacity-80 font-normal">(All Skincare)</span>
+                          </button>
+
+                          <div className="flex items-center gap-1.5 sm:ml-auto">
+                            <span className="text-[10px] font-bold text-gray-500 uppercase">Target Category:</span>
+                            <select
+                              value={altCategoryMode === 'specific' ? altSelectedCategory : ''}
+                              onChange={(e) => {
+                                const cat = e.target.value;
+                                if (cat) {
+                                  setAltCategoryMode('specific');
+                                  setAltSelectedCategory(cat);
+                                  fetchAlternatives(telemetry.product.id, 'specific', cat);
+                                } else {
+                                  setAltCategoryMode('same_category');
+                                  setAltSelectedCategory('');
+                                  fetchAlternatives(telemetry.product.id, 'same_category');
+                                }
+                              }}
+                              className="px-2.5 py-1 text-xs border border-gray-300 rounded-lg bg-white text-gray-700 font-medium focus:ring-1 focus:ring-purple-500 focus:outline-none"
+                            >
+                              <option value="">Specific Category...</option>
+                              {SKINCARE_CATEGORIES.map(c => (
+                                <option key={c} value={c}>{c}</option>
+                              ))}
+                            </select>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Alternatives List */}
+                      {loadingAlternatives ? (
+                        <div className="p-12 text-center flex flex-col items-center justify-center gap-3 bg-white rounded-2xl border border-gray-100 shadow-sm">
+                          <Loader2 className="w-7 h-7 animate-spin text-purple-600" />
+                          <span className="text-gray-500 font-semibold text-xs">Computing non-water active formulation compatibility...</span>
+                        </div>
+                      ) : telemetry.similar_formulation_matches.length === 0 ? (
                         <div className="p-8 text-center text-gray-400 bg-gray-50 rounded-2xl border">
-                          No formulation alternatives matched for this product.
+                          No formulation alternatives matched for this product with the selected category filter.
                         </div>
                       ) : (
                         telemetry.similar_formulation_matches.map((alt, idx) => (
@@ -1840,12 +1962,22 @@ const AdminObservatory = ({ onBackToApp }) => {
                                   )}
                                 </div>
                                 <div>
-                                  <div className="text-[10px] font-bold text-purple-600 uppercase flex items-center gap-1.5">
+                                  <div className="text-[10px] font-bold text-purple-600 uppercase flex flex-wrap items-center gap-1.5">
                                     <span>{alt.brand}</span>
                                     <span className="text-gray-300">•</span>
                                     <span className="text-gray-400 font-mono">#{alt.id}</span>
+                                    {alt.category && (
+                                      <span className="px-2 py-0.5 rounded-full text-[9px] font-bold bg-indigo-50 text-indigo-700 border border-indigo-200">
+                                        {alt.category}
+                                      </span>
+                                    )}
+                                    {alt.vehicle && alt.vehicle !== 'general' && (
+                                      <span className="px-2 py-0.5 rounded-full text-[9px] font-bold bg-purple-50 text-purple-700 border border-purple-200">
+                                        {alt.vehicle.replace('_', ' ').toUpperCase()}
+                                      </span>
+                                    )}
                                   </div>
-                                  <h4 className="font-bold text-sm text-gray-900 leading-snug group-hover:text-purple-700 transition">
+                                  <h4 className="font-bold text-sm text-gray-900 leading-snug group-hover:text-purple-700 transition mt-0.5">
                                     {alt.title}
                                   </h4>
                                   <div className="text-[11px] text-gray-500 mt-0.5">{alt.price ? `${alt.price} EGP` : 'Price N/A'}</div>
@@ -1869,7 +2001,7 @@ const AdminObservatory = ({ onBackToApp }) => {
                                     e.stopPropagation();
                                     handleOpenTelemetry(alt.id);
                                   }}
-                                  className="px-3 py-1.5 bg-purple-50 group-hover:bg-purple-600 text-purple-700 group-hover:text-white font-bold rounded-xl text-xs transition flex items-center gap-1 shrink-0"
+                                  className="px-3 py-1.5 bg-purple-50 group-hover:bg-purple-600 text-purple-700 group-hover:text-white font-bold rounded-xl text-xs transition flex items-center gap-1 shrink-0 cursor-pointer"
                                 >
                                   <span>Inspect</span>
                                   <ChevronRight className="w-3.5 h-3.5" />
@@ -1879,20 +2011,28 @@ const AdminObservatory = ({ onBackToApp }) => {
 
                             {/* Why it was matched */}
                             <div className="p-3 bg-purple-50/60 rounded-xl border border-purple-100 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 text-[11px]">
-                              <div>
+                              <div className="flex flex-wrap items-center gap-1.5">
                                 <span className="font-bold text-purple-900">Shared Actives: </span>
-                                <span className="text-purple-700">
-                                  {alt.shared_actives.length > 0 ? alt.shared_actives.join(', ') : 'Base formulation similarity'}
-                                </span>
+                                {alt.shared_actives && alt.shared_actives.length > 0 ? (
+                                  alt.shared_actives.map((act) => (
+                                    <span key={act} className="inline-flex items-center px-2 py-0.5 rounded-md bg-purple-100 text-purple-800 font-bold text-[10px]">
+                                      ✨ {act}
+                                    </span>
+                                  ))
+                                ) : (
+                                  <span className="text-purple-700 italic">
+                                    {alt.vehicle && alt.vehicle !== 'general' ? `Texture/Vehicle compatibility (${alt.vehicle.replace('_', ' ')})` : 'Base non-water formulation match'}
+                                  </span>
+                                )}
                               </div>
                               {alt.formula_similarity_percent !== null && (
                                 <div className="font-bold text-purple-800 shrink-0">
-                                  Formula Jaccard: {alt.formula_similarity_percent}%
+                                  Non-Water Jaccard: {alt.formula_similarity_percent}%
                                 </div>
                               )}
                             </div>
 
-                            {alt.differing_actives.length > 0 && (
+                            {alt.differing_actives && alt.differing_actives.length > 0 && (
                               <div className="text-[11px] text-gray-500 pl-1">
                                 <span className="font-semibold text-gray-700">Unique to this alternative: </span>
                                 <span>{alt.differing_actives.join(', ')}</span>

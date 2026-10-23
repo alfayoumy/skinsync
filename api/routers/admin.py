@@ -267,7 +267,11 @@ def list_admin_products(
 
 
 @router.get("/products/{product_id}/telemetry")
-def get_product_telemetry_forensics(product_id: int):
+def get_product_telemetry_forensics(
+    product_id: int,
+    category_mode: str = "same_category",
+    target_category: Optional[str] = None
+):
     """
     Comprehensive forensic audit trail for a single product listing:
     1. Raw store scraping details & HTML descriptions.
@@ -453,57 +457,30 @@ def get_product_telemetry_forensics(product_id: int):
         # 6. Top Similar Products & Match Breakdown
         similar_alternatives = []
         try:
-            rec_res = get_recommendations(target_title=product["title"], skin_type="normal")
+            rec_res = get_recommendations(
+                target_title=product["title"],
+                skin_type="normal",
+                category_mode=category_mode,
+                target_category=target_category
+            )
             if rec_res and "results" in rec_res:
-                target_parsed = parsed_ings
-                target_actives = set(actives_list)
-
-                for r in rec_res["results"][:8]:
-                    cand_id = r.get("id")
-                    cand_parsed = []
-                    cand_acts = set()
-
-                    if cand_id:
-                        cur.execute("SELECT ingredients_parsed, ingredients_raw, actives, canonical_product_id FROM products WHERE id = ?;", (cand_id,))
-                        c_row = cur.fetchone()
-                        if c_row:
-                            if product.get("canonical_product_id") and c_row["canonical_product_id"] == product.get("canonical_product_id"):
-                                continue
-                            if c_row["ingredients_parsed"]:
-                                try:
-                                    cand_parsed = json.loads(c_row["ingredients_parsed"])
-                                except Exception:
-                                    pass
-                            if not cand_parsed and c_row["ingredients_raw"]:
-                                cand_parsed, _ = parse_and_clean_ingredients(c_row["ingredients_raw"])
-
-                            if c_row["actives"]:
-                                try:
-                                    cand_acts = set(json.loads(c_row["actives"]))
-                                except Exception:
-                                    pass
-                            if not cand_acts and cand_parsed:
-                                _, p_a = parse_and_clean_ingredients(c_row["ingredients_raw"] or "")
-                                cand_acts = p_a
-
-                    shared_acts = sorted(list(target_actives.intersection(cand_acts)))
-                    diff_acts = sorted(list(cand_acts.difference(target_actives)))
-                    formula_jaccard = round(compute_weighted_jaccard(target_parsed, cand_parsed) * 100.0, 1) if target_parsed and cand_parsed else None
-
+                for r in rec_res["results"]:
                     similar_alternatives.append({
-                        "id": cand_id,
+                        "id": r.get("id"),
                         "title": r.get("title"),
                         "brand": r.get("brand"),
+                        "category": r.get("category"),
+                        "vehicle": r.get("vehicle"),
                         "price": r.get("price"),
                         "url": r.get("url"),
                         "image_url": r.get("image_url"),
                         "match_score": r.get("match_score"),
                         "cross_encoder_score": r.get("cross_score"),
                         "ai_provider": r.get("ai_provider"),
-                        "shared_actives": shared_acts,
-                        "differing_actives": diff_acts,
-                        "formula_similarity_percent": formula_jaccard,
-                        "match_summary": f"Shares {len(shared_acts)} key active(s): {', '.join(shared_acts) if shared_acts else 'Base formulation compatibility'}"
+                        "shared_actives": r.get("shared_actives", []),
+                        "differing_actives": r.get("differing_actives", []),
+                        "formula_similarity_percent": r.get("formula_similarity_percent"),
+                        "match_summary": r.get("match_summary", "")
                     })
         except Exception as e:
             logger.warning(f"Similar alternatives generation failed for {product_id}: {e}")
@@ -577,6 +554,39 @@ def get_product_telemetry_forensics(product_id: int):
         }
     finally:
         conn.close()
+
+
+@router.get("/products/{product_id}/alternatives")
+def get_product_alternatives_endpoint(
+    product_id: int,
+    category_mode: str = "same_category",
+    target_category: Optional[str] = None
+):
+    """
+    Returns alternative products/dupes for the given product, supporting
+    same_category, cross_category, or specific category filtering.
+    """
+    conn = get_connection()
+    try:
+        cur = conn.cursor()
+        cur.execute("SELECT id, title, brand, category FROM products WHERE id = ?;", (product_id,))
+        p = cur.fetchone()
+        if not p:
+            raise HTTPException(status_code=404, detail="Product not found")
+
+        rec_res = get_recommendations(
+            target_title=p["title"],
+            skin_type="normal",
+            category_mode=category_mode,
+            target_category=target_category
+        )
+        if not rec_res:
+            return {"source": {"id": p["id"], "title": p["title"], "brand": p["brand"], "category": p["category"]}, "results": []}
+
+        return rec_res
+    finally:
+        conn.close()
+
 
 
 class ClassificationUpdate(BaseModel):

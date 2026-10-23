@@ -18,33 +18,33 @@ logger = get_logger("skincare_engine.catalog_service")
 DB_PATH = os.path.join(os.path.dirname(os.path.dirname(__file__)), "skincare.db")
 
 KEY_ACTIVES = {
-    'hyaluronic_acid': ['hyaluronic acid', 'sodium hyaluronate', 'hydrolyzed hyaluronic', 'hyaluronate'],
-    'vitamin_b5': ['panthenol', 'd-panthenol', 'pro-vitamin b5', 'pantothenic acid'],
-    'niacinamide': ['niacinamide', 'nicotinamide', 'vitamin b3'],
-    'vitamin_c': ['ascorbic acid', 'l-ascorbic', 'ethyl ascorbic', 'magnesium ascorbyl', 'sodium ascorbyl', 'ascorbyl glucoside', 'vitamin c'],
-    'retinoid': ['retinol', 'retinyl palmitate', 'retinal', 'hydroxypinacolone retinoate', 'adapalene', 'tretinoin', 'retinyl'],
-    'salicylic_acid': ['salicylic acid', 'bha', 'betaine salicylate', 'willow bark'],
-    'aha': ['glycolic acid', 'lactic acid', 'mandelic acid', 'malic acid', 'citric acid', 'tartaric acid'],
-    'ceramides': ['ceramide np', 'ceramide ap', 'ceramide eop', 'ceramide 3', 'ceramide', 'phytosphingosine', 'sphingosine'],
-    'centella': ['centella asiatica', 'madecassoside', 'asiaticoside', 'asiatic acid', 'madecassic acid', 'cica', 'gotu kola'],
-    'peptides': ['peptide', 'matrixyl', 'copper tripeptide', 'palmitoyl', 'argireline', 'oligopeptide', 'acetyl hexapeptide'],
-    'azelaic_acid': ['azelaic acid', 'potassium azeloyl diglycinate'],
+    'hyaluronic_acid': ['hyaluronic acid', 'sodium hyaluronate', 'hydrolyzed hyaluronic', 'hyaluronate', 'hyaluron', 'hyaluro', 'hyalu', 'h.a', 'ha'],
+    'vitamin_b5': ['panthenol', 'd-panthenol', 'pro-vitamin b5', 'pantothenic acid', 'vitamin b5', 'b5'],
+    'niacinamide': ['niacinamide', 'nicotinamide', 'vitamin b3', 'b3'],
+    'vitamin_c': ['ascorbic acid', 'l-ascorbic', 'ethyl ascorbic', 'magnesium ascorbyl', 'sodium ascorbyl', 'ascorbyl glucoside', 'vitamin c', 'vit c', 'vit-c', 'ascorbic', 'ascorbyl'],
+    'retinoid': ['retinol', 'retinyl palmitate', 'retinal', 'hydroxypinacolone retinoate', 'adapalene', 'tretinoin', 'retinyl', 'retinoid'],
+    'salicylic_acid': ['salicylic acid', 'salicylic', 'bha', 'betaine salicylate', 'willow bark'],
+    'aha': ['glycolic acid', 'glycolic', 'lactic acid', 'lactic', 'mandelic acid', 'mandelic', 'malic acid', 'citric acid', 'tartaric acid', 'aha'],
+    'ceramides': ['ceramide np', 'ceramide ap', 'ceramide eop', 'ceramide 3', 'ceramide', 'ceramides', 'phytosphingosine', 'sphingosine'],
+    'centella': ['centella asiatica', 'centella', 'madecassoside', 'asiaticoside', 'asiatic acid', 'madecassic acid', 'cica', 'gotu kola'],
+    'peptides': ['peptide', 'peptides', 'matrixyl', 'copper tripeptide', 'palmitoyl', 'argireline', 'oligopeptide', 'acetyl hexapeptide'],
+    'azelaic_acid': ['azelaic acid', 'azelaic', 'potassium azeloyl diglycinate'],
     'arbutin': ['alpha-arbutin', 'arbutin', 'alpha arbutin', 'beta-arbutin'],
-    'zinc': ['zinc pca', 'zinc oxide', 'zinc gluconate'],
+    'zinc': ['zinc pca', 'zinc oxide', 'zinc gluconate', 'zinc'],
     'squalane': ['squalane', 'squalene'],
     'tea_tree': ['tea tree', 'melaleuca alternifolia'],
     'collagen': ['hydrolyzed collagen', 'marine collagen', 'collagen'],
     'aloe_vera': ['aloe barbadensis', 'aloe vera'],
-    'tranexamic_acid': ['tranexamic acid', 'txa', 'cetyl tranexamate'],
+    'tranexamic_acid': ['tranexamic acid', 'tranexamic', 'txa', 'cetyl tranexamate'],
     'kojic_acid': ['kojic acid', 'kojic dipalmitate'],
     'bakuchiol': ['bakuchiol'],
     'urea': ['urea', 'hydroxyethyl urea'],
     'benzoyl_peroxide': ['benzoyl peroxide', 'bpo'],
     'sulfur': ['sulfur', 'colloidal sulfur'],
     'ectoin': ['ectoin'],
-    'pha': ['gluconolactone', 'lactobionic acid', 'galactose', 'maltobionic acid'],
-    'ferulic_acid': ['ferulic acid'],
-    'licorice': ['glycyrrhiza glabra', 'licorice root', 'dipotassium glycyrrhizate', 'glabridin'],
+    'pha': ['gluconolactone', 'lactobionic acid', 'galactose', 'maltobionic acid', 'pha'],
+    'ferulic_acid': ['ferulic acid', 'ferulic'],
+    'licorice': ['glycyrrhiza glabra', 'licorice root', 'dipotassium glycyrrhizate', 'glabridin', 'licorice'],
     'snail_mucin': ['snail secretion filtrate', 'snail mucin'],
     'ferments': ['galactomyces', 'bifida ferment', 'saccharomyces', 'lactobacillus ferment']
 }
@@ -99,21 +99,35 @@ def parse_and_clean_ingredients(text: Optional[str]) -> Tuple[List[str], Set[str
         token = re.sub(r'^\d+(\.\d+)?%\s*(pure\s*)?', '', token)
         token = token.rstrip('.').strip()
         for act_cat, keywords in KEY_ACTIVES.items():
-            if any(k in token for k in keywords):
-                found_actives.add(act_cat)
+            for k in keywords:
+                if len(k) <= 3:
+                    if re.search(r'\b' + re.escape(k) + r'\b', token):
+                        found_actives.add(act_cat)
+                        break
+                else:
+                    if k in token:
+                        found_actives.add(act_cat)
+                        break
         canon = SYNONYMS.get(token, token)
         cleaned.append(canon)
     return cleaned, found_actives
 
 def extract_actives_from_title(title: Optional[str]) -> Set[str]:
-    """Extracts known active categories present in the product title."""
+    """Extracts known active categories present in the product title with boundary safety."""
     if not isinstance(title, str):
         return set()
     t = title.lower()
     found = set()
     for act_cat, keywords in KEY_ACTIVES.items():
-        if any(k in t for k in keywords):
-            found.add(act_cat)
+        for k in keywords:
+            if len(k) <= 3:
+                if re.search(r'\b' + re.escape(k) + r'\b', t):
+                    found.add(act_cat)
+                    break
+            else:
+                if k in t:
+                    found.add(act_cat)
+                    break
     return found
 
 # Global in-memory cache

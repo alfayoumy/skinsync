@@ -86,7 +86,7 @@ def classify_and_tag(title: str, brand: str = "", product_type: str = "") -> Tup
         return 'Fragrance', False
 
     # 1.7 Hair Care & Scalp Treatments
-    if re.search(r"\b(shampoo|shampooing|conditioner|apres-shampooing|hair\s*mask|hair\s*oil|hair\s*serum|hair\s*cream|hair\s*mist|hair\s*lotion|hair\s*spray|hair\s*gel|scalp|hair\b|cheveux|capillaire|hairloss|anti-hair\s*loss|leave-in|hair\s*color|hair\s*dye|keratin\s*treatment|tonifying\s*gel)\b", t):
+    if re.search(r"\b(shampoo|shampooing|conditioner|apres-shampooing|hair\s*mask|hair\s*oil|hair\s*serum|hair\s*cream|hair\s*mist|hair\s*lotion|hair\s*spray|hair\s*gel|scalp|hair\b|hairs\b|cheveux|capillaire|hairloss|anti\s*hair\s*loss|leave\s*in|hair\s*color|hair\s*dye|keratin|kerastase|k[eé]rastase|professionnel|prolonger|pro\s*longer|frizz|anti\s*frizz|dandruff|anti\s*dandruff|split\s*ends|blow\s*dry|thermique|heat\s*protect\w*|hairburst|hairoots|hairvogine|developer\s*\d+\s*volume|thickening\s*spray|tonifying\s*gel)\b", t):
         return 'Hair Care', False
 
     # 1.8 Nail Care & Polish

@@ -37,6 +37,8 @@ class OnboardingRequest(BaseModel):
 class ProductRequest(BaseModel):
     product_title: str
     user_skin_type: str = "normal"
+    category_mode: Optional[str] = "same_category"
+    target_category: Optional[str] = None
 
 class SynonymRequest(BaseModel):
     alias: str
@@ -87,7 +89,12 @@ def get_user(email: str):
 @router.post("/recommend")
 def recommend(request: ProductRequest):
     """Finds cosmetic alternatives and formulation dupes for a source product."""
-    data = get_recommendations(request.product_title, request.user_skin_type)
+    data = get_recommendations(
+        target_title=request.product_title,
+        skin_type=request.user_skin_type,
+        category_mode=request.category_mode or "same_category",
+        target_category=request.target_category
+    )
     if not data:
         raise HTTPException(status_code=404, detail="Product not found")
     return {

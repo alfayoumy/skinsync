@@ -39,6 +39,55 @@ def get_inci_concentration_weight(idx: int, ingredient_name: str) -> float:
         return 0.30
     return 0.10
 
+WATER_SOLVENTS = {
+    'water', 'aqua', 'eau', 'purified water', 'deionized water',
+    'aqua / water / eau', 'aqua (water)', 'water/aqua/eau',
+    'aqua/water', 'eau/water', 'water (aqua)', 'water (aqua/eau)',
+    'eau thermale', 'thermal water'
+}
+
+VEHICLE_PATTERNS: List[Tuple[str, str]] = [
+    ('cleansing_balm', r'\b(cleansing\s*balm|cleaning\s*balm|cleanser\s*balm|balm\s*cleanser|baume\s*nettoyant)\b'),
+    ('cleansing_oil', r'\b(cleansing\s*oil|oil\s*cleanser|huile\s*nettoyante)\b'),
+    ('micellar', r'\b(micellar|eau\s*micellaire)\b'),
+    ('foam_cleanser', r'\b(cleansing\s*foam|foaming\s*cleanser|foam\s*wash|foaming\s*gel|gel\s*moussant)\b'),
+    ('gel_cleanser', r'\b(cleansing\s*gel|gel\s*cleanser|wash\s*gel|gel\s*wash)\b'),
+    ('balm', r'\b(balm|baume)\b'),
+    ('serum', r'\b(serum|ampoule|booster|concentrate|elixir|essence)\b'),
+    ('gel_cream', r'\b(gel-cream|gel\s*cream|water\s*gel|hydro\s*gel)\b'),
+    ('cream', r'\b(cream|creme|rich\s*cream|cold\s*cream|soothing\s*cream|butter)\b'),
+    ('lotion', r'\b(lotion|emulsion|fluid|fluide|milk|lait)\b'),
+    ('gel', r'\b(gel\b)\b'),
+    ('oil', r'\b(face\s*oil|facial\s*oil|oil\b|huile)\b'),
+    ('mask', r'\b(mask|masque|sheet\s*mask)\b'),
+    ('scrub', r'\b(scrub|peeling|exfoliant|gommage)\b'),
+    ('stick', r'\b(stick\b)\b'),
+    ('spray', r'\b(mist|spray|vaporisateur)\b'),
+    ('pad', r'\b(pads?|peel\s*pads?)\b')
+]
+
+def extract_vehicle(title: str) -> str:
+    """Detects formulation vehicle/texture from title."""
+    t = str(title).lower()
+    for v_name, pat in VEHICLE_PATTERNS:
+        if re.search(pat, t):
+            return v_name
+    return 'general'
+
+def compute_vehicle_sim(v1: str, v2: str) -> float:
+    """Computes formulation vehicle compatibility."""
+    if v1 == v2 and v1 != 'general':
+        return 1.0
+    if (v1, v2) in {('cleansing_balm', 'cleansing_oil'), ('cleansing_oil', 'cleansing_balm')}:
+        return 0.65
+    if (v1, v2) in {('gel_cleanser', 'foam_cleanser'), ('foam_cleanser', 'gel_cleanser')}:
+        return 0.75
+    if (v1, v2) in {('cream', 'gel_cream'), ('gel_cream', 'cream'), ('cream', 'lotion'), ('lotion', 'cream')}:
+        return 0.70
+    if (v1, v2) in {('serum', 'lotion'), ('lotion', 'serum')}:
+        return 0.50
+    return 0.40 if (v1 == 'general' or v2 == 'general') else 0.20
+
 def compute_weighted_jaccard(list_a: List[str], list_b: List[str]) -> float:
     """Computes weighted Jaccard similarity across two ordered ingredient lists."""
     if not list_a or not list_b:
@@ -50,18 +99,45 @@ def compute_weighted_jaccard(list_a: List[str], list_b: List[str]) -> float:
     union_w = sum(max(weights_a.get(k, 0.0), weights_b.get(k, 0.0)) for k in all_keys)
     return (inter_w / union_w) if union_w > 0 else 0.0
 
-def compute_title_sim(t1: str, t2: str) -> float:
-    """Computes token Jaccard similarity between two product titles excluding stop words."""
-    c1 = clean_product_title(str(t1))
-    c2 = clean_product_title(str(t2))
-    w1 = set(re.findall(r'\w+', c1.lower()))
-    w2 = set(re.findall(r'\w+', c2.lower()))
-    stop = {'the', 'and', 'with', 'for', 'skin', 'in', 'of', 'face', 'cream', 'serum', 'lotion'}
+def compute_non_water_jaccard(list_a: List[str], list_b: List[str]) -> float:
+    """Computes weighted Jaccard similarity across non-water formulation ingredients."""
+    if not list_a or not list_b:
+        return 0.0
+    filtered_a = [ing for ing in list_a if ing.lower().strip() not in WATER_SOLVENTS]
+    filtered_b = [ing for ing in list_b if ing.lower().strip() not in WATER_SOLVENTS]
+    if not filtered_a or not filtered_b:
+        return 0.0
+    weights_a = {ing: get_inci_concentration_weight(i, ing) for i, ing in enumerate(filtered_a)}
+    weights_b = {ing: get_inci_concentration_weight(i, ing) for i, ing in enumerate(filtered_b)}
+    all_keys = set(weights_a.keys()).union(weights_b.keys())
+    inter_w = sum(min(weights_a.get(k, 0.0), weights_b.get(k, 0.0)) for k in all_keys)
+    union_w = sum(max(weights_a.get(k, 0.0), weights_b.get(k, 0.0)) for k in all_keys)
+    return (inter_w / union_w) if union_w > 0 else 0.0
+
+def compute_functional_title_sim(t1: str, t2: str, brand1: str = "", brand2: str = "") -> float:
+    """Computes functional token Jaccard similarity without brand bias."""
+    c1 = clean_product_title(str(t1)).lower()
+    c2 = clean_product_title(str(t2)).lower()
+    if brand1:
+        for b in brand1.lower().split():
+            if len(b) > 2:
+                c1 = re.sub(r'\b' + re.escape(b) + r'\b', ' ', c1)
+    if brand2:
+        for b in brand2.lower().split():
+            if len(b) > 2:
+                c2 = re.sub(r'\b' + re.escape(b) + r'\b', ' ', c2)
+    w1 = set(re.findall(r'\w+', c1))
+    w2 = set(re.findall(r'\w+', c2))
+    stop = {'the', 'and', 'with', 'for', 'skin', 'in', 'of', 'face', 'ml', 'g', 'oz', 'mg'}
     w1 = w1 - stop
     w2 = w2 - stop
     if not w1 or not w2:
         return 0.0
     return len(w1.intersection(w2)) / len(w1.union(w2))
+
+def compute_title_sim(t1: str, t2: str) -> float:
+    """Computes token Jaccard similarity between two product titles excluding stop words."""
+    return compute_functional_title_sim(t1, t2)
 
 def evaluate_skin_safety(parsed_ings: List[str], actives: Set[str], skin_type: str) -> Tuple[float, List[str]]:
     """
@@ -199,14 +275,22 @@ def call_gemini_reranker(source_title: str, candidate_title: str, candidate_ings
         logger.warning(f"Gemini fallback reranker call failed: {e}")
         return None
 
-def get_recommendations(target_title: str, skin_type: str = "normal") -> Optional[Dict[str, Any]]:
+def get_recommendations(
+    target_title: str,
+    skin_type: str = "normal",
+    category_mode: str = "same_category",
+    target_category: Optional[str] = None
+) -> Optional[Dict[str, Any]]:
     """
     Finds the top cosmetic alternatives/dupes for a target product using SOTA hybrid scoring:
-    - Standard category filtering
-    - Formula similarity (weighted Jaccard + active overlap + title sim)
+    - Formulation function over brand: zero brand bias in title matching and cross-encoder
+    - Category filtering modes: 'same_category' (default), 'cross_category', or specific target category
+    - Active ingredient priority: candidates matching target's non-water key actives are heavily boosted,
+      candidates lacking target actives are penalized
+    - Non-water formulation Jaccard: ubiquitous water/aqua solvents are excluded
+    - Texture/vehicle compatibility (e.g. cleansing balm vs cleansing balm)
+    - FastEmbed ONNX Cross-Encoder reranking (unbiased, comparing texture, actives & non-water formulation)
     - Clinical skin safety and tolerance adjustments
-    - FastEmbed ONNX Cross-Encoder reranking
-    - Pre-computed Gate 4 AI telemetry
     """
     df = get_catalog_df()
     matches = df[df['title'].str.lower() == target_title.lower()]
@@ -221,13 +305,19 @@ def get_recommendations(target_title: str, skin_type: str = "normal") -> Optiona
     target_ings = target['parsed_ingredients']
     target_actives = target['all_actives']
     target_clean_title = clean_product_title(str(target['title']))
-    target_ings_str = ", ".join(target_ings[:8]) if target_ings else ""
+    target_vehicle = extract_vehicle(target['title'])
+    target_non_water = [ing for ing in target_ings if ing.lower().strip() not in WATER_SOLVENTS]
 
-    candidates = df[df['std_category'] == target_cat].copy()
-    if len(candidates) < 6:
+    # Category candidate filtering
+    if target_category and target_category != 'all':
+        candidates = df[df['std_category'] == target_category].copy()
+    elif category_mode == "cross_category":
         candidates = df.copy()
+    else:  # same_category
+        candidates = df[df['std_category'] == target_cat].copy()
+        if len(candidates) < 6:
+            candidates = df.copy()
 
-    # Convert candidates to list of dicts for fast iteration
     candidate_records = candidates.to_dict('records')
     scored = []
 
@@ -238,30 +328,59 @@ def get_recommendations(target_title: str, skin_type: str = "normal") -> Optiona
     for row in candidate_records:
         if row['id'] == target_id:
             continue
-        # Sibling store listings of the same canonical product entity are not alternatives;
-        # they are store offers displayed under Multi-Store Pricing.
+        # Exclude sibling store listings of the same canonical product entity
         row_canon = row.get('canonical_product_id')
         if target_canonical_id and row_canon and row_canon == target_canonical_id:
             continue
+
         cand_ings = row['parsed_ingredients']
         cand_actives = row['all_actives']
+        cand_vehicle = extract_vehicle(row['title'])
+        cand_cat = row['std_category']
 
-        if target_actives and cand_actives:
-            inter_act = len(target_actives.intersection(cand_actives))
-            union_act = len(target_actives.union(cand_actives))
-            actives_sim = (inter_act / union_act) if union_act > 0 else 0.0
-        elif not target_actives and not cand_actives:
+        # 1. Active Ingredients Matching (Extremely Important)
+        shared_acts = target_actives.intersection(cand_actives) if target_actives else set()
+        diff_cand_acts = cand_actives.difference(target_actives) if target_actives else cand_actives
+
+        if target_actives:
+            if len(shared_acts) > 0:
+                active_recall = len(shared_acts) / len(target_actives)
+                active_precision = len(shared_acts) / len(cand_actives) if cand_actives else 0.5
+                actives_sim = (active_recall * 0.80) + (active_precision * 0.20)
+            else:
+                # Target has active ingredients (e.g. Hyaluronic Acid), but candidate has NONE of them!
+                actives_sim = 0.0
+        else:
+            # Target has no explicit active keywords (e.g. basic cleansing balm, barrier cream)
             actives_sim = 0.5
-        else:
-            actives_sim = 0.1
 
-        inci_sim = compute_weighted_jaccard(target_ings, cand_ings) if (target_ings and cand_ings) else 0.0
-        title_sim = compute_title_sim(target['title'], row['title'])
+        # 2. Non-Water Formulation Jaccard (excl. water/solvents)
+        non_water_jaccard = compute_non_water_jaccard(target_ings, cand_ings) if (target_ings and cand_ings) else 0.0
 
-        if target_ings and cand_ings:
-            formula_sim = (actives_sim * 0.50) + (inci_sim * 0.35) + (title_sim * 0.15)
+        # 3. Vehicle / Texture Compatibility
+        vehicle_sim = compute_vehicle_sim(target_vehicle, cand_vehicle)
+
+        # 4. Brand-Independent Functional Title Similarity
+        title_sim = compute_functional_title_sim(target['title'], row['title'], brand1=target['brand'], brand2=row['brand'])
+
+        # 5. Hybrid Formulation Scoring
+        if category_mode == "cross_category":
+            if target_actives:
+                if actives_sim == 0.0:
+                    formula_sim = 0.05
+                else:
+                    formula_sim = (actives_sim * 0.65) + (non_water_jaccard * 0.25) + (title_sim * 0.10)
+            else:
+                formula_sim = (non_water_jaccard * 0.70) + (title_sim * 0.30)
         else:
-            formula_sim = (actives_sim * 0.60) + (title_sim * 0.40)
+            # same_category
+            if target_actives:
+                if actives_sim == 0.0:
+                    formula_sim = (non_water_jaccard * 0.15) + (vehicle_sim * 0.10)
+                else:
+                    formula_sim = (actives_sim * 0.50) + (non_water_jaccard * 0.25) + (vehicle_sim * 0.20) + (title_sim * 0.05)
+            else:
+                formula_sim = (vehicle_sim * 0.45) + (non_water_jaccard * 0.40) + (title_sim * 0.15)
 
         skin_safety, warnings = evaluate_skin_safety(cand_ings, cand_actives, skin_type)
 
@@ -272,10 +391,14 @@ def get_recommendations(target_title: str, skin_type: str = "normal") -> Optiona
 
         final_match = float(round(min(98.5, max(30.0, final_match)), 1))
 
+        cand_non_water = [ing for ing in cand_ings if ing.lower().strip() not in WATER_SOLVENTS]
+
         scored.append({
             'id': int(row['id']),
             'title': str(row['title']),
             'brand': str(row['brand']),
+            'category': cand_cat,
+            'vehicle': cand_vehicle,
             'price': float(row['price_low']),
             'match_score': float(final_match),
             'formula_sim': float(formula_sim),
@@ -284,6 +407,11 @@ def get_recommendations(target_title: str, skin_type: str = "normal") -> Optiona
             'url': str(row['url']),
             'ingredients': row.get('ingredients') or "",
             'parsed_ingredients': cand_ings,
+            'non_water_ingredients': cand_non_water,
+            'shared_actives': sorted(list(shared_acts)),
+            'differing_actives': sorted(list(diff_cand_acts)),
+            'formula_similarity_percent': round(non_water_jaccard * 100.0, 1) if (target_ings and cand_ings) else None,
+            'match_summary': f"Shares {len(shared_acts)} key active(s): {', '.join(sorted(list(shared_acts)))}" if shared_acts else f"Vehicle: {cand_vehicle.replace('_', ' ').title()}",
             'gate4_jev_status': row.get('gate4_jev_status'),
             'inci_jev_score': row.get('inci_jev_score'),
             'gate4_gemini_status': row.get('gate4_gemini_status'),
@@ -298,11 +426,9 @@ def get_recommendations(target_title: str, skin_type: str = "normal") -> Optiona
     scored = sorted(scored, key=lambda x: x['match_score'], reverse=True)[:10]
 
     if cfg.ENABLE_CROSS_ENCODER and scored:
-        target_pair_text = f"{target['brand']} {target_clean_title}. Actives: {', '.join(sorted(target_actives)) if target_actives else 'N/A'}. Ingredients: {target_ings_str}"
+        target_pair_text = f"Category: {target_cat}. Texture: {target_vehicle}. Actives: {', '.join(sorted(target_actives)) if target_actives else 'None'}. Formulation: {', '.join(target_non_water[:10])}"
         for cand in scored:
-            cand_clean_title = clean_product_title(cand['title'])
-            cand_ings_sub = ", ".join(cand['parsed_ingredients'][:8]) if cand['parsed_ingredients'] else ""
-            cand_pair_text = f"{cand['brand']} {cand_clean_title}. Ingredients: {cand_ings_sub}"
+            cand_pair_text = f"Category: {cand['category']}. Texture: {cand['vehicle']}. Actives: {', '.join(sorted(cand['shared_actives'] + cand['differing_actives'])) if (cand['shared_actives'] or cand['differing_actives']) else 'None'}. Formulation: {', '.join(cand['non_water_ingredients'][:10])}"
             try:
                 cross_score = score_cross_encoder(target_pair_text, cand_pair_text)
                 cand['cross_score'] = float(round(cross_score, 4))
@@ -313,8 +439,8 @@ def get_recommendations(target_title: str, skin_type: str = "normal") -> Optiona
                 cand['cross_score'] = None
         scored = sorted(scored, key=lambda x: x['match_score'], reverse=True)
 
-    # Take top 5 candidates
-    scored = scored[:5]
+    # Take top 6 candidates
+    scored = scored[:6]
 
     # Pre-computed Gate 4 AI Telemetry & Local Cross-Encoder Verification
     for cand in scored:
@@ -345,6 +471,8 @@ def get_recommendations(target_title: str, skin_type: str = "normal") -> Optiona
     source_prod = {
         "title": str(target['title']),
         "brand": str(target['brand']),
+        "category": target_cat,
+        "vehicle": target_vehicle,
         "price": float(target['price_low']),
         "match_score": 100.0,
         "image_url": str(target['image_url']) if pd.notna(target['image_url']) else None,
@@ -358,6 +486,8 @@ def get_recommendations(target_title: str, skin_type: str = "normal") -> Optiona
             "id": c["id"],
             "title": c["title"],
             "brand": c["brand"],
+            "category": c["category"],
+            "vehicle": c["vehicle"],
             "price": c["price"],
             "match_score": c["match_score"],
             "cross_score": c.get("cross_score"),
@@ -366,7 +496,11 @@ def get_recommendations(target_title: str, skin_type: str = "normal") -> Optiona
             "ai_provider": c.get("ai_provider"),
             "image_url": c["image_url"],
             "warnings": c["warnings"],
-            "url": c["url"]
+            "url": c["url"],
+            "shared_actives": c.get("shared_actives", []),
+            "differing_actives": c.get("differing_actives", []),
+            "formula_similarity_percent": c.get("formula_similarity_percent"),
+            "match_summary": c.get("match_summary", "")
         })
 
     return {"source": source_prod, "results": clean_results}
