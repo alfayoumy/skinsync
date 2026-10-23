@@ -11,7 +11,7 @@ from typing import Tuple, List, Optional, Set
 
 SKINCARE_CATEGORIES: Set[str] = {
     'Cleanser', 'Moisturizer', 'Serum', 'Sunscreen', 'Toner',
-    'Exfoliator', 'Eye Care', 'Mask', 'Lip Care', 'Treatment',
+    'Exfoliator', 'Eye Skincare', 'Eye Care', 'Mask', 'Lip Care', 'Treatment',
     'Body Care', 'Tanning'
 }
 
@@ -62,7 +62,7 @@ def classify_and_tag(title: str, brand: str = "", product_type: str = "") -> Tup
 
     # 1.1 Supplements & Health (Vitamins, Dietary, Pills, Minerals)
     if re.search(r"\b(capsules?|tablets?|caplets?|gummies|gummy|effervescent|sachets?|syrup|supplement|dietary\s*supplement|multivitamin|vitamins?|omega\s*\d*|fish\s*oil|collagen\s*(powder|capsules?|tablets?)|biotin|zinc|magnesium|calcium|iron\s*tablets?|protein|whey|creatine|glucosamine|probiotics?)\b", t):
-        if not re.search(r"\b(serum|cream|gel|lotion|cleanser|mask|face|facial|topical)\b", t):
+        if not re.search(r"\b(serum|cream|gel|lotion|cleanser|mask|face|facial|topical|solution|formula|niacinamide|\d+%)\b", t):
             return 'Supplements & Health', False
 
     # 1.2 Medical Supplies & First Aid
@@ -93,9 +93,15 @@ def classify_and_tag(title: str, brand: str = "", product_type: str = "") -> Tup
     if re.search(r"\b(nail\s*polish|nail\s*lacquer|nail\s*enamel|nail\s*hardener|cuticle\s*oil|fake\s*nails|false\s*nails|nail\s*glue|nail\s*remover|nail\s*rescue|nail\s*care|nails\b|nail\b|aceton|yolo\b|topface\s*nail)\b", t):
         return 'Nail Care', False
 
-    # 1.9 Makeup & Decorative Cosmetics
-    if re.search(r"\b(mascara|eyeliner|eye\s*pencil|eyeshadow|eyebrow|brow\s*gel|brow\s*pencil|lipstick|lip\s*gloss|lip\s*tint|lip\s*liner|lip\s*pencil|lip\s*stain|lip\s*plump|foundation|concealer|blush|blusher|bronzer\s*palette|highlighter|compact\s*powder|setting\s*powder|loose\s*powder|fake\s*lashes|false\s*lashes|eyelashes|makeup\s*primer|makeup\s*fixer|contour\s*palette|sheglam|catrice|topface|kiss\s*lashes|liquid\s*matte|matte\s*liquid|tint\b)\b", t):
-        return 'Makeup', False
+    # 1.9 Makeup & Decorative Cosmetics & Lash/Brow Enhancers
+    is_makeup_item = re.search(r"\b(mascara|eyeliner|eye\s*liner|tattoo\s*liner|liner\b|eye\s*pencil|crayon\s*yeux|khol|kajal|eyeshadow|eye\s*shadow|eyebrow\w*|eye\s*brow\w*|brow\w*|lipstick|lip\s*gloss|lip\s*tint|lip\s*liner|lip\s*pencil|lip\s*stain|lip\s*plump|foundation|concealer|blush|blusher|bronzer\s*palette|highlighter|compact\s*powder|setting\s*powder|loose\s*powder|powder\b|fake\s*lashes|false\s*lashes|eyelashes|eyelash\w*|eye\s*lash\w*|lashes\b|makeup\s*primer|eye\s*primer|makeup\s*fixer|contour\s*palette|sheglam|catrice|topface|kiss\s*lashes|liquid\s*matte|matte\s*liquid|tint\b)\b", t)
+    if is_makeup_item:
+        is_hard_makeup = re.search(r"\b(mascara|eyeliner|eye\s*liner|tattoo\s*liner|liner\b|eye\s*pencil|crayon|khol|kajal|eyeshadow|eye\s*shadow|setting\s*powder|powder\b|fake\s*lashes|false\s*lashes|lashes\b|eyelash\w*|eye\s*lash\w*|eyebrow\w*|eye\s*brow\w*|brow\w*)\b", t)
+        if is_hard_makeup:
+            if not re.search(r"\b(eye\s*(?:cream|creme|serum|gel|balm|baume)|cernes|dark\s*circles?)\b", t) or re.search(r"\b(pencil|liner|mascara|eyeshadow|powder|eyelash\w*|eyebrow\w*|brow\w*)\b", t):
+                return 'Makeup', False
+        elif not re.search(r"\b(eye\s*(?:cream|creme|serum|gel|balm|baume|contour|patch\w*|care|repair|lift\w*|fluid|fluide)|dark\s*circles?|cernes|under\s*eye|peri-?orbital|contour\s*(?:des\s*)?yeux)\b", t):
+            return 'Makeup', False
 
     # 1.10 Baby Care (Diapers, Wipes)
     if re.search(r"\b(diaper|baby\s*wipes|nappy|baby\s*shampoo|baby\s*wash|baby\s*oil)\b", t):
@@ -113,19 +119,24 @@ def classify_and_tag(title: str, brand: str = "", product_type: str = "") -> Tup
     if re.search(r"\b(tan\b|tanning|self-tan|self\s*tan|fake\s*tan|bronzing|bronzer\s*(body|oil)|carrot\s*oil|carrot\s*spray|after\s*sun|after-sun|tan\s*extender|sun\s*oil|auto-bronzant)\b", t):
         return 'Tanning', True
 
-    # 2.2 Sun Protection
+    # 2.2 Eye Skincare (Eye Creams, Eye Serums, Under-Eye Gels, Eye Balms, Patches, Dark Circles & Eye Contour)
+    # Categorized distinctly as 'Eye Skincare' so eye serums are never confused with facial skin serums
+    is_eye_makeup_remover = re.search(r"\b(makeup\s*remover|make\s*up\s*remover|demaquillant\s*yeux|demaquillant)\b", t)
+    if not is_eye_makeup_remover:
+        has_eye_area = re.search(r"\b(under\s*eye|under-eye|peri-?orbital|contour\s*(?:des\s*)?yeux|cernes|anti-cernes|poches|eye\s*bags?|eyebags?|dark\s*circles?|eyes?\b|yeux\b|regard\b|crow\s*feet|puffiness)\b", t)
+        has_eye_formulation = re.search(r"\b(cream|creme|serum|gel|balm|baume|lotion|fluid|fluide|patch\w*|filler|stick|roller|concentrate|elixir|care|soin|lift\w*|repair|hydrat\w*|firming|wrinkle\w*|anti-age\w*|illuminat\w*|brighten\w*|defense|fortifier|treatment|shot|retexturing)\b", t)
+        if (has_eye_area and has_eye_formulation) or re.search(r"\b(eye\s*contour|soin\s*(?:du\s*)?regard|cernes|dark\s*circles?|eye\s*patches?|under\s*eye|peri-?orbital|eye\s*perimeter|eye\s*lighter|eye\s*repair|eye\s*lift\w*|double\s*serum\s*eye|eye\s*serum|eye\s*cream|eye\s*gel|eye\s*balm|eye\s*stick|eye\s*roller|eye\s*fluid|mineral\s*89\s*eyes?|caffeine\s*solution\s*.*egcg|eye\s*and\s*lips?\s*cream)\b", t):
+            return 'Eye Skincare', True
+
+    # 2.3 Sun Protection
     if re.search(r"\b(sunscreen|sun\s*screen|sun\s*block|sun\s*fluid|sun\s*cream|sun\s*gel|spf\s*\d+|spf\b|uvmune|photoderm|solaires?|sun\s*spray|sun\s*stick|sun\s*defense|acti-solaire)\b", t):
         return 'Sunscreen', True
-
-    # 2.3 Eye Contour Care
-    if re.search(r"\b(eye\s*cream|eye\s*contour|eye\s*serum|eye\s*gel|under\s*eye|eyes\b|yeux|contour\s*des\s*yeux|eye\s*patch|eye\s*patches|eye\s*care|cernes|dark\s*circle)\b", t):
-        return 'Eye Care', True
 
     # 2.4 Lip Care (Restorative & Healing Balms)
     if re.search(r"\b(lip\s*balm|lip\s*care|lip\s*therapy|lip\s*butter|lip\s*oil|baume\s*levres|soin\s*des\s*levres|levres|lip\s*repair|lip\s*sleeping\s*mask|lip\s*moist|lip\s*polish)\b", t):
         return 'Lip Care', True
 
-    # 2.5 Serums, Ampoules & Active Concentrates
+    # 2.5 Facial Serums, Ampoules & Active Concentrates
     if re.search(r"\b(\w*serum\b|ampoule|booster|concentrate|elixir|face\s*oil|facial\s*oil|drops\b)\b", t):
         return 'Serum', True
     if re.search(r"\b(niacinamide|hyaluronic\s*acid|retinol|vitamin\s*c|salicylic\s*acid|glycolic\s*acid|azelaic\s*acid)\b", t) and re.search(r"\d+%", t):
@@ -183,3 +194,80 @@ def is_skincare_product(category: str, title: str = "", brand: str = "") -> bool
         return True
     _, is_skin = classify_and_tag(title, brand=brand)
     return is_skin
+
+def classify_catalog_products(db_path=None) -> dict:
+    """
+    Iterates across all products in SQLite, applies title enrichment and deterministic taxonomy tagging,
+    and persists updated category and is_skincare flags. Refreshes in-memory catalog cache.
+    """
+    import sqlite3
+    from pipeline.db_manager import get_connection
+    from pipeline.title_enricher import enrich_product_title
+    from pipeline.logging_config import get_logger
+
+    logger = get_logger("skincare_pipeline.classifier")
+    conn = get_connection(db_path=db_path) if db_path else get_connection()
+    try:
+        cur = conn.cursor()
+        cur.execute("SELECT id, title, brand, handle, product_url, category FROM products ORDER BY id ASC;")
+        all_products = cur.fetchall()
+
+        skincare_cnt = 0
+        suppressed_cnt = 0
+        eye_cnt = 0
+        serum_cnt = 0
+        categories_updated = 0
+
+        cur.execute("BEGIN TRANSACTION;")
+        for pid, orig_title, brand, handle, url, old_cat in all_products:
+            new_title, changed, _ = enrich_product_title(orig_title, handle=handle, brand=brand, url=url)
+            if not new_title:
+                new_title = orig_title
+
+            new_cat, is_skincare = classify_and_tag(new_title, brand=brand)
+            is_skin_int = 1 if is_skincare else 0
+
+            if is_skincare:
+                skincare_cnt += 1
+            else:
+                suppressed_cnt += 1
+
+            if new_cat == 'Eye Skincare':
+                eye_cnt += 1
+            elif new_cat == 'Serum':
+                serum_cnt += 1
+
+            if new_cat != old_cat:
+                categories_updated += 1
+
+            cur.execute("""
+            UPDATE products
+            SET title = ?, category = ?, is_skincare = ?
+            WHERE id = ?;
+            """, (new_title, new_cat, is_skin_int, pid))
+
+        conn.commit()
+
+        # Refresh in-memory catalog
+        try:
+            from services.catalog_service import load_catalog_from_db
+            load_catalog_from_db()
+        except Exception as e:
+            logger.warning(f"Could not reload catalog cache: {e}")
+
+        logger.info(
+            f"Taxonomy Classification Complete: {skincare_cnt} active skincare ({eye_cnt} eye skincare, {serum_cnt} face serums), "
+            f"{suppressed_cnt} suppressed. {categories_updated} categories updated."
+        )
+
+        return {
+            "status": "success",
+            "total_products": len(all_products),
+            "total_skincare_active": skincare_cnt,
+            "total_suppressed": suppressed_cnt,
+            "eye_skincare_count": eye_cnt,
+            "serum_count": serum_cnt,
+            "categories_updated": categories_updated
+        }
+    finally:
+        conn.close()

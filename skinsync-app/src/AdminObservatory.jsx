@@ -642,7 +642,7 @@ const AdminObservatory = ({ onBackToApp }) => {
                     <option value="Body Care">Body Care</option>
                     <option value="Toner">Toner</option>
                     <option value="Exfoliator">Exfoliator</option>
-                    <option value="Eye Care">Eye Care</option>
+                    <option value="Eye Skincare">Eye Skincare</option>
                     <option value="Mask">Mask</option>
                     <option value="Lip Care">Lip Care</option>
                     <option value="Treatment">Treatment</option>
@@ -1178,7 +1178,7 @@ const AdminObservatory = ({ onBackToApp }) => {
                               <option value="Body Care">Body Care</option>
                               <option value="Toner">Toner</option>
                               <option value="Exfoliator">Exfoliator</option>
-                              <option value="Eye Care">Eye Care</option>
+                              <option value="Eye Skincare">Eye Skincare</option>
                               <option value="Mask">Mask</option>
                               <option value="Lip Care">Lip Care</option>
                               <option value="Treatment">Treatment</option>

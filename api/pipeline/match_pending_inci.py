@@ -22,7 +22,7 @@ except ImportError:
 logger = logging.getLogger("skincare_pipeline.match_pending_inci")
 
 PRIORITY_CATEGORIES = (
-    "Serum", "Moisturizer", "Sunscreen", "Cleanser", "Toner", "Exfoliator", "Eye Care", "Lip Care"
+    "Serum", "Moisturizer", "Sunscreen", "Cleanser", "Toner", "Exfoliator", "Eye Skincare", "Eye Care", "Lip Care"
 )
 
 def run_inci_backfill(limit: int = None, category_filter: str = None):
