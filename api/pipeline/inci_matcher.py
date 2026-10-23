@@ -518,7 +518,7 @@ def get_embedding_model():
 # 4-GATE DECOUPLED INCI MATCHER
 # ==============================================================================
 
-def match_with_inci_db(brand: str, title: str, conn, allow_synchronous_jev: bool = False, scoring_mode: str = "auto", allow_obf: bool = True) -> Optional[Dict[str, Any]]:
+def match_with_inci_db(brand: str, title: str, conn, allow_synchronous_jev: bool = False, scoring_mode: str = "auto", allow_obf: bool = True, has_source_ingredients: bool = False) -> Optional[Dict[str, Any]]:
     """
     Evaluates candidate formulations across 4 decoupled gates:
     Gate 1: Data Quality Check
@@ -800,7 +800,7 @@ def match_with_inci_db(brand: str, title: str, conn, allow_synchronous_jev: bool
         gemini_status = "pending_gemini"
         gemini_score = None
 
-        mode = (scoring_mode or "auto").lower().strip()
+        mode = "local" if has_source_ingredients else (scoring_mode or "auto").lower().strip()
         if allow_synchronous_jev or mode in ("local", "jev", "gemini", "all"):
             if mode == "local":
                 # Local only: evaluate via local Cross-Encoder + deterministic gates, 0 LLM network calls
@@ -814,9 +814,11 @@ def match_with_inci_db(brand: str, title: str, conn, allow_synchronous_jev: bool
                     jev_score = cross_score
                     gemini_status = "rejected"
                 else:
-                    jev_status = "local_ambiguous"
+                    jev_status = "bypassed_source_has_ingredients" if has_source_ingredients else "local_ambiguous"
                     jev_score = cross_score
-                    gemini_status = "pending_gemini"
+                    gemini_status = "bypassed_source_has_ingredients" if has_source_ingredients else "pending_gemini"
+                    if has_source_ingredients:
+                        safeguard_log += " | Source ingredients present; external LLM calls prohibited."
             elif mode == "jev":
                 # Jev only: no Gemini fallback
                 jev_ok = verify_match_with_jev(title, cand_name)

@@ -319,8 +319,14 @@ def get_product_telemetry_forensics(product_id: int):
                 acts = acts.union(p_acts)
             actives_list = sorted(list(acts))
 
-        # 3. Reference INCI Information
+        has_source_ings = bool(raw_ings and len(raw_ings.strip()) >= 15 and product.get("ingredient_source") != "inci_matched")
+
+        # 3. Reference INCI Information & Forensic Candidate Resolution
         reference_info = None
+        top_candidate = None
+        decision_summary = None
+        decision_reason = product.get("inci_safeguard_log")
+
         if product.get("inci_matched_id"):
             cur.execute("""
             SELECT id, brand, product_name, ingredients, source
@@ -340,6 +346,63 @@ def get_product_telemetry_forensics(product_id: int):
                     "parsed_tokens_count": len(ref_parsed),
                     "actives": list(ref_acts)
                 }
+                top_candidate = reference_info
+                decision_summary = "Approved Reference (Source Ground Truth Preserved)" if has_source_ings else "Approved Reference Match"
+        elif product.get("inci_matched_name"):
+            decision_summary = product.get("gate4_gemini_status") or product.get("gate4_cross_status") or "Evaluated"
+            top_candidate = {
+                "id": None,
+                "brand": product.get("brand"),
+                "product_name": product.get("inci_matched_name"),
+                "ingredients_raw": None,
+                "source": "candidate_lookup"
+            }
+        else:
+            try:
+                from pipeline.inci_matcher import match_with_inci_db
+                local_m = match_with_inci_db(
+                    brand=product.get("brand", ""),
+                    title=product.get("title", ""),
+                    conn=conn,
+                    scoring_mode="local",
+                    has_source_ingredients=has_source_ings
+                )
+                if local_m and local_m.get("matched_id"):
+                    cur.execute("""
+                    SELECT id, brand, product_name, ingredients, source
+                    FROM inci_reference
+                    WHERE id = ?;
+                    """, (local_m["matched_id"],))
+                    r_row = cur.fetchone()
+                    if r_row:
+                        r_dict = dict(r_row)
+                        r_parsed, r_acts = parse_and_clean_ingredients(r_dict["ingredients"])
+                        top_candidate = {
+                            "id": r_dict["id"],
+                            "brand": r_dict["brand"],
+                            "product_name": r_dict["product_name"],
+                            "ingredients_raw": r_dict["ingredients"],
+                            "source": r_dict["source"],
+                            "parsed_tokens_count": len(r_parsed),
+                            "actives": list(r_acts),
+                            "cross_encoder_score": local_m.get("inci_cross_score"),
+                            "hybrid_score": local_m.get("hybrid_score")
+                        }
+                    decision_reason = local_m.get("safeguard_log")
+                    if has_source_ings:
+                        decision_summary = "Bypassed: Ground Truth Ingredients Present (LLM Prohibited)"
+                    elif local_m.get("gate4_cross_status") == "cross_approved":
+                        decision_summary = "Auto-Approved by Cross-Encoder"
+                    else:
+                        decision_summary = local_m.get("gate4_cross_status") or "Evaluated"
+            except Exception as e:
+                logger.warning(f"Live candidate lookup error for product #{product_id}: {e}")
+
+        if not decision_summary:
+            if has_source_ings:
+                decision_summary = "Source Ingredients Active (Ground Truth Preserved)"
+            else:
+                decision_summary = product.get("gate4_gemini_status") or product.get("gate4_cross_status") or "Pending Evaluation"
 
         # 4. Cross-Store Canonical Offers & Price Arbitrage
         canonical_info = None
@@ -480,6 +543,10 @@ def get_product_telemetry_forensics(product_id: int):
             "inci_matching_telemetry": {
                 "inci_matched_id": product.get("inci_matched_id"),
                 "inci_matched_name": product.get("inci_matched_name"),
+                "has_source_ingredients": has_source_ings,
+                "decision_summary": decision_summary,
+                "decision_reason": decision_reason,
+                "top_candidate": top_candidate,
                 "reference_knowledge_base": reference_info,
                 "scores": {
                     "vector_similarity": product.get("inci_vector_score"),

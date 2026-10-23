@@ -35,6 +35,7 @@ def run_jev_verification_queue(limit: int = None):
     FROM products
     WHERE gate4_jev_status = 'pending_jev'
       AND inci_matched_name IS NOT NULL
+      AND (ingredients_raw IS NULL OR LENGTH(TRIM(ingredients_raw)) < 15 OR ingredient_source = 'inci_matched' OR ingredient_source IS NULL)
     ORDER BY id ASC
     LIMIT ?;
     """, (limit,))

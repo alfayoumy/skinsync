@@ -50,6 +50,7 @@ def run_gemini_verification_queue(limit: Optional[int] = None, batch_size: Optio
         WHERE inci_matched_name IS NOT NULL
           AND (gate4_gemini_status IS NULL OR gate4_gemini_status = 'pending_gemini')
           AND (gate4_jev_status IS NULL OR gate4_jev_status != 'jev_approved')
+          AND (ingredients_raw IS NULL OR LENGTH(TRIM(ingredients_raw)) < 15 OR ingredient_source = 'inci_matched' OR ingredient_source IS NULL)
         ORDER BY id ASC
         LIMIT ?;
         """
@@ -62,6 +63,7 @@ def run_gemini_verification_queue(limit: Optional[int] = None, batch_size: Optio
             gate4_gemini_status = 'pending_gemini'
             OR (gate4_jev_status = 'jev_rate_limited' AND (gate4_gemini_status IS NULL OR gate4_gemini_status = 'pending_gemini'))
           )
+          AND (ingredients_raw IS NULL OR LENGTH(TRIM(ingredients_raw)) < 15 OR ingredient_source = 'inci_matched' OR ingredient_source IS NULL)
         ORDER BY id ASC
         LIMIT ?;
         """

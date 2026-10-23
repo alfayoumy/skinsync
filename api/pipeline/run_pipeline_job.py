@@ -120,13 +120,15 @@ def run_full_pipeline(
             title = row["title"]
             curr_raw = row["ingredients_raw"]
 
+            has_source_ings = bool(curr_raw and len(curr_raw.strip()) >= 15 and row.get("ingredient_source") != "inci_matched")
             m_res = match_with_inci_db(
                 brand=brand,
                 title=title,
                 conn=conn,
                 allow_synchronous_jev=False,
                 scoring_mode="local",
-                allow_obf=False
+                allow_obf=False,
+                has_source_ingredients=has_source_ings
             )
 
             if m_res and m_res.get("matched_id"):

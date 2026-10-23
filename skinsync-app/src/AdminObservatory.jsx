@@ -1113,117 +1113,117 @@ const AdminObservatory = ({ onBackToApp }) => {
                 <div className="py-20 text-center text-gray-400">Failed to load telemetry.</div>
               ) : (
                 <>
-                  {/* ADMIN CLASSIFICATION OVERRIDE PANEL */}
-                  {telemetry && (
-                    <div className="mb-6 p-4 bg-gradient-to-r from-gray-50 to-purple-50/40 border border-gray-200 rounded-2xl shadow-sm">
-                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-gray-200/80">
-                        <div className="flex items-center gap-2">
-                          <Settings2 className="w-4 h-4 text-purple-600" />
-                          <span className="font-extrabold text-xs text-gray-900 uppercase tracking-wide">
-                            Admin Classification & Override Controls
-                          </span>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <button
-                            onClick={() => handleUpdateClassification(telemetry.product.id, 1, telemetry.product.category)}
-                            className={`px-3 py-1.5 rounded-xl font-bold text-xs transition-all flex items-center gap-1.5 cursor-pointer ${
-                              telemetry.product.is_skincare
-                                ? 'bg-emerald-600 text-white shadow-sm ring-2 ring-emerald-400'
-                                : 'bg-white text-gray-600 border border-gray-200 hover:bg-emerald-50 hover:text-emerald-700'
-                            }`}
-                          >
-                            <span>🧴 Active Skincare (Phase 1)</span>
-                          </button>
-                          <button
-                            onClick={() => handleUpdateClassification(telemetry.product.id, 0, telemetry.product.category)}
-                            className={`px-3 py-1.5 rounded-xl font-bold text-xs transition-all flex items-center gap-1.5 cursor-pointer ${
-                              !telemetry.product.is_skincare
-                                ? 'bg-amber-600 text-white shadow-sm ring-2 ring-amber-400'
-                                : 'bg-white text-gray-600 border border-gray-200 hover:bg-amber-50 hover:text-amber-800'
-                            }`}
-                          >
-                            <span>📦 Suppressed (Phase 2)</span>
-                          </button>
-                        </div>
-                      </div>
-
-                      <div className="pt-3 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
-                        <div className="text-gray-500 text-[11px]">
-                          {telemetry.product.is_skincare ? (
-                            <span className="text-emerald-700 font-semibold flex items-center gap-1">
-                              <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
-                              Active in consumer search, recommendations, and INCI ingredient routines.
-                            </span>
-                          ) : (
-                            <span className="text-amber-700 font-semibold flex items-center gap-1">
-                              <AlertTriangle className="w-3.5 h-3.5 text-amber-600" />
-                              Suppressed from Phase 1 consumer search; preserved in catalog for Phase 2 beauty catalog.
-                            </span>
-                          )}
-                        </div>
-
-                        <div className="flex items-center gap-2">
-                          <span className="text-gray-500 font-semibold text-[11px] whitespace-nowrap">Reassign Category:</span>
-                          <select
-                            value={telemetry.product.category}
-                            onChange={(e) => handleUpdateClassification(telemetry.product.id, telemetry.product.is_skincare ? 1 : 0, e.target.value)}
-                            className="px-2.5 py-1 bg-white border border-gray-200 rounded-lg text-xs font-semibold focus:outline-none focus:border-purple-500 text-gray-800 cursor-pointer"
-                          >
-                            <optgroup label="Active Skincare & Body">
-                              <option value="Cleanser">Cleanser</option>
-                              <option value="Moisturizer">Moisturizer</option>
-                              <option value="Serum">Serum</option>
-                              <option value="Sunscreen">Sunscreen</option>
-                              <option value="Tanning">Tanning & After-Sun</option>
-                              <option value="Body Care">Body Care</option>
-                              <option value="Toner">Toner</option>
-                              <option value="Exfoliator">Exfoliator</option>
-                              <option value="Eye Skincare">Eye Skincare</option>
-                              <option value="Mask">Mask</option>
-                              <option value="Lip Care">Lip Care</option>
-                              <option value="Treatment">Treatment</option>
-                            </optgroup>
-                            <optgroup label="Non-Skincare (Suppressed)">
-                              <option value="Deodorant">Deodorant / Antiperspirant</option>
-                              <option value="Fragrance">Fragrance / Perfume</option>
-                              <option value="Hair Care">Hair Care</option>
-                              <option value="Makeup">Makeup</option>
-                              <option value="Nail Care">Nail Care</option>
-                              <option value="Supplements & Health">Supplements & Health</option>
-                              <option value="Medical Supplies">Medical Supplies</option>
-                              <option value="Oral Care">Oral Care</option>
-                              <option value="Tools & Accessories">Tools & Accessories</option>
-                              <option value="Baby Care">Baby Care</option>
-                              <option value="Set">Set / Bundle</option>
-                              <option value="Other Non-Skincare">Other Non-Skincare</option>
-                            </optgroup>
-                          </select>
-                        </div>
-                      </div>
-                    </div>
-                  )}
-
-                  {telemetry && !telemetry.product.is_skincare && (
-                    <div className="mb-6 p-4 bg-amber-50 border border-amber-200 rounded-2xl flex items-start gap-3 text-amber-900">
-                      <div className="text-xl shrink-0">📦</div>
-                      <div>
-                        <div className="font-extrabold text-xs text-amber-950 flex items-center gap-2">
-                          <span>Suppressed Non-Skincare Item (Phase 2 Catalog)</span>
-                          <span className="bg-amber-200 text-amber-900 text-[10px] px-2 py-0.5 rounded-full font-bold">
-                            {telemetry.product.category}
-                          </span>
-                        </div>
-                        <p className="text-[11px] text-amber-800/90 mt-1 leading-relaxed">
-                          This product is categorized outside active skincare (e.g., deodorant, perfume, hair care, makeup).
-                          It is preserved in the database for future beauty expansion, but intentionally suppressed from Phase 1 consumer search, recommendation engines, and INCI ingredient matching workflows.
-                        </p>
-                      </div>
-                    </div>
-                  )}
-
                   {/* TAB 1: SCRAPED SOURCE INFO */}
                   {activeTab === 'scraped' && (
                     <div className="space-y-6">
+                      {/* ADMIN CLASSIFICATION OVERRIDE PANEL (Exclusively on Tab 1) */}
+                      {telemetry && (
+                        <div className="p-4 bg-gradient-to-r from-gray-50 to-purple-50/40 border border-gray-200 rounded-2xl shadow-sm">
+                          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-gray-200/80">
+                            <div className="flex items-center gap-2">
+                              <Settings2 className="w-4 h-4 text-purple-600" />
+                              <span className="font-extrabold text-xs text-gray-900 uppercase tracking-wide">
+                                Admin Classification & Override Controls
+                              </span>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <button
+                                onClick={() => handleUpdateClassification(telemetry.product.id, 1, telemetry.product.category)}
+                                className={`px-3 py-1.5 rounded-xl font-bold text-xs transition-all flex items-center gap-1.5 cursor-pointer ${
+                                  telemetry.product.is_skincare
+                                    ? 'bg-emerald-600 text-white shadow-sm ring-2 ring-emerald-400'
+                                    : 'bg-white text-gray-600 border border-gray-200 hover:bg-emerald-50 hover:text-emerald-700'
+                                }`}
+                              >
+                                <span>🧴 Active Skincare (Phase 1)</span>
+                              </button>
+                              <button
+                                onClick={() => handleUpdateClassification(telemetry.product.id, 0, telemetry.product.category)}
+                                className={`px-3 py-1.5 rounded-xl font-bold text-xs transition-all flex items-center gap-1.5 cursor-pointer ${
+                                  !telemetry.product.is_skincare
+                                    ? 'bg-amber-600 text-white shadow-sm ring-2 ring-amber-400'
+                                    : 'bg-white text-gray-600 border border-gray-200 hover:bg-amber-50 hover:text-amber-800'
+                                }`}
+                              >
+                                <span>📦 Suppressed (Phase 2)</span>
+                              </button>
+                            </div>
+                          </div>
+
+                          <div className="pt-3 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
+                            <div className="text-gray-500 text-[11px]">
+                              {telemetry.product.is_skincare ? (
+                                <span className="text-emerald-700 font-semibold flex items-center gap-1">
+                                  <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+                                  Active in consumer search, recommendations, and INCI ingredient routines.
+                                </span>
+                              ) : (
+                                <span className="text-amber-700 font-semibold flex items-center gap-1">
+                                  <AlertTriangle className="w-3.5 h-3.5 text-amber-600" />
+                                  Suppressed from Phase 1 consumer search; preserved in catalog for Phase 2 beauty catalog.
+                                </span>
+                              )}
+                            </div>
+
+                            <div className="flex items-center gap-2">
+                              <span className="text-gray-500 font-semibold text-[11px] whitespace-nowrap">Reassign Category:</span>
+                              <select
+                                value={telemetry.product.category}
+                                onChange={(e) => handleUpdateClassification(telemetry.product.id, telemetry.product.is_skincare ? 1 : 0, e.target.value)}
+                                className="px-2.5 py-1 bg-white border border-gray-200 rounded-lg text-xs font-semibold focus:outline-none focus:border-purple-500 text-gray-800 cursor-pointer"
+                              >
+                                <optgroup label="Active Skincare & Body">
+                                  <option value="Cleanser">Cleanser</option>
+                                  <option value="Moisturizer">Moisturizer</option>
+                                  <option value="Serum">Serum</option>
+                                  <option value="Sunscreen">Sunscreen</option>
+                                  <option value="Tanning">Tanning & After-Sun</option>
+                                  <option value="Body Care">Body Care</option>
+                                  <option value="Toner">Toner</option>
+                                  <option value="Exfoliator">Exfoliator</option>
+                                  <option value="Eye Skincare">Eye Skincare</option>
+                                  <option value="Mask">Mask</option>
+                                  <option value="Lip Care">Lip Care</option>
+                                  <option value="Treatment">Treatment</option>
+                                </optgroup>
+                                <optgroup label="Non-Skincare (Suppressed)">
+                                  <option value="Deodorant">Deodorant / Antiperspirant</option>
+                                  <option value="Fragrance">Fragrance / Perfume</option>
+                                  <option value="Hair Care">Hair Care</option>
+                                  <option value="Makeup">Makeup</option>
+                                  <option value="Nail Care">Nail Care</option>
+                                  <option value="Supplements & Health">Supplements & Health</option>
+                                  <option value="Medical Supplies">Medical Supplies</option>
+                                  <option value="Oral Care">Oral Care</option>
+                                  <option value="Tools & Accessories">Tools & Accessories</option>
+                                  <option value="Baby Care">Baby Care</option>
+                                  <option value="Set">Set / Bundle</option>
+                                  <option value="Other Non-Skincare">Other Non-Skincare</option>
+                                </optgroup>
+                              </select>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+
+                      {telemetry && !telemetry.product.is_skincare && (
+                        <div className="p-4 bg-amber-50 border border-amber-200 rounded-2xl flex items-start gap-3 text-amber-900">
+                          <div className="text-xl shrink-0">📦</div>
+                          <div>
+                            <div className="font-extrabold text-xs text-amber-950 flex items-center gap-2">
+                              <span>Suppressed Non-Skincare Item (Phase 2 Catalog)</span>
+                              <span className="bg-amber-200 text-amber-900 text-[10px] px-2 py-0.5 rounded-full font-bold">
+                                {telemetry.product.category}
+                              </span>
+                            </div>
+                            <p className="text-[11px] text-amber-800/90 mt-1 leading-relaxed">
+                              This product is categorized outside active skincare (e.g., deodorant, perfume, hair care, makeup).
+                              It is preserved in the database for future beauty expansion, but intentionally suppressed from Phase 1 consumer search, recommendation engines, and INCI ingredient matching workflows.
+                            </p>
+                          </div>
+                        </div>
+                      )}
+
                       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 bg-gray-50 p-4 rounded-2xl border border-gray-200">
                         <div>
                           <div className="text-[10px] text-gray-400 font-bold uppercase">Store Platform ID</div>
@@ -1363,42 +1363,172 @@ const AdminObservatory = ({ onBackToApp }) => {
                   {/* TAB 3: INCI MATCHING & 4-GATE TELEMETRY */}
                   {activeTab === 'inci' && (
                     <div className="space-y-6">
+                      {/* INCI PIPELINE DECISION & POLICY CARD */}
+                      <div className="p-5 bg-gradient-to-br from-white to-gray-50 rounded-2xl border border-gray-200 shadow-sm space-y-4">
+                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-gray-200">
+                          <div>
+                            <div className="text-[10px] uppercase font-bold text-gray-400 tracking-wider">
+                              INCI Pipeline Decision & Policy Status
+                            </div>
+                            <div className="font-extrabold text-base text-gray-900 mt-0.5">
+                              {telemetry.inci_matching_telemetry.decision_summary || 'Evaluation Complete'}
+                            </div>
+                          </div>
+                          <div>
+                            {telemetry.inci_matching_telemetry.has_source_ingredients ? (
+                              <span className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-emerald-100 text-emerald-800 rounded-xl font-black text-xs border border-emerald-300">
+                                <ShieldCheck className="w-4 h-4 text-emerald-600" />
+                                <span>Ground Truth Preserved (LLM Calls Prohibited)</span>
+                              </span>
+                            ) : telemetry.inci_matching_telemetry.inci_matched_id ? (
+                              <span className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-purple-100 text-purple-800 rounded-xl font-black text-xs border border-purple-300">
+                                <CheckCircle2 className="w-4 h-4 text-purple-600" />
+                                <span>Approved INCI Match</span>
+                              </span>
+                            ) : (
+                              <span className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-amber-100 text-amber-800 rounded-xl font-bold text-xs border border-amber-300">
+                                <AlertTriangle className="w-4 h-4 text-amber-600" />
+                                <span>{telemetry.inci_matching_telemetry.gates?.gate4_gemini_status || 'Pending / Rejected'}</span>
+                              </span>
+                            )}
+                          </div>
+                        </div>
+
+                        {telemetry.inci_matching_telemetry.has_source_ingredients ? (
+                          <div className="p-3.5 bg-emerald-50/80 border border-emerald-200 rounded-xl flex items-start gap-2.5 text-xs text-emerald-900">
+                            <span className="text-base shrink-0">🛡️</span>
+                            <div className="leading-relaxed">
+                              <span className="font-bold">Authentic Source Ingredients Active: </span>
+                              This product already possesses genuine ingredients scraped directly from the store. The pipeline strictly preserves authentic source ingredients as ground truth and will <span className="font-bold underline">never overwrite</span> them with INCI database formulations. External LLM calls (Gemini/Jev) are <span className="font-bold text-emerald-950">strictly prohibited</span>; local Gates 1–4 are used for fast, zero-cost reference alignment only.
+                            </div>
+                          </div>
+                        ) : (
+                          <div className="p-3.5 bg-purple-50/70 border border-purple-200 rounded-xl text-xs text-purple-900 leading-relaxed">
+                            <span className="font-bold">INCI Formulation Alignment: </span>
+                            This product does not have authentic retailer ingredients. It is evaluated against the 21,000+ formula INCI knowledge base using hybrid dense/sparse retrieval and multi-gate cross-encoder validation to determine formulation identity.
+                          </div>
+                        )}
+
+                        {(telemetry.inci_matching_telemetry.decision_reason || telemetry.inci_matching_telemetry.safeguard_log) && (
+                          <div className="text-xs">
+                            <div className="text-[10px] font-bold text-gray-500 uppercase mb-1">Decision Rationale & Safeguard Notes:</div>
+                            <div className="p-3 bg-gray-100 rounded-xl font-mono text-[11px] text-gray-800 whitespace-pre-wrap max-h-24 overflow-y-auto">
+                              {telemetry.inci_matching_telemetry.decision_reason || telemetry.inci_matching_telemetry.safeguard_log}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+
+                      {/* TOP EVALUATED INCI CANDIDATE */}
+                      <div className="p-5 bg-white rounded-2xl border border-gray-200 shadow-sm space-y-3">
+                        <div className="flex items-center justify-between pb-2 border-b border-gray-100">
+                          <div className="flex items-center gap-2">
+                            <span className="text-base">🎯</span>
+                            <div>
+                              <div className="font-extrabold text-sm text-gray-900">Top Evaluated INCI Candidate</div>
+                              <div className="text-[10px] text-gray-400">Forensic match evaluated against product title & brand</div>
+                            </div>
+                          </div>
+                          {telemetry.inci_matching_telemetry.top_candidate?.id && (
+                            <span className="bg-gray-100 text-gray-700 px-2.5 py-1 rounded-lg font-mono text-xs font-bold">
+                              Reference ID #{telemetry.inci_matching_telemetry.top_candidate.id}
+                            </span>
+                          )}
+                        </div>
+
+                        {telemetry.inci_matching_telemetry.top_candidate ? (
+                          <div className="space-y-3">
+                            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                              <div>
+                                <span className="text-[10px] font-bold uppercase text-purple-600">
+                                  {telemetry.inci_matching_telemetry.top_candidate.brand || 'Brand Unknown'}
+                                </span>
+                                <h4 className="font-black text-sm text-gray-900">
+                                  {telemetry.inci_matching_telemetry.top_candidate.product_name}
+                                </h4>
+                              </div>
+                              <div className="flex items-center gap-2 text-xs">
+                                <span className="px-2.5 py-1 bg-gray-100 text-gray-700 rounded-lg font-semibold text-[11px]">
+                                  Database: {telemetry.inci_matching_telemetry.top_candidate.source || 'inci_reference'}
+                                </span>
+                                {telemetry.inci_matching_telemetry.top_candidate.parsed_tokens_count && (
+                                  <span className="px-2.5 py-1 bg-purple-50 text-purple-700 rounded-lg font-semibold text-[11px]">
+                                    {telemetry.inci_matching_telemetry.top_candidate.parsed_tokens_count} tokens
+                                  </span>
+                                )}
+                              </div>
+                            </div>
+
+                            {/* Candidate Actives */}
+                            {telemetry.inci_matching_telemetry.top_candidate.actives && telemetry.inci_matching_telemetry.top_candidate.actives.length > 0 && (
+                              <div className="flex items-center gap-1.5 flex-wrap">
+                                <span className="text-[10px] font-bold text-gray-400 uppercase">Actives:</span>
+                                {telemetry.inci_matching_telemetry.top_candidate.actives.map((act, i) => (
+                                  <span key={i} className="px-2 py-0.5 bg-purple-50 text-purple-700 font-bold rounded text-[11px]">
+                                    {act}
+                                  </span>
+                                ))}
+                              </div>
+                            )}
+
+                            {/* Candidate Raw Ingredients */}
+                            <div>
+                              <div className="text-[10px] font-bold text-gray-400 uppercase mb-1">
+                                Candidate Ingredients Formulation:
+                              </div>
+                              <div className="p-3 bg-gray-50 rounded-xl text-[11px] font-mono text-gray-800 break-words max-h-32 overflow-y-auto border border-gray-100 leading-relaxed">
+                                {telemetry.inci_matching_telemetry.top_candidate.ingredients_raw || 'No raw formulation string recorded in reference record.'}
+                              </div>
+                            </div>
+                          </div>
+                        ) : (
+                          <div className="py-6 text-center text-gray-400 italic">
+                            No INCI candidate exceeded preliminary gate criteria for this product title.
+                          </div>
+                        )}
+                      </div>
+
                       {/* Gate Status Grid */}
-                      <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                        <div className="p-3 bg-gray-50 rounded-xl border border-gray-200">
-                          <div className="text-[10px] text-gray-400 font-bold uppercase">Gate 1: Data Quality</div>
-                          <div className="font-bold text-gray-900 mt-1">
-                            {telemetry.inci_matching_telemetry.gates.gate1_quality_status || 'N/A'}
-                          </div>
+                      <div>
+                        <div className="font-bold text-gray-700 mb-2 uppercase text-[10px] tracking-wider">
+                          4-Gate Evaluation Pipeline Telemetry
                         </div>
-                        <div className="p-3 bg-gray-50 rounded-xl border border-gray-200">
-                          <div className="text-[10px] text-gray-400 font-bold uppercase">Gate 2: Safeguard Rules</div>
-                          <div className="font-bold text-gray-900 mt-1">
-                            {telemetry.inci_matching_telemetry.gates.gate2_safeguard_status || 'N/A'}
+                        <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                          <div className="p-3 bg-gray-50 rounded-xl border border-gray-200">
+                            <div className="text-[10px] text-gray-400 font-bold uppercase">Gate 1: Data Quality</div>
+                            <div className="font-bold text-gray-900 mt-1">
+                              {telemetry.inci_matching_telemetry.gates.gate1_quality_status || 'N/A'}
+                            </div>
                           </div>
-                        </div>
-                        <div className="p-3 bg-gray-50 rounded-xl border border-gray-200">
-                          <div className="text-[10px] text-gray-400 font-bold uppercase">Gate 3: Active Overlap</div>
-                          <div className="font-bold text-gray-900 mt-1">
-                            {telemetry.inci_matching_telemetry.gates.gate3_active_status || 'N/A'}
+                          <div className="p-3 bg-gray-50 rounded-xl border border-gray-200">
+                            <div className="text-[10px] text-gray-400 font-bold uppercase">Gate 2: Safeguard Rules</div>
+                            <div className="font-bold text-gray-900 mt-1">
+                              {telemetry.inci_matching_telemetry.gates.gate2_safeguard_status || 'N/A'}
+                            </div>
                           </div>
-                        </div>
-                        <div className="p-3 bg-gray-50 rounded-xl border border-gray-200">
-                          <div className="text-[10px] text-gray-400 font-bold uppercase">Gate 4: Cross-Encoder</div>
-                          <div className="font-bold text-purple-700 mt-1">
-                            {telemetry.inci_matching_telemetry.gates.gate4_cross_status || 'N/A'}
+                          <div className="p-3 bg-gray-50 rounded-xl border border-gray-200">
+                            <div className="text-[10px] text-gray-400 font-bold uppercase">Gate 3: Active Overlap</div>
+                            <div className="font-bold text-gray-900 mt-1">
+                              {telemetry.inci_matching_telemetry.gates.gate3_active_status || 'N/A'}
+                            </div>
                           </div>
-                        </div>
-                        <div className="p-3 bg-gray-50 rounded-xl border border-gray-200">
-                          <div className="text-[10px] text-gray-400 font-bold uppercase">Gate 4: Jev 1.13</div>
-                          <div className="font-bold text-gray-900 mt-1">
-                            {telemetry.inci_matching_telemetry.gates.gate4_jev_status || 'N/A'}
+                          <div className="p-3 bg-gray-50 rounded-xl border border-gray-200">
+                            <div className="text-[10px] text-gray-400 font-bold uppercase">Gate 4: Cross-Encoder</div>
+                            <div className="font-bold text-purple-700 mt-1">
+                              {telemetry.inci_matching_telemetry.gates.gate4_cross_status || 'N/A'}
+                            </div>
                           </div>
-                        </div>
-                        <div className="p-3 bg-gray-50 rounded-xl border border-gray-200">
-                          <div className="text-[10px] text-gray-400 font-bold uppercase">Gate 4: Gemini Batch</div>
-                          <div className="font-bold text-pink-600 mt-1">
-                            {telemetry.inci_matching_telemetry.gates.gate4_gemini_status || 'N/A'}
+                          <div className="p-3 bg-gray-50 rounded-xl border border-gray-200">
+                            <div className="text-[10px] text-gray-400 font-bold uppercase">Gate 4: Jev 1.13</div>
+                            <div className="font-bold text-gray-900 mt-1">
+                              {telemetry.inci_matching_telemetry.gates.gate4_jev_status || 'N/A'}
+                            </div>
+                          </div>
+                          <div className="p-3 bg-gray-50 rounded-xl border border-gray-200">
+                            <div className="text-[10px] text-gray-400 font-bold uppercase">Gate 4: Gemini Batch</div>
+                            <div className="font-bold text-pink-600 mt-1">
+                              {telemetry.inci_matching_telemetry.gates.gate4_gemini_status || 'N/A'}
+                            </div>
                           </div>
                         </div>
                       </div>
@@ -1435,36 +1565,6 @@ const AdminObservatory = ({ onBackToApp }) => {
                           </div>
                         </div>
                       </div>
-
-                      {/* Matched Reference Details */}
-                      {telemetry.inci_matching_telemetry.reference_knowledge_base && (
-                        <div className="p-4 bg-purple-50/60 rounded-xl border border-purple-200">
-                          <div className="text-[10px] font-bold uppercase text-purple-700 mb-1">
-                            Matched INCI Reference Record #{telemetry.inci_matching_telemetry.reference_knowledge_base.id}
-                          </div>
-                          <div className="font-extrabold text-sm text-gray-900">
-                            {telemetry.inci_matching_telemetry.reference_knowledge_base.product_name}
-                          </div>
-                          <p className="text-gray-500 text-xs mt-1">
-                            Brand: {telemetry.inci_matching_telemetry.reference_knowledge_base.brand} • Source: {telemetry.inci_matching_telemetry.reference_knowledge_base.source}
-                          </p>
-                          <div className="mt-3 text-[11px] text-gray-700 font-mono bg-white p-2.5 rounded-lg border border-purple-100 max-h-24 overflow-y-auto">
-                            {telemetry.inci_matching_telemetry.reference_knowledge_base.ingredients_raw}
-                          </div>
-                        </div>
-                      )}
-
-                      {/* Safeguard & Decision Notes */}
-                      {telemetry.inci_matching_telemetry.safeguard_log && (
-                        <div>
-                          <div className="font-bold text-gray-700 mb-1 uppercase text-[10px] tracking-wider">
-                            Safeguard Decision Notes & Bypassed Candidate Log
-                          </div>
-                          <pre className="p-3 bg-gray-100 rounded-lg text-[11px] font-mono text-gray-700 whitespace-pre-wrap">
-                            {telemetry.inci_matching_telemetry.safeguard_log}
-                          </pre>
-                        </div>
-                      )}
                     </div>
                   )}
 
@@ -1534,11 +1634,21 @@ const AdminObservatory = ({ onBackToApp }) => {
                                     <p className="text-[11px] text-gray-500 truncate max-w-sm mt-0.5">{offer.store_title}</p>
                                   </div>
 
-                                  <div className="flex items-center gap-4">
+                                  <div className="flex items-center gap-3">
                                     <div className="text-right">
                                       <div className="font-black text-sm text-gray-900">{offer.price} EGP</div>
                                       <div className="text-[10px] text-gray-400 capitalize">{offer.ingredient_source || 'store'}</div>
                                     </div>
+                                    {!offer.is_current_product && (
+                                      <button
+                                        type="button"
+                                        onClick={() => handleOpenTelemetry(offer.product_id)}
+                                        className="px-2.5 py-1.5 bg-purple-50 hover:bg-purple-100 text-purple-700 font-bold rounded-lg text-xs transition cursor-pointer"
+                                        title="Inspect listing forensics"
+                                      >
+                                        Inspect
+                                      </button>
+                                    )}
                                     <a
                                       href={offer.product_url}
                                       target="_blank"
@@ -1624,8 +1734,13 @@ const AdminObservatory = ({ onBackToApp }) => {
                   {/* TAB 6: TOP SIMILAR FORMULATION MATCHES */}
                   {activeTab === 'similar' && (
                     <div className="space-y-4">
-                      <div className="font-bold text-gray-700 uppercase text-[10px] tracking-wider">
-                        Top Catalog Dupes & Alternatives Breakdown
+                      <div className="flex items-center justify-between pb-1">
+                        <div className="font-bold text-gray-700 uppercase text-[10px] tracking-wider">
+                          Top Catalog Dupes & Alternatives Breakdown
+                        </div>
+                        <div className="text-[11px] text-gray-400 font-medium">
+                          Click any card to inspect product forensics
+                        </div>
                       </div>
 
                       {telemetry.similar_formulation_matches.length === 0 ? (
@@ -1636,11 +1751,12 @@ const AdminObservatory = ({ onBackToApp }) => {
                         telemetry.similar_formulation_matches.map((alt, idx) => (
                           <div 
                             key={idx}
-                            className="p-4 rounded-2xl border border-gray-200 bg-white hover:border-purple-300 transition-all space-y-3"
+                            onClick={() => handleOpenTelemetry(alt.id)}
+                            className="p-4 rounded-2xl border border-gray-200 bg-white hover:border-purple-400 hover:shadow-md transition-all space-y-3 cursor-pointer group"
                           >
                             <div className="flex items-start justify-between gap-4">
                               <div className="flex items-center gap-3">
-                                <div className="w-12 h-12 rounded-xl bg-gray-50 border border-gray-200 flex items-center justify-center shrink-0 overflow-hidden">
+                                <div className="w-12 h-12 rounded-xl bg-gray-50 border border-gray-200 flex items-center justify-center shrink-0 overflow-hidden group-hover:border-purple-300">
                                   {alt.image_url ? (
                                     <img src={alt.image_url} alt="" className="max-h-full max-w-full object-contain" onError={(e) => { e.target.style.display = 'none'; }} />
                                   ) : (
@@ -1648,21 +1764,40 @@ const AdminObservatory = ({ onBackToApp }) => {
                                   )}
                                 </div>
                                 <div>
-                                  <div className="text-[10px] font-bold text-purple-600 uppercase">{alt.brand}</div>
-                                  <h4 className="font-bold text-sm text-gray-900 leading-snug">{alt.title}</h4>
+                                  <div className="text-[10px] font-bold text-purple-600 uppercase flex items-center gap-1.5">
+                                    <span>{alt.brand}</span>
+                                    <span className="text-gray-300">•</span>
+                                    <span className="text-gray-400 font-mono">#{alt.id}</span>
+                                  </div>
+                                  <h4 className="font-bold text-sm text-gray-900 leading-snug group-hover:text-purple-700 transition">
+                                    {alt.title}
+                                  </h4>
                                   <div className="text-[11px] text-gray-500 mt-0.5">{alt.price ? `${alt.price} EGP` : 'Price N/A'}</div>
                                 </div>
                               </div>
 
-                              <div className="text-right shrink-0">
-                                <span className="bg-gradient-to-r from-purple-600 to-pink-600 text-white font-black text-xs px-3 py-1 rounded-full shadow-sm">
-                                  {Math.round(alt.match_score)}% Match
-                                </span>
-                                {alt.cross_encoder_score && (
-                                  <div className="text-[10px] text-gray-500 mt-1 font-semibold">
-                                    Cross-Encoder: {Math.round(alt.cross_encoder_score * 100)}%
-                                  </div>
-                                )}
+                              <div className="flex items-center gap-3 shrink-0">
+                                <div className="text-right">
+                                  <span className="bg-gradient-to-r from-purple-600 to-pink-600 text-white font-black text-xs px-3 py-1 rounded-full shadow-sm">
+                                    {Math.round(alt.match_score)}% Match
+                                  </span>
+                                  {alt.cross_encoder_score && (
+                                    <div className="text-[10px] text-gray-500 mt-1 font-semibold">
+                                      Cross-Encoder: {Math.round(alt.cross_encoder_score * 100)}%
+                                    </div>
+                                  )}
+                                </div>
+                                <button
+                                  type="button"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleOpenTelemetry(alt.id);
+                                  }}
+                                  className="px-3 py-1.5 bg-purple-50 group-hover:bg-purple-600 text-purple-700 group-hover:text-white font-bold rounded-xl text-xs transition flex items-center gap-1 shrink-0"
+                                >
+                                  <span>Inspect</span>
+                                  <ChevronRight className="w-3.5 h-3.5" />
+                                </button>
                               </div>
                             </div>
 
