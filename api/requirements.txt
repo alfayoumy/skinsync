@@ -2,5 +2,7 @@ fastapi
 uvicorn
 pandas
 numpy
-scikit-learn
-gunicorn
+python-multipart
+python-dotenv
+# rapidfuzz needed for fuzzy matching
+rapidfuzz
