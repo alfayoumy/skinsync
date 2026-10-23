@@ -10,7 +10,6 @@ def _load_env_file():
     candidates = [
         os.path.join(os.path.dirname(os.path.dirname(__file__)), ".env"),
         os.path.join(os.getcwd(), ".env"),
-        os.path.join(os.getcwd(), "repo", "api", ".env"),
     ]
     for c in candidates:
         if os.path.exists(c):
@@ -50,6 +49,12 @@ def _env_float(key: str, default: float) -> float:
 def _env_str(key: str, default: str) -> str:
     return os.environ.get(key, default)
 
+def _env_bool(key: str, default: bool) -> bool:
+    val = os.environ.get(key)
+    if val is not None:
+        return val.strip().lower() in ("1", "true", "yes", "on")
+    return default
+
 @dataclass(frozen=True)
 class PipelineConfig:
     # -------------------------------------------------------------------------
@@ -69,7 +74,14 @@ class PipelineConfig:
     TOP_K_CANDIDATES: int = _env_int("TOP_K_CANDIDATES", 5)
 
     # -------------------------------------------------------------------------
-    # 3. Decision Thresholds (Auto-Approve vs. Ambiguity vs. Reject)
+    # 3. Local ONNX Cross-Encoder Reranker
+    # -------------------------------------------------------------------------
+    ENABLE_CROSS_ENCODER: bool = _env_bool("ENABLE_CROSS_ENCODER", True)
+    CROSS_ENCODER_MODEL_NAME: str = _env_str("CROSS_ENCODER_MODEL_NAME", "Xenova/ms-marco-MiniLM-L-6-v2")
+    CROSS_ENCODER_CONFIDENCE_THRESHOLD: float = _env_float("CROSS_ENCODER_CONFIDENCE_THRESHOLD", 0.70)
+
+    # -------------------------------------------------------------------------
+    # 4. Decision Thresholds (Auto-Approve vs. Ambiguity vs. Reject)
     # -------------------------------------------------------------------------
     # Score at or above which candidate is auto-approved without LLM calls
     AUTO_APPROVE_HYBRID_THRESHOLD: float = _env_float("AUTO_APPROVE_HYBRID_THRESHOLD", 0.93)
@@ -79,7 +91,7 @@ class PipelineConfig:
     CONSERVATIVE_FALLBACK_THRESHOLD: float = _env_float("CONSERVATIVE_FALLBACK_THRESHOLD", 0.88)
 
     # -------------------------------------------------------------------------
-    # 4. Gate 4: Jev 1.13 AI Verification & Rate-Limiting
+    # 5. Gate 4: Jev 1.13 AI Verification (Primary)
     # -------------------------------------------------------------------------
     JEV_MODEL_NAME: str = _env_str("JEV_MODEL_NAME", "jev-1.13-free")
     JEV_CONFIDENCE_THRESHOLD: float = _env_float("JEV_CONFIDENCE_THRESHOLD", 0.70)
@@ -88,7 +100,18 @@ class PipelineConfig:
     JEV_TIMEOUT_SECONDS: float = _env_float("JEV_TIMEOUT_SECONDS", 8.0)
 
     # -------------------------------------------------------------------------
-    # 5. Crawler & Scraping Engine
+    # 6. Gate 4: Gemini 3.5 Flash-Lite Fallback (When Jev is Rate Limited or Unavailable)
+    # -------------------------------------------------------------------------
+    GEMINI_API_KEY: str = _env_str("GEMINI_API_KEY", "")
+    GEMINI_MODEL_NAME: str = _env_str("GEMINI_MODEL_NAME", "gemini-3.5-flash-lite")
+    GEMINI_TIMEOUT_SECONDS: float = _env_float("GEMINI_TIMEOUT_SECONDS", 35.0)
+    GEMINI_CONFIDENCE_THRESHOLD: float = _env_float("GEMINI_CONFIDENCE_THRESHOLD", 0.70)
+    GEMINI_MAX_RPM: int = _env_int("GEMINI_MAX_RPM", 15)
+    GEMINI_MAX_RPD: int = _env_int("GEMINI_MAX_RPD", 1500)
+    GEMINI_PACE_DELAY_SECONDS: float = _env_float("GEMINI_PACE_DELAY_SECONDS", 4.0)
+
+    # -------------------------------------------------------------------------
+    # 7. Crawler & Scraping Engine
     # -------------------------------------------------------------------------
     SHOPIFY_PAGE_LIMIT: int = _env_int("SHOPIFY_PAGE_LIMIT", 250)
     SHOPIFY_DEFAULT_DELAY_SECONDS: float = _env_float("SHOPIFY_DEFAULT_DELAY_SECONDS", 0.35)
@@ -99,13 +122,13 @@ class PipelineConfig:
     MIN_STORE_ENRICH_LEN: int = _env_int("MIN_STORE_ENRICH_LEN", 20)
 
     # -------------------------------------------------------------------------
-    # 6. Strategy B: Open Beauty Facts Live Fallback
+    # 8. Strategy B: Open Beauty Facts Live Fallback
     # -------------------------------------------------------------------------
     OPENBEAUTYFACTS_TIMEOUT_SECONDS: float = _env_float("OPENBEAUTYFACTS_TIMEOUT_SECONDS", 5.0)
     OPENBEAUTYFACTS_PAGE_SIZE: int = _env_int("OPENBEAUTYFACTS_PAGE_SIZE", 5)
 
     # -------------------------------------------------------------------------
-    # 7. Worker Batch Processing
+    # 9. Worker Batch Processing
     # -------------------------------------------------------------------------
     INCI_BACKFILL_BATCH_SIZE: int = _env_int("INCI_BACKFILL_BATCH_SIZE", 50)
     JEV_QUEUE_BATCH_SIZE: int = _env_int("JEV_QUEUE_BATCH_SIZE", 25)
