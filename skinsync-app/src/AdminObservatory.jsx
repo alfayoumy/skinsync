@@ -319,11 +319,13 @@ const AdminObservatory = ({ onBackToApp }) => {
                 className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-xs focus:outline-none focus:border-purple-500 font-medium"
               >
                 <option value="">All Categories</option>
-                <optgroup label="Core Skincare">
+                <optgroup label="Active Skincare & Body">
                   <option value="Cleanser">Cleanser</option>
                   <option value="Moisturizer">Moisturizer</option>
                   <option value="Serum">Serum</option>
                   <option value="Sunscreen">Sunscreen</option>
+                  <option value="Tanning">Tanning & After-Sun</option>
+                  <option value="Body Care">Body Care</option>
                   <option value="Toner">Toner</option>
                   <option value="Exfoliator">Exfoliator</option>
                   <option value="Eye Care">Eye Care</option>
@@ -336,9 +338,12 @@ const AdminObservatory = ({ onBackToApp }) => {
                   <option value="Fragrance">Fragrance / Perfume</option>
                   <option value="Hair Care">Hair Care</option>
                   <option value="Makeup">Makeup</option>
-                  <option value="Body Care">Body Care</option>
+                  <option value="Nail Care">Nail Care</option>
+                  <option value="Supplements & Health">Supplements & Health (Vitamins/Pills)</option>
+                  <option value="Medical Supplies">Medical Supplies & First Aid</option>
                   <option value="Oral Care">Oral Care</option>
                   <option value="Tools & Accessories">Tools & Accessories</option>
+                  <option value="Baby Care">Baby Care</option>
                   <option value="Set">Set / Bundle</option>
                   <option value="Other Non-Skincare">Other Non-Skincare</option>
                 </optgroup>
