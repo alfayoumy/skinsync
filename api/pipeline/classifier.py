@@ -94,11 +94,11 @@ def classify_and_tag(title: str, brand: str = "", product_type: str = "") -> Tup
         return 'Nail Care', False
 
     # 1.9 Makeup & Decorative Cosmetics & Lash/Brow Enhancers
-    is_makeup_item = re.search(r"\b(mascara|eyeliner|eye\s*liner|tattoo\s*liner|liner\b|eye\s*pencil|crayon\s*yeux|khol|kajal|eyeshadow|eye\s*shadow|eyebrow\w*|eye\s*brow\w*|brow\w*|lipstick|lip\s*gloss|lip\s*tint|lip\s*liner|lip\s*pencil|lip\s*stain|lip\s*plump|foundation|concealer|blush|blusher|bronzer\s*palette|highlighter|compact\s*powder|setting\s*powder|loose\s*powder|powder\b|fake\s*lashes|false\s*lashes|eyelashes|eyelash\w*|eye\s*lash\w*|lashes\b|makeup\s*primer|eye\s*primer|makeup\s*fixer|contour\s*palette|sheglam|catrice|topface|kiss\s*lashes|liquid\s*matte|matte\s*liquid|tint\b)\b", t)
+    is_makeup_item = re.search(r"\b(mascara|eyeliner|eye\s*liner|tattoo\s*liner|liner\b|eye\s*pencil|crayon\s*yeux|khol|kajal|eyeshadow|eye\s*shadow|eyebrow\w*|eye\s*brow\w*|brow\w*|lipstick|lip\s*gloss|lip\s*tint|lip\s*liner|lip\s*pencil|lip\s*stain|lip\s*plump|foundation|concealer|blush|blusher|bronzer\s*palette|highlighter|compact\s*powder|setting\s*powder|loose\s*powder|powder\b|fake\s*lashes?|false\s*lashes?|eyelashes?|eyelash\w*|eye\s*lash\w*|lash(?:es)?\b|makeup\s*primer|eye\s*primer|makeup\s*fixer|contour\s*palette|sheglam|catrice|topface|kiss\s*lashes|liquid\s*matte|matte\s*liquid|tint\b)\b", t)
     if is_makeup_item:
-        is_hard_makeup = re.search(r"\b(mascara|eyeliner|eye\s*liner|tattoo\s*liner|liner\b|eye\s*pencil|crayon|khol|kajal|eyeshadow|eye\s*shadow|setting\s*powder|powder\b|fake\s*lashes|false\s*lashes|lashes\b|eyelash\w*|eye\s*lash\w*|eyebrow\w*|eye\s*brow\w*|brow\w*)\b", t)
+        is_hard_makeup = re.search(r"\b(mascara|eyeliner|eye\s*liner|tattoo\s*liner|liner\b|eye\s*pencil|crayon|khol|kajal|eyeshadow|eye\s*shadow|setting\s*powder|powder\b|fake\s*lashes?|false\s*lashes?|lash(?:es)?\b|eyelashes?|eyelash\w*|eye\s*lash\w*|eyebrow\w*|eye\s*brow\w*|brow\w*)\b", t)
         if is_hard_makeup:
-            if not re.search(r"\b(eye\s*(?:cream|creme|serum|gel|balm|baume)|cernes|dark\s*circles?)\b", t) or re.search(r"\b(pencil|liner|mascara|eyeshadow|powder|eyelash\w*|eyebrow\w*|brow\w*)\b", t):
+            if not re.search(r"\b(eye\s*(?:cream|creme|serum|gel|balm|baume)|cernes|dark\s*circles?)\b", t) or re.search(r"\b(pencil|liner|mascara|eyeshadow|powder|eyelash\w*|lash(?:es)?\b|eyebrow\w*|brow\w*)\b", t):
                 return 'Makeup', False
         elif not re.search(r"\b(eye\s*(?:cream|creme|serum|gel|balm|baume|contour|patch\w*|care|repair|lift\w*|fluid|fluide)|dark\s*circles?|cernes|under\s*eye|peri-?orbital|contour\s*(?:des\s*)?yeux)\b", t):
             return 'Makeup', False
