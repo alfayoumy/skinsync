@@ -538,7 +538,7 @@ def match_with_inci_db(brand: str, title: str, conn, allow_synchronous_jev: bool
        OR LOWER(brand) LIKE '%' || LOWER(?) || '%';
     """, (brand, brand, brand))
 
-    candidates = cur.fetchall()
+    candidates = [dict(r) for r in cur.fetchall()]
 
     # Flaw 1 Fix: Fallback to canonical normalized brand matching if direct query yielded 0
     if not candidates:
@@ -559,83 +559,83 @@ def match_with_inci_db(brand: str, title: str, conn, allow_synchronous_jev: bool
 
             if matched_b:
                 cur.execute("SELECT id, product_name, ingredients, embedding FROM inci_reference WHERE brand = ?;", (matched_b,))
-                candidates = cur.fetchall()
+                candidates = [dict(r) for r in cur.fetchall()]
 
     # Strategy B: Open Beauty Facts API fallback if local candidates absent and OBF allowed
-    if not candidates and allow_obf:
-        obf_result = query_open_beauty_facts(brand, title)
-        if obf_result:
-            logger.info(f"Open Beauty Facts MATCHED: '{title}' == '{obf_result['product_name']}'")
-            cur.execute("""
-            INSERT INTO inci_reference (brand, product_name, ingredients, source)
-            VALUES (?, ?, ?, 'openbeautyfacts');
-            """, (brand, obf_result["product_name"], obf_result["ingredients"]))
-            conn.commit()
-            new_id = cur.lastrowid
-            return {
-                "ingredients": obf_result["ingredients"],
-                "matched_id": new_id,
-                "matched_name": obf_result["product_name"],
-                "vector_score": 0.85,
-                "token_score": 0.85,
-                "hybrid_score": 0.85,
-                "inci_cross_score": 0.85,
-                "gate1_quality_status": "passed_obf_verified",
-                "gate2_safeguard_status": "passed_direct",
-                "gate3_active_status": "passed_active_verified",
-                "gate4_cross_status": "passed_obf_verified",
-                "gate4_jev_status": "pending_jev",
-                "inci_jev_score": None,
-                "gate4_gemini_status": None,
-                "inci_gemini_score": None,
-                "safeguard_log": "OBF live API verified via Gates 1, 2, 3",
-                "source": "openbeautyfacts"
-            }
+    if not candidates:
+        if allow_obf:
+            obf_result = query_open_beauty_facts(brand, title)
+            if obf_result:
+                logger.info(f"Open Beauty Facts MATCHED: '{title}' == '{obf_result['product_name']}'")
+                cur.execute("""
+                INSERT INTO inci_reference (brand, product_name, ingredients, source)
+                VALUES (?, ?, ?, 'openbeautyfacts');
+                """, (brand, obf_result["product_name"], obf_result["ingredients"]))
+                conn.commit()
+                new_id = cur.lastrowid
+                return {
+                    "ingredients": obf_result["ingredients"],
+                    "matched_id": new_id,
+                    "matched_name": obf_result["product_name"],
+                    "vector_score": 0.85,
+                    "token_score": 0.85,
+                    "hybrid_score": 0.85,
+                    "inci_cross_score": 0.85,
+                    "gate1_quality_status": "passed_obf_verified",
+                    "gate2_safeguard_status": "passed_direct",
+                    "gate3_active_status": "passed_active_verified",
+                    "gate4_cross_status": "passed_obf_verified",
+                    "gate4_jev_status": "pending_jev",
+                    "inci_jev_score": None,
+                    "gate4_gemini_status": None,
+                    "inci_gemini_score": None,
+                    "safeguard_log": "OBF live API verified via Gates 1, 2, 3",
+                    "source": "openbeautyfacts"
+                }
         return None
 
     model = get_embedding_model()
     cleaned_q = clean_product_title(title)
 
     # --- 1. DENSE VECTOR RETRIEVAL (FastEmbed + NumPy SQLite BLOB) ---
+    sim_map = {}
     if model is not None:
-        missing = [row for row in candidates if row['embedding'] is None]
+        missing = [row for row in candidates if row.get('embedding') is None]
         if missing:
             try:
                 embs = list(model.embed([r['product_name'] for r in missing]))
                 for r, emb in zip(missing, embs):
-                    cur.execute("UPDATE inci_reference SET embedding = ? WHERE id = ?;", (emb.astype(np.float32).tobytes(), r['id']))
+                    emb_bytes = emb.astype(np.float32).tobytes()
+                    cur.execute("UPDATE inci_reference SET embedding = ? WHERE id = ?;", (emb_bytes, r['id']))
+                    r['embedding'] = emb_bytes
                 conn.commit()
-                cur.execute("""
-                SELECT id, product_name, ingredients, embedding FROM inci_reference
-                WHERE LOWER(brand) = LOWER(?) 
-                   OR LOWER(?) LIKE '%' || LOWER(brand) || '%'
-                   OR LOWER(brand) LIKE '%' || LOWER(?) || '%';
-                """, (brand, brand, brand))
-                candidates = cur.fetchall()
             except Exception as e:
                 logger.warning(f"FastEmbed batch embedding failed: {e}")
 
-        try:
-            q_emb = list(model.embed([cleaned_q or title]))[0]
-            q_vec = q_emb / np.linalg.norm(q_emb)
+        valid_candidates = [r for r in candidates if r.get('embedding') is not None]
+        if valid_candidates:
+            try:
+                q_emb = list(model.embed([cleaned_q or title]))[0]
+                q_norm = np.linalg.norm(q_emb)
+                q_vec = q_emb / q_norm if q_norm > 0 else q_emb
 
-            db_vecs = np.array([np.frombuffer(r['embedding'], dtype=np.float32) for r in candidates])
-            db_norms = np.linalg.norm(db_vecs, axis=1, keepdims=True)
-            db_vecs_norm = db_vecs / db_norms
+                raw_vecs = [np.frombuffer(r['embedding'], dtype=np.float32) for r in valid_candidates]
+                db_vecs = np.atleast_2d(np.array(raw_vecs))
+                db_norms = np.maximum(np.linalg.norm(db_vecs, axis=1, keepdims=True), 1e-9)
+                db_vecs_norm = db_vecs / db_norms
 
-            dense_sims = np.dot(db_vecs_norm, q_vec)
-        except Exception as e:
-            logger.warning(f"Vector search computation failed: {e}")
-            dense_sims = None
-    else:
-        dense_sims = None
+                dense_sims = np.dot(db_vecs_norm, q_vec)
+                sim_map = {r['id']: float(dense_sims[i]) for i, r in enumerate(valid_candidates)}
+            except Exception as e:
+                logger.warning(f"Vector search computation failed: {e}")
+                sim_map = {}
 
     # --- 2. HYBRID CANDIDATE SCORING (Calibrated Vector + Dual Token Ratio) ---
     scored_candidates = []
     for idx, cand in enumerate(candidates):
         cand_name = cand['product_name']
         cand_clean = clean_product_title(cand_name)
-        v_sim = float(dense_sims[idx]) if dense_sims is not None else 0.0
+        v_sim = sim_map.get(cand['id'], 0.0)
         
         if HAS_RAPIDFUZZ:
             t_sort = float(fuzz.token_sort_ratio(cleaned_q, cand_clean)) / 100.0
@@ -645,7 +645,7 @@ def match_with_inci_db(brand: str, title: str, conn, allow_synchronous_jev: bool
             matcher = difflib.SequenceMatcher(None, cleaned_q.lower(), cand_clean.lower())
             t_sim = matcher.ratio()
 
-        if dense_sims is not None:
+        if cand['id'] in sim_map:
             # Calibrate BGE vector cosine similarity to full [0.0, 1.0] span
             v_calibrated = max(0.0, min(1.0, (v_sim - 0.50) / 0.50))
             hybrid_score = cfg.DENSE_VECTOR_WEIGHT * v_calibrated + cfg.SPARSE_TOKEN_WEIGHT * t_sim
@@ -707,12 +707,13 @@ def match_with_inci_db(brand: str, title: str, conn, allow_synchronous_jev: bool
 
     # Joint Cross-Encoder Evaluation on top compatible candidate
     cross_score = score_cross_encoder(title, cand_name)
-    cross_threshold = getattr(cfg, "CROSS_ENCODER_CONFIDENCE_THRESHOLD", 0.70)
+    cross_threshold = getattr(cfg, "CROSS_ENCODER_CONFIDENCE_THRESHOLD", 0.85)
     cross_status = "cross_approved" if cross_score >= cross_threshold else "cross_ambiguous"
 
     # --- GATE 4: JEV + GEMINI FALLBACK EVALUATION ---
     # Case A: Very High Confidence Match -> Auto-approved with 0 LLM calls
-    if h_score >= cfg.AUTO_APPROVE_HYBRID_THRESHOLD or (cross_score >= 0.92 and h_score >= 0.85):
+    is_high_conf = (h_score >= cfg.AUTO_APPROVE_HYBRID_THRESHOLD) or (cross_score >= 0.95 and h_score >= 0.80)
+    if is_high_conf:
         return {
             "ingredients": best_compatible['ingredients'],
             "matched_id": best_compatible['id'],
@@ -724,7 +725,7 @@ def match_with_inci_db(brand: str, title: str, conn, allow_synchronous_jev: bool
             "gate1_quality_status": g1_status,
             "gate2_safeguard_status": g2_status,
             "gate3_active_status": g3_status,
-            "gate4_cross_status": cross_status,
+            "gate4_cross_status": "cross_approved",
             "gate4_jev_status": "auto_approved_high_confidence",
             "inci_jev_score": None,
             "gate4_gemini_status": None,
@@ -737,23 +738,27 @@ def match_with_inci_db(brand: str, title: str, conn, allow_synchronous_jev: bool
     if h_score >= cfg.AMBIGUITY_ZONE_LOW_THRESHOLD:
         jev_status = "pending_jev"
         jev_score = None
-        gemini_status = None
+        gemini_status = "pending_gemini"
         gemini_score = None
 
         mode = (scoring_mode or "auto").lower().strip()
         if allow_synchronous_jev or mode in ("local", "jev", "gemini", "all"):
             if mode == "local":
                 # Local only: evaluate via local Cross-Encoder + deterministic gates, 0 LLM network calls
-                jev_status = "local_approved" if cross_score >= cross_threshold else "local_ambiguous"
+                is_local_approved = (cross_score >= cross_threshold and h_score >= 0.75)
+                jev_status = "local_approved" if is_local_approved else "local_ambiguous"
                 jev_score = cross_score
+                gemini_status = None if is_local_approved else "pending_gemini"
             elif mode == "jev":
                 # Jev only: no Gemini fallback
                 jev_ok = verify_match_with_jev(title, cand_name)
                 if jev_ok is not None:
                     jev_status = "jev_approved" if jev_ok is True else "jev_rejected"
                     jev_score = 0.95 if jev_ok is True else 0.15
+                    gemini_status = None
                 else:
                     jev_status = "jev_rate_limited"
+                    gemini_status = "pending_gemini"
             elif mode == "gemini":
                 # Gemini only: no Jev call
                 gemini_res = verify_match_with_gemini(title, cand_name)
@@ -769,6 +774,7 @@ def match_with_inci_db(brand: str, title: str, conn, allow_synchronous_jev: bool
                 if jev_ok is not None:
                     jev_status = "jev_approved" if jev_ok is True else "jev_rejected"
                     jev_score = 0.95 if jev_ok is True else 0.15
+                    gemini_status = None
                 else:
                     jev_status = "jev_rate_limited"
                     gemini_res = verify_match_with_gemini(title, cand_name)
@@ -776,6 +782,8 @@ def match_with_inci_db(brand: str, title: str, conn, allow_synchronous_jev: bool
                         g_ok, g_conf = gemini_res
                         gemini_status = "gemini_approved" if g_ok else "gemini_rejected"
                         gemini_score = g_conf
+                    else:
+                        gemini_status = "pending_gemini"
 
         is_rejected = (jev_status == "jev_rejected" or gemini_status == "gemini_rejected")
 

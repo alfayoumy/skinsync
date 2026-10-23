@@ -257,18 +257,22 @@ def sync_store(store_cfg: dict, max_pages: int = None, conn=None, fields: list =
                             SET title = ?, brand = ?, category = ?, price = ?, compare_at_price = ?,
                                 is_available = ?, image_url = ?, ingredients_raw = ?,
                                 ingredients_parsed = ?, actives = ?, ingredient_source = ?,
+                                description_html = COALESCE(?, description_html),
                                 updated_at = CURRENT_TIMESTAMP
                             WHERE id = ?;
                             """, (title, vendor, category, price, compare_price, is_available, image_url,
                                   raw_ings, json.dumps(parsed_ings), json.dumps(actives),
-                                  ing_source, pid))
+                                  ing_source, body_html, pid))
                         else:
                             cur.execute("""
                             UPDATE products
                             SET title = ?, brand = ?, category = ?, price = ?, compare_at_price = ?,
-                                is_available = ?, image_url = ?, updated_at = CURRENT_TIMESTAMP
+                                is_available = ?, image_url = ?,
+                                description_html = COALESCE(?, description_html),
+                                updated_at = CURRENT_TIMESTAMP
                             WHERE id = ?;
-                            """, (title, vendor, category, price, compare_price, is_available, image_url, pid))
+                            """, (title, vendor, category, price, compare_price, is_available, image_url,
+                                  body_html, pid))
                     else:
                         # Granular field updates
                         upd_cols = []

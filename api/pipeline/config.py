@@ -78,15 +78,15 @@ class PipelineConfig:
     # -------------------------------------------------------------------------
     ENABLE_CROSS_ENCODER: bool = _env_bool("ENABLE_CROSS_ENCODER", True)
     CROSS_ENCODER_MODEL_NAME: str = _env_str("CROSS_ENCODER_MODEL_NAME", "Xenova/ms-marco-MiniLM-L-6-v2")
-    CROSS_ENCODER_CONFIDENCE_THRESHOLD: float = _env_float("CROSS_ENCODER_CONFIDENCE_THRESHOLD", 0.70)
+    CROSS_ENCODER_CONFIDENCE_THRESHOLD: float = _env_float("CROSS_ENCODER_CONFIDENCE_THRESHOLD", 0.85)
 
     # -------------------------------------------------------------------------
     # 4. Decision Thresholds (Auto-Approve vs. Ambiguity vs. Reject)
     # -------------------------------------------------------------------------
     # Score at or above which candidate is auto-approved without LLM calls
     AUTO_APPROVE_HYBRID_THRESHOLD: float = _env_float("AUTO_APPROVE_HYBRID_THRESHOLD", 0.93)
-    # Score below which candidate is discarded without calling Jev
-    AMBIGUITY_ZONE_LOW_THRESHOLD: float = _env_float("AMBIGUITY_ZONE_LOW_THRESHOLD", 0.70)
+    # Score below which candidate is discarded without calling Jev / Gemini
+    AMBIGUITY_ZONE_LOW_THRESHOLD: float = _env_float("AMBIGUITY_ZONE_LOW_THRESHOLD", 0.45)
     # Conservative threshold if Jev API is unreachable
     CONSERVATIVE_FALLBACK_THRESHOLD: float = _env_float("CONSERVATIVE_FALLBACK_THRESHOLD", 0.88)
 

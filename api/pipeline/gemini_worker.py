@@ -66,128 +66,157 @@ def run_gemini_verification_queue(limit: Optional[int] = None, batch_size: Optio
         LIMIT ?;
         """
 
-    cur.execute(query, (limit,))
-    queue = cur.fetchall()
+    try:
+        cur.execute(query, (limit,))
+        queue = [dict(r) for r in cur.fetchall()]
 
-    logger.info(f"=== Starting Gate 4 Gemini Batch Verification Worker ===")
-    logger.info(f"Found {len(queue)} products queued for Gemini evaluation (Batch Size: {batch_size}).")
+        logger.info(f"=== Starting Gate 4 Gemini Batch Verification Worker ===")
+        logger.info(f"Found {len(queue)} products queued for Gemini evaluation (Batch Size: {batch_size}).")
 
-    if not queue:
-        conn.close()
-        return {"processed": 0, "approved": 0, "rejected": 0, "rate_limited": 0, "api_calls": 0}
+        if not queue:
+            return {"processed": 0, "approved": 0, "rejected": 0, "rate_limited": 0, "api_calls": 0}
 
-    batches = chunk_list(queue, batch_size)
-    approved = 0
-    rejected = 0
-    rate_limited = 0
-    api_calls = 0
+        batches = chunk_list(queue, batch_size)
+        approved = 0
+        rejected = 0
+        rate_limited = 0
+        api_calls = 0
 
-    cross_threshold = getattr(cfg, "CROSS_ENCODER_CONFIDENCE_THRESHOLD", 0.70)
-    gemini_threshold = getattr(cfg, "GEMINI_CONFIDENCE_THRESHOLD", 0.70)
+        cross_threshold = getattr(cfg, "CROSS_ENCODER_CONFIDENCE_THRESHOLD", 0.85)
+        gemini_threshold = getattr(cfg, "GEMINI_CONFIDENCE_THRESHOLD", 0.70)
 
-    for b_idx, batch in enumerate(batches, 1):
-        logger.info(f"--- Processing Batch {b_idx}/{len(batches)} ({len(batch)} items) ---")
+        for b_idx, batch in enumerate(batches, 1):
+            logger.info(f"--- Processing Batch {b_idx}/{len(batches)} ({len(batch)} items) ---")
 
-        # 1. Compute local ONNX Cross-Encoder scores for the batch
-        batch_items = []
-        cross_scores = {}
-        for p in batch:
-            pid = p["id"]
-            title = p["title"]
-            cand_name = p["inci_matched_name"]
-            c_score = score_cross_encoder(title, cand_name)
-            cross_scores[pid] = c_score
-            batch_items.append({
-                "id": pid,
-                "store_title": title,
-                "candidate_title": cand_name
-            })
-
-        # 2. Call Gemini 3.5 Flash-Lite batch verification (1 request for the entire batch)
-        evaluations = verify_batch_with_gemini(batch_items)
-        api_calls += 1
-
-        if evaluations is None:
-            # API rate limit reached or network failure
-            rate_limited += len(batch)
-            logger.warning(f"[Batch {b_idx}] Gemini API returned None (Rate limited or daily quota exhausted). Leaving {len(batch)} items in queue.")
-            # Record cross-encoder scores so progress isn't lost
+            # 1. Compute local ONNX Cross-Encoder scores for the batch
+            batch_items = []
+            cross_scores = {}
             for p in batch:
                 pid = p["id"]
+                title = p["title"]
+                cand_name = p["inci_matched_name"]
+                c_score = score_cross_encoder(title, cand_name)
+                cross_scores[pid] = c_score
+                batch_items.append({
+                    "id": pid,
+                    "store_title": title,
+                    "candidate_title": cand_name
+                })
+
+            # 2. Call Gemini 3.5 Flash-Lite batch verification (1 request for the entire batch)
+            evaluations = verify_batch_with_gemini(batch_items)
+            api_calls += 1
+
+            if evaluations is None:
+                # API rate limit reached or network failure
+                rate_limited += len(batch)
+                logger.warning(f"[Batch {b_idx}] Gemini API returned None (Rate limited or daily quota exhausted). Leaving {len(batch)} items in queue.")
+                # Record cross-encoder scores so progress isn't lost
+                for p in batch:
+                    pid = p["id"]
+                    c_score = cross_scores.get(pid, 0.5)
+                    c_status = "cross_approved" if c_score >= cross_threshold else "cross_ambiguous"
+                    cur.execute("""
+                    UPDATE products
+                    SET gate4_gemini_status = 'pending_gemini',
+                        gate4_cross_status = ?, inci_cross_score = ?,
+                        updated_at = CURRENT_TIMESTAMP
+                    WHERE id = ?;
+                    """, (c_status, c_score, pid))
+                conn.commit()
+                break
+
+            # 3. Update SQLite for each item in the batch
+            batch_approved = 0
+            batch_rejected = 0
+
+            for p in batch:
+                pid = p["id"]
+                title = p["title"]
+                cand_name = p["inci_matched_name"]
                 c_score = cross_scores.get(pid, 0.5)
                 c_status = "cross_approved" if c_score >= cross_threshold else "cross_ambiguous"
-                cur.execute("""
-                UPDATE products
-                SET gate4_gemini_status = 'pending_gemini',
-                    gate4_cross_status = ?, inci_cross_score = ?,
-                    updated_at = CURRENT_TIMESTAMP
-                WHERE id = ?;
-                """, (c_status, c_score, pid))
-            conn.commit()
-            break
 
-        # 3. Update SQLite for each item in the batch
-        batch_approved = 0
-        batch_rejected = 0
+                if pid in evaluations:
+                    is_same, conf, reason = evaluations[pid]
+                    if is_same and conf >= gemini_threshold:
+                        # If product has no ingredients, backfill from matched inci_reference
+                        cur.execute("""
+                        SELECT r.ingredients
+                        FROM products p
+                        JOIN inci_reference r ON r.id = p.inci_matched_id
+                        WHERE p.id = ?;
+                        """, (pid,))
+                        ref_row = cur.fetchone()
+                        ref_ings = ref_row[0] if ref_row else None
 
-        for p in batch:
-            pid = p["id"]
-            title = p["title"]
-            cand_name = p["inci_matched_name"]
-            c_score = cross_scores.get(pid, 0.5)
-            c_status = "cross_approved" if c_score >= cross_threshold else "cross_ambiguous"
-
-            if pid in evaluations:
-                is_same, conf, reason = evaluations[pid]
-                if is_same and conf >= gemini_threshold:
-                    cur.execute("""
-                    UPDATE products
-                    SET gate4_gemini_status = 'gemini_approved', inci_gemini_score = ?,
-                        gate4_cross_status = ?, inci_cross_score = ?,
-                        updated_at = CURRENT_TIMESTAMP
-                    WHERE id = ?;
-                    """, (conf, c_status, c_score, pid))
-                    approved += 1
-                    batch_approved += 1
-                    logger.info(f"  [GEMINI BATCH APPROVED] ID {pid}: '{title[:32]}' == '{cand_name[:32]}' (Conf: {conf:.2f} | Reason: {reason[:40]})")
+                        curr_raw = p.get("ingredients_raw") if isinstance(p, dict) else p["ingredients_raw"]
+                        if (not curr_raw or len(curr_raw.strip()) < 10) and ref_ings and len(ref_ings.strip()) >= 15:
+                            from pipeline.inci_matcher import parse_and_normalize_ingredients
+                            import json
+                            parsed, acts = parse_and_normalize_ingredients(ref_ings)
+                            cur.execute("""
+                            UPDATE products
+                            SET gate4_gemini_status = 'gemini_approved', inci_gemini_score = ?,
+                                gate4_cross_status = ?, inci_cross_score = ?,
+                                ingredients_raw = ?, ingredients_parsed = ?, actives = ?,
+                                ingredient_source = 'skinsafe_matched',
+                                updated_at = CURRENT_TIMESTAMP
+                            WHERE id = ?;
+                            """, (conf, c_status, c_score, ref_ings, json.dumps(parsed), json.dumps(acts), pid))
+                        else:
+                            cur.execute("""
+                            UPDATE products
+                            SET gate4_gemini_status = 'gemini_approved', inci_gemini_score = ?,
+                                gate4_cross_status = ?, inci_cross_score = ?,
+                                updated_at = CURRENT_TIMESTAMP
+                            WHERE id = ?;
+                            """, (conf, c_status, c_score, pid))
+                        approved += 1
+                        batch_approved += 1
+                        logger.info(f"  [GEMINI BATCH APPROVED] ID {pid}: '{title[:32]}' == '{cand_name[:32]}' (Conf: {conf:.2f} | Reason: {reason[:40]})")
+                    else:
+                        cur.execute("""
+                        UPDATE products
+                        SET gate4_gemini_status = 'gemini_rejected', inci_gemini_score = ?,
+                            gate4_cross_status = ?, inci_cross_score = ?,
+                            ingredients_raw = CASE WHEN ingredient_source = 'skinsafe_matched' THEN NULL ELSE ingredients_raw END,
+                            ingredients_parsed = CASE WHEN ingredient_source = 'skinsafe_matched' THEN NULL ELSE ingredients_parsed END,
+                            actives = CASE WHEN ingredient_source = 'skinsafe_matched' THEN NULL ELSE actives END,
+                            ingredient_source = CASE WHEN ingredient_source = 'skinsafe_matched' THEN NULL ELSE ingredient_source END,
+                            updated_at = CURRENT_TIMESTAMP
+                        WHERE id = ?;
+                        """, (conf, c_status, c_score, pid))
+                        rejected += 1
+                        batch_rejected += 1
+                        logger.info(f"  [GEMINI BATCH REJECTED] ID {pid}: '{title[:32]}' != '{cand_name[:32]}' (Conf: {conf:.2f} | Reason: {reason[:40]})")
                 else:
+                    # Omitted in LLM response: leave for retry
+                    rate_limited += 1
                     cur.execute("""
                     UPDATE products
-                    SET gate4_gemini_status = 'gemini_rejected', inci_gemini_score = ?,
+                    SET gate4_gemini_status = 'pending_gemini',
                         gate4_cross_status = ?, inci_cross_score = ?,
-                        ingredients_raw = NULL, ingredients_parsed = NULL, actives = NULL,
                         updated_at = CURRENT_TIMESTAMP
                     WHERE id = ?;
-                    """, (conf, c_status, c_score, pid))
-                    rejected += 1
-                    batch_rejected += 1
-                    logger.info(f"  [GEMINI BATCH REJECTED] ID {pid}: '{title[:32]}' != '{cand_name[:32]}' (Conf: {conf:.2f} | Reason: {reason[:40]})")
-            else:
-                # Omitted in LLM response: leave for retry
-                rate_limited += 1
-                cur.execute("""
-                UPDATE products
-                SET gate4_gemini_status = 'pending_gemini',
-                    gate4_cross_status = ?, inci_cross_score = ?,
-                    updated_at = CURRENT_TIMESTAMP
-                WHERE id = ?;
-                """, (c_status, c_score, pid))
-                logger.warning(f"  [GEMINI BATCH OMITTED] ID {pid}: Item missing from LLM response. Kept in pending_gemini.")
+                    """, (c_status, c_score, pid))
+                    logger.warning(f"  [GEMINI BATCH OMITTED] ID {pid}: Item missing from LLM response. Kept in pending_gemini.")
 
-        conn.commit()
-        logger.info(f"Batch {b_idx} committed: {batch_approved} approved, {batch_rejected} rejected.")
+            conn.commit()
+            logger.info(f"Batch {b_idx} committed: {batch_approved} approved, {batch_rejected} rejected.")
 
-    conn.close()
-    logger.info("=== Gate 4 Gemini Batch Worker Run Complete ===")
-    logger.info(f"Processed: {approved + rejected + rate_limited} | Approved: {approved} | Rejected: {rejected} | Rate Limited: {rate_limited} | API Calls: {api_calls}")
+        logger.info("=== Gate 4 Gemini Batch Worker Run Complete ===")
+        logger.info(f"Processed: {approved + rejected + rate_limited} | Approved: {approved} | Rejected: {rejected} | Rate Limited: {rate_limited} | API Calls: {api_calls}")
 
-    return {
-        "processed": approved + rejected + rate_limited,
-        "approved": approved,
-        "rejected": rejected,
-        "rate_limited": rate_limited,
-        "api_calls": api_calls
-    }
+        return {
+            "processed": approved + rejected + rate_limited,
+            "approved": approved,
+            "rejected": rejected,
+            "rate_limited": rate_limited,
+            "api_calls": api_calls
+        }
+    finally:
+        conn.close()
 
 if __name__ == "__main__":
     setup_logging()
