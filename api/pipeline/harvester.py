@@ -95,9 +95,11 @@ def fetch_shopify_page(domain: str, page: int, retries: int = None) -> list:
 
     return []
 
-def sync_store(store_cfg: dict, max_pages: int = None, conn = None) -> dict:
+def sync_store(store_cfg: dict, max_pages: int = None, conn = None, fields: list = None) -> dict:
     """
     Crawls and synchronizes a single Shopify store into the database.
+    Optionally accepts a list of specific fields to refresh:
+    e.g. ['price', 'stock', 'image', 'ingredients', 'title'] or 'all'.
     """
     if max_pages is None:
         max_pages = cfg.DEFAULT_MAX_PAGES_PER_STORE
@@ -106,13 +108,33 @@ def sync_store(store_cfg: dict, max_pages: int = None, conn = None) -> dict:
         conn = get_connection()
         should_close = True
 
+    # Normalize fields filter
+    clean_fields = None
+    if fields:
+        clean_fields = set()
+        for f in fields:
+            f_norm = str(f).lower().strip()
+            if f_norm in ("all", "*"):
+                clean_fields = None
+                break
+            if f_norm in ("price", "pricing"):
+                clean_fields.add("price")
+            elif f_norm in ("stock", "availability", "is_available"):
+                clean_fields.add("stock")
+            elif f_norm in ("image", "images", "image_url"):
+                clean_fields.add("image")
+            elif f_norm in ("ingredients", "ingredient", "raw_ingredients"):
+                clean_fields.add("ingredients")
+            elif f_norm in ("title", "category"):
+                clean_fields.add("title")
+
     cur = conn.cursor()
     store_id = store_cfg["id"]
     domain = store_cfg["domain"]
     name = store_cfg["name"]
     delay = store_cfg.get("rate_limit_delay", cfg.SHOPIFY_DEFAULT_DELAY_SECONDS)
 
-    logger.info(f"--- Starting Sync for Store: {name} ({domain}) ---")
+    logger.info(f"--- Starting Sync for Store: {name} ({domain}) | Fields: {list(clean_fields) if clean_fields else 'all'} ---")
 
     # Start Sync Run Log
     cur.execute("""
@@ -189,32 +211,59 @@ def sync_store(store_cfg: dict, max_pages: int = None, conn = None) -> dict:
                     pid = existing["id"]
                     old_price = float(existing["price"])
 
-                    # Detect Price Change
-                    if abs(old_price - price) > cfg.PRICE_DIFFERENCE_THRESHOLD and price > 0:
-                        cur.execute("""
-                        INSERT INTO price_history (product_id, old_price, new_price)
-                        VALUES (?, ?, ?);
-                        """, (pid, old_price, price))
-                        price_changes += 1
+                    # Detect Price Change if price is being updated
+                    if clean_fields is None or "price" in clean_fields:
+                        if abs(old_price - price) > cfg.PRICE_DIFFERENCE_THRESHOLD and price > 0:
+                            cur.execute("""
+                            INSERT INTO price_history (product_id, old_price, new_price)
+                            VALUES (?, ?, ?);
+                            """, (pid, old_price, price))
+                            price_changes += 1
 
-                    # Update existing record
-                    if not existing["ingredients_raw"] and raw_ings:
-                        cur.execute("""
-                        UPDATE products
-                        SET price = ?, compare_at_price = ?, is_available = ?, image_url = ?,
-                            ingredients_raw = ?, ingredients_parsed = ?, actives = ?,
-                            ingredient_source = ?, updated_at = CURRENT_TIMESTAMP
-                        WHERE id = ?;
-                        """, (price, compare_price, is_available, image_url,
-                              raw_ings, json.dumps(parsed_ings), json.dumps(actives),
-                              ing_source, pid))
+                    if clean_fields is None:
+                        # Full update of all fields
+                        if not existing["ingredients_raw"] and raw_ings:
+                            cur.execute("""
+                            UPDATE products
+                            SET price = ?, compare_at_price = ?, is_available = ?, image_url = ?,
+                                ingredients_raw = ?, ingredients_parsed = ?, actives = ?,
+                                ingredient_source = ?, updated_at = CURRENT_TIMESTAMP
+                            WHERE id = ?;
+                            """, (price, compare_price, is_available, image_url,
+                                  raw_ings, json.dumps(parsed_ings), json.dumps(actives),
+                                  ing_source, pid))
+                        else:
+                            cur.execute("""
+                            UPDATE products
+                            SET price = ?, compare_at_price = ?, is_available = ?, image_url = ?,
+                                updated_at = CURRENT_TIMESTAMP
+                            WHERE id = ?;
+                            """, (price, compare_price, is_available, image_url, pid))
                     else:
-                        cur.execute("""
-                        UPDATE products
-                        SET price = ?, compare_at_price = ?, is_available = ?, image_url = ?,
-                            updated_at = CURRENT_TIMESTAMP
-                        WHERE id = ?;
-                        """, (price, compare_price, is_available, image_url, pid))
+                        # Granular field updates
+                        upd_cols = []
+                        upd_vals = []
+                        if "price" in clean_fields:
+                            upd_cols.extend(["price = ?", "compare_at_price = ?"])
+                            upd_vals.extend([price, compare_price])
+                        if "stock" in clean_fields:
+                            upd_cols.append("is_available = ?")
+                            upd_vals.append(is_available)
+                        if "image" in clean_fields:
+                            upd_cols.append("image_url = ?")
+                            upd_vals.append(image_url)
+                        if "title" in clean_fields:
+                            upd_cols.extend(["title = ?", "category = ?"])
+                            upd_vals.extend([title, category])
+                        if "ingredients" in clean_fields and raw_ings:
+                            upd_cols.extend(["ingredients_raw = ?", "ingredients_parsed = ?", "actives = ?", "ingredient_source = ?"])
+                            upd_vals.extend([raw_ings, json.dumps(parsed_ings), json.dumps(actives), ing_source])
+
+                        if upd_cols:
+                            upd_cols.append("updated_at = CURRENT_TIMESTAMP")
+                            upd_vals.append(pid)
+                            sql = f"UPDATE products SET {', '.join(upd_cols)} WHERE id = ?;"
+                            cur.execute(sql, tuple(upd_vals))
 
                     total_updated += 1
                 else:
@@ -223,12 +272,12 @@ def sync_store(store_cfg: dict, max_pages: int = None, conn = None) -> dict:
                     INSERT INTO products (
                         store_id, store_product_id, handle, title, brand, category,
                         price, compare_at_price, is_available, image_url, product_url,
-                        ingredients_raw, ingredients_parsed, actives, ingredient_source
-                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
+                        description_html, ingredients_raw, ingredients_parsed, actives, ingredient_source
+                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
                     """, (
                         store_id, prod_id, handle, title, vendor, category,
                         price, compare_price, is_available, image_url, product_url,
-                        raw_ings, json.dumps(parsed_ings), json.dumps(actives), ing_source
+                        body_html, raw_ings, json.dumps(parsed_ings), json.dumps(actives), ing_source
                     ))
                     total_added += 1
 
@@ -279,7 +328,7 @@ def sync_store(store_cfg: dict, max_pages: int = None, conn = None) -> dict:
         "error": error_msg
     }
 
-def sync_all_stores(max_pages_per_store: int = None) -> list:
+def sync_all_stores(max_pages_per_store: int = None, fields: list = None) -> list:
     """
     Runs full synchronization for all configured stores.
     """
@@ -288,10 +337,55 @@ def sync_all_stores(max_pages_per_store: int = None) -> list:
     conn = get_connection()
     results = []
     for store_cfg in STORES:
-        res = sync_store(store_cfg, max_pages=max_pages_per_store, conn=conn)
+        res = sync_store(store_cfg, max_pages=max_pages_per_store, conn=conn, fields=fields)
         results.append(res)
     conn.close()
     return results
+
+def refresh_catalog(store_id: str = None, fields: list = None, max_pages: int = None) -> dict:
+    """
+    Refreshes catalog products across a specific store or all stores,
+    selectively updating specific fields ('price', 'stock', 'image', 'ingredients', or 'all').
+    """
+    if max_pages is None:
+        max_pages = cfg.DEFAULT_MAX_PAGES_PER_STORE
+
+    target_stores = STORES
+    if store_id and str(store_id).lower().strip() not in ("all", "*", ""):
+        sid = str(store_id).lower().strip()
+        target_stores = [s for s in STORES if s["id"] == sid]
+        if not target_stores:
+            return {
+                "status": "error",
+                "message": f"Store ID '{store_id}' not found. Available stores: {[s['id'] for s in STORES]}"
+            }
+
+    conn = get_connection()
+    results = []
+    total_fetched = 0
+    total_updated = 0
+    total_added = 0
+    total_price_changes = 0
+
+    for s_cfg in target_stores:
+        res = sync_store(s_cfg, max_pages=max_pages, conn=conn, fields=fields)
+        results.append(res)
+        total_fetched += res.get("fetched", 0)
+        total_updated += res.get("updated", 0)
+        total_added += res.get("added", 0)
+        total_price_changes += res.get("price_changes", 0)
+
+    conn.close()
+    return {
+        "status": "success",
+        "stores_processed": [s["name"] for s in target_stores],
+        "fields_refreshed": fields or ["all"],
+        "total_fetched": total_fetched,
+        "total_updated": total_updated,
+        "total_added": total_added,
+        "price_changes": total_price_changes,
+        "store_details": results
+    }
 
 if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO)

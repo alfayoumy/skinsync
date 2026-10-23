@@ -13,16 +13,28 @@ import logging
 import sqlite3
 import sys
 
-from dermo_data import INGREDIENT_DB, Comedogenicity, Irritancy, _get_ingredient_fuzzy
+from dermo_data import (
+    INGREDIENT_DB, Comedogenicity, Irritancy, _get_ingredient_fuzzy,
+    evaluate_product_dermo, reload_clinical_db
+)
 from pipeline.config import cfg
-from pipeline.db_manager import load_synonyms_from_db, add_synonym_to_db
+from pipeline.db_manager import (
+    load_synonyms_from_db, add_synonym_to_db,
+    load_clinical_ingredients_from_db, add_clinical_ingredient_to_db,
+    get_connection
+)
 from pipeline.inci_matcher import (
     get_cross_encoder,
     score_cross_encoder,
     verify_match_with_gemini,
     clean_product_title,
-    normalize_brand
+    normalize_brand,
+    match_with_inci_db,
+    parse_and_normalize_ingredients,
+    extract_ingredients_from_html
 )
+from pipeline.safeguards import CosmeticCompatibilityValidator
+from pipeline.harvester import refresh_catalog, STORES
 
 logger = logging.getLogger("skincare_engine")
 logging.basicConfig(level=logging.INFO)
@@ -758,6 +770,724 @@ def create_or_update_synonym(req: SynonymRequest):
             "category": req.category
         }
     raise HTTPException(status_code=500, detail="Failed to persist synonym in database.")
+
+# ==============================================================================
+# 7. SPECIALIZED OPERATIONAL ENDPOINTS
+# ==============================================================================
+
+# ------------------------------------------------------------------------------
+# 7.1. CATALOG / PRODUCT REFRESH ENDPOINTS
+# ------------------------------------------------------------------------------
+class CatalogRefreshRequest(BaseModel):
+    store_id: Optional[str] = None
+    fields: Optional[List[str]] = None
+    max_pages: Optional[int] = 50
+    background: bool = True
+
+class StoreRefreshRequest(BaseModel):
+    fields: Optional[List[str]] = None
+    max_pages: Optional[int] = 50
+    background: bool = True
+
+def _run_refresh_catalog_task(store_id: Optional[str], fields: Optional[List[str]], max_pages: int):
+    try:
+        res = refresh_catalog(store_id=store_id, fields=fields, max_pages=max_pages)
+        load_catalog_from_db()
+        return res
+    except Exception as e:
+        logger.error(f"Catalog refresh error: {e}")
+        return {"status": "error", "message": str(e)}
+
+@app.post("/products/refresh")
+def refresh_products_endpoint(req: CatalogRefreshRequest, background_tasks: BackgroundTasks):
+    """
+    Refreshes catalog products across a specific source or all sources,
+    selectively updating specific fields ('price', 'stock', 'image', 'ingredients', or 'all').
+    """
+    if req.background:
+        background_tasks.add_task(_run_refresh_catalog_task, req.store_id, req.fields, req.max_pages or 50)
+        return {
+            "status": "accepted",
+            "message": f"Catalog refresh dispatched to background worker (store: {req.store_id or 'all'}, fields: {req.fields or 'all'}). Check /stats for progress."
+        }
+    return _run_refresh_catalog_task(req.store_id, req.fields, req.max_pages or 50)
+
+@app.post("/stores/{store_id}/refresh")
+def refresh_store_endpoint(store_id: str, background_tasks: BackgroundTasks, req: Optional[StoreRefreshRequest] = None):
+    """
+    Refreshes products for a specific source ID across selected or all fields.
+    """
+    fields = req.fields if req else None
+    max_pages = req.max_pages if req and req.max_pages else 50
+    bg = req.background if req else True
+    if bg:
+        background_tasks.add_task(_run_refresh_catalog_task, store_id, fields, max_pages)
+        return {
+            "status": "accepted",
+            "message": f"Store refresh dispatched for store '{store_id}' (fields: {fields or 'all'})."
+        }
+    return _run_refresh_catalog_task(store_id, fields, max_pages)
+
+# ------------------------------------------------------------------------------
+# 7.2. INCI FORMULATION MATCHING ENDPOINTS
+# ------------------------------------------------------------------------------
+class InciMatchRequest(BaseModel):
+    brand: str
+    title: str
+    scoring_mode: str = "local"  # "local", "jev", "gemini", "all"
+    allow_obf: bool = False
+
+@app.post("/inci/match")
+def match_inci_endpoint(req: InciMatchRequest):
+    """
+    Performs on-demand INCI formulation matching with granular scoring mode control
+    ('local', 'jev', 'gemini', 'all'/'auto') and Open Beauty Facts fallback flag.
+    """
+    conn = get_connection()
+    try:
+        res = match_with_inci_db(
+            brand=req.brand,
+            title=req.title,
+            conn=conn,
+            allow_synchronous_jev=True,
+            scoring_mode=req.scoring_mode,
+            allow_obf=req.allow_obf
+        )
+        if not res:
+            return {
+                "matched": False,
+                "brand": req.brand,
+                "title": req.title,
+                "scoring_mode": req.scoring_mode,
+                "result": None
+            }
+        return {
+            "matched": True,
+            "brand": req.brand,
+            "title": req.title,
+            "scoring_mode": req.scoring_mode,
+            "result": res
+        }
+    finally:
+        conn.close()
+
+class ProductInciMatchRequest(BaseModel):
+    scoring_mode: str = "local"
+    allow_obf: bool = False
+    update_product: bool = True
+
+@app.post("/products/{product_id}/match-inci")
+def match_product_inci_endpoint(product_id: int, req: ProductInciMatchRequest):
+    """
+    Matches an existing product in the database against the INCI reference database and updates its telemetry.
+    """
+    conn = get_connection()
+    try:
+        cur = conn.cursor()
+        cur.execute("SELECT id, brand, title, ingredients_raw FROM products WHERE id = ?;", (product_id,))
+        row = cur.fetchone()
+        if not row:
+            raise HTTPException(status_code=404, detail=f"Product ID {product_id} not found.")
+
+        brand = row["brand"]
+        title = row["title"]
+        curr_raw = row["ingredients_raw"]
+
+        match_res = match_with_inci_db(
+            brand=brand,
+            title=title,
+            conn=conn,
+            allow_synchronous_jev=True,
+            scoring_mode=req.scoring_mode,
+            allow_obf=req.allow_obf
+        )
+
+        if not match_res:
+            return {
+                "matched": False,
+                "product_id": product_id,
+                "brand": brand,
+                "title": title,
+                "scoring_mode": req.scoring_mode,
+                "message": "No compatible INCI match found."
+            }
+
+        if req.update_product:
+            update_sql = """
+            UPDATE products
+            SET inci_matched_id = ?,
+                inci_matched_name = ?,
+                inci_vector_score = ?,
+                inci_token_score = ?,
+                inci_hybrid_score = ?,
+                inci_cross_score = ?,
+                inci_jev_score = ?,
+                inci_gemini_score = ?,
+                gate1_quality_status = ?,
+                gate2_safeguard_status = ?,
+                gate3_active_status = ?,
+                gate4_cross_status = ?,
+                gate4_jev_status = ?,
+                gate4_gemini_status = ?,
+                inci_safeguard_log = ?,
+                updated_at = CURRENT_TIMESTAMP
+            """
+            params = [
+                match_res.get("matched_id"),
+                match_res.get("matched_name"),
+                match_res.get("vector_score"),
+                match_res.get("token_score"),
+                match_res.get("hybrid_score"),
+                match_res.get("inci_cross_score"),
+                match_res.get("inci_jev_score"),
+                match_res.get("inci_gemini_score"),
+                match_res.get("gate1_quality_status"),
+                match_res.get("gate2_safeguard_status"),
+                match_res.get("gate3_active_status"),
+                match_res.get("gate4_cross_status"),
+                match_res.get("gate4_jev_status"),
+                match_res.get("gate4_gemini_status"),
+                match_res.get("safeguard_log"),
+            ]
+
+            if (not curr_raw or len(curr_raw.strip()) < 10) and match_res.get("ingredients"):
+                parsed, acts = parse_and_normalize_ingredients(match_res["ingredients"])
+                update_sql += """,
+                ingredients_raw = ?,
+                ingredients_parsed = ?,
+                actives = ?,
+                ingredient_source = 'skinsafe_matched'
+                """
+                params.extend([match_res["ingredients"], json.dumps(parsed), json.dumps(acts)])
+
+            update_sql += " WHERE id = ?;"
+            params.append(product_id)
+            cur.execute(update_sql, params)
+            conn.commit()
+            load_catalog_from_db()
+
+        return {
+            "matched": True,
+            "product_id": product_id,
+            "brand": brand,
+            "title": title,
+            "scoring_mode": req.scoring_mode,
+            "updated": req.update_product,
+            "match": match_res
+        }
+    finally:
+        conn.close()
+
+class BatchInciMatchRequest(BaseModel):
+    product_ids: Optional[List[int]] = None
+    store_id: Optional[str] = None
+    limit: int = 25
+    scoring_mode: str = "local"
+    allow_obf: bool = False
+    only_unmatched: bool = True
+    background: bool = False
+
+def _run_batch_inci_match(req: BatchInciMatchRequest):
+    conn = get_connection()
+    try:
+        cur = conn.cursor()
+        query = "SELECT id, brand, title, ingredients_raw FROM products WHERE 1=1"
+        params = []
+        if req.product_ids:
+            placeholders = ",".join("?" for _ in req.product_ids)
+            query += f" AND id IN ({placeholders})"
+            params.extend(req.product_ids)
+        if req.store_id:
+            query += " AND store_id = ?"
+            params.append(req.store_id)
+        if req.only_unmatched:
+            query += " AND (inci_matched_id IS NULL OR gate4_jev_status IS NULL)"
+        query += f" LIMIT {max(1, min(req.limit, 200))};"
+
+        cur.execute(query, params)
+        rows = cur.fetchall()
+
+        results = []
+        matched_count = 0
+        for r in rows:
+            pid = r["id"]
+            brand = r["brand"]
+            title = r["title"]
+            curr_raw = r["ingredients_raw"]
+            m_res = match_with_inci_db(brand, title, conn, allow_synchronous_jev=True, scoring_mode=req.scoring_mode, allow_obf=req.allow_obf)
+            if m_res:
+                matched_count += 1
+                update_sql = """
+                UPDATE products
+                SET inci_matched_id = ?, inci_matched_name = ?, inci_vector_score = ?,
+                    inci_token_score = ?, inci_hybrid_score = ?, inci_cross_score = ?,
+                    inci_jev_score = ?, inci_gemini_score = ?, gate1_quality_status = ?,
+                    gate2_safeguard_status = ?, gate3_active_status = ?, gate4_cross_status = ?,
+                    gate4_jev_status = ?, gate4_gemini_status = ?, inci_safeguard_log = ?,
+                    updated_at = CURRENT_TIMESTAMP
+                """
+                u_params = [
+                    m_res.get("matched_id"), m_res.get("matched_name"), m_res.get("vector_score"),
+                    m_res.get("token_score"), m_res.get("hybrid_score"), m_res.get("inci_cross_score"),
+                    m_res.get("inci_jev_score"), m_res.get("inci_gemini_score"), m_res.get("gate1_quality_status"),
+                    m_res.get("gate2_safeguard_status"), m_res.get("gate3_active_status"), m_res.get("gate4_cross_status"),
+                    m_res.get("gate4_jev_status"), m_res.get("gate4_gemini_status"), m_res.get("safeguard_log")
+                ]
+                if (not curr_raw or len(curr_raw.strip()) < 10) and m_res.get("ingredients"):
+                    parsed, acts = parse_and_normalize_ingredients(m_res["ingredients"])
+                    update_sql += ", ingredients_raw = ?, ingredients_parsed = ?, actives = ?, ingredient_source = 'skinsafe_matched'"
+                    u_params.extend([m_res["ingredients"], json.dumps(parsed), json.dumps(acts)])
+                update_sql += " WHERE id = ?;"
+                u_params.append(pid)
+                cur.execute(update_sql, u_params)
+                conn.commit()
+                results.append({"id": pid, "title": title, "matched": True, "matched_name": m_res.get("matched_name")})
+            else:
+                results.append({"id": pid, "title": title, "matched": False})
+
+        load_catalog_from_db()
+        return {
+            "status": "success",
+            "total_processed": len(rows),
+            "total_matched": matched_count,
+            "scoring_mode": req.scoring_mode,
+            "details": results
+        }
+    finally:
+        conn.close()
+
+@app.post("/inci/batch-match")
+def batch_match_inci_endpoint(req: BatchInciMatchRequest, background_tasks: BackgroundTasks):
+    """
+    Runs batch INCI matching across selected products or catalog items.
+    """
+    if req.background:
+        background_tasks.add_task(_run_batch_inci_match, req)
+        return {
+            "status": "accepted",
+            "message": f"Batch INCI matching job dispatched to background worker (mode: {req.scoring_mode}, limit: {req.limit})."
+        }
+    return _run_batch_inci_match(req)
+
+# ------------------------------------------------------------------------------
+# 7.3. PRODUCTS INGREDIENTS FILL ENDPOINTS
+# ------------------------------------------------------------------------------
+class FillIngredientsRequest(BaseModel):
+    source: str = "auto"  # "store", "inci", "auto"
+    overwrite: bool = False
+
+def _fill_single_product_ingredients(product_row, source: str, overwrite: bool, conn):
+    cur = conn.cursor()
+    curr_raw = product_row["ingredients_raw"]
+    if curr_raw and len(curr_raw.strip()) >= 15 and not overwrite:
+        return {
+            "status": "skipped",
+            "message": "Product already has ingredients. Set overwrite=True to replace.",
+            "ingredients_raw": curr_raw
+        }
+
+    raw_text = None
+    source_used = None
+
+    # Step 1: Store HTML description
+    if source in ("store", "auto"):
+        desc = product_row["description_html"]
+        if desc:
+            extracted = extract_ingredients_from_html(desc)
+            if extracted and len(extracted) >= 15:
+                raw_text = extracted
+                source_used = "store_description"
+
+    # Step 2: INCI Reference DB
+    if (not raw_text or len(raw_text) < 15) and source in ("inci", "auto"):
+        if product_row["inci_matched_id"]:
+            cur.execute("SELECT ingredients FROM inci_reference WHERE id = ?;", (product_row["inci_matched_id"],))
+            i_row = cur.fetchone()
+            if i_row and i_row["ingredients"]:
+                raw_text = i_row["ingredients"]
+                source_used = "skinsafe_matched"
+        if not raw_text:
+            m_res = match_with_inci_db(product_row["brand"], product_row["title"], conn, allow_synchronous_jev=False, scoring_mode="local")
+            if m_res and m_res.get("ingredients"):
+                raw_text = m_res["ingredients"]
+                source_used = "skinsafe_matched"
+
+    if not raw_text or len(raw_text.strip()) < 10:
+        return {
+            "status": "not_found",
+            "message": f"No ingredients found using source mode '{source}'."
+        }
+
+    parsed, actives = parse_and_normalize_ingredients(raw_text)
+    cur.execute("""
+    UPDATE products
+    SET ingredients_raw = ?,
+        ingredients_parsed = ?,
+        actives = ?,
+        ingredient_source = ?,
+        updated_at = CURRENT_TIMESTAMP
+    WHERE id = ?;
+    """, (raw_text, json.dumps(parsed), json.dumps(actives), source_used, product_row["id"]))
+    conn.commit()
+
+    return {
+        "status": "success",
+        "product_id": product_row["id"],
+        "source_used": source_used,
+        "ingredients_raw": raw_text,
+        "parsed_count": len(parsed),
+        "actives": actives
+    }
+
+@app.post("/products/{product_id}/fill-ingredients")
+def fill_product_ingredients_endpoint(product_id: int, req: FillIngredientsRequest):
+    """
+    Fills a single product's ingredients from store description ('store'),
+    INCI reference ('inci'), or fallback ('auto').
+    """
+    conn = get_connection()
+    try:
+        cur = conn.cursor()
+        cur.execute("SELECT id, brand, title, description_html, ingredients_raw, inci_matched_id FROM products WHERE id = ?;", (product_id,))
+        row = cur.fetchone()
+        if not row:
+            raise HTTPException(status_code=404, detail=f"Product ID {product_id} not found.")
+
+        result = _fill_single_product_ingredients(row, req.source, req.overwrite, conn)
+        if result["status"] == "success":
+            load_catalog_from_db()
+        return result
+    finally:
+        conn.close()
+
+class BatchFillIngredientsRequest(BaseModel):
+    product_ids: Optional[List[int]] = None
+    store_id: Optional[str] = None
+    source: str = "auto"
+    only_empty: bool = True
+    overwrite: bool = False
+    limit: int = 50
+    background: bool = False
+
+def _run_batch_fill_ingredients(req: BatchFillIngredientsRequest):
+    conn = get_connection()
+    try:
+        cur = conn.cursor()
+        query = "SELECT id, brand, title, description_html, ingredients_raw, inci_matched_id FROM products WHERE 1=1"
+        params = []
+        if req.product_ids:
+            placeholders = ",".join("?" for _ in req.product_ids)
+            query += f" AND id IN ({placeholders})"
+            params.extend(req.product_ids)
+        if req.store_id:
+            query += " AND store_id = ?"
+            params.append(req.store_id)
+        if req.only_empty and not req.overwrite:
+            query += " AND (ingredients_raw IS NULL OR LENGTH(TRIM(ingredients_raw)) < 10)"
+        query += f" LIMIT {max(1, min(req.limit, 200))};"
+
+        cur.execute(query, params)
+        rows = cur.fetchall()
+
+        results = []
+        success_count = 0
+        for r in rows:
+            res = _fill_single_product_ingredients(r, req.source, req.overwrite, conn)
+            if res.get("status") == "success":
+                success_count += 1
+            results.append({"id": r["id"], "title": r["title"], "status": res.get("status"), "source": res.get("source_used")})
+
+        load_catalog_from_db()
+        return {
+            "status": "success",
+            "processed": len(rows),
+            "filled": success_count,
+            "source": req.source,
+            "details": results
+        }
+    finally:
+        conn.close()
+
+@app.post("/products/ingredients/batch-fill")
+def batch_fill_ingredients_endpoint(req: BatchFillIngredientsRequest, background_tasks: BackgroundTasks):
+    """
+    Batch populates missing product ingredients from store description or INCI reference.
+    """
+    if req.background:
+        background_tasks.add_task(_run_batch_fill_ingredients, req)
+        return {
+            "status": "accepted",
+            "message": f"Batch ingredients fill job dispatched (source: {req.source}, limit: {req.limit})."
+        }
+    return _run_batch_fill_ingredients(req)
+
+# ------------------------------------------------------------------------------
+# 7.4. PRODUCT SIMILARITY SCORING ENDPOINT
+# ------------------------------------------------------------------------------
+class ProductItemPayload(BaseModel):
+    id: Optional[int] = None
+    title: Optional[str] = None
+    brand: Optional[str] = None
+    ingredients: Optional[Union[List[str], str]] = None
+
+class SimilarityScoreRequest(BaseModel):
+    product_id_a: Optional[int] = None
+    product_id_b: Optional[int] = None
+    product_a: Optional[ProductItemPayload] = None
+    product_b: Optional[ProductItemPayload] = None
+    skin_type: str = "normal"
+    include_cross_encoder: bool = True
+
+def _resolve_product_for_similarity(pid: Optional[int], payload: Optional[ProductItemPayload], conn):
+    if pid is not None:
+        cur = conn.cursor()
+        cur.execute("SELECT id, title, brand, ingredients_raw, ingredients_parsed, actives FROM products WHERE id = ?;", (pid,))
+        row = cur.fetchone()
+        if not row:
+            raise HTTPException(status_code=404, detail=f"Product with ID {pid} not found in database.")
+        raw_ings = row["ingredients_raw"] or ""
+        parsed = json.loads(row["ingredients_parsed"]) if row["ingredients_parsed"] else []
+        if not parsed and raw_ings:
+            parsed, _ = parse_and_clean_ingredients(raw_ings)
+        acts = set(json.loads(row["actives"])) if row["actives"] else set()
+        if not acts:
+            acts = extract_actives_from_title(row["title"])
+            if raw_ings:
+                _, p_acts = parse_and_clean_ingredients(raw_ings)
+                acts = acts.union(p_acts)
+        return {
+            "id": row["id"],
+            "title": row["title"],
+            "brand": row["brand"],
+            "parsed_ingredients": parsed,
+            "actives": acts,
+            "raw_ingredients": raw_ings
+        }
+    elif payload is not None:
+        title = payload.title or ""
+        brand = payload.brand or "Unknown"
+        ings_input = payload.ingredients or []
+        if isinstance(ings_input, str):
+            parsed, acts = parse_and_clean_ingredients(ings_input)
+            raw_ings = ings_input
+        else:
+            parsed = [str(x).strip().lower() for x in ings_input if str(x).strip()]
+            raw_ings = ", ".join(parsed)
+            _, acts = parse_and_clean_ingredients(raw_ings)
+        t_acts = extract_actives_from_title(title)
+        acts = acts.union(t_acts)
+        return {
+            "id": payload.id,
+            "title": title,
+            "brand": brand,
+            "parsed_ingredients": parsed,
+            "actives": acts,
+            "raw_ingredients": raw_ings
+        }
+    else:
+        raise HTTPException(status_code=400, detail="Must provide either product ID or product payload.")
+
+@app.post("/similarity/score")
+def score_similarity_endpoint(req: SimilarityScoreRequest):
+    """
+    Computes pairwise formulation similarity and cosmetic compatibility between two products.
+    Accepts either database product IDs or custom product payloads.
+    Evaluates:
+    - 3-zone FDA/EU weighted Jaccard similarity
+    - Active molecule overlap
+    - Product title similarity
+    - Cosmetic compatibility safeguards
+    - FastEmbed cross-encoder score
+    - Dermatological safety and tolerance breakdown
+    """
+    conn = get_connection()
+    try:
+        prod_a = _resolve_product_for_similarity(req.product_id_a, req.product_a, conn)
+        prod_b = _resolve_product_for_similarity(req.product_id_b, req.product_b, conn)
+    finally:
+        conn.close()
+
+    parsed_a = prod_a["parsed_ingredients"]
+    parsed_b = prod_b["parsed_ingredients"]
+    acts_a = prod_a["actives"]
+    acts_b = prod_b["actives"]
+
+    # 1. 3-Zone Weighted Jaccard
+    inci_sim = compute_weighted_jaccard(parsed_a, parsed_b) if (parsed_a and parsed_b) else 0.0
+
+    # 2. Actives Overlap
+    if acts_a and acts_b:
+        inter_act = len(acts_a.intersection(acts_b))
+        union_act = len(acts_a.union(acts_b))
+        actives_sim = (inter_act / union_act) if union_act > 0 else 0.0
+    elif not acts_a and not acts_b:
+        actives_sim = 0.5
+    else:
+        actives_sim = 0.1
+
+    # 3. Title Sim
+    title_sim = compute_title_sim(prod_a["title"], prod_b["title"])
+
+    # 4. Formula Sim
+    if parsed_a and parsed_b:
+        formula_sim = (actives_sim * 0.50) + (inci_sim * 0.35) + (title_sim * 0.15)
+    else:
+        formula_sim = (actives_sim * 0.60) + (title_sim * 0.40)
+
+    # 5. Cross-Encoder
+    cross_score = None
+    if req.include_cross_encoder and cfg.ENABLE_CROSS_ENCODER:
+        try:
+            cand_a_text = f"{prod_a['brand']} {clean_product_title(prod_a['title'])}. Actives: {', '.join(sorted(acts_a)) if acts_a else 'N/A'}. Ingredients: {', '.join(parsed_a[:8]) if parsed_a else 'N/A'}"
+            cand_b_text = f"{prod_b['brand']} {clean_product_title(prod_b['title'])}. Ingredients: {', '.join(parsed_b[:8]) if parsed_b else 'N/A'}"
+            cross_score = score_cross_encoder(cand_a_text, cand_b_text)
+            cross_score = float(round(cross_score, 4))
+        except Exception as e:
+            logger.warning(f"Cross-encoder scoring error: {e}")
+
+    # 6. Safeguards
+    compat_ok, reason = CosmeticCompatibilityValidator.validate_pair(prod_a["title"], prod_b["title"])
+
+    # 7. Skin Safety
+    safety_a, warn_a = evaluate_skin_safety(parsed_a, acts_a, req.skin_type)
+    safety_b, warn_b = evaluate_skin_safety(parsed_b, acts_b, req.skin_type)
+
+    # 8. Calibrated Match Score
+    if req.skin_type == "normal":
+        base_match = 45.0 + (formula_sim * 53.0)
+    else:
+        mean_safety = (safety_a + safety_b) / 2.0
+        base_match = 45.0 + (formula_sim * 39.0) + ((mean_safety / 100.0) * 14.5)
+
+    if cross_score is not None:
+        final_match = (base_match * 0.75) + (cross_score * 100 * 0.25)
+    else:
+        final_match = base_match
+
+    final_match = float(round(min(99.0, max(15.0, final_match)), 1))
+
+    return {
+        "match_score": final_match,
+        "formula_similarity": float(round(formula_sim, 4)),
+        "inci_weighted_jaccard": float(round(inci_sim, 4)),
+        "actives_overlap": float(round(actives_sim, 4)),
+        "title_similarity": float(round(title_sim, 4)),
+        "cross_encoder_score": cross_score,
+        "safeguards": {
+            "is_compatible": compat_ok,
+            "notes": reason or "Direct compatibility passed"
+        },
+        "skin_type": req.skin_type,
+        "product_a": {
+            "id": prod_a["id"],
+            "title": prod_a["title"],
+            "brand": prod_a["brand"],
+            "actives": sorted(list(acts_a)),
+            "safety_score": safety_a,
+            "warnings": warn_a
+        },
+        "product_b": {
+            "id": prod_b["id"],
+            "title": prod_b["title"],
+            "brand": prod_b["brand"],
+            "actives": sorted(list(acts_b)),
+            "safety_score": safety_b,
+            "warnings": warn_b
+        }
+    }
+
+# ------------------------------------------------------------------------------
+# 7.5. COMEDOGENICITY & IRRITANCY CLINICAL SCORING ENDPOINTS
+# ------------------------------------------------------------------------------
+class DermoScoreRequest(BaseModel):
+    ingredients: Union[List[str], str]
+    skin_type: str = "acne_prone"  # oily, dry, sensitive, acne_prone, normal
+
+@app.post("/dermo/score")
+def score_dermo_endpoint(req: DermoScoreRequest):
+    """
+    Evaluates clinical comedogenicity (acne risk 0-10) and irritancy risk (0-10)
+    for a list or string of ingredients based on the database-backed clinical ingredient catalog.
+    """
+    return evaluate_product_dermo(req.ingredients, skin_type=req.skin_type)
+
+@app.get("/products/{product_id}/dermo-score")
+def score_product_dermo_endpoint(product_id: int, skin_type: str = "acne_prone"):
+    """
+    Retrieves a product from the database catalog and computes its full clinical dermatological score.
+    """
+    conn = get_connection()
+    try:
+        cur = conn.cursor()
+        cur.execute("SELECT id, title, brand, ingredients_raw, ingredients_parsed FROM products WHERE id = ?;", (product_id,))
+        row = cur.fetchone()
+        if not row:
+            raise HTTPException(status_code=404, detail=f"Product with ID {product_id} not found.")
+
+        ings = None
+        if row["ingredients_parsed"]:
+            try:
+                ings = json.loads(row["ingredients_parsed"])
+            except Exception:
+                ings = None
+        if not ings and row["ingredients_raw"]:
+            ings = row["ingredients_raw"]
+        if not ings:
+            ings = []
+
+        dermo_res = evaluate_product_dermo(ings, skin_type=skin_type)
+        return {
+            "product_id": row["id"],
+            "title": row["title"],
+            "brand": row["brand"],
+            "ingredients_present": bool(ings),
+            "evaluation": dermo_res
+        }
+    finally:
+        conn.close()
+
+@app.get("/dermo/ingredients")
+def list_clinical_ingredients_endpoint():
+    """
+    Lists all clinical dermatological ingredients stored in the database.
+    """
+    return load_clinical_ingredients_from_db()
+
+class ClinicalIngredientCreateRequest(BaseModel):
+    inci: str
+    common_name: Optional[str] = None
+    functional_type: str = "active"
+    comedogenicity: int = 0
+    irritancy: int = 0
+    tags: Optional[List[str]] = None
+    evidence: Optional[str] = None
+    contraindications: Optional[List[str]] = None
+    notes: Optional[str] = None
+
+@app.post("/dermo/ingredients")
+def create_clinical_ingredient_endpoint(req: ClinicalIngredientCreateRequest):
+    """
+    Adds or updates a clinical ingredient in the database and hot-reloads the dermatological engine cache.
+    """
+    ok = add_clinical_ingredient_to_db(
+        inci=req.inci,
+        common_name=req.common_name,
+        functional_type=req.functional_type,
+        comedogenicity=req.comedogenicity,
+        irritancy=req.irritancy,
+        tags=req.tags,
+        evidence=req.evidence,
+        contraindications=req.contraindications,
+        notes=req.notes
+    )
+    if not ok:
+        raise HTTPException(status_code=500, detail="Failed to save clinical ingredient to database.")
+    reload_clinical_db()
+    return {
+        "status": "success",
+        "message": f"Clinical ingredient '{req.inci}' persisted and clinical engine cache reloaded.",
+        "ingredient": req.model_dump() if hasattr(req, "model_dump") else req.dict()
+    }
 
 @app.get("/")
 def health_check():

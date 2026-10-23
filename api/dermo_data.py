@@ -74,13 +74,15 @@ from rapidfuzz import process, fuzz, utils
 # --- Helper utilities --------------------------------------------------------
 
 try:
-    from pipeline.db_manager import load_synonyms_from_db
+    from pipeline.db_manager import load_synonyms_from_db, load_clinical_ingredients_from_db
 except ImportError:
     try:
-        from db_manager import load_synonyms_from_db
+        from db_manager import load_synonyms_from_db, load_clinical_ingredients_from_db
     except ImportError:
         def load_synonyms_from_db():
             return {}
+        def load_clinical_ingredients_from_db():
+            return []
 
 # Cache for fuzzy results and normalized lookup
 _FUZZY_CACHE = {}
@@ -253,7 +255,7 @@ def recommend_for_skin_type(ingredients: List[str], db: Dict[str, Ingredient], s
 # Keep this authoritative, minimal, and conservative. Use "variable" when literature
 # shows concentration-dependent or fraction-dependent behavior.
 
-INGREDIENT_DB: Dict[str, Ingredient] = {
+STATIC_INGREDIENT_DB: Dict[str, Ingredient] = {
     # ACNE TRIGGERS / high comedogenic potential (concentration-dependent)
     "Cocos Nucifera (Coconut) Oil": Ingredient(
         inci="Cocos Nucifera (Coconut) Oil",
@@ -543,7 +545,152 @@ INGREDIENT_DB: Dict[str, Ingredient] = {
     ),
 }
 
-# Validate on import (fail-fast in development; in production you may want to toggle)
+def load_clinical_db() -> Dict[str, Ingredient]:
+    """Loads authoritative clinical ingredient metadata from SQLite with static fallback."""
+    db = {}
+    rows = load_clinical_ingredients_from_db()
+    if rows:
+        for r in rows:
+            inci = r["inci"]
+            c_val = r["comedogenicity"]
+            i_val = r["irritancy"]
+            try:
+                comedo = Comedogenicity(c_val)
+            except ValueError:
+                comedo = Comedogenicity.VARIABLE if c_val == -1 else Comedogenicity.ZERO
+            try:
+                irrit = Irritancy(i_val)
+            except ValueError:
+                irrit = Irritancy.ZERO
+            db[inci] = Ingredient(
+                inci=inci,
+                common_name=r["common_name"],
+                functional_type=r["functional_type"],
+                comedogenicity=comedo,
+                irritancy=irrit,
+                tags=r["tags"] or [],
+                evidence=r["evidence"],
+                contraindications=r["contraindications"] or [],
+                notes=r["notes"]
+            )
+        return db
+    return STATIC_INGREDIENT_DB
+
+INGREDIENT_DB: Dict[str, Ingredient] = load_clinical_db()
+
+def reload_clinical_db():
+    """Reloads clinical ingredients from SQLite and clears lookup caches."""
+    global INGREDIENT_DB
+    INGREDIENT_DB = load_clinical_db()
+    reload_dermo_lookup_cache()
+    return INGREDIENT_DB
+
+def evaluate_product_dermo(ingredients: List[str], skin_type: str = "normal", db: Dict[str, Ingredient] = None) -> Dict[str, Any]:
+    """
+    Evaluates complete dermatological profile:
+    - Comedogenicity (acne risk score 0.0 - 10.0)
+    - Irritancy (irritancy risk score 0.0 - 10.0)
+    - Detailed list of flagged pore-clogging and irritating ingredients with clinical citations
+    - Skin-type specific warnings (oily, acne_prone, sensitive, dry)
+    """
+    if db is None:
+        db = INGREDIENT_DB
+
+    comedogenic_items = []
+    irritating_items = []
+    skin_flagged = []
+    contraindications = []
+    total_comedo = 0.0
+    total_irrit = 0.0
+    count = 0
+
+    st_clean = (skin_type or "normal").lower().strip()
+
+    for raw_inci in ingredients:
+        entry = _get_ingredient_fuzzy(raw_inci, db)
+        if not entry:
+            continue
+
+        count += 1
+        c_val = (entry.comedogenicity.value if isinstance(entry.comedogenicity, Comedogenicity) and entry.comedogenicity != Comedogenicity.VARIABLE
+                 else 1.5 if entry.comedogenicity == Comedogenicity.VARIABLE else int(entry.comedogenicity))
+        i_val = int(entry.irritancy)
+
+        total_comedo += c_val
+        total_irrit += i_val
+
+        # Comedogenic check (>= 2 or variable)
+        if c_val >= 2.0 or entry.comedogenicity == Comedogenicity.VARIABLE:
+            comedogenic_items.append({
+                "ingredient": raw_inci,
+                "canonical_inci": entry.inci,
+                "common_name": entry.common_name,
+                "comedogenicity": c_val,
+                "evidence": entry.evidence,
+                "notes": entry.notes
+            })
+
+        # Irritancy check (>= 2)
+        if i_val >= 2:
+            irritating_items.append({
+                "ingredient": raw_inci,
+                "canonical_inci": entry.inci,
+                "common_name": entry.common_name,
+                "irritancy": i_val,
+                "evidence": entry.evidence,
+                "notes": entry.notes
+            })
+
+        # Skin-type specific flagging
+        if st_clean in ("oily", "acne_prone"):
+            if c_val >= 3.0 or entry.comedogenicity == Comedogenicity.VARIABLE:
+                skin_flagged.append({
+                    "ingredient": raw_inci,
+                    "reason": "comedogenic_pore_clogging_risk",
+                    "severity": "high" if c_val >= 4.0 else "moderate",
+                    "detail": entry.notes or entry.evidence
+                })
+        if st_clean == "sensitive":
+            if i_val >= 3 or "fragrance" in entry.tags or "essential_oil" in entry.tags:
+                skin_flagged.append({
+                    "ingredient": raw_inci,
+                    "reason": "irritancy_or_sensitizer_risk",
+                    "severity": "high" if i_val >= 4 else "moderate",
+                    "detail": entry.notes or entry.evidence
+                })
+        if st_clean == "dry":
+            if entry.inci in ("Alcohol Denat.", "Sodium Lauryl Sulfate") or "drying" in entry.tags:
+                skin_flagged.append({
+                    "ingredient": raw_inci,
+                    "reason": "barrier_drying_agent",
+                    "severity": "moderate",
+                    "detail": entry.notes or entry.evidence
+                })
+
+        if entry.contraindications:
+            for c in entry.contraindications:
+                contraindications.append({"ingredient": entry.inci, "contraindication": c, "notes": entry.notes})
+
+    acne_score = round((total_comedo / count) * 2.0, 2) if count else 0.0 # scale 0-5 to 0-10
+    irrit_score = round((total_irrit / count) * 2.0, 2) if count else 0.0 # scale 0-5 to 0-10
+    overall_score = round((0.6 * acne_score + 0.4 * irrit_score), 2)
+
+    is_suitable = len(skin_flagged) == 0 and overall_score < 6.0
+
+    return {
+        "skin_type": st_clean,
+        "acne_risk_score": acne_score,         # 0.0 to 10.0
+        "irritancy_risk_score": irrit_score,   # 0.0 to 10.0
+        "overall_risk_score": overall_score,   # 0.0 to 10.0
+        "is_suitable_for_skin_type": is_suitable,
+        "total_clinical_matches": count,
+        "comedogenic_ingredients": comedogenic_items,
+        "irritating_ingredients": irritating_items,
+        "flagged_for_skin_type": skin_flagged,
+        "contraindications": contraindications
+    }
+
+# Validate on import
 try:
     validate_db(INGREDIENT_DB)
 except Exception as exc:

@@ -3,6 +3,7 @@ import os
 import json
 import logging
 from datetime import datetime
+from typing import List, Dict, Any, Optional, Tuple
 
 logger = logging.getLogger("skincare_pipeline.db")
 
@@ -93,6 +94,63 @@ DEFAULT_SYNONYMS = [
     ('retinyl palmitate', 'retinyl palmitate', 'active')
 ]
 
+DEFAULT_CLINICAL_INGREDIENTS = [
+    ('Cocos Nucifera (Coconut) Oil', 'Coconut oil', 'oil', 4, 1, ['moisturizer', 'occlusive'],
+     'Widely reported high comedogenic rating; tends to clog pores in acne-prone skin at leave-on concentrations.', [],
+     'Effective emollient for dry skin; avoid in acne-prone/oily skin when used as primary leave-on oil.'),
+    ('Theobroma Cacao (Cocoa) Seed Butter', 'Cocoa butter', 'butter', 4, 1, ['moisturizer'], '', [],
+     'Rich occlusive; useful for very dry skin but can be pore-clogging in acne-prone skin.'),
+    ('Isopropyl Myristate', 'Isopropyl myristate', 'emollient', 5, 2, ['texture', 'emollient'],
+     'Classic comedogenicity tables flag IPM/IPMa as high risk, particularly in leave-on formulations.', [],
+     'Often used to increase spreadability; avoid in acne-prone formulations or keep at low concentrations in rinse-off.'),
+    ('Isopropyl Palmitate', 'Isopropyl palmitate', 'emollient', 4, 1, ['texture'], '', [], ''),
+    ('Ethylhexyl Palmitate', 'Ethylhexyl palmitate', 'emollient', 4, 1, ['texture'], '', [], ''),
+    ('Sodium Laureth Sulfate', 'SLES', 'surfactant', 0, 2, ['cleanser'], '', [],
+     'Less irritating than SLS for many users, but still can be drying/irritating depending on formulation.'),
+    ('Sodium Lauryl Sulfate', 'SLS', 'surfactant', 0, 5, ['cleanser', 'irritant'],
+     'SLS is a well-documented irritant in patch/wash models. Avoid in sensitive-skin-targeted cleansers.', [],
+     'Primarily an irritant; not a comedogen per se.'),
+    ('Alcohol Denat.', 'Denatured alcohol', 'solvent', 0, 3, ['drying'],
+     'Denatured alcohol can be drying and can exacerbate barrier dysfunction in sensitive/dry skin.', [],
+     'Short-term texture benefits; avoid as primary active in dry/sensitive-skin leave-on products.'),
+    ('Parfum', 'Fragrance (generic)', 'fragrance', 0, 4, ['fragrance'],
+     'Fragrance is a leading cause of allergic contact dermatitis from cosmetics; many fragrance components are sensitizers.', [],
+     'Use fragrance-free labeling for sensitive-skin products.'),
+    ('Menthol', 'Menthol', 'sensitizer', 0, 5, ['cooling', 'sensitizer'], '', [], 'Common irritant and sensitizer in leave-on products.'),
+    ('Melaleuca Alternifolia (Tea Tree) Leaf Oil', 'Tea tree oil', 'essential_oil', 1, 2, ['antimicrobial', 'acne_fighting'], '', [],
+     'Has antimicrobial properties but can be irritating/sensitizing to some users; concentration-dependent.'),
+    ('Niacinamide', 'Niacinamide (Vitamin B3)', 'active', 0, 1, ['brightening', 'acne_fighting', 'barrier_repair'],
+     'Clinical testing shows good tolerability up to commonly used concentrations.', [], 'Generally well tolerated.'),
+    ('Salicylic Acid', 'Salicylic acid (BHA)', 'exfoliant', 0, 2, ['acne_fighting', 'bha'],
+     'Proven efficacy for acne; formulations may cause dryness/irritation depending on pH and vehicle.', [], ''),
+    ('Glycolic Acid', 'Glycolic acid (AHA)', 'exfoliant', 0, 3, ['anti_aging', 'aha'], '', [],
+     'Irritancy depends on concentration/pH; leave-on high-strength AHAs can be sensitizing.'),
+    ('Retinol', 'Retinol (vitamin A derivative)', 'retinoid', 0, 4, ['anti_aging', 'acne_fighting'],
+     'Topical retinoids increase skin turnover and can irritate; topical retinoids are generally advised against in pregnancy.',
+     ['pregnancy'], 'Introduce slowly; use sunscreen due to photosensitivity.'),
+    ('Ascorbic Acid', 'L-ascorbic acid (Vitamin C)', 'active', 0, 3, ['brightening', 'antioxidant'], '', [],
+     'Potent antioxidant but acidic and can irritate sensitive skin; stability issues require appropriate formulation.'),
+    ('Sodium Ascorbyl Phosphate', 'Sodium ascorbyl phosphate (SAP)', 'active', 0, 1, ['brightening', 'vitamin_c'],
+     'SAP is a more stable, gentler vitamin C derivative often used for sensitive or acne-prone skin.', [],
+     'Less irritating than L-ascorbic acid in many formulations.'),
+    ('Sodium Hyaluronate', 'Sodium hyaluronate', 'humectant', 0, 0, ['hydration'], '', [], ''),
+    ('Hyaluronic Acid', 'Hyaluronic acid', 'humectant', 0, 0, ['hydration'], '', [], ''),
+    ('Glycerin', 'Glycerin', 'humectant', 0, 0, ['hydration'], '', [], ''),
+    ('Ceramide NP', 'Ceramide NP', 'lipid', 0, 0, ['barrier_repair'], '', [], ''),
+    ('Panthenol', 'Panthenol (pro-vitamin B5)', 'humectant', 0, 0, ['soothing'], '', [], ''),
+    ('Allantoin', 'Allantoin', 'soother', 0, 0, ['soothing'], '', [], ''),
+    ('Centella Asiatica Extract', 'Centella asiatica', 'extract', 0, 0, ['soothing'], '', [], ''),
+    ('Aloe Barbadensis Leaf Juice', 'Aloe vera', 'extract', 0, 0, ['soothing'], '', [], ''),
+    ('Squalane', 'Squalane (plant/synthetic)', 'oil', 1, 0, ['moisturizer'], '', [],
+     'Generally low comedogenic risk and well tolerated in many skin types.'),
+    ('Simmondsia Chinensis (Jojoba) Seed Oil', 'Jojoba oil', 'oil', 2, 0, ['moisturizer'], '', [], ''),
+    ('Butyrospermum Parkii (Shea) Butter', 'Shea butter', 'butter', 2, 0, ['moisturizer'], '', [],
+     'Useful for dry skin; may be heavier for oily/acne-prone skin depending on formula.'),
+    ('Phenoxyethanol', 'Phenoxyethanol', 'preservative', 0, 1, ['preservative'], '', [], ''),
+    ('Parabens', 'Parabens (methylparaben, propylparaben etc.)', 'preservative', 0, 2, ['preservative'], '', [], ''),
+    ('Tocopherol', 'Vitamin E (tocopherol)', 'antioxidant', 2, 1, ['vitamin_e'], '', [], '')
+]
+
 def init_db(db_path=DB_PATH):
     """
     Initializes database schema with proper indexes for fast searches and historical tracking.
@@ -129,6 +187,7 @@ def init_db(db_path=DB_PATH):
         is_available INTEGER NOT NULL DEFAULT 1,
         image_url TEXT,
         product_url TEXT NOT NULL UNIQUE,
+        description_html TEXT,
         ingredients_raw TEXT,
         ingredients_parsed TEXT, -- JSON array of normalized tokens
         actives TEXT,            -- JSON array of key actives
@@ -158,6 +217,7 @@ def init_db(db_path=DB_PATH):
     cur.execute("PRAGMA table_info(products);")
     existing_cols = {r[1] for r in cur.fetchall()}
     telemetry_cols = [
+        ('description_html', 'TEXT'),
         ('clean_title', 'TEXT'),
         ('inci_matched_id', 'INTEGER'),
         ('inci_matched_name', 'TEXT'),
@@ -250,6 +310,25 @@ def init_db(db_path=DB_PATH):
     """)
     cur.execute("CREATE INDEX IF NOT EXISTS idx_ingredient_synonyms_alias ON ingredient_synonyms(alias);")
 
+    # 8. Clinical Dermatology Ingredients (Comedogenicity & Irritancy - Database-backed)
+    cur.execute("""
+    CREATE TABLE IF NOT EXISTS clinical_ingredients (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        inci TEXT NOT NULL UNIQUE,
+        common_name TEXT,
+        functional_type TEXT,
+        comedogenicity INTEGER NOT NULL DEFAULT 0,
+        irritancy INTEGER NOT NULL DEFAULT 0,
+        tags TEXT,
+        evidence TEXT,
+        contraindications TEXT,
+        notes TEXT,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    );
+    """)
+    cur.execute("CREATE INDEX IF NOT EXISTS idx_clinical_ingredients_inci ON clinical_ingredients(inci);")
+
     # Indexes for sub-millisecond query performance
     cur.execute("CREATE INDEX IF NOT EXISTS idx_products_category ON products(category);")
     cur.execute("CREATE INDEX IF NOT EXISTS idx_products_brand ON products(brand);")
@@ -283,6 +362,25 @@ def init_db(db_path=DB_PATH):
             canonical_name = excluded.canonical_name,
             category = excluded.category;
         """, (alias.lower().strip(), canon.strip(), cat))
+
+    # Seed Default Clinical Ingredients (Comedogenicity & Irritancy Database)
+    for inci, c_name, f_type, comedo, irrit, tags, evid, contras, notes in DEFAULT_CLINICAL_INGREDIENTS:
+        cur.execute("""
+        INSERT INTO clinical_ingredients (
+            inci, common_name, functional_type, comedogenicity, irritancy,
+            tags, evidence, contraindications, notes
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+        ON CONFLICT(inci) DO UPDATE SET
+            common_name = excluded.common_name,
+            functional_type = excluded.functional_type,
+            comedogenicity = excluded.comedogenicity,
+            irritancy = excluded.irritancy,
+            tags = excluded.tags,
+            evidence = excluded.evidence,
+            contraindications = excluded.contraindications,
+            notes = excluded.notes,
+            updated_at = CURRENT_TIMESTAMP;
+        """, (inci, c_name, f_type, comedo, irrit, json.dumps(tags), evid, json.dumps(contras), notes))
 
     conn.commit()
     conn.close()
@@ -330,6 +428,86 @@ def add_synonym_to_db(alias: str, canonical_name: str, category: str = 'general'
         return True
     except Exception as e:
         logger.error(f"Failed to save synonym '{alias}': {e}")
+        return False
+    finally:
+        if should_close:
+            conn.close()
+
+def load_clinical_ingredients_from_db(conn=None, db_path=DB_PATH) -> List[Dict[str, Any]]:
+    """Loads all clinical ingredients with ratings and metadata from SQLite."""
+    should_close = False
+    if conn is None:
+        conn = get_connection(db_path)
+        should_close = True
+    try:
+        cur = conn.cursor()
+        cur.execute("""
+        SELECT id, inci, common_name, functional_type, comedogenicity, irritancy,
+               tags, evidence, contraindications, notes
+        FROM clinical_ingredients
+        ORDER BY inci ASC;
+        """)
+        rows = cur.fetchall()
+        result = []
+        for r in rows:
+            tags = json.loads(r["tags"]) if r["tags"] else []
+            contras = json.loads(r["contraindications"]) if r["contraindications"] else []
+            result.append({
+                "id": r["id"],
+                "inci": r["inci"],
+                "common_name": r["common_name"],
+                "functional_type": r["functional_type"],
+                "comedogenicity": r["comedogenicity"],
+                "irritancy": r["irritancy"],
+                "tags": tags,
+                "evidence": r["evidence"],
+                "contraindications": contras,
+                "notes": r["notes"]
+            })
+        return result
+    except Exception as e:
+        logger.warning(f"Failed to load clinical ingredients from database: {e}")
+        return []
+    finally:
+        if should_close:
+            conn.close()
+
+def add_clinical_ingredient_to_db(inci: str, common_name: str = None, functional_type: str = "active",
+                                  comedogenicity: int = 0, irritancy: int = 0,
+                                  tags: list = None, evidence: str = None,
+                                  contraindications: list = None, notes: str = None,
+                                  conn=None, db_path=DB_PATH) -> bool:
+    """Inserts or updates a clinical ingredient record in SQLite."""
+    should_close = False
+    if conn is None:
+        conn = get_connection(db_path)
+        should_close = True
+    try:
+        cur = conn.cursor()
+        cur.execute("""
+        INSERT INTO clinical_ingredients (
+            inci, common_name, functional_type, comedogenicity, irritancy,
+            tags, evidence, contraindications, notes
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+        ON CONFLICT(inci) DO UPDATE SET
+            common_name = excluded.common_name,
+            functional_type = excluded.functional_type,
+            comedogenicity = excluded.comedogenicity,
+            irritancy = excluded.irritancy,
+            tags = excluded.tags,
+            evidence = excluded.evidence,
+            contraindications = excluded.contraindications,
+            notes = excluded.notes,
+            updated_at = CURRENT_TIMESTAMP;
+        """, (inci.strip(), common_name.strip() if common_name else None,
+              functional_type.strip() if functional_type else "active",
+              int(comedogenicity), int(irritancy),
+              json.dumps(tags or []), evidence.strip() if evidence else None,
+              json.dumps(contraindications or []), notes.strip() if notes else None))
+        conn.commit()
+        return True
+    except Exception as e:
+        logger.error(f"Failed to save clinical ingredient '{inci}': {e}")
         return False
     finally:
         if should_close:

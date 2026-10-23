@@ -514,18 +514,17 @@ def get_embedding_model():
 # 4-GATE DECOUPLED INCI MATCHER
 # ==============================================================================
 
-def match_with_inci_db(brand: str, title: str, conn, allow_synchronous_jev: bool = False) -> Optional[Dict[str, Any]]:
+def match_with_inci_db(brand: str, title: str, conn, allow_synchronous_jev: bool = False, scoring_mode: str = "auto", allow_obf: bool = True) -> Optional[Dict[str, Any]]:
     """
     Evaluates candidate formulations across 4 decoupled gates:
     Gate 1: Data Quality Check
     Gate 2: Rule-Based Compatibility Safeguard
     Gate 3: Active Molecule Consistency Check
-    Gate 4: Decoupled Jev State Handling (Auto-approved if >= 0.93, pending_jev if 0.70-0.92)
+    Gate 4: Multi-mode Semantic Verification ('local', 'jev', 'gemini', 'all'/'auto')
     """
     if not brand or not title:
         return None
 
-    cur = conn.cursor()
     cur = conn.cursor()
     # Search within the same brand first (bidirectional)
     cur.execute("""
@@ -558,8 +557,8 @@ def match_with_inci_db(brand: str, title: str, conn, allow_synchronous_jev: bool
                 cur.execute("SELECT id, product_name, ingredients, embedding FROM inci_reference WHERE brand = ?;", (matched_b,))
                 candidates = cur.fetchall()
 
-    # Strategy B: Open Beauty Facts API fallback if local candidates absent
-    if not candidates:
+    # Strategy B: Open Beauty Facts API fallback if local candidates absent and OBF allowed
+    if not candidates and allow_obf:
         obf_result = query_open_beauty_facts(brand, title)
         if obf_result:
             logger.info(f"Open Beauty Facts MATCHED: '{title}' == '{obf_result['product_name']}'")
@@ -737,20 +736,42 @@ def match_with_inci_db(brand: str, title: str, conn, allow_synchronous_jev: bool
         gemini_status = None
         gemini_score = None
 
-        if allow_synchronous_jev:
-            # 1. Primary: Try Jev 1.13
-            jev_ok = verify_match_with_jev(title, cand_name)
-            if jev_ok is not None:
-                jev_status = "jev_approved" if jev_ok is True else "jev_rejected"
-                jev_score = 0.95 if jev_ok is True else 0.15
-            else:
-                # 2. Fallback: Jev rate-limited (HTTP 429) or unavailable -> Fallback to Gemini 2.5 Flash-Lite!
-                jev_status = "jev_rate_limited"
+        mode = (scoring_mode or "auto").lower().strip()
+        if allow_synchronous_jev or mode in ("local", "jev", "gemini", "all"):
+            if mode == "local":
+                # Local only: evaluate via local Cross-Encoder + deterministic gates, 0 LLM network calls
+                jev_status = "local_approved" if cross_score >= cross_threshold else "local_ambiguous"
+                jev_score = cross_score
+            elif mode == "jev":
+                # Jev only: no Gemini fallback
+                jev_ok = verify_match_with_jev(title, cand_name)
+                if jev_ok is not None:
+                    jev_status = "jev_approved" if jev_ok is True else "jev_rejected"
+                    jev_score = 0.95 if jev_ok is True else 0.15
+                else:
+                    jev_status = "jev_rate_limited"
+            elif mode == "gemini":
+                # Gemini only: no Jev call
                 gemini_res = verify_match_with_gemini(title, cand_name)
                 if gemini_res is not None:
                     g_ok, g_conf = gemini_res
                     gemini_status = "gemini_approved" if g_ok else "gemini_rejected"
                     gemini_score = g_conf
+                else:
+                    gemini_status = "pending_gemini"
+            else:
+                # All / Auto: Primary Jev with Gemini fallback on rate limit / unavailability
+                jev_ok = verify_match_with_jev(title, cand_name)
+                if jev_ok is not None:
+                    jev_status = "jev_approved" if jev_ok is True else "jev_rejected"
+                    jev_score = 0.95 if jev_ok is True else 0.15
+                else:
+                    jev_status = "jev_rate_limited"
+                    gemini_res = verify_match_with_gemini(title, cand_name)
+                    if gemini_res is not None:
+                        g_ok, g_conf = gemini_res
+                        gemini_status = "gemini_approved" if g_ok else "gemini_rejected"
+                        gemini_score = g_conf
 
         is_rejected = (jev_status == "jev_rejected" or gemini_status == "gemini_rejected")
 
