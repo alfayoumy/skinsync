@@ -1398,7 +1398,7 @@ def resolve_waterfall_for_canonical_product(
     for offer in offers:
         from pipeline.identity_trust import verified_link
         link = conn.execute('SELECT store_product_id FROM products WHERE id=?',(offer['id'],)).fetchone()
-        if not link or not verified_link(conn,offer['store_id'],link[0],c_id):
+        if not link or not verified_link(conn,offer['store_id'],link[0] or str(offer['id']),c_id):
             continue
         t1_res = resolve_tier1_store_tab(offer, historical_index)
         if t1_res and t1_res.get("ingredients_raw"):
@@ -1592,6 +1592,9 @@ def run_waterfall_pipeline(
                         old_hash = existing.get("formula_hash") or formulation_repo.compute_formula_hash(old_tokens)
                         published = old_hash == formulation_repo.compute_formula_hash(cand.parsed_tokens)
 
+                item_res["status"] = "resolved" if published else "candidate_only"
+                item_res["method"] = cand.source_name
+                item_res["product_id"] = can_id
                 if published:
                     stats["resolved"] += 1
                     m = cand.source_name
@@ -1599,6 +1602,9 @@ def run_waterfall_pipeline(
                 else:
                     stats["unresolved"] += 1
             else:
+                item_res["status"] = "candidate_only" if cand else "unresolved"
+                item_res["method"] = cand.source_name if cand else None
+                item_res["product_id"] = can_id
                 if cand and not dry_run:
                     formulation_repo.record_candidate_evidence(
                         candidate=cand,

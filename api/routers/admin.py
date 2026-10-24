@@ -1173,10 +1173,12 @@ class WaterfallBatchRunner:
                             self._add_log(f"[{m.upper()}] #{pid} {title[:45]}")
                         elif status_tag == "pending_llm_verification":
                             self._add_log(f"[TIER7_LLM_QUEUED] #{pid} {title[:45]}")
-                        elif last_outcome.get('candidate'):
+                        elif status_tag == "candidate_only" and last_outcome.get('candidate'):
                             candidate=last_outcome['candidate']
                             self._add_log(f"[{candidate.source_name.upper()}] Canonical #{last_outcome.get('canonical_id')} "
-                                          f"{str(title)[:45]} — candidate evidence (publication gated)")
+                                          f"{str(title)[:45]} — evidence only; INCI publication not approved")
+                        elif status_tag == "unresolved":
+                            self._add_log(f"[NO_VERIFIED_FORMULA] Canonical #{last_outcome.get('canonical_id')} {str(title)[:45]}")
 
             revalidate = (config.get("scope") == "all_skincare")
             res_stats = run_waterfall_pipeline(
