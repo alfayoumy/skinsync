@@ -4,6 +4,7 @@ import unicodedata
 
 CURATED_BRANDS = {
     'CeraVe': ['cerave','cera ve','سيرافي','سيرافى'],
+    'Avène': ['avene','avène','eau thermale avene','eau thermale avène'],
     'La Roche-Posay': ['la roche posay','lrp','la roche-posay laboratoire dermatologique','لاروش بوزيه'],
     'The Ordinary': ['the ordinary','ordinary','ذا اورديناري'],
     'SKIN1004': ['skin1004','skin 1004'],
