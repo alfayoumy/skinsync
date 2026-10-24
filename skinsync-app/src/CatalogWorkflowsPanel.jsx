@@ -413,7 +413,7 @@ export default function CatalogWorkflowsPanel({onClose, initialTab='products',on
                 </div>}
                 {selectivePreview.active_workers?.length>0&&<p>Active workers: {selectivePreview.active_workers.join(', ')}</p>}
               </div>}
-              {selectivePreview.pending_tasks_not_running>0&&<p className="text-xs text-gray-500">{selectivePreview.pending_tasks_not_running} pending task records are not running and do not block a rebuild.</p>
+              {selectivePreview.pending_tasks_not_running>0&&<p className="text-xs text-gray-500">{selectivePreview.pending_tasks_not_running} pending task records are not running and do not block a rebuild.</p>}
               {selectivePreview.can_rebuild&&<div className="space-y-2">
                 <label className="block text-sm font-semibold">Type REBUILD FROM SAVED DISCOVERY to proceed.
                   <input className={input} autoComplete="off" value={selectiveConfirmation}
