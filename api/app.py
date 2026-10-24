@@ -25,6 +25,7 @@ from routers.logs import router as logs_router
 from routers.prices import router as prices_router
 from routers.admin import router as admin_router
 from routers.aggregation import router as aggregation_router
+from routers.workflows import router as workflows_router
 
 setup_logging()
 logger = get_logger("skincare_engine")
@@ -113,6 +114,7 @@ app.include_router(logs_router)
 app.include_router(prices_router)
 app.include_router(admin_router)
 app.include_router(aggregation_router)
+app.include_router(workflows_router)
 
 # ==============================================================================
 # 3. BACKWARDS COMPATIBILITY EXPORTS
