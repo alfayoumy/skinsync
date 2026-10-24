@@ -78,6 +78,7 @@ class TestMultiTierComparator(unittest.TestCase):
         wr._SKINSAFE_BRAND_INDEX = None
         wm._WHITELIST_SET = None
         wm._COMPILED_WHITELIST_REGEX = None
+        wm._WHITELIST_CACHE = None
 
         # Seed test whitelist ingredients
         cur.executemany("""
@@ -109,6 +110,8 @@ class TestMultiTierComparator(unittest.TestCase):
         self.mock_catalog_load = self.catalog_patcher.start()
 
     def tearDown(self):
+        import pipeline.whitelist_matcher as wm
+        wm._WHITELIST_CACHE = None
         self.catalog_patcher.stop()
         self.conn.close()
 
@@ -172,25 +175,11 @@ class TestMultiTierComparator(unittest.TestCase):
             write_to_db=True
         )
 
-        # Apply tier5 resolution
-        apply_res = apply_tier_resolution_for_product(101, "tier5", conn=self.conn)
-        self.assertEqual(apply_res["status"], "success")
-        self.assertEqual(apply_res["selected_tier"], "tier5")
-
-        # Verify DB product record updated
-        cur.execute("""
-        SELECT ingredients_raw, ingredients_parsed, actives, ingredient_source, tier_resolutions
-        FROM products WHERE id = 101;
-        """)
-        row = cur.fetchone()
-        self.assertIsNotNone(row["ingredients_raw"])
-        self.assertIn("Glycerin", row["ingredients_raw"])
-        self.assertEqual(row["ingredient_source"], "whitelist_description")
-
-        # Verify selected_tier persisted in tier_resolutions JSON
-        tier_res_json = json.loads(row["tier_resolutions"])
-        self.assertEqual(tier_res_json.get("selected_tier"), "tier5")
-        self.assertIsNotNone(tier_res_json.get("selected_at"))
+        # An unlinked offer cannot publish a canonical formulation.
+        with self.assertRaisesRegex(ValueError, "Link this offer"):
+            apply_tier_resolution_for_product(101, "tier5", conn=self.conn)
+        row = self.conn.execute("SELECT ingredients_raw FROM products WHERE id=101").fetchone()
+        self.assertIsNone(row["ingredients_raw"])
 
     def test_apply_invalid_tier_fails_gracefully(self):
         """Verify attempting to apply an invalid tier code raises a ValueError."""
@@ -209,8 +198,8 @@ class TestMultiTierComparator(unittest.TestCase):
         with self.assertRaises(ValueError):
             apply_tier_resolution_for_product(101, "tier99", conn=self.conn)
 
-    def test_apply_not_found_tier_clears_formula(self):
-        """Verify applying a not_found tier resets active formula as an intentional admin clear."""
+    def test_apply_not_found_tier_preserves_formula(self):
+        """A failed tier cannot clear existing ingredient evidence."""
         cur = self.conn.cursor()
         cur.execute("SELECT * FROM products WHERE id = 101;")
         prod = dict(cur.fetchone())
@@ -223,7 +212,7 @@ class TestMultiTierComparator(unittest.TestCase):
             langsearch_enabled=False,
             write_to_db=True
         )
-        apply_tier_resolution_for_product(101, "tier5", conn=self.conn)
+        self.conn.execute("UPDATE products SET ingredients_raw='Water, Glycerin', ingredient_source='store_page_tab' WHERE id=101")
 
         # Now apply tier2 (not_found)
         res = apply_tier_resolution_for_product(101, "tier2", conn=self.conn)
@@ -232,8 +221,8 @@ class TestMultiTierComparator(unittest.TestCase):
 
         cur.execute("SELECT ingredients_raw, ingredient_source FROM products WHERE id = 101;")
         row = cur.fetchone()
-        self.assertIsNone(row["ingredients_raw"])
-        self.assertIsNone(row["ingredient_source"])
+        self.assertEqual(row["ingredients_raw"], "Water, Glycerin")
+        self.assertEqual(row["ingredient_source"], "store_page_tab")
 
 
 if __name__ == "__main__":

@@ -18,6 +18,12 @@ from pipeline.jev_worker import run_jev_verification_queue
 from pipeline.inci_matcher import verify_batch_with_gemini
 
 class TestWorkerSeparation(unittest.TestCase):
+    def setUp(self):
+        for target in ("pipeline.gemini_worker.score_cross_encoder", "pipeline.jev_worker.score_cross_encoder"):
+            patcher = patch(target, return_value=0.95)
+            patcher.start()
+            self.addCleanup(patcher.stop)
+
 
     def test_chunk_list(self):
         items = list(range(25))
@@ -61,7 +67,7 @@ class TestWorkerSeparation(unittest.TestCase):
         self.assertFalse(results[102][0])
         self.assertAlmostEqual(results[102][1], 0.99)
 
-    @patch("pipeline.inci_matcher.verify_batch_with_gemini")
+    @patch("pipeline.gemini_worker.verify_batch_with_gemini")
     @patch("pipeline.gemini_worker.get_connection")
     def test_gemini_worker_batch_execution(self, mock_get_conn, mock_verify_batch):
         # Mock DB records

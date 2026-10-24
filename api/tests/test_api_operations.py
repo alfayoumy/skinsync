@@ -123,7 +123,7 @@ class TestApiOperations(unittest.TestCase):
         self.assertEqual(resp.status_code, 200)
         data = resp.json()
         self.assertIn("status", data)
-        self.assertIn(data["status"], ["success", "skipped", "not_found"])
+        self.assertIn(data["status"], ["success", "skipped", "not_found", "candidate_only"])
 
     def test_fill_ingredients_not_found(self):
         resp = self.client.post("/products/99999999/fill-ingredients", json={

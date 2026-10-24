@@ -351,25 +351,25 @@ class TestCanonicalArchitectureInvariants(unittest.TestCase):
         # Linked retailer offer with no ingredients stored
         cur.execute("""
         INSERT INTO products (
-            store_id, store_product_id, handle, title, brand, category,
+            id, store_id, store_product_id, handle, title, brand, category,
             price, is_available, product_url, canonical_product_id, is_skincare, ingredients_raw
         ) VALUES (
-            'feel22', 'to_1', 'the-ordinary-niacinamide', 'The Ordinary Niacinamide 10% + Zinc 1% 30ml', 'The Ordinary', 'Serum',
+            501, 'feel22', 'to_1', 'the-ordinary-niacinamide', 'The Ordinary Niacinamide 10% + Zinc 1% 30ml', 'The Ordinary', 'Serum',
             450.0, 1, 'https://feel22.com/to', ?, 1, NULL
         );
         """, (canon_id,))
-        offer_id = cur.lastrowid
+        offer_id = 501
         self.conn.commit()
 
         # 1. Resolve directly by canonical ID
-        res_canon = _resolve_product_for_similarity(canon_id, None, self.conn)
+        res_canon = _resolve_product_for_similarity(canon_id, None, self.conn, entity_type="canonical")
         self.assertEqual(res_canon["id"], canon_id)
         self.assertTrue(res_canon["is_authoritative_canonical"])
         self.assertIn("niacinamide", res_canon["actives"])
         self.assertIn("zinc", res_canon["actives"])
 
         # 2. Resolve by retailer offer ID -> MUST resolve to the canonical authoritative formulation
-        res_offer = _resolve_product_for_similarity(offer_id, None, self.conn)
+        res_offer = _resolve_product_for_similarity(offer_id, None, self.conn, entity_type="product")
         self.assertEqual(res_offer["canonical_product_id"], canon_id)
         self.assertTrue(res_offer["is_authoritative_canonical"])
         self.assertIn("niacinamide", res_offer["actives"])

@@ -189,7 +189,7 @@ class TestInkeeDecoderAndInciBeautyGuards(unittest.TestCase):
 
     def test_database_persistence_of_ingredient_source_url(self):
         """
-        Tests that ingredient_source_url is correctly persisted into the products table
+        Tests that ingredient_source_url is correctly persisted into the canonical table
         when resolving and applying Tier 4.
         """
         temp_db = tempfile.NamedTemporaryFile(suffix=".db", delete=False)
@@ -200,31 +200,12 @@ class TestInkeeDecoderAndInciBeautyGuards(unittest.TestCase):
             conn = sqlite3.connect(db_path)
             conn.row_factory = sqlite3.Row
             cur = conn.cursor()
-            cur.execute("""
-            CREATE TABLE products (
-                id INTEGER PRIMARY KEY,
-                store_id INTEGER,
-                title TEXT,
-                brand TEXT,
-                description_html TEXT,
-                ingredients_raw TEXT,
-                ingredients_parsed TEXT,
-                actives TEXT,
-                ingredient_source TEXT,
-                ingredient_source_url TEXT,
-                tier_resolutions TEXT,
-                canonical_product_id INTEGER,
-                inci_matched_id INTEGER,
-                inci_matched_name TEXT,
-                gate4_cross_status TEXT,
-                is_skincare INTEGER DEFAULT 1,
-                updated_at TIMESTAMP
-            );
-            """)
-            cur.execute("""
-            INSERT INTO products (id, store_id, title, brand, description_html, ingredient_source)
-            VALUES (1, 10, 'Effaclar Duo Plus', 'La Roche-Posay', 'Anti blemish treatment', NULL);
-            """)
+            from pipeline.db_manager import init_db
+            init_db(conn=conn, seed_defaults=False)
+            cur.execute("INSERT INTO stores (id,name,domain) VALUES ('10','Test Store','test.example')")
+            cur.execute("INSERT INTO canonical_products (id,canonical_title,brand,category,normalized_key) VALUES (1,'Effaclar Duo Plus','La Roche-Posay','Treatment','effaclar-duo')")
+            cur.execute("""INSERT INTO products (id,store_id,title,brand,category,product_url,description_html,canonical_product_id)
+                VALUES (1,'10','Effaclar Duo Plus','La Roche-Posay','Treatment','https://test.example/p','Anti blemish treatment',1)""")
             conn.commit()
 
             # Mock apply_tier_resolution_for_product applying a Tier 4 outcome with a source URL
@@ -254,7 +235,7 @@ class TestInkeeDecoderAndInciBeautyGuards(unittest.TestCase):
             apply_tier_resolution_for_product(1, "tier4", conn=conn)
 
             # Verify persisted database row
-            cur.execute("SELECT ingredient_source, ingredient_source_url, ingredients_raw FROM products WHERE id = 1;")
+            cur.execute("SELECT ingredient_source, ingredient_source_url, ingredients_raw FROM canonical_products WHERE id = 1;")
             row = cur.fetchone()
 
             self.assertEqual(row["ingredient_source"], "langsearch_web_search")

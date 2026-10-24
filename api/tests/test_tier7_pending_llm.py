@@ -130,7 +130,7 @@ class TestTier7PendingLLM(unittest.TestCase):
         self.assertEqual(row["inci_matched_name"], "Nuxe Rich Hand Cream Cica 50ml")
         self.assertEqual(row["gate4_jev_status"], "pending_jev")
         self.assertEqual(row["gate4_gemini_status"], "pending_gemini")
-        self.assertEqual(row["ingredient_source"], "pending_tier7_match")
+        self.assertIsNone(row["ingredient_source"])
         self.assertIsNone(row["ingredients_raw"])
 
     def test_03_execute_waterfall_tier7_fallback(self):
@@ -160,7 +160,7 @@ class TestTier7PendingLLM(unittest.TestCase):
 
         cur.execute("SELECT ingredient_source, gate4_jev_status, gate4_gemini_status FROM products WHERE id = 501;")
         row = cur.fetchone()
-        self.assertEqual(row["ingredient_source"], "pending_tier7_match")
+        self.assertIsNone(row["ingredient_source"])
         self.assertEqual(row["gate4_jev_status"], "pending_jev")
         self.assertEqual(row["gate4_gemini_status"], "pending_gemini")
 
