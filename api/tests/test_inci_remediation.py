@@ -416,6 +416,9 @@ class TestBulkWaterfallCanonicalArchitecture(unittest.TestCase):
         from pipeline.config import cfg
         raw = "Water, Glycerin, Panthenol, Sodium Hyaluronate, Phenoxyethanol"
         self.conn.execute("INSERT INTO inci_reference (id, brand, product_name, ingredients) VALUES (10, 'BrandAlpha', 'Hydrating B5 Serum', ?)", (raw,))
+        # This isolated Jev test starts with NO existing verified store INCI;
+        # Jev should not run when a trusted declaration is already present.
+        self.conn.execute("UPDATE products SET ingredients_raw=NULL,ingredient_source=NULL WHERE id=201")
         self.conn.execute("UPDATE products SET inci_matched_id=10, inci_matched_name='Hydrating B5 Serum', gate4_jev_status='pending_jev' WHERE id=201")
         self.conn.commit()
         connection = MagicMock(wraps=self.conn)
@@ -427,7 +430,7 @@ class TestBulkWaterfallCanonicalArchitecture(unittest.TestCase):
             result = run_jev_verification_queue(limit=1)
         self.assertEqual(result["approved"], 1)
         self.assertIsNone(self.conn.execute("SELECT ingredients_raw FROM canonical_products WHERE id=200").fetchone()[0])
-        self.assertEqual(self.conn.execute("SELECT ingredients_raw FROM products WHERE id=201").fetchone()[0],self.store_raw)
+        self.assertIsNone(self.conn.execute("SELECT ingredients_raw FROM products WHERE id=201").fetchone()[0])
         evidence=self.conn.execute("SELECT decision,raw_ingredients_found FROM inci_audit_evidence WHERE canonical_product_id=200 ORDER BY id DESC LIMIT 1").fetchone()
         self.assertEqual(evidence["decision"], "identity_blocked")
         self.assertEqual(evidence["raw_ingredients_found"], raw)
