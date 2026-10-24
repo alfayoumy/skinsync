@@ -311,3 +311,14 @@ Source: [`api/routers/workflows.py`](../api/routers/workflows.py).
 | GET | `/admin/workflows/products/discover-multiple/{task_id}` | [`discovery_progress()`](../api/routers/workflows.py#L383) | `read` |
 | POST | `/admin/workflows/products/prepare-reviews` | [`prepare_legacy_review_cases()`](../api/routers/workflows.py#L397) | `identity` |
 | POST | `/admin/workflows/products/discover-multiple/{task_id}/cancel` | [`cancel_discovery()`](../api/routers/workflows.py#L413) | `collection` |
+
+### catalog_reset router
+
+Source: [`api/routers/catalog_reset.py`](../api/routers/catalog_reset.py).
+
+| Method | Path | Handler | Permission |
+|---|---|---|---|
+| GET | `/admin/workflows/catalog/reset/preview` | `reset_preview()` | `read` |
+| POST | `/admin/workflows/catalog/reset` | `reset_catalog()` | `operations` |
+
+The preview returns `can_reset`, product-derived table row counts, active jobs, preserved-table counts, and a fingerprint without modifying data. The reset accepts `{"fingerprint":"<64-character preview fingerprint>","confirmation":"RESET ALL PRODUCT DATA"}`, creates and checks a private SQLite backup before mutating rows, refuses active/background jobs, and transactionally purges dependent catalog records. The reset response returns the backup path and deleted record counts. Saved Gemini verdicts remain in the backup, not in the new live catalog.
