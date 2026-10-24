@@ -80,6 +80,19 @@ TABLES = [
 ]
 
 
+def ensure_identity_gemini_schema(conn):
+    """Idempotently migrate an existing catalog on first Gemini review access.
+
+    Existing installations may start the API without re-running init_db(). A
+    review listing must remain available when that optional queue table has
+    not been created yet.
+    """
+    for sql in TABLES:
+        if (sql.startswith('CREATE TABLE IF NOT EXISTS identity_gemini_queue(')
+                or sql.startswith('CREATE INDEX IF NOT EXISTS idx_identity_gemini_status')):
+            conn.execute(sql)
+
+
 def init_aggregation_schema(conn):
     for sql in TABLES:
         conn.execute(sql)

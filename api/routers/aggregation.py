@@ -141,6 +141,8 @@ def reviews(kind:Optional[str]=None,status:str='pending',
             limit:int=Query(50,ge=1,le=500),offset:int=Query(0,ge=0)):
     """Pending human queue excludes Gemini cases until a model verdict requires review."""
     def run(conn):
+        from pipeline.aggregation_schema import ensure_identity_gemini_schema
+        ensure_identity_gemini_schema(conn)
         query='''FROM product_review_queue r LEFT JOIN identity_gemini_queue q ON q.review_id=r.id
             WHERE r.status=?'''
         params=[status]
@@ -154,8 +156,16 @@ def reviews(kind:Optional[str]=None,status:str='pending',
             'q.confidence gemini_confidence,q.explanation gemini_explanation '+query+
             ' ORDER BY r.id LIMIT ? OFFSET ?',params+[limit,offset])]
         for row in rows:
-            row['details']=json.loads(row['details'])
-            row['decision']=json.loads(row['decision']) if row['decision'] else None
+            # A malformed legacy JSON payload must not hide every other case.
+            try:
+                row['details']=json.loads(row['details'] or '{}')
+            except (ValueError,TypeError):
+                row['details']={'title':'Legacy review #'+str(row['id']),
+                                'reason_code':'unparseable_legacy_evidence'}
+            try:
+                row['decision']=json.loads(row['decision']) if row['decision'] else None
+            except (ValueError,TypeError):
+                row['decision']=None
         return {'reviews':rows,'total':count,'view':view}
     return operation(run)
 
@@ -174,6 +184,8 @@ class GeminiRunRequest(BaseModel):
 def gemini_identity_queue_status():
     from pipeline.product_identity_gemini import queue_counts
     def fn(conn):
+        from pipeline.aggregation_schema import ensure_identity_gemini_schema
+        ensure_identity_gemini_schema(conn)
         counts=queue_counts(conn)
         return {'counts':counts,
             'pending_identity_cases':conn.execute("""SELECT COUNT(*) FROM product_review_queue
@@ -185,6 +197,8 @@ def gemini_identity_queue_status():
 def gemini_identity_enqueue(request:GeminiEnqueueRequest):
     from pipeline.product_identity_gemini import queue_cases
     def fn(conn):
+        from pipeline.aggregation_schema import ensure_identity_gemini_schema
+        ensure_identity_gemini_schema(conn)
         return queue_cases(conn,request.review_ids,request.limit,reviewer_name('identity_admin'))
     return operation(fn)
 
@@ -201,6 +215,8 @@ def gemini_identity_run(request:GeminiRunRequest,background_tasks:BackgroundTask
         raise HTTPException(status_code=409,detail='Configure GEMINI_API_KEY before starting product identity review.')
     conn=get_connection()
     try:
+        from pipeline.aggregation_schema import ensure_identity_gemini_schema
+        ensure_identity_gemini_schema(conn)
         recover_abandoned_cases(conn)
         ready=conn.execute("SELECT COUNT(*) FROM identity_gemini_queue WHERE status='queued'").fetchone()[0]
         conn.commit()
