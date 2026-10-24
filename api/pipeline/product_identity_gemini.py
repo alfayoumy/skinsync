@@ -19,7 +19,7 @@ from pipeline.db_manager import get_connection
 from pipeline.task_tracker import update_task_progress,complete_task,fail_task
 
 POLICY_VERSION='gemini_identity_v1'
-AUTO_THRESHOLD=0.97
+AUTO_THRESHOLD=0.90
 DEFAULT_BATCH=10
 TRUSTED_INCI={'store_page_tab','historical_store_scrape','curated_v10','admin_override'}
 GEMINI_VERDICTS={'same_product','different_product','uncertain'}
@@ -176,10 +176,10 @@ def _all_current_offers(conn,cid,declared):
     return actual
 
 
-def can_auto_resolve(conn,case,answer):
+def can_auto_resolve(conn,case,answer,threshold=None):
     """A model 'yes' is necessary but never sufficient for automatic approval."""
     if (case['kind']!='identity' or answer['verdict']!='same_product'
-        or answer['confidence']<AUTO_THRESHOLD):
+        or answer['confidence']<(AUTO_THRESHOLD if threshold is None else threshold)):
         return False,'Model verdict is uncertain, negative, or below automatic threshold.'
     details=case['details']
     cid=case['canonical_product_id']
