@@ -72,7 +72,9 @@ MARKETING_VERBS_NOUNS = {
     'anti aging', 'age spots', 'dark spots', 'coverage', 'lips', 'hair types',
     'skin types', 'to help', 'to protect', 'to soothe', 'to hydrate', 'to provide',
     'our secret', 'clinically proven', 'gluten-free', 'cruelty-free', 'paraben-free',
-    'morning savior', 'day after day', 'revolutionary'
+    'morning savior', 'day after day', 'revolutionary', 'soft', 'feel', 'korean',
+    'products', 'supplier', 'suppliers', 'confidence', 'applicator', 'outlining',
+    'wear', 'swipe', 'transfer', 'smudge', 'waterproof', 'comforts skin'
 }
 
 def clean_token(token: str) -> Optional[str]:
@@ -101,9 +103,15 @@ def clean_token(token: str) -> Optional[str]:
     ]):
         return None
 
+    # Reject conversational starters
+    tokens = low.split()
+    if not tokens:
+        return None
+    if tokens[0] in {'the', 'a', 'an', 'to', 'with', 'for', 'from', 'in', 'on', 'so', 'you', 'if', 'is', 'it', 'offers', 'provides', 'made'}:
+        return None
+
     # Check if multiple English function words exist (e.g. 'to help condition the lips')
     func_words = {'the', 'a', 'an', 'to', 'your', 'our', 'it', 'its', 'their', 'this', 'that', 'with'}
-    tokens = low.split()
     if sum(1 for w in tokens if w in func_words) >= 2:
         return None
 
@@ -190,8 +198,8 @@ def seed_ingredient_whitelist(conn=None, min_frequency: int = 1) -> Dict[str, An
 
         token_counter = Counter()
 
-        # 1. Harvest candidates from inci_reference database (53,017 formulations)
-        cur.execute("SELECT ingredients FROM inci_reference WHERE ingredients IS NOT NULL;")
+        # 1. Harvest candidates from inci_reference database (verified SkinSAFE formulations)
+        cur.execute("SELECT ingredients FROM inci_reference WHERE ingredients IS NOT NULL AND source = 'skinsafe';")
         for (ings,) in cur.fetchall():
             if not ings:
                 continue

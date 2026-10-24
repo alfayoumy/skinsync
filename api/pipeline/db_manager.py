@@ -716,7 +716,11 @@ def add_whitelist_ingredient(name: str, canonical_name: str = None, category: st
             updated_at = CURRENT_TIMESTAMP;
         """, (clean_name, clean_canon, cat, 1 if is_active else 0))
         conn.commit()
-        return cur.lastrowid
+        if cur.lastrowid and cur.lastrowid > 0:
+            return cur.lastrowid
+        cur.execute("SELECT id FROM ingredient_whitelist WHERE name = ?;", (clean_name,))
+        row = cur.fetchone()
+        return row[0] if row else None
     except Exception as e:
         logger.error(f"Failed to add whitelist ingredient '{name}': {e}")
         return None

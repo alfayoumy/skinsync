@@ -35,7 +35,7 @@ def run_jev_verification_queue(limit: int = None):
     FROM products
     WHERE gate4_jev_status = 'pending_jev'
       AND inci_matched_name IS NOT NULL
-      AND (ingredients_raw IS NULL OR LENGTH(TRIM(ingredients_raw)) < 15 OR ingredient_source = 'inci_matched' OR ingredient_source IS NULL)
+      AND (ingredients_raw IS NULL OR LENGTH(TRIM(ingredients_raw)) < 15 OR ingredient_source IN ('inci_matched', 'pending_tier7_match') OR ingredient_source IS NULL)
     ORDER BY id ASC
     LIMIT ?;
     """, (limit,))
@@ -67,21 +67,48 @@ def run_jev_verification_queue(limit: int = None):
 
         if verdict is True:
             cur.execute("""
-            UPDATE products
-            SET gate4_jev_status = 'jev_approved', inci_jev_score = 0.95,
-                gate4_cross_status = ?, inci_cross_score = ?,
-                updated_at = CURRENT_TIMESTAMP
-            WHERE id = ?;
-            """, (cross_status, cross_score, pid))
+            SELECT r.ingredients
+            FROM products p
+            JOIN inci_reference r ON r.id = p.inci_matched_id
+            WHERE p.id = ?;
+            """, (pid,))
+            ref_row = cur.fetchone()
+            ref_ings = ref_row[0] if ref_row else None
+
+            curr_raw = p.get("ingredients_raw") if isinstance(p, dict) else p["ingredients_raw"]
+            if (not curr_raw or len(curr_raw.strip()) < 10) and ref_ings and len(ref_ings.strip()) >= 15:
+                from pipeline.inci_matcher import parse_and_normalize_ingredients
+                import json
+                parsed, acts = parse_and_normalize_ingredients(ref_ings)
+                cur.execute("""
+                UPDATE products
+                SET gate4_jev_status = 'jev_approved', inci_jev_score = 0.95,
+                    gate4_cross_status = ?, inci_cross_score = ?,
+                    ingredients_raw = ?, ingredients_parsed = ?, actives = ?,
+                    ingredient_source = 'skinsafe_matched',
+                    updated_at = CURRENT_TIMESTAMP
+                WHERE id = ?;
+                """, (cross_status, cross_score, ref_ings, json.dumps(parsed), json.dumps(acts), pid))
+            else:
+                cur.execute("""
+                UPDATE products
+                SET gate4_jev_status = 'jev_approved', inci_jev_score = 0.95,
+                    gate4_cross_status = ?, inci_cross_score = ?,
+                    updated_at = CURRENT_TIMESTAMP
+                WHERE id = ?;
+                """, (cross_status, cross_score, pid))
             conn.commit()
             approved += 1
-            logger.info(f"[{idx}/{len(queue)}] [JEV APPROVED] '{title[:35]}' == '{cand_name[:35]}' (Score: {h_score:.2f} | Cross: {cross_score:.2f})")
+            logger.info(f"[{idx}/{len(queue)}] [JEV APPROVED] '{title[:35]}' == '{cand_name[:35]}' (Score: {(h_score or 0.0):.2f} | Cross: {cross_score:.2f})")
         elif verdict is False:
             cur.execute("""
             UPDATE products
             SET gate4_jev_status = 'jev_rejected', inci_jev_score = 0.15,
                 gate4_cross_status = ?, inci_cross_score = ?,
-                ingredients_raw = NULL, ingredients_parsed = NULL, actives = NULL,
+                ingredients_raw = CASE WHEN ingredient_source IN ('skinsafe_matched', 'pending_tier7_match') THEN NULL ELSE ingredients_raw END,
+                ingredients_parsed = CASE WHEN ingredient_source IN ('skinsafe_matched', 'pending_tier7_match') THEN NULL ELSE ingredients_parsed END,
+                actives = CASE WHEN ingredient_source IN ('skinsafe_matched', 'pending_tier7_match') THEN NULL ELSE actives END,
+                ingredient_source = CASE WHEN ingredient_source IN ('skinsafe_matched', 'pending_tier7_match') THEN NULL ELSE ingredient_source END,
                 updated_at = CURRENT_TIMESTAMP
             WHERE id = ?;
             """, (cross_status, cross_score, pid))

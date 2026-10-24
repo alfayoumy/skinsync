@@ -1,12 +1,13 @@
 """
 Authoritative Waterfall INCI Resolver Pipeline.
-Implements the 6-tier waterfall methodology for resolving cosmetic ingredients:
+Implements the 7-tier waterfall methodology for resolving cosmetic ingredients:
 1. Current store page ingredient list (then Historical Store Scrapes Jan 10-12, 2026) - dedicated tab only
 2. OpenBeauty API (world.openbeautyfacts.org)
-3. High SkinSAFE Match (strict brand, vehicle, and line alignment against inci_reference)
+3. High SkinSAFE Match (strict brand, vehicle, and line alignment against inci_reference >= 0.50 overlap)
 4. LangSearch Web Search API (searches '{brand} {title} inci ingredients' and parses INCI from top results)
 5. Store page description whitelisted ingredients (extracts verified chemical ingredients via whitelist)
 6. Cross-store same-product cluster propagation (copies ingredients from resolved cluster partners)
+7. Pending Jev & Pending Gemini arbitration from Tier 3 SkinSAFE match (if Tiers 4, 5, 6 all fail)
 
 Every resolved product records its exact waterfall method in `products.ingredient_source`.
 """
@@ -291,19 +292,20 @@ def load_skinsafe_reference_index(conn=None) -> Dict[str, List[Tuple]]:
             if should_close:
                 conn.close()
 
-def resolve_tier3_skinsafe_high(brand: str, title: str, conn=None) -> Optional[Dict[str, Any]]:
+def resolve_tier3_skinsafe_with_candidate(brand: str, title: str, conn=None) -> Tuple[Optional[Dict[str, Any]], Optional[Dict[str, Any]]]:
     """
-    Tier 3: Strict high-confidence match against SkinSAFE reference catalog.
-    Enforces brand alignment, identical cosmetic vehicle, zero variant conflicts,
-    and high title overlap (Jaccard >= 0.50).
+    Tier 3 & Tier 7 Candidate Resolver:
+    - If best candidate overlap >= 0.50: returns (high_match_dict, None) for instant Tier 3 resolution.
+    - If 0.20 <= best candidate overlap < 0.50: returns (None, ambiguous_candidate_dict) as fallback candidate for Tier 7.
+    - Otherwise returns (None, None).
     """
     if not brand or not title:
-        return None
+        return None, None
 
     ref_index = load_skinsafe_reference_index(conn=conn)
     clean_b = re.sub(r'[^a-z0-9]', '', brand.lower())
     if not clean_b:
-        return None
+        return None, None
 
     candidates = ref_index.get(clean_b, [])
     if not candidates:
@@ -314,7 +316,7 @@ def resolve_tier3_skinsafe_high(brand: str, title: str, conn=None) -> Optional[D
                     break
 
     if not candidates:
-        return None
+        return None, None
 
     import unicodedata
     def norm_ascii(s: str) -> str:
@@ -381,7 +383,7 @@ def resolve_tier3_skinsafe_high(brand: str, title: str, conn=None) -> Optional[D
             best_overlap = overlap
             best_cand = (c_id, p_name, b_name, ings, overlap)
 
-    # High confidence threshold
+    # High confidence threshold for Tier 3
     if best_cand and best_overlap >= 0.50:
         return {
             "ingredients_raw": best_cand[3].strip(),
@@ -389,9 +391,29 @@ def resolve_tier3_skinsafe_high(brand: str, title: str, conn=None) -> Optional[D
             "inci_matched_name": best_cand[1],
             "confidence": best_cand[4],
             "method": "skinsafe_high_match"
+        }, None
+
+    # Ambiguity zone threshold for Tier 7 (Jev & Gemini fallback)
+    if best_cand and best_overlap >= 0.20:
+        return None, {
+            "id": best_cand[0],
+            "product_name": best_cand[1],
+            "brand": best_cand[2],
+            "ingredients": best_cand[3],
+            "confidence": best_cand[4]
         }
 
-    return None
+    return None, None
+
+
+def resolve_tier3_skinsafe_high(brand: str, title: str, conn=None) -> Optional[Dict[str, Any]]:
+    """
+    Tier 3: Strict high-confidence match against SkinSAFE reference catalog.
+    Enforces brand alignment, identical cosmetic vehicle, zero variant conflicts,
+    and high title overlap (Jaccard >= 0.50).
+    """
+    high_match, _ = resolve_tier3_skinsafe_with_candidate(brand, title, conn=conn)
+    return high_match
 
 # ==============================================================================
 # TIER 4: LANGSEARCH WEB SEARCH API
@@ -653,6 +675,54 @@ def resolve_tier6_cluster_propagation(product_id: int, canonical_id: Optional[in
             conn.close()
 
 # ==============================================================================
+# TIER 7: PENDING JEV & PENDING GEMINI FROM TIER 3 (IF TIERS 4, 5, 6 ALL FAIL)
+# ==============================================================================
+
+def resolve_tier7_pending_llm(
+    product_id: int,
+    candidate: Dict[str, Any],
+    conn=None,
+    write_to_db: bool = True,
+    dry_run: bool = False
+) -> Dict[str, Any]:
+    """
+    Tier 7: Queues ambiguous SkinSAFE candidate from Tier 3 for Jev and Gemini verification
+    when Tiers 4, 5, and 6 have all failed to find ingredients.
+    Sets gate4_jev_status='pending_jev', gate4_gemini_status='pending_gemini',
+    records inci_matched_id and inci_matched_name, and sets ingredient_source='pending_tier7_match'.
+    Leaves ingredients_raw as NULL until an LLM verifier (Jev or Gemini) approves it.
+    """
+    cand_id = candidate["id"]
+    cand_name = candidate["product_name"]
+    conf = round(candidate.get("confidence", 0.0), 3)
+
+    if not dry_run and conn and product_id and write_to_db:
+        cur = conn.cursor()
+        cur.execute("""
+        UPDATE products
+        SET inci_matched_id = ?,
+            inci_matched_name = ?,
+            inci_token_score = ?,
+            gate4_jev_status = 'pending_jev',
+            gate4_gemini_status = 'pending_gemini',
+            gate4_cross_status = 'pending',
+            ingredient_source = 'pending_tier7_match',
+            updated_at = CURRENT_TIMESTAMP
+        WHERE id = ?;
+        """, (cand_id, cand_name, conf, product_id))
+        conn.commit()
+
+    return {
+        "status": "pending_llm_verification",
+        "product_id": product_id,
+        "method": "tier7_pending_llm",
+        "inci_matched_id": cand_id,
+        "inci_matched_name": cand_name,
+        "confidence": conf,
+        "candidate": candidate
+    }
+
+# ==============================================================================
 # WATERFALL CONTROLLER & DISPATCHER
 # ==============================================================================
 
@@ -661,11 +731,12 @@ def execute_inci_waterfall_for_product(
     conn=None,
     historical_index: Optional[Dict[str, str]] = None,
     langsearch_enabled: bool = True,
+    allow_tier7: bool = True,
     dry_run: bool = False,
     write_to_db: bool = False
 ) -> Dict[str, Any]:
     """
-    Executes the 6-tier waterfall resolution for a single skincare product.
+    Executes the 7-tier waterfall resolution for a single skincare product.
     Returns resolution result with exact method recorded.
     """
     if historical_index is None:
@@ -678,6 +749,7 @@ def execute_inci_waterfall_for_product(
     canonical_id = product.get("canonical_product_id")
 
     res = None
+    tier3_candidate = None
 
     # Tier 1: Current store tab / Historical store scrapes
     res = resolve_tier1_store_tab(product, historical_index)
@@ -686,9 +758,9 @@ def execute_inci_waterfall_for_product(
     if not res:
         res = resolve_tier2_openbeauty(brand, title)
 
-    # Tier 3: High SkinSAFE Match
+    # Tier 3: High SkinSAFE Match (and capture ambiguous candidate for Tier 7)
     if not res:
-        res = resolve_tier3_skinsafe_high(brand, title, conn=conn)
+        res, tier3_candidate = resolve_tier3_skinsafe_with_candidate(brand, title, conn=conn)
 
     # Tier 4: LangSearch Web Search API
     if not res and langsearch_enabled:
@@ -703,6 +775,10 @@ def execute_inci_waterfall_for_product(
     # Tier 6: Same-Product Cluster Propagation
     if not res:
         res = resolve_tier6_cluster_propagation(p_id, canonical_id, brand, title, conn=conn)
+
+    # Tier 7: Pending Jev & Pending Gemini from Tier 3 if Tiers 4, 5, 6 all fail
+    if not res and allow_tier7 and tier3_candidate:
+        return resolve_tier7_pending_llm(p_id, tier3_candidate, conn=conn, write_to_db=write_to_db, dry_run=dry_run)
 
     # If successfully resolved, parse actives and commit
     if res and res.get("ingredients_raw"):
@@ -847,6 +923,7 @@ def run_waterfall_pipeline(
                 conn=t_conn,
                 historical_index=historical_index,
                 langsearch_enabled=langsearch_enabled,
+                allow_tier7=False,
                 dry_run=dry_run,
                 write_to_db=False
             )
@@ -1002,6 +1079,49 @@ def run_waterfall_pipeline(
             conn.commit()
 
         logger.info(f"Pass 2 Complete: Propagated {len(propagated_updates)} ingredients via cluster propagation.")
+
+        # --- PASS 3: Tier 7 Pending Jev & Pending Gemini from Tier 3 ---
+        logger.info("--- PASS 3: Executing Tier 7 Pending Jev & Pending Gemini Arbitration ---")
+        cur.execute("""
+        SELECT id, title, brand
+        FROM products
+        WHERE is_skincare = 1 AND (ingredients_raw IS NULL OR TRIM(ingredients_raw) = '');
+        """)
+        empty_after_tier6 = [dict(r) for r in cur.fetchall()]
+        logger.info(f"Evaluating {len(empty_after_tier6)} products still empty after Tiers 1-6 for Tier 7 LLM queue...")
+
+        tier7_updates = []
+        for p in empty_after_tier6:
+            pid = p["id"]
+            brand = p.get("brand") or ""
+            title = p.get("title") or ""
+            _, tier3_cand = resolve_tier3_skinsafe_with_candidate(brand, title, conn=conn)
+            if tier3_cand:
+                cand_id = tier3_cand["id"]
+                cand_name = tier3_cand["product_name"]
+                conf = round(tier3_cand.get("confidence", 0.0), 3)
+                if not dry_run:
+                    tier7_updates.append((cand_id, cand_name, conf, pid))
+                stats["resolved"] += 1
+                stats["unresolved"] = max(0, stats["unresolved"] - 1)
+                stats["by_method"]["tier7_pending_llm"] = stats["by_method"].get("tier7_pending_llm", 0) + 1
+
+        if tier7_updates and not dry_run:
+            cur.executemany("""
+            UPDATE products
+            SET inci_matched_id = ?,
+                inci_matched_name = ?,
+                inci_token_score = ?,
+                gate4_jev_status = 'pending_jev',
+                gate4_gemini_status = 'pending_gemini',
+                gate4_cross_status = 'pending',
+                ingredient_source = 'pending_tier7_match',
+                updated_at = CURRENT_TIMESTAMP
+            WHERE id = ?;
+            """, tier7_updates)
+            conn.commit()
+
+        logger.info(f"Pass 3 Complete: Queued {len(tier7_updates)} products for Jev & Gemini semantic verification.")
         logger.info(f"--- INCI Waterfall Resolution Pipeline Complete ---")
         logger.info(f"Final Stats: Resolved {stats['resolved']}/{total_to_process} ({stats['resolved']/max(total_to_process, 1)*100:.1f}%) | Breakdown: {stats['by_method']}")
         return stats

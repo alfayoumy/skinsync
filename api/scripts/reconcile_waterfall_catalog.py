@@ -26,8 +26,8 @@ def reconcile_catalog():
     cur = conn.cursor()
 
     try:
-        # Step 1: Reset flawed langsearch and cluster_propagation entries
-        logger.info("Step 1: Purging flawed langsearch and cluster_propagation entries...")
+        # Step 1: Reset flawed langsearch, cluster_propagation, and pending_tier7_match entries
+        logger.info("Step 1: Purging flawed langsearch and cluster entries for fresh waterfall...")
         cur.execute("""
         UPDATE products
         SET ingredients_raw = NULL,
@@ -35,7 +35,7 @@ def reconcile_catalog():
             actives = NULL,
             ingredient_source = NULL,
             updated_at = CURRENT_TIMESTAMP
-        WHERE is_skincare = 1 AND ingredient_source IN ('langsearch_web_search', 'cluster_propagation');
+        WHERE is_skincare = 1 AND ingredient_source IN ('langsearch_web_search', 'cluster_propagation', 'pending_tier7_match');
         """)
         purged_count = cur.rowcount
         conn.commit()
@@ -55,11 +55,12 @@ def reconcile_catalog():
         logger.info(f"Waterfall pipeline finished in {elapsed:.1f}s.")
         logger.info(f"Waterfall stats: {stats}")
 
-        # Step 3: Ensure remaining empty products are cleanly marked NULL
+        # Step 3: Ensure remaining empty products without Tier 7 queue are cleanly marked NULL
         cur.execute("""
         UPDATE products
         SET ingredient_source = NULL
-        WHERE is_skincare = 1 AND (ingredients_raw IS NULL OR TRIM(ingredients_raw) = '');
+        WHERE is_skincare = 1 AND (ingredients_raw IS NULL OR TRIM(ingredients_raw) = '')
+          AND ingredient_source != 'pending_tier7_match';
         """)
         conn.commit()
 

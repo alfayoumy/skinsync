@@ -50,7 +50,7 @@ def run_gemini_verification_queue(limit: Optional[int] = None, batch_size: Optio
         WHERE inci_matched_name IS NOT NULL
           AND (gate4_gemini_status IS NULL OR gate4_gemini_status = 'pending_gemini')
           AND (gate4_jev_status IS NULL OR gate4_jev_status != 'jev_approved')
-          AND (ingredients_raw IS NULL OR LENGTH(TRIM(ingredients_raw)) < 15 OR ingredient_source = 'inci_matched' OR ingredient_source IS NULL)
+          AND (ingredients_raw IS NULL OR LENGTH(TRIM(ingredients_raw)) < 15 OR ingredient_source IN ('inci_matched', 'pending_tier7_match') OR ingredient_source IS NULL)
         ORDER BY id ASC
         LIMIT ?;
         """
@@ -63,7 +63,7 @@ def run_gemini_verification_queue(limit: Optional[int] = None, batch_size: Optio
             gate4_gemini_status = 'pending_gemini'
             OR (gate4_jev_status = 'jev_rate_limited' AND (gate4_gemini_status IS NULL OR gate4_gemini_status = 'pending_gemini'))
           )
-          AND (ingredients_raw IS NULL OR LENGTH(TRIM(ingredients_raw)) < 15 OR ingredient_source = 'inci_matched' OR ingredient_source IS NULL)
+          AND (ingredients_raw IS NULL OR LENGTH(TRIM(ingredients_raw)) < 15 OR ingredient_source IN ('inci_matched', 'pending_tier7_match') OR ingredient_source IS NULL)
         ORDER BY id ASC
         LIMIT ?;
         """
@@ -182,10 +182,10 @@ def run_gemini_verification_queue(limit: Optional[int] = None, batch_size: Optio
                         UPDATE products
                         SET gate4_gemini_status = 'gemini_rejected', inci_gemini_score = ?,
                             gate4_cross_status = ?, inci_cross_score = ?,
-                            ingredients_raw = CASE WHEN ingredient_source = 'skinsafe_matched' THEN NULL ELSE ingredients_raw END,
-                            ingredients_parsed = CASE WHEN ingredient_source = 'skinsafe_matched' THEN NULL ELSE ingredients_parsed END,
-                            actives = CASE WHEN ingredient_source = 'skinsafe_matched' THEN NULL ELSE actives END,
-                            ingredient_source = CASE WHEN ingredient_source = 'skinsafe_matched' THEN NULL ELSE ingredient_source END,
+                            ingredients_raw = CASE WHEN ingredient_source IN ('skinsafe_matched', 'pending_tier7_match') THEN NULL ELSE ingredients_raw END,
+                            ingredients_parsed = CASE WHEN ingredient_source IN ('skinsafe_matched', 'pending_tier7_match') THEN NULL ELSE ingredients_parsed END,
+                            actives = CASE WHEN ingredient_source IN ('skinsafe_matched', 'pending_tier7_match') THEN NULL ELSE actives END,
+                            ingredient_source = CASE WHEN ingredient_source IN ('skinsafe_matched', 'pending_tier7_match') THEN NULL ELSE ingredient_source END,
                             updated_at = CURRENT_TIMESTAMP
                         WHERE id = ?;
                         """, (conf, c_status, c_score, pid))
