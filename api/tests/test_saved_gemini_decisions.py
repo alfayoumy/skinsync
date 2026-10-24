@@ -95,6 +95,64 @@ class SavedGeminiDecisionTests(unittest.TestCase):
         self.assertEqual(result['still_needs_review'],1)
         self.assertEqual(self.conn.execute('SELECT status FROM product_review_queue WHERE id=?',(rid,)).fetchone()[0],'pending')
 
+    def test_gemini_history_filters_sorts_and_shows_applied_records(self):
+        from routers.aggregation import gemini_identity_results
+
+        class Proxy:
+            def __init__(self,connection):self.connection=connection
+            def __getattr__(self,key):return getattr(self.connection,key)
+            def close(self):pass
+
+        _,avene=self.make_case('Avène Hyaluron Activ B3 Eye Cream','Avène',
+            [('bashrety','Avène Hyaluron Activ B3 Eye Cream'),
+             ('feel22','Avene Hyaluron Activ B3 Eye Cream')],'same_product',.95)
+        _,nuxe=self.make_case('NUXE Huile Prodigieuse Dry Oil','NUXE',
+            [('bashrety','NUXE Huile Prodigieuse Dry Oil'),
+             ('feel22','NUXE Huile Prodigieuse Florale Dry Oil')],'different_product',.99)
+        _,cerave=self.make_case('CeraVe Hydrating Cleanser','CeraVe',
+            [('sourcebeauty','CeraVe Hydrating Cleanser'),
+             ('feel22','CeraVe Hydrating Cleanser')],'same_product',.80)
+
+        self.conn.execute("UPDATE product_review_queue SET status='confirmed',decision=? WHERE id=?",
+            (json.dumps({'action':'auto_verify'}),avene))
+        self.conn.execute("UPDATE identity_gemini_queue SET status='auto_resolved' WHERE review_id=?",(avene,))
+
+        defaults=dict(verdict=None,outcome=None,review_status=None,
+            confidence_min=0,confidence_max=1,search='',sort_by='confidence',
+            sort_order='desc',limit=50,offset=0)
+        with patch('routers.aggregation.get_connection',return_value=Proxy(self.conn)):
+            all_rows=gemini_identity_results(**defaults)
+            self.assertEqual(all_rows['total'],3)
+            self.assertEqual([r['review_id'] for r in all_rows['results']],[nuxe,avene,cerave])
+            self.assertEqual(all_rows['results'][0]['model_reason'],'Stored Gemini reason')
+            self.assertIn('Old 0.97 cutoff',all_rows['results'][0]['application_reason'])
+            self.assertEqual(all_rows['results'][1]['decision']['action'],'auto_verify')
+            self.assertEqual(all_rows['results'][1]['outcome'],'auto_resolved')
+            self.assertEqual(len(all_rows['results'][0]['offers']),2)
+            self.assertTrue(all_rows['results'][0]['evidence_current'])
+            range_rows=gemini_identity_results(**{**defaults,'confidence_min':0.90,'confidence_max':0.98})
+            self.assertEqual([r['review_id'] for r in range_rows['results']],[avene])
+            high_different=gemini_identity_results(**{**defaults,'verdict':'different_product',
+                'confidence_min':0.97})
+            self.assertEqual([r['review_id'] for r in high_different['results']],[nuxe])
+            completed=gemini_identity_results(**{**defaults,'review_status':'confirmed'})
+            self.assertEqual([r['review_id'] for r in completed['results']],[avene])
+            search=gemini_identity_results(**{**defaults,'search':'Hydrating Cleanser'})
+            self.assertEqual(search['results'][0]['review_id'],cerave)
+            ascending=gemini_identity_results(**{**defaults,'sort_order':'asc','limit':2})
+            self.assertEqual([r['review_id'] for r in ascending['results']],[cerave,avene])
+            second_page=gemini_identity_results(**{**defaults,'offset':1,'limit':1})
+            self.assertEqual([r['review_id'] for r in second_page['results']],[avene])
+
+    def test_history_rejects_invalid_confidence_range(self):
+        from fastapi import HTTPException
+        from routers.aggregation import gemini_identity_results
+        with self.assertRaises(HTTPException) as captured:
+            gemini_identity_results(verdict=None,outcome=None,review_status=None,
+                confidence_min=.99,confidence_max=.90,search='',sort_by='confidence',
+                sort_order='desc',limit=50,offset=0)
+        self.assertEqual(captured.exception.status_code,422)
+
     def test_stale_case_cannot_apply_saved_confidence(self):
         name='CeraVe Moisturizing Cream'
         cid,rid=self.make_case(name,'CeraVe',[('a',name),('b',name)],'same_product',.95)
