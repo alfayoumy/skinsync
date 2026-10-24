@@ -1,110 +1,48 @@
-# Hardening assessment response
+# Security, identity and INCI hardening requirements
 
-Bulk refresh remains unapproved. This patch does not collect from additional sources,
-reassign live identities, replace legacy formulas, or persist the old dry-run findings.
+**Current implementation/readiness policy — 25 October 2026.** This supersedes old one-commit hardening assessments. A green regression workflow validates code against a disposable catalog, not live source or production correctness.
 
-## Administrator access
+## Authorization
 
-All `/admin`, task and log requests require a scoped bearer credential. All other
-write endpoints require credentials except onboarding and public recommendation,
-formula matching and scoring requests. Administrative credentials fail closed when
-absent or invalid. Allowed frontend origins default to localhost/127.0.0.1 port 5173;
-set `SKINSYNC_ALLOWED_ORIGINS` to an explicit comma-separated list for deployment.
-Wildcard origins are discarded. Use HTTPS when serving outside localhost.
+`api/security/admin.py` uses `AdminAuthentication` and `SKINSYNC_ADMIN_CREDENTIALS` (JSON actor→token/permissions), with a minimum 32-character token and explicit scopes:
 
-Run once, from the repository root:
+- `read`: admin reads, review lists, Gemini decisions, diagnostics.
+- `collection`: source collection, multi-source discovery, offer-only refresh.
+- `identity`: product identity auto-verification, review preparation, Gemini identity queue/replay, brand alias/constraints/merge/split/reversal, controlled rollout.
+- `formula`: INCI waterfall, model/ingredient queues and formulation writes.
+- `formula_correction` **plus** `formula`: explicit authoritative correction/force-approval APIs.
+- `operations`: operations not assigned a more specific scope.
 
-```sh
-python3 api/scripts/configure_admin.py --token-file ../data/admin-access/local-admin.token
-```
+The middleware responds 503 when credentials are unconfigured, 401 for missing/invalid tokens and 403 for insufficient permissions. Do not embed real tokens in source, docs or frontend. Frontend development only forwards tokens to trusted localhost API origins by default.
 
-This appends `SKINSYNC_ADMIN_CREDENTIALS` to the ignored local API `.env`, creates a
-private token file, and prints only its location. Restart the backend, open Admin,
-and enter the token. The browser keeps it in memory, clears it on sign-out/unmount,
-and only attaches it to the configured local API origins. No credential is bundled
-with the frontend or saved to localStorage.
+## Source and identity controls
 
-Credentials map authenticated names to independent `read`, `collection`, `identity`,
-`formula`, `formula_correction` and `operations` permissions. Evidence approval that
-can force a correction requires both formula permissions. Collection users cannot
-approve identities, rollouts or formulas. Reviewer attribution comes from the
-authenticated credential, overriding supplied reviewer names. Internal CLI operations
-continue to require explicit reviewer/reason attribution.
+- Source adapters are restricted by registered source ID, HTTPS domain, market, enablement, robots policies where applicable, and pacing. `publish_enabled` is independent from `enabled`.
+- Legacy offers remain traceable; immutable-ish raw observation snapshots preserve source evidence, and source-specific variants are not collapsed into arbitrary first-variant prices.
+- Automated title matching does not automatically allow source-to-canonical linking. Require approved/curated brand aliases and compatible SPF, active strength, formulation vehicle, fragrance/tint, timing and revision attributes.
+- No transitive fuzzy merge solely from token overlap; no automatic canonical merge based on Gemini.
+- A confident Gemini `same_product` at ≥0.90 can update identity only after deterministic safeguards. A confident `different_product` may be split only into explicitly anchored variants with audited cannot-link constraints; otherwise retain a genuine structural review.
+- Previously evaluated Gemini identity cases can be replayed locally without provider calls, with saved evidence hashes, audited history and a preview/apply boundary.
 
-Before deploying the new evaluation endpoints, stop API/workers and apply the additive
-schema update with a fresh backup (this does not start collection):
+## Formulation/INCI trust
 
-```sh
-python3 api/scripts/migrate_aggregation.py --backup ../data/backups/skincare-before-hardening-UNIQUE.db --apply
-```
+- Identity verification is not proof of INCI. Manufacturer/regional full list evidence takes precedence over unrelated market formulations or ingredient-reference candidates only when exact-product identity is supported.
+- Partial lists/key actives, truncated ingredient text, search snippets and LLM approval are never sufficient alone for authoritative full INCI publication.
+- Ordered ingredient hashes preserve sequence; a conflicting full formula must not overwrite an existing approved version without a reviewed correction.
+- Use `FormulationRepository`, `formulation_versions` and `inci_audit_evidence` for publication/audit; do not write directly to canonical INCI from arbitrary retailer/LLM workflows.
+- Explicit correction endpoints require stronger permissions.
 
-The additive hardening migration was applied locally with a new persistent backup:
-`data/backups/skincare-before-hardening-20261024T181600Z.db` in the workspace.
-All existing product, canonical and evidence fields were verified unchanged. A local
-administrator credential is configured; its private token is in workspace
-`data/admin-access/local-admin.token`. No credential is committed to Git.
-Collection, reconciliation persistence and bulk refresh were not started.
+## Governance and evaluation
 
-## Identity and INCI trust
+- Label independently sampled source observations and mismatched identity pairs. Source evaluation results and reconciliation previews have SQLite immutability triggers; labels close after finalization.
+- A release gate should inspect cross-category conflicts, duplicate identity candidates, changed source/formula evidence, unverified products, source coverage, review backlog, and test/CI evidence.
+- The numerical JSON benchmarks checked into `docs/aggregation/` are snapshots; they must not be reported as fresh/live catalog precision metrics without rerunning evaluations.
 
-Historical links receive `legacy_preserved_unverified`; they are not evidence of
-identity verification. Preservation does not register verified title aliases. The
-resolver ignores title aliases attributable to unverified legacy links. Independently
-validated exact structured links or explicit manual reviews can be identity-verified.
-New identities remain hidden/provisional even when their source is approved.
+## Deployment risks and follow-up
 
-Bulk waterfall requires a verified canonical identity and excludes pending identity
-or duplicate cases in both review queues. At publication time the repository requires verified canonical identity and checks
-again, including cases with candidate IDs and null canonical IDs. Forced corrections
-cannot bypass identity conflicts. Retailer and source observation candidates require
-a verified source-to-canonical link; request flags alone cannot establish identity.
-Historical ingredient text is retained. The additive provenance field distinguishes
-legacy-unverified formulations from approved authoritative evidence.
+- Python 3.12 is used for CI, while current `api/Dockerfile` uses Python 3.9. Validate and align the container environment before release.
+- The legacy `daily_sync.py` mixes scraping, product creation and price updates; the newer separated catalog workflows are recommended for controlled operational runs.
+- Some HTML sources lack full-catalog adapters and require explicit product URLs.
+- Back up SQLite consistently under WAL before bulk changes, verify `SKINSYNC_DB_PATH` and monitor task lifecycle and actual database updates.
 
-## Rollout evaluation
-
-`POST /admin/aggregation/sources/{id}/evaluations` freezes a server-selected stratified
-sample, current canonical/formula/mapping baseline and a hash of source policy and
-matching/extraction code. Inspect `/evaluations/{id}` and submit independently reviewed
-labels to `/evaluations/{id}/labels`, then finalize with `/evaluations/{id}/finalize`.
-
-Publication gates require at least 100 distinct source products, 50 marketed identities,
-10 examples each of sunscreen, serum, treatment, cleanser and moisturizer, and 50 actual
-automatic links. Price/INCI sources additionally need at least 50 evaluated offers/full
-ordered ingredient samples. Metrics are computed server-side. Artifacts and labels are
-immutable; corrections require a new run. Rollout accepts `evaluation_id`, not metrics.
-The source, code, observations, associations, offers and existing catalog baseline must
-still match the evaluated state. Existing precision, false-merge, preservation and
-classification thresholds also apply. These are minimum release gates, not evidence of
-population-wide accuracy. Specialized sources without this category coverage remain
-staged until a separately reviewed evaluation policy is implemented.
-
-## Controlled reconciliation and real samples
-
-`POST /admin/aggregation/reconcile` remains a disposable preview. To retain a reviewable
-snapshot use `POST /reconciliation/previews`; after review, explicitly persist its findings
-with `POST /reconciliation/previews/{id}/findings`. Both paths are relative to
-`/admin/aggregation`. Persistence rejects stale catalog fingerprints, copies findings into
-the actionable queue, and records approver and snapshot provenance. It does not apply
-product reassociations or replace formulas. The historical 1,347 finding count is a preview
-count, not a claim about live queue contents.
-
-`api/scripts/sample_catalog_review.py` exports deterministic, stratified real catalog
-samples read-only. The current export has 480 classification records and 480 existing
-retailer/canonical pairs across 24 categories, stored in workspace
-`data/reviews/hardening-20261024`. The committed manifest contains counts and hashes; the matching CSVs are in
-`docs/aggregation/review-samples/`.
-Ground-truth label columns are blank. Independent classification/identity labels,
-critical false-merge and false-exclusion measurements, and an external INCI audit
-remain outstanding; no metrics have been invented from model predictions.
-
-## Collection and verification
-
-The live collector and diagnostics share the same pre-redirect HTTPS/domain/port
-validator. Redirects outside a registered source are rejected before an outbound
-request is built. Robots checks and bounded responses remain enforced.
-
-The regression workflow is in `.github/workflows/regressions.yml`; an added workflow
-is not evidence of a completed GitHub Actions run. Local test results are recorded
-in `validation-results.json`. Full refresh approval requires independent sample review,
-source validation and bounded ingestion, waterfall readiness checks and verified backups.
+[Operations and security guide](../workflows-and-operations.md) · [Database](../database-reference.md) · [API reference](../api-reference.md)
