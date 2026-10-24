@@ -57,7 +57,10 @@ EXCLUDED_STANDALONE = {
     'directions', 'features', 'benefits', 'routine', 'warning', 'caution',
     'application', 'revitaliz', 'results', 'suitable for', 'contour', 'years',
     'evening', 'morning', 'night', 'day', 'fresh', 'dermatologist', 'tested',
-    'vegan', 'cruelty', 'paraben', 'fragrance', 'flavor', 'scent'
+    'vegan', 'cruelty', 'paraben', 'fragrance', 'flavor', 'scent',
+    'ingredients', 'alcohol-free', 'lock in moisture', 'plant', 'balm', 'birch',
+    'micellar water', 'sunscreen', 'essence', 'vaseline', 'serum', 'lotion',
+    'cleanser', 'toner', 'shampoo', 'conditioner', 'wash', 'pad', 'pads', 'mist'
 }
 
 def load_and_compile_whitelist(conn=None, force_reload: bool = False) -> List[Dict[str, Any]]:
