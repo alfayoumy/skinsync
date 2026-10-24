@@ -7,6 +7,7 @@ Verifies:
 4. Strict pipeline precedence (Priority 1: store full INCI > Priority 2: SkinSAFE DB > Priority 3: Whitelist fallback).
 5. FastAPI Admin API endpoints: GET, POST, PUT, DELETE /admin/whitelist and POST /admin/whitelist/reconcile-pending.
 """
+from admin_test_support import authenticate
 
 import os
 import sys
@@ -30,7 +31,7 @@ class TestWhitelistMatcher(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.client = TestClient(app)
+        cls.client = TestClient(app, headers=authenticate(cls))
         cls.conn = get_connection(DB_PATH)
         reload_whitelist_cache(cls.conn)
 

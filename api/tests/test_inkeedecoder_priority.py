@@ -208,6 +208,12 @@ class TestInkeeDecoderAndInciBeautyGuards(unittest.TestCase):
                 VALUES (1,'10','Effaclar Duo Plus','La Roche-Posay','Treatment','https://test.example/p','Anti blemish treatment',1)""")
             conn.commit()
 
+            # Source URL persistence is tested on an explicitly reviewed identity and association.
+            conn.execute("UPDATE canonical_products SET identity_status='verified' WHERE id=1")
+            from pipeline.canonical_identity_resolver import CanonicalIdentityResolver
+            CanonicalIdentityResolver(conn).record_link('10','1',1,'accepted','manual_review',{},'fixture-reviewer')
+            conn.commit()
+
             # Mock apply_tier_resolution_for_product applying a Tier 4 outcome with a source URL
             tier4_resolutions = {
                 "selected_tier": "tier4",

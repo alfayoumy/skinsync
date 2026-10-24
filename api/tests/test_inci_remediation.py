@@ -166,6 +166,7 @@ class TestFormulationRepository(unittest.TestCase):
         VALUES ('Test Moisturizing Cream', 'TestBrand', 'Moisturizer', 'testbrand_cream');
         """)
         self.can_id = cur.lastrowid
+        self.conn.execute("UPDATE canonical_products SET identity_status='verified' WHERE id=?",(self.can_id,))
         self.conn.commit()
 
     def tearDown(self):
@@ -351,6 +352,12 @@ class TestBulkWaterfallCanonicalArchitecture(unittest.TestCase):
         VALUES (202, 'store2', 'BrandAlpha Hydrating B5 Serum 50ml', 'BrandAlpha', 'Serum', 550.0, 'https://s2.com/b5',
                 '<div>Great serum for hydration!</div>', 200, 1, NULL);
         """)
+        # This fixture exercises approved identities; unverified/pending cases have separate rejection tests.
+        self.conn.execute("UPDATE canonical_products SET identity_status='verified' WHERE id=200")
+        from pipeline.canonical_identity_resolver import CanonicalIdentityResolver
+        for store,pid in [('store1',201),('store2',202)]:
+            self.conn.execute('UPDATE products SET store_product_id=? WHERE id=?',(str(pid),pid))
+            CanonicalIdentityResolver(self.conn).record_link(store,str(pid),200,'accepted','manual_review',{},'fixture-reviewer')
         self.conn.commit()
 
     def tearDown(self):
@@ -458,6 +465,7 @@ class TestFormulationProtectionAndIntegrity(unittest.TestCase):
         INSERT INTO canonical_products (id, canonical_title, brand, category, normalized_key, is_skincare, ingredients_raw)
         VALUES (300, 'Original Authoritative Cream', 'CeraBrand', 'Cream', 'cerabrand_orig', 1, NULL);
         """)
+        self.conn.execute("UPDATE canonical_products SET identity_status='verified' WHERE id=300")
         self.conn.commit()
 
         # Publish initial authoritative formulation v1
@@ -554,7 +562,7 @@ class TestFormulationProtectionAndIntegrity(unittest.TestCase):
         self.assertFalse(success, "Truncated formulation was published as authoritative!")
 
     def candidate(self, **changes):
-        values = dict(canonical_product_id=300, source_name="store_page_tab",
+        values = dict(canonical_product_id=300, source_name="curated_v10",
             raw_ingredients="Water, Glycerin, Ceramide NP, Ceramide AP, Phytosphingosine, Cholesterol",
             parsed_tokens=["water", "glycerin", "ceramide np", "ceramide ap", "phytosphingosine", "cholesterol"],
             completeness="full")

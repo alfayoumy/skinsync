@@ -1,6 +1,8 @@
 # End-to-end refresh approval scope
 
-Status: awaiting user confirmation; no bulk refresh started.
+Status: blocked by hardening release gates and independent review; no bulk refresh started.
+See `hardening.md`. Configure scoped administrator access and complete labeled source
+evaluations before requesting final bulk-refresh confirmation.
 
 The pre-migration SQLite backup is
 `data/backups/skincare-before-aggregation-20261024T171654Z.db` (relative to the

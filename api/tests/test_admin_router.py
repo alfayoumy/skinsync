@@ -4,6 +4,7 @@ Unit and Integration Tests for Admin & Telemetry Observatory Router:
 2. Filtered catalog listing with pagination (/admin/products).
 3. In-depth product forensics and audit trail (/admin/products/{id}/telemetry).
 """
+from admin_test_support import authenticate
 
 import os
 import sys
@@ -20,7 +21,7 @@ from pipeline.db_manager import get_connection
 class TestAdminObservatory(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
-        cls.client = TestClient(app)
+        cls.client = TestClient(app, headers=authenticate(cls))
         conn = get_connection()
         cur = conn.cursor()
         cur.execute("SELECT id FROM products WHERE canonical_product_id IS NOT NULL LIMIT 1;")

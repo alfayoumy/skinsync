@@ -1,3 +1,4 @@
+from admin_test_support import authenticate
 import sqlite3
 import tempfile
 import unittest
@@ -18,7 +19,7 @@ class TestAggregationApi(unittest.TestCase):
             classify_product_attributes('CeraVe Moisturizing Cream','CeraVe'),extract_identity('CeraVe Moisturizing Cream','CeraVe'),True)
         conn.execute("UPDATE sources SET enabled=1 WHERE id='sourcebeauty'");conn.commit();conn.close()
         patcher=patch('routers.aggregation.get_connection',side_effect=self.connect);patcher.start();self.addCleanup(patcher.stop)
-        self.client=TestClient(app);self.addCleanup(self.client.close)
+        self.client=TestClient(app, headers=authenticate(self));self.addCleanup(self.client.close)
     def connect(self):
         conn=sqlite3.connect(self.path);conn.row_factory=sqlite3.Row;return conn
     def payload(self):
@@ -54,7 +55,7 @@ class TestAggregationApi(unittest.TestCase):
         self.assertEqual(decision.status_code,200)
     def test_rollout_cannot_skip_benchmarks(self):
         response=self.client.post('/admin/aggregation/sources/sourcebeauty/rollout',json={'report':{},'reviewer':'curator','reason':'Enable source'})
-        self.assertEqual(response.status_code,400)
+        self.assertEqual(response.status_code,422)
     def test_new_sources_and_domains_are_not_automatically_enabled(self):
         result=self.client.get('/admin/aggregation/sources').json()
         by_id={s['id']:s for s in result['sources']}

@@ -53,7 +53,7 @@
   "source_smoke_is_catalog_coverage_estimate": false,
   "source_database_writes": 0,
   "publications": 0,
-  "full_regression_tests": 234,
+  "full_regression_tests": 256,
   "full_regression_status": "passed",
   "frontend_build": "passed",
   "new_review_panel_eslint": "passed",
@@ -96,10 +96,32 @@
       "ordered_inci_products": 0
     }
   },
-  "refresh_status": "awaiting_user_confirmation",
+  "refresh_status": "blocked_pending_independent_review",
   "backup_reverified": {
     "integrity_check": "ok",
     "products": 22800,
     "canonical_products": 14710
+  },
+  "hardening": {
+    "status": "implemented",
+    "full_regressions": 256,
+    "frontend_build": "passed",
+    "frontend_lint": "passed",
+    "ci_workflow": "added; no remote run claimed",
+    "catalog_classification_samples": 480,
+    "catalog_identity_pairs": 480,
+    "sample_labels": "pending independent review",
+    "migration_applied": true,
+    "pre_hardening_backup": "../data/backups/skincare-before-hardening-20261024T181600Z.db",
+    "protected_data_preserved": true,
+    "local_admin_configured": true,
+    "bulk_refresh_started": false,
+    "live_authentication": {
+      "unauthenticated_status": 401,
+      "authenticated_status": 200
+    },
+    "live_source_observations": 0,
+    "live_review_queue_cases": 0,
+    "pre_hardening_verification": "../data/backups/skincare-before-hardening-20261024T181600Z.verification.json"
   }
 }

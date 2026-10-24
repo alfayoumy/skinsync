@@ -7,6 +7,7 @@ Unit and Integration Tests for Centralized Rotational Logging System:
 5. JSON and standard structured formatting
 6. REST API Endpoints (/logs/files, /logs/recent, /logs/rotate)
 """
+from admin_test_support import authenticate
 
 import unittest
 import os
@@ -28,7 +29,7 @@ from pipeline.logging_config import (
 class TestRotationalLogging(unittest.TestCase):
     def setUp(self):
         self.test_dir = tempfile.mkdtemp(prefix="test_logs_")
-        self.client = TestClient(app)
+        self.client = TestClient(app, headers=authenticate(self))
 
     def tearDown(self):
         clear_task_context()

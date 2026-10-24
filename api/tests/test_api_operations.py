@@ -6,6 +6,7 @@ Integration and Unit Tests for Specialized API Operations:
 4. Product Formulation Similarity Scoring (/similarity/score)
 5. Clinical Comedogenicity & Irritancy Scoring (/dermo/score, /products/{id}/dermo-score, /dermo/ingredients)
 """
+from admin_test_support import authenticate
 
 import unittest
 import os
@@ -21,7 +22,7 @@ from pipeline.db_manager import get_connection
 class TestApiOperations(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
-        cls.client = TestClient(app)
+        cls.client = TestClient(app, headers=authenticate(cls))
         # Verify DB connection and retrieve sample product ID
         conn = get_connection()
         cur = conn.cursor()

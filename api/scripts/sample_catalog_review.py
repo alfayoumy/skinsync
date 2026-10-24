@@ -20,7 +20,7 @@ def export_samples(database,output,per_category=20):
         output=Path(output);output.mkdir(parents=True,exist_ok=False)
         fields=['id','store_id','title','brand','category','is_skincare','canonical_product_id','product_url','reviewed_category','reviewed_is_skincare','reviewer','reason']
         with (output/'classification.csv').open('w',newline='') as f:
-            writer=csv.DictWriter(f,fieldnames=fields);writer.writeheader();writer.writerows(samples)
+            writer=csv.DictWriter(f,fieldnames=fields,lineterminator='\n');writer.writeheader();writer.writerows(samples)
         pairs=[]
         for sample in samples:
             if not sample['canonical_product_id']:continue
@@ -30,7 +30,7 @@ def export_samples(database,output,per_category=20):
                 'reviewed_same_identity':'','reviewer':'','reason':''})
         with (output/'identity-pairs.csv').open('w',newline='') as f:
             fields=list(pairs[0]) if pairs else ['product_id','reviewed_same_identity','reviewer','reason']
-            writer=csv.DictWriter(f,fieldnames=fields);writer.writeheader();writer.writerows(pairs)
+            writer=csv.DictWriter(f,fieldnames=fields,lineterminator='\n');writer.writeheader();writer.writerows(pairs)
         manifest={'seed':354181,'classification_samples':len(samples),'identity_pairs':len(pairs),'categories':{k:len(v) for k,v in buckets.items()},
                   'status':'unlabeled; not benchmark evidence','files':{p.name:hashlib.sha256(p.read_bytes()).hexdigest() for p in output.glob('*.csv')}}
         (output/'manifest.json').write_text(json.dumps(manifest,indent=2))

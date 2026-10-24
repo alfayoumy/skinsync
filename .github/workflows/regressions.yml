@@ -1,0 +1,46 @@
+name: Catalog safety regressions
+on:
+  push:
+  pull_request:
+permissions:
+  contents: read
+jobs:
+  backend:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          lfs: true
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: pip
+          cache-dependency-path: api/requirements.txt
+      - run: pip install -r api/requirements.txt httpx
+      - name: Run isolated catalog and HTTP regressions
+        run: python api/tests/run_regressions.py
+        env:
+          ENABLE_CROSS_ENCODER: 'false'
+          GEMINI_API_KEY: ''
+          LANGSEARCH_API_KEY: ''
+          OPENCODE_API_KEY: ''
+          JEV_API_KEY: ''
+  frontend:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    defaults:
+      run:
+        working-directory: skinsync-app
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          lfs: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: skinsync-app/package-lock.json
+      - run: npm ci
+      - run: npm run build
+      - run: npx eslint src/AdminAccess.jsx src/apiFetch.js src/AggregationReviewPanel.jsx src/ConnectionTests.jsx src/useConnectionTests.js

@@ -7,6 +7,7 @@ Unit and Integration Tests for Control Tables and Task Tracking System:
 5. REST Endpoints (/tasks, /tasks/{id}, /tasks/{id}/subtasks, /tasks/{id}/logs,
                    /tasks/{id}/cancel, /scraping/checkpoints, /scraping/checkpoints/{store_id})
 """
+from admin_test_support import authenticate
 
 import unittest
 import os
@@ -30,7 +31,7 @@ from pipeline.task_tracker import (
 class TestControlTables(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
-        cls.client = TestClient(app)
+        cls.client = TestClient(app, headers=authenticate(cls))
 
     # =========================================================================
     # 1. DIRECT TASK TRACKER UNIT TESTS

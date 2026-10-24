@@ -64,6 +64,7 @@ class TestCanonicalArchitectureInvariants(unittest.TestCase):
             ("bloompharmacy", "Bloom Pharmacy", "bloompharmacy.com"),
             ("drdawood", "Dr. Dawood", "drdawood.com"),
         ])
+        self.conn.execute('UPDATE sources SET enabled=1')
         self.conn.commit()
 
     def tearDown(self):
@@ -218,6 +219,8 @@ class TestCanonicalArchitectureInvariants(unittest.TestCase):
         cur.execute("SELECT DISTINCT canonical_product_id FROM products WHERE id = 1;")
         canonical_id = cur.fetchone()[0]
 
+        # Price comparison fixture represents a reviewed, visible identity.
+        self.conn.execute("UPDATE canonical_products SET catalog_visible=1,identity_status='verified' WHERE id=?",(canonical_id,))
         res = get_canonical_price_comparison(canonical_id, conn=self.conn)
         self.assertIsNotNone(res)
         self.assertEqual(res["canonical_product_id"], canonical_id)

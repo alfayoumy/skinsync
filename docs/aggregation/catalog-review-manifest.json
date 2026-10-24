@@ -1,0 +1,36 @@
+{
+  "seed": 354181,
+  "classification_samples": 480,
+  "identity_pairs": 480,
+  "categories": {
+    "Deodorant": 963,
+    "Hair Care": 2939,
+    "Eye Skincare": 345,
+    "Body Care": 1247,
+    "Serum": 1413,
+    "Exfoliator": 385,
+    "Treatment": 111,
+    "Sunscreen": 1034,
+    "Toner": 363,
+    "Moisturizer": 1502,
+    "Nail Care": 445,
+    "Tanning": 135,
+    "Supplements & Health": 485,
+    "Cleanser": 1375,
+    "Lip Care": 413,
+    "Other Non-Skincare": 2356,
+    "Makeup": 3002,
+    "Mask": 250,
+    "Baby Care": 45,
+    "Fragrance": 3158,
+    "Set": 494,
+    "Tools & Accessories": 157,
+    "Medical Supplies": 37,
+    "Oral Care": 146
+  },
+  "status": "unlabeled; not benchmark evidence",
+  "files": {
+    "classification.csv": "d16cbd3126b7600fd0382e1ac2629772d06883f6b11fef603fab8db5413de3d5",
+    "identity-pairs.csv": "cb86e164818b3f44f44484bc68c4a8973745c52f72eaf0d9353f8308721590f7"
+  }
+}

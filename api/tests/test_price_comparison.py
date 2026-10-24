@@ -5,6 +5,7 @@ Unit and Integration Tests for Cross-Source Product Linking & Price Comparison:
 3. Price comparison service (get_canonical_price_comparison, get_product_price_comparison, get_price_arbitrage_deals).
 4. FastAPI endpoints (/products/{id}/price-comparison, /canonical-products/{id}/offers, /products/price-deals, /products/link-clusters).
 """
+from admin_test_support import authenticate
 
 import os
 import sys
@@ -375,7 +376,7 @@ class TestPriceComparisonService(unittest.TestCase):
 class TestPriceComparisonApiEndpoints(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
-        cls.client = TestClient(app)
+        cls.client = TestClient(app, headers=authenticate(cls))
         conn = get_connection()
         cur = conn.cursor()
         cur.execute("SELECT id FROM canonical_products WHERE store_count > 1 LIMIT 1;")

@@ -6,6 +6,7 @@ Unit and Integration Tests for Product Title Enrichment Engine:
 4. Curated v10 catalog lookup and generic noun prefixing
 5. Database migration execution and REST API endpoints (/products/enrich-titles)
 """
+from admin_test_support import authenticate
 
 import unittest
 import os
@@ -31,7 +32,7 @@ from pipeline.db_manager import get_connection
 class TestTitleEnrichmentEngine(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
-        cls.client = TestClient(app)
+        cls.client = TestClient(app, headers=authenticate(cls))
 
     # =========================================================================
     # 1. BRAND DETECTION & NORMALIZATION TESTS

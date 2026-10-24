@@ -1,3 +1,4 @@
+from admin_test_support import authenticate
 import json
 import sqlite3
 import unittest
@@ -122,6 +123,7 @@ class TestIdentityReviewApi(unittest.TestCase):
         for cid in (100, 200):
             conn.execute('''INSERT INTO canonical_products(id,canonical_title,brand,category,normalized_key)
                 VALUES (?,'Brand Hydrating Cream','Brand','Moisturizer',?)''', (cid,str(cid)))
+        conn.execute("UPDATE canonical_products SET identity_status='verified'")
         conn.commit()
         conn.close()
         def connect():
@@ -133,7 +135,7 @@ class TestIdentityReviewApi(unittest.TestCase):
         self.addCleanup(patcher.stop)
         from app import app
         from fastapi.testclient import TestClient
-        self.client = TestClient(app)
+        self.client = TestClient(app, headers=authenticate(self))
         self.addCleanup(self.client.close)
 
     def test_read_only_audit_then_persist_and_review(self):
@@ -172,6 +174,8 @@ class TestIdentityReviewApi(unittest.TestCase):
         conn.execute("INSERT INTO stores(id,name,domain) VALUES ('test','Test','test.example')")
         conn.execute('''INSERT INTO products(id,store_id,title,brand,category,product_url,canonical_product_id,ingredients_raw)
             VALUES (1,'test','Brand Hydrating Cream','Brand','Moisturizer','https://test.example/1',100,?)''',(original,))
+        from pipeline.canonical_identity_resolver import CanonicalIdentityResolver
+        CanonicalIdentityResolver(conn).record_link('test','1',100,'accepted','manual_review',{},'fixture-reviewer')
         conn.commit()
         conn.close()
         def connect():

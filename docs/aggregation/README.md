@@ -18,7 +18,7 @@ Implemented on top of the canonical-publication remediation. This is an additive
 | Ingredients | Identity is resolved first. Declarations become evidence and a resolution-queue item. Exact source evidence enters the controlled waterfall. Regional compatibility, completeness and order are required. Conflicts go to review; authority chooses a representative only after declarations agree. No generated ingredients are accepted. |
 | History | Approved formulation versions are retained separately. Retail ingestion cannot replace canonical INCI. Explicit evidence corrections still pass repository validation. |
 | Review | Unified identity, duplicate, category and formulation queue, with remembered decisions. The hamburger menu’s **Source Registry** entry opens all registered sources, including staged sources with no products, source-specific setup and review coverage. The main dashboard keeps the catalog explorer and its dynamic retailer filter. Reviewed aliases, categories, links and mismatches are durable. |
-| Rollout | Collection and publication are separate switches. New-source canonical products are provisional and hidden. Activation requires a named reviewer, a labeled evaluation report and passing quality gates. No source was activated by this implementation. |
+| Rollout | Collection and publication are separate switches. New-source canonical products are provisional and hidden. Activation requires a named reviewer, an immutable server evaluation ID, reviewed labels and passing quality gates. No source was activated by this implementation. |
 
 Classification confidence is a deterministic rule score, not a calibrated probability. The 30-item engineering gold set is deliberately difficult but small; its score is not a population accuracy claim. International manufacturer declarations remain ineligible for automatic publication until regional compatibility is explicitly reviewed. Bundles and unresolved categories remain staged; they do not receive a shared canonical INCI.
 
@@ -65,7 +65,7 @@ A pending caller transaction must be committed or rolled back before requesting 
 - `POST .../sources/{id}/ingest`: normalize supplied source payloads; defaults to `dry_run: true`.
 - `POST .../sources/{id}/collect`: bounded explicit URLs, registered domains, robots policy and collection delays. HTML-backed product detail enrichment also works for Shopify sources. Unknown/disallowed access is deferred.
 - `GET .../sources/{id}/coverage`: distinct discovered products, canonical matches, offers, candidate lists, full ordered declarations, pending review and publications.
-- `POST .../sources/{id}/rollout`: reviewed source-specific quality report. Enforces category macro-F1 ≥ .95, skincare false exclusion ≤ .01, automatic-link precision ≥ .995, exact offer/durability/preservation results, and zero critical merges, wrong-product formulas or unintended new entities. These are release gates, not measured production claims.
+- `POST .../sources/{id}/rollout`: finalized server-side `evaluation_id`; caller-supplied metrics are rejected. Enforces category macro-F1 ≥ .95, skincare false exclusion ≤ .01, automatic-link precision ≥ .995, exact offer/durability/preservation results, and zero critical merges, wrong-product formulas or unintended new entities. These are release gates, not measured production claims.
 
 For a read-only live benchmark on explicit product pages:
 
@@ -115,7 +115,7 @@ python3 api/tests/run_regressions.py
 npm --prefix skinsync-app run build
 ```
 
-The regression runner uses a disposable database copy and mocks external providers and model downloads; HTTP routes execute normally. It must run outside restricted loopback environments where FastAPI TestClient cannot operate. The full suite passed **222 tests**, including HTTP integration tests. The new panel also passes its ESLint check. Additional merge/reversal guards were verified in the focused aggregation suite.
+The regression runner uses a disposable database copy and mocks external providers and model downloads; HTTP routes execute normally. It must run outside restricted loopback environments where FastAPI TestClient cannot operate. The pre-hardening suite passed **234 tests**, including HTTP integration tests. Current hardening results are recorded in `validation-results.json`. The new panel also passes its ESLint check. Additional merge/reversal guards were verified in the focused aggregation suite.
 
 The checked-in taxonomy benchmark and source manifest are reproducible validation artifacts. No production category mass update, canonical merge/split, source activation, full waterfall or external catalog export was performed. The previously modified `api/skincare.db` is retained and excluded from implementation artifacts.
 
@@ -129,3 +129,5 @@ small request using the production protocol and validate response content/schema
 401/403/429 means reachable with an unsuccessful functional check. Results and running
 state are process-local, shared across dialogs, and reset on backend restart. At most three
 tests run concurrently; repeated clicks do not duplicate an already queued/running target.
+
+See [hardening.md](hardening.md) for administrator setup, verified identity enforcement, immutable evaluation gates and the remaining independent review requirements.
