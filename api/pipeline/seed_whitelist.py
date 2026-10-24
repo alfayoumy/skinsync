@@ -74,7 +74,12 @@ MARKETING_VERBS_NOUNS = {
     'our secret', 'clinically proven', 'gluten-free', 'cruelty-free', 'paraben-free',
     'morning savior', 'day after day', 'revolutionary', 'soft', 'feel', 'korean',
     'products', 'supplier', 'suppliers', 'confidence', 'applicator', 'outlining',
-    'wear', 'swipe', 'transfer', 'smudge', 'waterproof', 'comforts skin'
+    'wear', 'swipe', 'transfer', 'smudge', 'waterproof', 'comforts skin',
+    'non-irritat', 'non-comedogen', 'hypoallergen', 'dermatolog', 'tested', 'clinically',
+    'uv filter', 'sun protect', 'broad spectrum', 'deep hydration', 'instant hydration',
+    'skin barrier', 'barrier repair', 'plant extract', 'herbal extract', 'botanical extract',
+    'fruit extract', 'this product', 'it is', 'contains', 'may contain', 'with a soft',
+    'delivery enhancer', 'f.i.l.', 'pr-000', 'without causing'
 }
 
 def clean_token(token: str) -> Optional[str]:
@@ -92,6 +97,14 @@ def clean_token(token: str) -> Optional[str]:
     if len(t) < 3 or len(t) > 60:
         return None
     low = t.lower()
+
+    # Reject corrupt characters or embedded asterisks
+    if any(c in t for c in ['ã', 'Â', '™', '®', '*']):
+        return None
+
+    # Reject sentence boundaries or multi-ingredient mergers separated by period
+    if re.search(r'\.\s+[A-Za-z]', t):
+        return None
     
     # Reject narrative sentences and marketing claims
     if any(m in low for m in MARKETING_VERBS_NOUNS):
@@ -203,7 +216,7 @@ def seed_ingredient_whitelist(conn=None, min_frequency: int = 1) -> Dict[str, An
         for (ings,) in cur.fetchall():
             if not ings:
                 continue
-            for p in re.split(r'[,;\n•]+', ings):
+            for p in re.split(r'[,;\n•]+|\.\s+', ings):
                 for cleaned in clean_paren_and_slash(p):
                     m = re.search(r'\(([^)]+)\)', cleaned)
                     if m:
@@ -236,7 +249,7 @@ def seed_ingredient_whitelist(conn=None, min_frequency: int = 1) -> Dict[str, An
                             ings = row.get('ingredients') or ''
                             if not ings:
                                 continue
-                            for p in re.split(r'[,;\n•]+', ings):
+                            for p in re.split(r'[,;\n•]+|\.\s+', ings):
                                 for cleaned in clean_paren_and_slash(p):
                                     m = re.search(r'\(([^)]+)\)', cleaned)
                                     if m:

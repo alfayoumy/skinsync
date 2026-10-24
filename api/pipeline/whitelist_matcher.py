@@ -79,8 +79,15 @@ def load_and_compile_whitelist(conn=None, force_reload: bool = False) -> List[Di
         name = item.get("name", "").strip()
         if not name:
             continue
-        # Exclude standalone generic English words
-        if ' ' not in name and name.lower() in EXCLUDED_STANDALONE:
+        # Exclude standalone generic English words and marketing claims
+        low_name = name.lower()
+        if ' ' not in name and low_name in EXCLUDED_STANDALONE:
+            continue
+        if low_name in {
+            'non-irritating', 'non-comedogenic', 'hypoallergenic', 'uv filters',
+            'sun protection', 'all skin types', 'natural plant extracts', 'plant extracts',
+            'herbal extracts', 'botanical extracts', 'a soft', 'soft', 'feel'
+        }:
             continue
         
         # Word boundary pattern: require word boundary at start and end
