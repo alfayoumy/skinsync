@@ -51,6 +51,29 @@ class CatalogResetTests(unittest.TestCase):
             execute_catalog_reset(self.conn, report['fingerprint'], CONFIRMATION, 'tester')
         self.assertEqual(self.conn.execute('SELECT COUNT(*) FROM products').fetchone()[0], 1)
 
+    def test_idle_pending_tasks_do_not_block_reset(self):
+        self.conn.execute("""INSERT INTO pipeline_tasks(task_id,task_type,status)
+            VALUES('pending-review','manual_review','pending')""")
+        self.conn.commit()
+        plan=preview_catalog_reset(self.conn)
+        self.assertTrue(plan['can_reset'])
+        self.assertEqual(plan['active_jobs'],[])
+
+    def test_pending_task_cannot_start_during_maintenance_lock(self):
+        from pipeline.task_tracker import start_task
+        from pipeline.catalog_reset import _control_schema
+        self.conn.execute("""INSERT INTO pipeline_tasks(task_id,task_type,status)
+            VALUES('delayed-task','catalog_discovery','pending')""")
+        _control_schema(self.conn)
+        self.conn.execute("INSERT INTO catalog_reset_control(singleton,active) VALUES(1,1)")
+        self.conn.commit()
+        with self.assertRaisesRegex(ValueError,'reset in progress'):
+            start_task('delayed-task',conn=self.conn)
+        self.assertEqual(self.conn.execute(
+            "SELECT status FROM pipeline_tasks WHERE task_id='delayed-task'").fetchone()[0],'pending')
+        self.conn.execute('UPDATE catalog_reset_control SET active=0 WHERE singleton=1')
+        self.conn.commit()
+
     def test_cancelled_worker_must_finish_current_page(self):
         self.conn.execute("""INSERT INTO pipeline_tasks(task_id,task_type,status,updated_at)
             VALUES ('cancelled-1','catalog_discovery','cancelled',CURRENT_TIMESTAMP)""")

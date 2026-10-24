@@ -402,9 +402,18 @@ export default function CatalogWorkflowsPanel({onClose, initialTab='products',on
               <p className="text-xs">Purge {selectivePreview.legacy_products_to_purge} legacy listings, {selectivePreview.legacy_canonicals_to_purge} old canonicals, {selectivePreview.old_inci_evidence_to_purge} old INCI records and archive {selectivePreview.old_gemini_decisions_to_archive} Gemini decisions.</p>
               <div className="grid sm:grid-cols-2 gap-1 text-xs">{Object.entries(selectivePreview.sources||{}).map(([sid,data])=>
                 <div key={sid}>{sid}: {data.saved_product_observations} saved / {data.fetched_in_run} scanned</div>)}</div>
-              {!selectivePreview.can_rebuild&&<div className="text-red-700 space-y-1">
+              {!selectivePreview.can_rebuild&&<div className="text-red-700 space-y-2">
                 {selectivePreview.errors.map((item,i)=><p key={i}>{item}</p>)}
+                {selectivePreview.active_jobs?.length>0&&<div className="rounded-lg border border-red-200 p-3 text-xs">
+                  <p className="font-bold">Blocking task records (not necessarily live processes)</p>
+                  {selectivePreview.active_jobs.map(job=><div key={job.task_id} className="mt-1 break-all">
+                    <strong>{job.task_type}</strong> — {job.status} · {job.current_stage||'no stage'} · updated {job.updated_at||'unknown'} · <code>{job.task_id}</code>
+                  </div>)}
+                  <p className="mt-2">Check these task IDs and verify no scanner or worker is running before changing a stuck task's status. This rebuild does not dismiss running task records automatically.</p>
+                </div>}
+                {selectivePreview.active_workers?.length>0&&<p>Active workers: {selectivePreview.active_workers.join(', ')}</p>}
               </div>}
+              {selectivePreview.pending_tasks_not_running>0&&<p className="text-xs text-gray-500">{selectivePreview.pending_tasks_not_running} pending task records are not running and do not block a rebuild.</p>}
               {selectivePreview.can_rebuild&&<div className="space-y-2">
                 <label className="block text-sm font-semibold">Type REBUILD FROM SAVED DISCOVERY to proceed.
                   <input className={input} autoComplete="off" value={selectiveConfirmation}

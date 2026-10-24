@@ -164,3 +164,7 @@ The research worker invokes DonSeTch's `web_search` and `web_fetch` via MCP for 
 
 If DonSeTch or the Gemini API key is absent, the UI shows that missing dependency and refuses to start; existing INCI waterfall functionality is unaffected. The DonSeTch binary is not installed just by merging the GitHub commit. Free Google API tier quotas and availability are account-specific. Do not point this at large-scale crawling or bypass blocked sources; use it as a targeted lookup fallback.
 
+
+### Diagnose inactive pending catalog tasks before a selective rebuild
+
+Ordinary task rows in `pending` state mean work has not started and should not block an offline catalog rebuild. A new product-discovery scan enters `running` when submitted and still blocks; so does any running task, recently cancelled discovery not yet stopped, or active AI worker. The selective preview displays the IDs, types, stages and update times of blocking task records and the number of idle pending tasks. This change does not auto-retire a `running` record merely due to age: verify a stuck task with its status and workers before handling it separately. A preview is read-only.

@@ -143,7 +143,7 @@ def preview_selective_rebuild(conn, discovery_task_id=None, db_path=None):
     active_jobs = _active_tasks(conn, existing)
     active_workers = _active_workers(conn, existing)
     if active_jobs:
-        errors.append('Other catalog jobs are active or have not fully stopped.')
+        errors.append('Other catalog jobs are active or have not fully stopped. See active_jobs for the blocking task records.')
     if active_workers:
         errors.append('AI or ingredient workers are still processing.')
     maintenance = conn.execute(
@@ -162,7 +162,11 @@ def preview_selective_rebuild(conn, discovery_task_id=None, db_path=None):
         'source_evidence_hash': _selected_observation_signature(conn, sources) if coverage else None,
     }
     fingerprint = hashlib.sha256(json.dumps(signature, sort_keys=True).encode()).hexdigest()
+    pending_not_running = conn.execute(
+        "SELECT COUNT(*) FROM pipeline_tasks WHERE status='pending'").fetchone()[0] if 'pipeline_tasks' in existing else 0
     return {'can_rebuild': not errors, 'errors': errors, 'fingerprint': fingerprint,
+            'active_jobs': active_jobs, 'active_workers': active_workers,
+            'pending_tasks_not_running': pending_not_running,
             'discovery_task_id': task['task_id'] if task else None,
             'source_ids': sources, 'sources': source_details,
             'observations_to_replay': sum(coverage.values()),

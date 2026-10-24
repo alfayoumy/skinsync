@@ -58,10 +58,20 @@ def guard_catalog_writes(conn):
 
 
 def _active_tasks(conn, tables):
+    """Report executing jobs, not idle work awaiting an explicit start.
+
+    Discovery is inserted with status='running' at submission, and a newly
+    cancelled discovery can still have an in-flight page. Ordinary pending
+    tasks may persist indefinitely without an executing worker and cannot
+    block catalog maintenance. Running records are never ignored solely
+    because their heartbeat is old; an active job may be slow.
+    """
     if 'pipeline_tasks' not in tables:
         return []
-    return [dict(row) for row in conn.execute("""SELECT task_id,task_type,status,current_stage
-        FROM pipeline_tasks WHERE status IN ('running','pending')
+    return [dict(row) for row in conn.execute("""SELECT task_id,task_type,status,
+            current_stage,updated_at,started_at
+        FROM pipeline_tasks
+        WHERE (status='running' AND NOT (task_type='catalog_discovery' AND COALESCE(current_stage,'')='worker_stopped'))
         OR (task_type='catalog_discovery' AND status='cancelled'
             AND COALESCE(current_stage,'')!='worker_stopped'
             AND updated_at >= datetime('now','-1 hour'))

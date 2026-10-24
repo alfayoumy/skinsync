@@ -83,12 +83,22 @@ class SelectiveRebuildTests(unittest.TestCase):
         self.assertFalse(plan['can_rebuild'])
         self.assertTrue(any('preview-only' in e for e in plan['errors']))
 
+    def test_idle_pending_tasks_do_not_block_saved_discovery(self):
+        self.conn.execute("""INSERT INTO pipeline_tasks(task_id,task_type,status,updated_at)
+            VALUES('pending-old','batch_match_inci','pending',datetime('now','-7 days'))""")
+        self.conn.commit()
+        plan=preview_selective_rebuild(self.conn,'completed-source-scan')
+        self.assertTrue(plan['can_rebuild'],plan['errors'])
+        self.assertEqual(plan['pending_tasks_not_running'],1)
+        self.assertEqual(plan['active_jobs'],[])
+
     def test_active_scan_blocks_without_removing_rows(self):
         self.conn.execute("""INSERT INTO pipeline_tasks(task_id,task_type,status)
             VALUES('other-task','catalog_discovery','running')""")
         self.conn.commit()
         plan=preview_selective_rebuild(self.conn,'completed-source-scan')
         self.assertFalse(plan['can_rebuild'])
+        self.assertEqual(plan['active_jobs'][0]['task_id'],'other-task')
         with self.assertRaises(ValueError):
             start_selective_rebuild(self.conn,plan['fingerprint'],SELECTIVE_CONFIRMATION,
                                     'tester',plan['discovery_task_id'])
