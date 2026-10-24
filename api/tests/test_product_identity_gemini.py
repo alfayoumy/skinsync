@@ -167,6 +167,33 @@ class GeminiIdentityReviewTests(unittest.TestCase):
         fail.assert_called_once()
         self.assertEqual(queue_counts(self.conn)['queued'],1)
 
+    def test_old_database_without_queue_table_still_lists_1164_pending_reviews(self):
+        """Optional Gemini table migration must not hide the existing review backlog."""
+        from routers.aggregation import reviews,gemini_identity_queue_status
+        for i in range(1164):
+            queue_review(self.conn,'identity','teststore',str(i+50000),self.cid,
+                {'title':f'Legacy review {i}','canonical_ids':[self.cid],'offers':[]})
+        self.conn.execute('DROP TABLE identity_gemini_queue')
+        proxy=NoCloseConnection(self.conn)
+        with patch('routers.aggregation.get_connection',return_value=proxy):
+            result=reviews(view='manual',status='pending',limit=50,offset=0)
+            self.assertEqual(result['total'],1165)
+            self.assertEqual(len(result['reviews']),50)
+            queue=gemini_identity_queue_status()
+        self.assertEqual(queue['counts'],{})
+        self.assertEqual(queue['pending_identity_cases'],1165)
+        self.assertIsNotNone(self.conn.execute(
+            "SELECT name FROM sqlite_master WHERE type='table' AND name='identity_gemini_queue'").fetchone())
+
+    def test_malformed_legacy_review_evidence_does_not_hide_other_reviews(self):
+        from routers.aggregation import reviews
+        self.conn.execute("UPDATE product_review_queue SET details='not valid JSON' WHERE id=?",(self.review_id,))
+        proxy=NoCloseConnection(self.conn)
+        with patch('routers.aggregation.get_connection',return_value=proxy):
+            result=reviews(status='pending',view='manual',limit=50,offset=0)
+        self.assertEqual(result['total'],1)
+        self.assertEqual(result['reviews'][0]['details']['reason_code'],'unparseable_legacy_evidence')
+
     def test_admin_gemini_review_write_requires_identity_scope(self):
         self.assertEqual(permission_for('/admin/aggregation/reviews/gemini/run','POST'),'identity')
 

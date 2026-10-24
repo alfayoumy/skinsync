@@ -166,7 +166,7 @@ export default function AggregationReviewPanel({ onClose, initialSourceId = 'sou
             });
             const data=await response.json();
             if(!response.ok)throw new Error(typeof data.detail==='string'?data.detail:'Could not prepare review cases');
-            setMessage(data.review_cases_prepared+' review cases prepared; '+data.pending_review_cases+' pending in total.');
+            setMessage(data.review_cases_prepared ? (data.review_cases_prepared+' new cases added. '+data.pending_review_cases+' cases are now pending.') : ('No new cases to create. '+data.pending_review_cases+' review cases are already saved and waiting.'));
           })}>
           {busy?'Checking products...':'Find legacy products needing review'}
         </button>
