@@ -73,6 +73,61 @@ def clean_title_tokens(text: str, brand: str = "") -> Set[str]:
         tokens = tokens - b_tokens
     return tokens
 
+INCI_ABBREVIATIONS = {'denat', 'vit', 'ext', 'no', 'ci', 'leaf', 'root', 'pwd'}
+
+def sanitize_inci_list(text: str) -> str:
+    """
+    Cleans and purges trailing retail narrative, usage directions, and marketing sentences
+    from extracted INCI formulations.
+    """
+    if not text:
+        return ""
+    s = text.strip()
+
+    # 1. Truncate at explicit retail section headers or marketing stop phrases
+    stop_phrases = [
+        r'\.\s*(?:The list of ingredients|Ingredients are subject to|Please refer to the ingredients|For the latest information)',
+        r'\.\s*(?:Avoid contact with eyes|In case of contact with eyes|Rinse thoroughly)',
+        r'\.\s*(?:How to use|Directions|Mode d\'emploi|Mode of application|Application|Apply morning|Apply to)',
+        r'\.\s*(?:Caution|Warning|Precautions|Attention|For external use only|Keep out of reach)',
+        r'\.\s*(?:Main ingredients|Active ingredients|Key ingredients|Actifs principaux)\s*[:\-\n]',
+        r'\b(?:Line\s+[a-zA-Z0-9\s]+\s*For\s+age|Line\s+jejuFor\s+age)\b',
+        r'\b(?:MAIN INGREDIENTS|ACTIVE INGREDIENTS)\s+.*$',
+        r'\b(?:Function\s*[:\-\n]|Volume\s*[:\-\n]|Certificate\s*[:\-\n]|Shelf life\s*[:\-\n]|Format\s*[:\-\n]).*$',
+        r'\bINCI\s*\[[0-9\-]+\]',
+        r'\.\s*(?:Apply\s+dots|Refresh\s+whenever|pair\s+it\s+with|Use\s+as\s+desired|are\s+listed\s+among|alongside\s+the\s+listed)',
+        r'\.\s*Moisturizing and smoothing active ingredients\b.*$'
+    ]
+    for pat in stop_phrases:
+        s = re.split(pat, s, flags=re.IGNORECASE)[0].strip()
+
+    # 2. Sentence boundary check after periods (respecting INCI abbreviations like 'Alcohol Denat.')
+    parts = re.split(r'(\.\s+)', s)
+    clean_parts = []
+    for i in range(0, len(parts), 2):
+        chunk = parts[i]
+        sep = parts[i+1] if i+1 < len(parts) else ''
+
+        last_word = re.findall(r'[a-zA-Z]+', chunk)
+        last_tok = last_word[-1].lower() if last_word else ''
+
+        if last_tok in INCI_ABBREVIATIONS:
+            clean_parts.append(chunk + sep)
+            continue
+
+        if i+2 < len(parts):
+            next_chunk = parts[i+2]
+            prose_words = {'is', 'are', 'was', 'were', 'the', 'this', 'that', 'with', 'for', 'from', 'helps', 'to', 'your', 'skin', 'formula', 'suitable'}
+            next_words = set(re.findall(r'\b[a-z]+\b', next_chunk.lower()))
+            if len(next_words & prose_words) >= 2 and len(next_chunk.split(',')) <= 1:
+                clean_parts.append(chunk)
+                break
+        clean_parts.append(chunk + sep)
+
+    s = ''.join(clean_parts).strip()
+    s = re.sub(r'[\.\s,;:\-]+$', '', s).strip()
+    return s
+
 # ==============================================================================
 # TIER 1: STORE INGREDIENTS TAB & HISTORICAL STORE SCRAPES
 # ==============================================================================
@@ -380,6 +435,7 @@ def extract_inci_from_web_text(text: str) -> Optional[str]:
 _LANGSEARCH_CACHE: Dict[str, Optional[Dict[str, Any]]] = {}
 _LANGSEARCH_LOCK = threading.Lock()
 _LAST_LANGSEARCH_TIME = 0.0
+_LANGSEARCH_EXHAUSTED = False
 
 def _throttle_langsearch():
     global _LAST_LANGSEARCH_TIME
@@ -395,6 +451,10 @@ def resolve_tier4_langsearch(brand: str, title: str, api_key: Optional[str] = No
     Tier 4: Queries LangSearch Web Search API for '{brand} {title} inci ingredients'
     and extracts authentic INCI formulation from top beauty/retailer results.
     """
+    global _LANGSEARCH_EXHAUSTED
+    if _LANGSEARCH_EXHAUSTED:
+        return None
+
     if not brand or not title:
         return None
 
@@ -431,16 +491,45 @@ def resolve_tier4_langsearch(brand: str, title: str, api_key: Optional[str] = No
             headers=headers,
             method="POST"
         )
-        with urllib.request.urlopen(req, timeout=20) as resp:
+        with urllib.request.urlopen(req, timeout=15) as resp:
             data = json.loads(resp.read().decode("utf-8"))
             pages = data.get("data", {}).get("webPages", {}).get("value", [])
 
             for p in pages:
+                p_name = (p.get("name") or "").lower()
+                p_url = (p.get("url") or "").lower()
+                p_snippet = (p.get("snippet") or "").lower()
+                clean_b = re.sub(r'[^a-z0-9]', '', brand.lower())
+
+                # Gate 1: Brand relevance - brand must appear in page name, url, or snippet
+                if clean_b and clean_b not in re.sub(r'[^a-z0-9]', '', p_name) and clean_b not in re.sub(r'[^a-z0-9]', '', p_url) and clean_b not in re.sub(r'[^a-z0-9]', '', p_snippet):
+                    continue
+
+                # Gate 2: Semantic product title token check
+                title_words = clean_title_tokens(title, brand)
+                filler = {'cream', 'gel', 'serum', 'lotion', 'face', 'body', 'skin', 'care', 'cleanser', 'wash', 'moisturizer', 'daily', 'treatment'}
+                key_words = title_words - filler
+                if key_words:
+                    combined = f"{p_name} {p_url} {p_snippet}"
+                    if not any(w in combined for w in key_words):
+                        continue
+
                 web_text = p.get("text") or ""
                 extracted = extract_inci_from_web_text(web_text)
                 if extracted:
+                    sanitized = sanitize_inci_list(extracted)
+                    if not is_valid_inci_list(sanitized) or len(sanitized.split(',')) < 2:
+                        continue
+
+                    # Gate 3: Foreign brand cross-contamination guard
+                    low_san = sanitized.lower()
+                    if 'uriage' in low_san and 'uriage' not in brand.lower():
+                        continue
+                    if any(z in low_san for z in ['ziaja', 'line jeju', 'jeju']) and 'ziaja' not in brand.lower() and 'jeju' not in title.lower():
+                        continue
+
                     res = {
-                        "ingredients_raw": extracted.strip(),
+                        "ingredients_raw": sanitized.strip(),
                         "source_url": p.get("url"),
                         "method": "langsearch_web_search"
                     }
@@ -448,7 +537,12 @@ def resolve_tier4_langsearch(brand: str, title: str, api_key: Optional[str] = No
                         _LANGSEARCH_CACHE[cache_key] = res
                     return res
     except Exception as ex:
-        logger.debug(f"LangSearch query failed for {query}: {ex}")
+        err_str = str(ex).lower()
+        if "429" in err_str or "allowance" in err_str or "rate" in err_str:
+            _LANGSEARCH_EXHAUSTED = True
+            logger.warning(f"LangSearch API allowance exceeded or rate limited ({ex}). Circuit-breaker activated for remainder of run.")
+        else:
+            logger.debug(f"LangSearch query failed for {query}: {ex}")
 
     with _LANGSEARCH_LOCK:
         _LANGSEARCH_CACHE[cache_key] = None
@@ -499,43 +593,55 @@ def resolve_tier6_cluster_propagation(product_id: int, canonical_id: Optional[in
     try:
         cur = conn.cursor()
 
-        # Method A: Via canonical_product_id if set
+        # Method A: Via canonical_product_id if set (same cluster entity)
         if canonical_id:
             cur.execute("""
-            SELECT ingredients_raw, ingredients_parsed, actives, ingredient_source
+            SELECT id, title, ingredients_raw, ingredients_parsed, actives, ingredient_source
             FROM products
             WHERE canonical_product_id = ? AND id != ?
               AND ingredients_raw IS NOT NULL AND TRIM(ingredients_raw) != ''
               AND ingredient_source NOT IN ('cluster_propagation', 'unmatched')
-            LIMIT 1;
+            LIMIT 5;
             """, (canonical_id, product_id))
-            row = cur.fetchone()
-            if row and row[0]:
-                return {
-                    "ingredients_raw": row[0].strip(),
-                    "ingredients_parsed": row[1],
-                    "actives": row[2],
-                    "method": "cluster_propagation"
-                }
+            target_v = set(get_vehicles(title))
+            for row in cur.fetchall():
+                other_id, other_title, other_raw, other_parsed, other_actives, other_src = row[0], row[1], row[2], row[3], row[4], row[5]
+                other_v = set(get_vehicles(other_title))
+                if target_v and other_v and target_v.isdisjoint(other_v):
+                    continue
+                if other_raw and is_valid_inci_list(other_raw):
+                    return {
+                        "ingredients_raw": sanitize_inci_list(other_raw),
+                        "ingredients_parsed": other_parsed,
+                        "actives": other_actives,
+                        "method": "cluster_propagation"
+                    }
 
-        # Method B: Matching brand and clean title
-        clean_t = re.sub(r'\b\d+\s*(?:ml|g|gm|oz|fl\s*oz)\b|[()\[\]\+]', ' ', title, flags=re.I)
-        clean_t = re.sub(r'[^a-zA-Z0-9\s]', ' ', clean_t).strip().lower()
-        if len(clean_t) >= 5 and brand:
+        # Method B: Matching brand and title tokens across stores
+        t_tokens = clean_title_tokens(title, brand)
+        target_v = set(get_vehicles(title))
+        if brand and len(t_tokens) >= 2:
             cur.execute("""
-            SELECT ingredients_raw, ingredients_parsed, actives, ingredient_source
+            SELECT id, title, ingredients_raw, ingredients_parsed, actives, ingredient_source
             FROM products
             WHERE id != ? AND LOWER(brand) = ? 
               AND ingredients_raw IS NOT NULL AND TRIM(ingredients_raw) != ''
               AND ingredient_source NOT IN ('cluster_propagation', 'unmatched')
               AND is_skincare = 1
-            LIMIT 10;
+            LIMIT 30;
             """, (product_id, brand.lower().strip()))
             for r in cur.fetchall():
-                other_raw, other_parsed, other_actives, other_src = r[0], r[1], r[2], r[3]
+                other_id, other_title, other_raw, other_parsed, other_actives, other_src = r[0], r[1], r[2], r[3], r[4], r[5]
+                other_tokens = clean_title_tokens(other_title, brand)
+                overlap = len(t_tokens & other_tokens) / max(len(t_tokens | other_tokens), 1)
+                if overlap < 0.70:
+                    continue
+                other_v = set(get_vehicles(other_title))
+                if target_v and other_v and target_v.isdisjoint(other_v):
+                    continue
                 if other_raw and is_valid_inci_list(other_raw):
                     return {
-                        "ingredients_raw": other_raw.strip(),
+                        "ingredients_raw": sanitize_inci_list(other_raw),
                         "ingredients_parsed": other_parsed,
                         "actives": other_actives,
                         "method": "cluster_propagation"
@@ -600,7 +706,7 @@ def execute_inci_waterfall_for_product(
 
     # If successfully resolved, parse actives and commit
     if res and res.get("ingredients_raw"):
-        raw_ings = res["ingredients_raw"].strip()
+        raw_ings = sanitize_inci_list(res["ingredients_raw"]).strip()
         method = res["method"]
 
         # Parse normalized tokens and actives if not already pre-parsed
@@ -827,7 +933,7 @@ def run_waterfall_pipeline(
             if not raw_i:
                 continue
             if cid and cid not in canonical_map:
-                canonical_map[cid] = (raw_i, pars_i, act_i)
+                canonical_map[cid] = (raw_i, pars_i, act_i, t)
             clean_t = re.sub(r'\b\d+\s*(?:ml|g|gm|oz|fl\s*oz)\b|[()\[\]\+]', ' ', t, flags=re.I)
             clean_t = re.sub(r'[^a-zA-Z0-9\s]', ' ', clean_t).strip().lower()
             if b and len(clean_t) >= 5 and (b, clean_t) not in brand_title_map:
@@ -845,18 +951,24 @@ def run_waterfall_pipeline(
         for p in still_empty:
             matched = None
             cid = p.get("canonical_product_id")
+            title = p.get("title") or ""
+            target_v = set(get_vehicles(title))
+
             if cid and cid in canonical_map:
-                matched = canonical_map[cid]
+                cand_raw, cand_pars, cand_act, cand_title = canonical_map[cid]
+                cand_v = set(get_vehicles(cand_title))
+                if not (target_v and cand_v and target_v.isdisjoint(cand_v)):
+                    matched = (cand_raw, cand_pars, cand_act)
             else:
                 b = (p.get("brand") or "").strip().lower()
-                t = (p.get("title") or "").strip()
-                clean_t = re.sub(r'\b\d+\s*(?:ml|g|gm|oz|fl\s*oz)\b|[()\[\]\+]', ' ', t, flags=re.I)
+                clean_t = re.sub(r'\b\d+\s*(?:ml|g|gm|oz|fl\s*oz)\b|[()\[\]\+]', ' ', title, flags=re.I)
                 clean_t = re.sub(r'[^a-zA-Z0-9\s]', ' ', clean_t).strip().lower()
                 if b and len(clean_t) >= 5 and (b, clean_t) in brand_title_map:
                     matched = brand_title_map[(b, clean_t)]
 
             if matched:
                 raw_ings, pars_ings, acts = matched
+                raw_ings = sanitize_inci_list(raw_ings)
                 if not pars_ings or not acts:
                     p_tokens, act_list = parse_and_normalize_ingredients(raw_ings)
                     pars_ings = json.dumps(p_tokens)

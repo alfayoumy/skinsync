@@ -172,9 +172,9 @@ def is_valid_inci_list(text: str) -> bool:
     if re.search(r'[\n\r][\-•⦁\*]\s*[A-Z][a-z]+(?:\s+[a-z]+){2,}', clean):
         return False
 
-    # 3. Must have standard cosmetic comma separation (minimum 4 distinct tokens)
-    commas = clean.count(',')
-    if commas < 3:
+    # 3. Must have standard cosmetic delimiter separation (minimum 4 distinct tokens)
+    delims = clean.count(',') + clean.count(';') + clean.count('●') + clean.count('•') + len(re.findall(r'\s+[\-–—]\s+', clean))
+    if delims < 3:
         return False
         
     # 4. Must contain at least two canonical cosmetic base formulation markers
@@ -222,7 +222,7 @@ def parse_and_normalize_ingredients(text: str) -> Tuple[List[str], List[str]]:
     if not text or not isinstance(text, str):
         return [], []
 
-    raw_tokens = re.split(r'[,;•\n\r/]+', text)
+    raw_tokens = re.split(r'[,;•●\n\r/]+|\s+[\-–—]\s+', text)
     cleaned = []
     actives = set()
 

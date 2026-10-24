@@ -171,7 +171,10 @@ def extract_ingredients_via_whitelist(
     occupied_spans: List[Tuple[int, int]] = []
     matches: List[Tuple[int, str, str]] = [] # (start_index, canonical_name, category)
 
+    clean_text_lower = clean_text.lower()
     for item in whitelist:
+        if item["name"].lower() not in clean_text_lower:
+            continue
         pat = item["pattern"]
         canon = item["canonical_name"]
         cat = item["category"]
