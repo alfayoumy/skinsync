@@ -11,7 +11,8 @@ from pipeline.source_registry import get_source
 from pipeline.source_adapters import ShopifyAdapter
 from pipeline.source_adapters.contracts import money
 from pipeline.aggregation_service import process_source_observation
-from pipeline.canonical_identity_resolver import identity_name, extract_identity, compare_attributes
+from pipeline.canonical_identity_resolver import identity_name, extract_identity, compare_attributes, valid_gtin
+from pipeline.brand_registry import resolve_brand
 from pipeline.identity_gates import validate_identity_gates
 from pipeline.offer_service import refresh_offer_aggregates
 
@@ -49,7 +50,6 @@ def discover_shopify(conn,source_id,start_page=1,pages=1,dry_run=True):
     source=_shopify_source(conn,source_id)
     adapter=ShopifyAdapter(source)
     summary=Counter()
-    before=conn.total_changes
     if dry_run:
         conn.execute('SAVEPOINT catalog_scan_preview')
     try:
@@ -107,16 +107,27 @@ def update_existing_shopify_offers(conn,source_id,start_page=1,pages=1,
                 for variant in product.get('variants') or []:
                     key=str(variant.get('id',''))
                     offer=conn.execute("""SELECT id,canonical_product_id,title,price,compare_at_price,
-                        is_available,normalized_size_ml,normalized_size_g,currency FROM product_offers
+                        is_available,normalized_size_ml,normalized_size_g,currency,sku,gtin FROM product_offers
                         WHERE source_id=? AND source_product_id=? AND source_variant_id=?""",
                         (source_id,pid,key)).fetchone()
                     if not offer:
                         counts['not_previously_linked']+=1
                         continue
                     offer=dict(offer)
-                    identity_ok=identity_name(title,product.get('vendor',''))==identity_name(offer['title'],product.get('vendor',''))
-                    gates_ok,_=validate_identity_gates(title,offer['title'],product.get('vendor',''),product.get('vendor',''))
-                    if not identity_ok or not gates_ok:
+                    existing=conn.execute('SELECT brand,canonical_title FROM canonical_products WHERE id=?',
+                        (offer['canonical_product_id'],)).fetchone()
+                    incoming_brand=resolve_brand(product.get('vendor',''),conn)
+                    accepted_brand=resolve_brand(existing['brand'],conn) if existing else None
+                    brand_ok=bool(incoming_brand and accepted_brand and incoming_brand['id']==accepted_brand['id'])
+                    identity_ok=brand_ok and identity_name(title,existing['brand'])==identity_name(offer['title'],existing['brand'])
+                    gates_ok,_=validate_identity_gates(title,offer['title'],existing['brand'] if existing else '',existing['brand'] if existing else '')
+                    candidate_identity=extract_identity(title,existing['brand']) if existing else {}
+                    accepted_identity=extract_identity(offer['title'],existing['brand']) if existing else {}
+                    conflicting=bool(compare_attributes(candidate_identity,accepted_identity)['conflicts']) if existing else True
+                    mismatched_sku=bool(offer['sku'] and variant.get('sku') and offer['sku']!=variant['sku'])
+                    mismatched_gtin=bool(offer['gtin'] and valid_gtin(variant.get('barcode')) and
+                                         offer['gtin']!=valid_gtin(variant['barcode']))
+                    if not identity_ok or not gates_ok or conflicting or mismatched_sku or mismatched_gtin:
                         counts['identity_mismatches']+=1
                         continue
                     new_price=money(variant.get('price')) if update_price else offer['price']
