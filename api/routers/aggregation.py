@@ -1,7 +1,7 @@
 """Staged multi-source ingestion, review, reconciliation and controlled rollout."""
 import json
 from typing import Any,Optional,Literal
-from fastapi import APIRouter,HTTPException,Query
+from fastapi import APIRouter,HTTPException,Query,BackgroundTasks
 from pydantic import BaseModel,Field
 from pipeline.db_manager import get_connection
 from security.admin import reviewer_name
@@ -136,15 +136,107 @@ def observations(source_id:Optional[str]=None,limit:int=Query(50,ge=1,le=500),of
 
 
 @router.get('/reviews')
-def reviews(kind:Optional[str]=None,status:str='pending',limit:int=Query(50,ge=1,le=500),offset:int=Query(0,ge=0)):
+def reviews(kind:Optional[str]=None,status:str='pending',
+            view:Literal['manual','awaiting_gemini','all']='manual',
+            limit:int=Query(50,ge=1,le=500),offset:int=Query(0,ge=0)):
+    """Pending human queue excludes Gemini cases until a model verdict requires review."""
     def run(conn):
-        query='SELECT * FROM product_review_queue WHERE status=?';params=[status]
-        if kind:query+=' AND kind=?';params.append(kind)
-        count=conn.execute('SELECT COUNT(*) FROM ('+query+')',params).fetchone()[0]
-        rows=[dict(r) for r in conn.execute(query+' ORDER BY id LIMIT ? OFFSET ?',params+[limit,offset])]
-        for row in rows:row['details']=json.loads(row['details']);row['decision']=json.loads(row['decision']) if row['decision'] else None
-        return {'reviews':rows,'total':count}
+        query='''FROM product_review_queue r LEFT JOIN identity_gemini_queue q ON q.review_id=r.id
+            WHERE r.status=?'''
+        params=[status]
+        if kind:query+=' AND r.kind=?';params.append(kind)
+        if view=='manual':
+            query+=" AND (q.review_id IS NULL OR q.status='needs_manual')"
+        elif view=='awaiting_gemini':
+            query+=" AND q.status IN ('queued','processing')"
+        count=conn.execute('SELECT COUNT(*) '+query,params).fetchone()[0]
+        rows=[dict(r) for r in conn.execute('SELECT r.*,q.status gemini_status,q.verdict gemini_verdict,'
+            'q.confidence gemini_confidence,q.explanation gemini_explanation '+query+
+            ' ORDER BY r.id LIMIT ? OFFSET ?',params+[limit,offset])]
+        for row in rows:
+            row['details']=json.loads(row['details'])
+            row['decision']=json.loads(row['decision']) if row['decision'] else None
+        return {'reviews':rows,'total':count,'view':view}
     return operation(run)
+
+
+class GeminiEnqueueRequest(BaseModel):
+    review_ids:Optional[list[int]]=None
+    limit:int=Field(default=20000,ge=1,le=20000)
+
+
+class GeminiRunRequest(BaseModel):
+    limit:int=Field(default=500,ge=1,le=20000)
+    batch_size:int=Field(default=10,ge=1,le=20)
+
+
+@router.get('/reviews/gemini/queue')
+def gemini_identity_queue_status():
+    from pipeline.product_identity_gemini import queue_counts
+    def fn(conn):
+        counts=queue_counts(conn)
+        return {'counts':counts,
+            'pending_identity_cases':conn.execute("""SELECT COUNT(*) FROM product_review_queue
+                WHERE status='pending' AND kind IN ('identity','duplicate')""").fetchone()[0]}
+    return operation(fn)
+
+
+@router.post('/reviews/gemini/enqueue')
+def gemini_identity_enqueue(request:GeminiEnqueueRequest):
+    from pipeline.product_identity_gemini import queue_cases
+    def fn(conn):
+        return queue_cases(conn,request.review_ids,request.limit,reviewer_name('identity_admin'))
+    return operation(fn)
+
+
+@router.post('/reviews/gemini/run')
+def gemini_identity_run(request:GeminiRunRequest,background_tasks:BackgroundTasks):
+    from pipeline.product_identity_gemini import run_identity_gemini_queue
+    from pipeline.task_tracker import create_task
+    from pipeline.inci_matcher import _load_env
+    from pipeline.config import cfg
+    import os
+    _load_env()
+    if not (os.environ.get('GEMINI_API_KEY') or getattr(cfg,'GEMINI_API_KEY','')):
+        raise HTTPException(status_code=409,detail='Configure GEMINI_API_KEY before starting product identity review.')
+    conn=get_connection()
+    try:
+        ready=conn.execute("SELECT COUNT(*) FROM identity_gemini_queue WHERE status='queued'").fetchone()[0]
+        active=conn.execute("""SELECT task_id FROM pipeline_tasks WHERE task_type='product_identity_gemini'
+            AND status='running' LIMIT 1""").fetchone()
+    finally:conn.close()
+    if not ready:raise HTTPException(status_code=409,detail='No product identity cases are queued.')
+    if active:raise HTTPException(status_code=409,detail='A Gemini product-review job is already running.')
+    task_id=create_task('product_identity_gemini',target_source='review_queue',
+        params={'limit':request.limit,'batch_size':request.batch_size},
+        total_items=min(ready,request.limit),auto_start=True)
+    background_tasks.add_task(run_identity_gemini_queue,task_id,request.limit,request.batch_size)
+    return {'task_id':task_id,'status':'running','queued':ready,
+        'message':'Gemini will evaluate several product-review cases per API call. Only guarded high-confidence matches are auto-resolved.'}
+
+
+@router.get('/reviews/gemini/jobs/{task_id}')
+def gemini_identity_job_status(task_id:str):
+    conn=get_connection()
+    try:
+        row=conn.execute("""SELECT task_id,status,processed_items,total_items,metadata,error_message,
+            current_stage FROM pipeline_tasks WHERE task_id=? AND task_type='product_identity_gemini'""",(task_id,)).fetchone()
+        if not row:raise HTTPException(status_code=404,detail='Gemini review job not found.')
+        result=dict(row);result['metadata']=json.loads(result['metadata'] or '{}')
+        return result
+    finally:conn.close()
+
+
+@router.post('/reviews/gemini/jobs/{task_id}/cancel')
+def gemini_identity_job_stop(task_id:str):
+    from pipeline.task_tracker import cancel_task
+    conn=get_connection()
+    try:
+        row=conn.execute("""SELECT status FROM pipeline_tasks
+            WHERE task_id=? AND task_type='product_identity_gemini'""",(task_id,)).fetchone()
+        if not row:raise HTTPException(status_code=404,detail='Gemini review job not found.')
+    finally:conn.close()
+    return {'cancelled':cancel_task(task_id,reason='Admin stopped Gemini product reviews')}
 
 
 @router.post('/reviews/{review_id}')

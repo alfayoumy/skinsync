@@ -223,7 +223,6 @@ def _load_cases(conn,limit,batch_size):
 
 def run_identity_gemini_queue(task_id,limit=500,batch_size=DEFAULT_BATCH,provider=None):
     """Tracked batched worker; failures leave cases retryable and do not resolve reviews."""
-    from pipeline.task_tracker import get_task
     provider=provider or call_gemini_identity_batch
     counts=Counter()
     calls=0
@@ -259,6 +258,12 @@ def run_identity_gemini_queue(task_id,limit=500,batch_size=DEFAULT_BATCH,provide
         calls+=1
         conn=get_connection()
         try:
+            state=conn.execute('SELECT status FROM pipeline_tasks WHERE task_id=?',(task_id,)).fetchone()
+            if state and state[0]=='cancelled':
+                for case in cases:
+                    conn.execute("UPDATE identity_gemini_queue SET status='queued' WHERE review_id=?",(case['id'],))
+                conn.commit()
+                return {'status':'cancelled',**dict(counts)}
             for case in cases:
                 scanned+=1
                 answer=answers.get(case['id'])
