@@ -48,6 +48,11 @@ class CatalogWorkflowSeparation(unittest.TestCase):
         self.assertEqual(staged['catalog_visible'],0)
         self.assertIsNone(staged['ingredients_raw'])
 
+    def test_legacy_three_page_cap_is_removed_from_discovery_schema(self):
+        from routers.workflows import MultiSourceDiscovery, ShopifyScan
+        self.assertEqual(MultiSourceDiscovery(source_ids=['sourcebeauty'],pages=0).pages,0)
+        self.assertEqual(ShopifyScan(source_id='sourcebeauty',pages=12).pages,12)
+
     def test_offer_refresh_skips_unknown_and_updates_only_existing(self):
         self.conn.execute("""INSERT INTO product_offers(source_id,source_product_id,source_variant_id,canonical_product_id,
             product_url,title,price,compare_at_price,is_available,currency,sku)
