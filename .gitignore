@@ -48,7 +48,6 @@ Thumbs.db
 # Scratch and temporary testing files
 scratch/
 tmp/
-*.db
 *.db-wal
 *.db-shm
 *.db.bak
