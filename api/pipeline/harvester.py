@@ -60,7 +60,7 @@ def get_configured_stores(conn=None) -> list:
 # Dynamically loaded store list referenced by pipeline
 STORES = get_configured_stores()
 
-def fetch_shopify_page(domain: str, page: int, retries: int = None) -> list:
+def fetch_shopify_page(domain: str, page: int, retries: int = None, strict: bool = False) -> list:
     """
     Fetches a page of products from Shopify /products.json with retry logic.
     """
@@ -73,25 +73,32 @@ def fetch_shopify_page(domain: str, page: int, retries: int = None) -> list:
     }
     req = urllib.request.Request(url, headers=headers)
 
+    failure = None
     for attempt in range(retries):
         try:
             with urllib.request.urlopen(req, timeout=cfg.SHOPIFY_TIMEOUT_SECONDS) as response:
                 data = json.loads(response.read().decode('utf-8'))
                 return data.get("products", [])
         except urllib.error.HTTPError as e:
+            failure = e
             if e.code == 429:
                 wait_sec = (attempt + 1) * 3
                 logger.warning(f"Rate limited by {domain}. Backing off for {wait_sec}s...")
                 time.sleep(wait_sec)
             elif e.code in (404, 403):
                 logger.error(f"HTTP {e.code} for {domain} page {page}: {e.reason}")
+                if strict:
+                    raise RuntimeError(f"Shopify HTTP {e.code} on {domain} page {page}") from e
                 return []
             else:
                 time.sleep(1)
         except Exception as e:
+            failure = e
             logger.warning(f"Fetch error for {domain} page {page} (attempt {attempt+1}): {e}")
             time.sleep(1.5)
 
+    if strict:
+        raise RuntimeError(f"Shopify retrieval failed for {domain} page {page} after retries") from failure
     return []
 
 def sync_store(store_cfg: dict, max_pages: int = None, conn=None, fields: list = None, task_id: str = None) -> dict:

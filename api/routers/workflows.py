@@ -3,6 +3,7 @@
 This router intentionally contains no INCI publication and no LLM calls.
 """
 from collections import Counter
+import time
 from pipeline.legacy_identity_reconcile import reconcile_legacy_exact
 from typing import Literal
 from fastapi import APIRouter, HTTPException, BackgroundTasks
@@ -22,8 +23,8 @@ router=APIRouter(prefix='/admin/workflows',tags=['Catalog workflows'])
 
 class ShopifyScan(BaseModel):
     source_id: str
-    start_page: int=Field(default=1,ge=1,le=5000)
-    pages: int=Field(default=1,ge=1,le=3)
+    start_page: int=Field(default=1,ge=1)
+    pages: int=Field(default=0,ge=0)
     dry_run: bool=True
 
 
@@ -45,44 +46,80 @@ def _shopify_source(conn,source_id):
     return source
 
 
-def discover_shopify(conn,source_id,start_page=1,pages=1,dry_run=True):
-    """Import product observations and classify/link identities; never run INCI waterfall."""
+class ScanCancelled(Exception):
+    """User stopped the current catalog discovery job."""
+
+
+def discover_shopify(conn,source_id,start_page=1,pages=0,dry_run=True,on_page=None,should_cancel=None):
+    """Scan until Shopify has no products (pages=0), or a user-defined page count.
+
+    Each page is an independent checkpoint. A transient network error does NOT
+    count as end-of-catalog. Preview rolls back each observation separately.
+    """
     from pipeline.harvester import fetch_shopify_page
+    if start_page < 1 or pages < 0:
+        raise ValueError("Starting page must be positive and page limit nonnegative.")
     source=_shopify_source(conn,source_id)
     adapter=ShopifyAdapter(source)
     summary=Counter()
-    if dry_run:
-        conn.execute('SAVEPOINT catalog_scan_preview')
-    try:
-        for page in range(start_page,start_page+pages):
-            products=fetch_shopify_page(source['domain'],page)
-            if not products:break
-            summary['fetched']+=len(products)
-            for raw in products:
-                for obs in adapter.parse({'product':raw}):
-                    result=process_source_observation(conn,obs,dry_run=False)
-                    summary['observations']+=1
-                    for item in result['results']:
-                        summary[item['status']]+=1
-                        if item.get('offer_ids'):summary['offers_seen']+=len(item['offer_ids'])
+    last_page=None
+    stop_reason='page_limit' if pages else 'catalog_exhausted'
+    page=start_page
+    previous_page_ids=None
+    delay=max(0.0,float(source.get('rate_limit_seconds') or 0))
+    while pages==0 or summary['pages_scanned'] < pages:
+        if should_cancel and should_cancel():
+            raise ScanCancelled(f"Scan stopped before Shopify page {page}; previous pages are preserved.")
+        products=fetch_shopify_page(source['domain'],page,strict=True)
+        if not products:
+            stop_reason='catalog_exhausted'
+            break
+        identifiers=tuple(str(raw.get('id') or '') for raw in products)
+        # Broken pagination may return the same products for every page.
+        if page>start_page and identifiers == previous_page_ids:
+            stop_reason='repeated_page'
+            break
+        previous_page_ids=identifiers
+        summary['pages_scanned']+=1
+        summary['fetched']+=len(products)
+        for raw in products:
+            for obs in adapter.parse({'product':raw}):
+                result=process_source_observation(conn,obs,dry_run=dry_run)
+                summary['observations']+=1
+                for item in result['results']:
+                    summary[item['status']]+=1
+                    if item.get('offer_ids'):
+                        summary['offers_seen']+=len(item['offer_ids'])
         if dry_run:
-            conn.execute('ROLLBACK TO SAVEPOINT catalog_scan_preview')
-            conn.execute('RELEASE SAVEPOINT catalog_scan_preview')
-        return {
-            'workflow':'product_discovery','dry_run':dry_run,'source_id':source_id,
-            'pages_requested':pages,'fetched':summary['fetched'],
-            'observations':summary['observations'],
-            'existing_products_matched':summary['matched'],
-            'new_products_staged':summary['provisional'],
-            'needs_review':summary['review'],'excluded':summary['excluded'],
-            'offers_seen':summary['offers_seen'],
-            'note':'New identities remain hidden until approved. This does not run the INCI waterfall or LLM workers.',
-        }
-    except Exception:
-        if dry_run:
-            conn.execute('ROLLBACK TO SAVEPOINT catalog_scan_preview')
-            conn.execute('RELEASE SAVEPOINT catalog_scan_preview')
-        raise
+            conn.rollback()
+        else:
+            # A long all-pages import never holds the entire catalog in one
+            # SQLite transaction; completed pages persist as checkpoints.
+            conn.commit()
+        last_page=page
+        if on_page:
+            on_page({'source_id':source_id,'page':page,
+                     'pages_scanned':summary['pages_scanned'],
+                     'products_found':summary['fetched'],
+                     'matched':summary['matched'],
+                     'new_products_staged':summary['provisional'],
+                     'needs_review':summary['review']})
+        page+=1
+        if delay and (pages==0 or summary['pages_scanned']<pages):
+            time.sleep(delay)
+    return {
+        'workflow':'product_discovery','dry_run':dry_run,'source_id':source_id,
+        'pages_requested':pages,'scan_mode':'all_pages' if pages==0 else 'page_limit',
+        'pages_scanned':summary['pages_scanned'],
+        'last_completed_page':last_page,'next_page':page,
+        'stop_reason':stop_reason,'catalog_exhausted':stop_reason=='catalog_exhausted',
+        'fetched':summary['fetched'],'observations':summary['observations'],
+        'existing_products_matched':summary['matched'],
+        'new_products_staged':summary['provisional'],
+        'needs_review':summary['review'],'excluded':summary['excluded'],
+        'offers_seen':summary['offers_seen'],
+        'note':'Complete catalog coverage is confirmed only after an empty Shopify page. Importing does not run INCI or AI workers.',
+    }
 
 
 def update_existing_shopify_offers(conn,source_id,start_page=1,pages=1,
