@@ -472,11 +472,19 @@ def link_catalog_products(conn=None, task_id: Optional[str] = None) -> Dict[str,
                     canonical=dict(canonical)
                     from pipeline.canonical_identity_resolver import compare_attributes
                     comparison=compare_attributes(identity,json.loads(canonical.get('identity_attributes') or '{}'))
+                    anchor_identity=json.loads(canonical.get('identity_attributes') or '{}')
+                    anchor_brand=resolve_brand(canonical.get('brand'),conn)
+                    if identity.get('name')!=anchor_identity.get('name'):comparison['unknown'].append('legacy_title_identity')
+                    if not brand or not anchor_brand or brand.get('id')!=anchor_brand.get('id'):comparison['conflicts'].append('brand')
+                    if comparison['unknown'] or comparison['conflicts']:comparison['status']='requires_review'
                     if comparison['status']!='compatible':
                         queue_review(conn,'identity',source_id,source_pid,anchor,{'product_id':pid,'canonical_id':anchor,'comparison':comparison})
                         reviews+=1
-                    resolver.record_link(source_id,source_pid,anchor,'accepted','legacy_preserved',{'product_id':pid,'attributes':identity})
-                    resolver.add_aliases(anchor,identity,source_id)
+                    from pipeline.identity_trust import verified_link
+                    if comparison['conflicts'] or not verified_link(conn,source_id,source_pid,anchor):
+                        resolver.record_link(source_id,source_pid,anchor,'accepted','legacy_preserved',{'product_id':pid,'attributes':identity})
+                    # Preserving a historical association is not verification.
+                    conn.execute("UPDATE canonical_products SET identity_status='legacy_preserved_unverified' WHERE id=? AND identity_status!='verified'",(anchor,))
                     touched.add(anchor)
             else:
                 if classification.classification_status=='review':
@@ -487,9 +495,8 @@ def link_catalog_products(conn=None, task_id: Optional[str] = None) -> Dict[str,
                     queue_review(conn,'identity',source_id,source_pid,None,{'product_id':pid,'decision':decision.to_dict()})
                     deferred+=1;reviews+=1;continue
                 if decision.status=='new':
-                    # Existing operational catalog keeps its compatibility behavior;
-                    # staged source ingestion uses provisional, hidden canonicals.
-                    anchor=resolver.create_provisional(title,product['brand'],classification,identity,visible=True)
+                    # New identities require independent approval in every ingestion path.
+                    anchor=resolver.create_provisional(title,product['brand'],classification,identity,visible=False)
                     conn.execute('UPDATE canonical_products SET is_skincare=?,primary_image_url=? WHERE id=?',
                         (int(product.get('is_skincare',classification.is_skincare)),product.get('image_url'),anchor))
                     created+=1

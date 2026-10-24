@@ -19,7 +19,10 @@ def resolve_source_formulations(conn,canonical_id,publish=False):
         flags=json.loads(item.get('validation_flags') or '{}')
         validation=tokenize_inci_string(item['raw_ingredients_found'],product_title=canonical['canonical_title'])
         reason=None
-        if item['completeness']!='full' or not item['order_verified'] or validation.is_truncated:reason='incomplete_or_unordered'
+        from pipeline.identity_trust import verified_link
+        source_obs=conn.execute('SELECT source_id,source_product_id FROM source_product_observations WHERE id=?',(item['observation_id'],)).fetchone()
+        if not source_obs or not verified_link(conn,source_obs[0],flags.get('identity_link_product_id') or source_obs[1],canonical_id):reason='identity_unverified'
+        elif item['completeness']!='full' or not item['order_verified'] or validation.is_truncated:reason='incomplete_or_unordered'
         elif not flags.get('identity_resolved'):reason='identity_unresolved'
         elif item['source_type']=='manufacturer' and item['market'] not in ('EG','MENA') and not flags.get('region_compatibility_approved'):
             reason='regional_compatibility_requires_review'

@@ -198,7 +198,16 @@ class FormulationRepository:
             conn.execute("BEGIN")
         conn.execute("SAVEPOINT formulation_publication")
         try:
-            result = self._publish_formulation(candidate, approval_reason, force, audited_by, conn)
+            from pipeline.identity_trust import publication_block
+            blocked = publication_block(conn, candidate)
+            if blocked:
+                self.record_candidate_evidence(candidate, decision='identity_blocked', discrepancy_notes=blocked,
+                                               audited_by=audited_by, conn=conn)
+                result = False
+            else:
+                result = self._publish_formulation(candidate, approval_reason, force, audited_by, conn)
+            if result and 'formulation_provenance' in {r[1] for r in conn.execute('PRAGMA table_info(canonical_products)')}:
+                conn.execute("UPDATE canonical_products SET formulation_provenance='approved_authoritative' WHERE id=?", (candidate.canonical_product_id,))
             conn.execute("RELEASE SAVEPOINT formulation_publication")
             if owned:
                 conn.commit()

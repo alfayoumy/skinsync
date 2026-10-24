@@ -69,7 +69,7 @@ def load_env_file():
 
     if os.environ.get("OPENCODE_API_KEY"):
         key = os.environ.get("OPENCODE_API_KEY")
-        logger.info(f"Loaded OPENCODE_API_KEY from environment ({key[:4]}...{key[-3:]})")
+        logger.info("Loaded OPENCODE_API_KEY from environment.")
     elif os.environ.get("JEV_API_KEY") or os.environ.get("TYPESAFE_API_KEY"):
         logger.info("Loaded JEV_API_KEY / TYPESAFE_API_KEY from environment.")
 
@@ -85,13 +85,21 @@ app = FastAPI(
     version="3.0"
 )
 
+from security.admin import AdminAuthentication
+app.add_middleware(AdminAuthentication)
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_origins=[origin.strip() for origin in os.getenv("SKINSYNC_ALLOWED_ORIGINS", "http://127.0.0.1:5173,http://localhost:5173").split(",") if origin.strip() and origin.strip() != "*"],
+    allow_credentials=False,
+    allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+    allow_headers=["Authorization", "Content-Type"],
 )
+
+from fastapi import Request
+@app.get("/admin/access")
+def admin_access(request: Request):
+    return request.state.admin
 
 # Register modular domain routers
 app.include_router(recommendations_router)

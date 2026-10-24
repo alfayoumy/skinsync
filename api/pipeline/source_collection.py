@@ -2,8 +2,6 @@
 import json
 import threading
 import time
-from urllib.request import Request,urlopen
-from urllib.parse import urljoin
 from urllib.robotparser import RobotFileParser
 from pipeline.source_registry import get_source,url_matches_source
 from pipeline.source_adapters import get_adapter, HTMLAdapter
@@ -14,11 +12,11 @@ USER_AGENT='SkinSync/1.0 (+product-ingredient-research)'
 MAX_RESPONSE=4*1024*1024
 
 
-def _read(url):
-    with urlopen(Request(url,headers={'User-Agent':USER_AGENT}),timeout=20) as response:
-        payload=response.read(MAX_RESPONSE+1)
-        if len(payload)>MAX_RESPONSE:raise ValueError('Source response exceeds the bounded collection limit; no truncated evidence is accepted.')
-        return payload.decode('utf-8','replace'),response.geturl()
+def _read(url, source=None):
+    if source is None:
+        raise ValueError('Registered source policy is required.')
+    from pipeline.source_http import read_source
+    return read_source(source, url)
 
 
 def collect_source(conn,source_id,urls,max_products=100,dry_run=False):
@@ -29,7 +27,7 @@ def collect_source(conn,source_id,urls,max_products=100,dry_run=False):
         if not url_matches_source(source,url):raise ValueError('Collection URL is outside the registered source.')
     robots=RobotFileParser()
     try:
-        robots_text,_=_read('https://'+source['domain']+'/robots.txt')
+        robots_text,_=_read('https://'+source['domain']+'/robots.txt',source)
         robots.parse(robots_text.splitlines())
     except Exception as exc:
         raise ValueError('Could not establish the source access policy; collection is deferred.') from exc
@@ -44,7 +42,7 @@ def collect_source(conn,source_id,urls,max_products=100,dry_run=False):
             remaining=delay-(time.monotonic()-_LAST.get(source_id,0))
             if remaining>0:time.sleep(min(remaining,60))
             _LAST[source_id]=time.monotonic()
-        content,final_url=_read(url)
+        content,final_url=_read(url,source)
         if not url_matches_source(source,final_url):
             # The historical database name redirects to its verified new hostname.
             alias=source_id in ('incidecoder','inkeedecoder') and final_url.startswith(('https://incidecoder.com/','https://inkeedecoder.com/'))

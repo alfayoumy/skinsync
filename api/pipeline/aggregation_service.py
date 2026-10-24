@@ -106,7 +106,7 @@ def process_source_observation(conn,observation,dry_run=False,legacy_product_id=
             if decision.status=='new':
                 # Unknown/provisional identities never become consumer-visible by accident.
                 cid=resolver.create_provisional(observation.raw_title,observation.raw_brand,classification,variant_identity,
-                    visible=bool(source['enabled'] and source['publish_enabled']))
+                    visible=False)
             accepted_category=conn.execute('SELECT category,classification_status FROM canonical_products WHERE id=?',(cid,)).fetchone()
             if accepted_category['category']!=classification.primary_category:
                 queue_review(conn,'category',source['id'],link_product_id,cid,
@@ -134,7 +134,7 @@ def process_source_observation(conn,observation,dry_run=False,legacy_product_id=
                     validation.declared_actives,confidence_score=0,evidence_url=observation.source_url,source_record_id=str(oid),
                     completeness=completeness,validation_flags={'identity_resolved':True,'is_truncated':validation.is_truncated,
                         'order_verified':observation.ingredient_order_verified,'source_market':source['market'],
-                        'source_type':source['source_type'],'formula_code':observation.formula_code,'source_id':source['id']})
+                        'identity_link_product_id':link_product_id,'source_type':source['source_type'],'formula_code':observation.formula_code,'source_id':source['id']})
                 old=conn.execute('SELECT id FROM inci_audit_evidence WHERE observation_id=? AND canonical_product_id=?',(oid,cid)).fetchone()
                 if not old:
                     eid=FormulationRepository().record_candidate_evidence(candidate,conn=conn)

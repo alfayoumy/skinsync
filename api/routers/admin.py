@@ -2,6 +2,7 @@
 Admin & Observatory Router: Full catalog inspection, product telemetry forensics,
 cross-store linking audit, INCI matching gate logs, and similar product breakdown.
 """
+from security.admin import reviewer_name
 
 import json
 import re
@@ -1689,7 +1690,7 @@ def decide_identity_review(review_id: int, request: IdentityReviewDecision):
     conn = get_connection()
     try:
         init_identity_review_db(conn)
-        review_identity_case(conn, review_id, request.status, request.reviewer, request.notes)
+        review_identity_case(conn, review_id, request.status, reviewer_name(request.reviewer), request.notes)
         conn.commit()
         return {'status': request.status, 'review_id': review_id}
     except ValueError as exc:

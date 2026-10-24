@@ -906,7 +906,7 @@ def execute_inci_waterfall_for_product(
                     evidence_url=source_url,
                     source_record_id=str(p_id) if p_id else None,
                     completeness=completeness,
-                    validation_flags={"method": method, "is_truncated": tok_res.is_truncated},
+                    validation_flags={"method": method, "is_truncated": tok_res.is_truncated, "origin_product_id": p_id},
                     inci_matched_id=res.get("inci_matched_id"),
                     inci_matched_name=res.get("inci_matched_name")
                 )
@@ -1290,7 +1290,7 @@ def apply_tier_resolution_for_product(
                     evidence_url=source_url,
                     source_record_id=str(product_id),
                     completeness=validation.completeness if method != "whitelist_description" else "partial",
-                    validation_flags={"applied_via": "admin_arbitration", "tier_code": tier_code},
+                    validation_flags={"applied_via": "admin_arbitration", "tier_code": tier_code, "origin_product_id": product_id},
                     inci_matched_id=inci_id,
                     inci_matched_name=inci_name
                 )
@@ -1396,6 +1396,10 @@ def resolve_waterfall_for_canonical_product(
 
     # Tier 1: Check linked offers for dedicated store tab or historical scrapes
     for offer in offers:
+        from pipeline.identity_trust import verified_link
+        link = conn.execute('SELECT store_product_id FROM products WHERE id=?',(offer['id'],)).fetchone()
+        if not link or not verified_link(conn,offer['store_id'],link[0],c_id):
+            continue
         t1_res = resolve_tier1_store_tab(offer, historical_index)
         if t1_res and t1_res.get("ingredients_raw"):
             res = t1_res
@@ -1482,6 +1486,7 @@ def run_waterfall_pipeline(
         from pipeline.whitelist_matcher import load_and_compile_whitelist
         load_and_compile_whitelist(conn=conn)
 
+        from pipeline.identity_trust import pending_identity_review
         # Target canonical skincare products
         query = """
         SELECT id, canonical_title, brand, category, ingredients_raw, ingredient_source, formula_version, formula_hash
@@ -1500,11 +1505,17 @@ def run_waterfall_pipeline(
                 )
             )"""
         query += " ORDER BY id ASC"
-        if limit:
-            query += f" LIMIT {int(limit)}"
 
         cur.execute(query)
         rows = [dict(r) for r in cur.fetchall()]
+        identity_columns = {r[1] for r in conn.execute('PRAGMA table_info(canonical_products)')}
+        if 'identity_status' in identity_columns:
+            verified = {r[0] for r in conn.execute("SELECT id FROM canonical_products WHERE identity_status='verified'")}
+            rows = [r for r in rows if r['id'] in verified and not pending_identity_review(conn, r['id'])]
+        else:
+            rows = []
+        if limit:
+            rows = rows[:int(limit)]
 
         total_to_process = len(rows)
         logger.info(f"--- Starting Canonical INCI Waterfall Pipeline ({total_to_process} canonical products, {max_workers} workers, LangSearch: {langsearch_enabled}, Jev: {queue_jev}, Gemini: {queue_gemini}) ---")

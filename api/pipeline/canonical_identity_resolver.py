@@ -76,6 +76,7 @@ def compare_attributes(a,b):
         elif bool(x)!=bool(y): unknown.append(key)
     if a.get('region_defining') or b.get('region_defining'):
         if a.get('market') and b.get('market') and a['market']!=b['market']: conflicts.append('market')
+        elif not a.get('market') or not b.get('market'): unknown.append('market')
     return {'conflicts':conflicts,'unknown':unknown,'status':'conflict' if conflicts else ('unknown' if unknown else 'compatible')}
 
 
@@ -139,6 +140,9 @@ class CanonicalIdentityResolver:
                 if reason and any(word in reason for word in ('Line conflict','Vehicle conflict','Circadian','Fragrance','Tint')):
                     comparison['conflicts'].append(reason)
             aliases=[dict(r) for r in self.conn.execute('SELECT * FROM canonical_product_aliases WHERE canonical_product_id=? AND verified=1',(cid,))]
+            unverified_origin = self.conn.execute("SELECT 1 FROM product_identity_links WHERE canonical_product_id=? AND identity_status='legacy_preserved_unverified' AND method='legacy_preserved'", (cid,)).fetchone()
+            if unverified_origin:
+                aliases=[a for a in aliases if a['alias_type']!='title' or not self.conn.execute("SELECT 1 FROM product_identity_links WHERE canonical_product_id=? AND source_id=? AND identity_status='legacy_preserved_unverified'",(cid,a['source_id'])).fetchone()]
             verified_name=any(a['alias_type']=='title' and a['alias_value']==identity['name'] for a in aliases)
             strong=any((a['alias_type']=='gtin' and barcode and a['alias_value']==barcode) or
                 (a['alias_type']=='manufacturer_sku' and manufacturer_sku and a['source_id']==source_id and a['alias_value']==manufacturer_sku) or
@@ -182,10 +186,11 @@ class CanonicalIdentityResolver:
         return result.lastrowid
 
     def record_link(self,source_id,source_product_id,canonical_id,status,method,evidence,reviewer=None):
-        self.conn.execute('''INSERT INTO product_identity_links(source_id,source_product_id,canonical_product_id,status,method,evidence,reviewed_by)
-            VALUES (?,?,?,?,?,?,?) ON CONFLICT(source_id,source_product_id,canonical_product_id) DO UPDATE SET
-            status=excluded.status,method=excluded.method,evidence=excluded.evidence,reviewed_by=COALESCE(excluded.reviewed_by,reviewed_by),updated_at=CURRENT_TIMESTAMP''',
-            (source_id,source_product_id,canonical_id,status,method,json.dumps(evidence),reviewer))
+        trust = 'identity_verified' if status == 'accepted' and (reviewer or method not in ('legacy_preserved','requires_review')) else 'legacy_preserved_unverified'
+        self.conn.execute('''INSERT INTO product_identity_links(source_id,source_product_id,canonical_product_id,status,method,evidence,reviewed_by,identity_status)
+            VALUES (?,?,?,?,?,?,?,?) ON CONFLICT(source_id,source_product_id,canonical_product_id) DO UPDATE SET
+            status=excluded.status,identity_status=excluded.identity_status,method=excluded.method,evidence=excluded.evidence,reviewed_by=COALESCE(excluded.reviewed_by,reviewed_by),updated_at=CURRENT_TIMESTAMP''',
+            (source_id,source_product_id,canonical_id,status,method,json.dumps(evidence),reviewer,trust))
 
     def add_aliases(self,canonical_id,identity,source_id,gtin=None,manufacturer_sku=None):
         aliases=[('title',identity['name'])]

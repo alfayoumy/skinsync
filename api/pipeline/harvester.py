@@ -355,9 +355,10 @@ def sync_store(store_cfg: dict, max_pages: int = None, conn=None, fields: list =
                 from pipeline.canonical_identity_resolver import CanonicalIdentityResolver
                 original = ShopifyAdapter(source).parse({'product': p})[0]
                 linked = conn.execute('SELECT canonical_product_id FROM products WHERE id=?',(pid,)).fetchone()
-                if linked and linked[0]:
+                from pipeline.identity_trust import verified_link
+                if linked and linked[0] and not verified_link(conn,source['id'],original.source_product_id,linked[0]):
                     CanonicalIdentityResolver(conn).record_link(source['id'],original.source_product_id,linked[0],
-                        'accepted','legacy_preserved',{'legacy_product_id':pid})
+                        'pending','legacy_preserved',{'legacy_product_id':pid})
                 source_result = process_source_observation(conn,original,legacy_product_id=pid,offer_fields=clean_fields)
                 accepted_offers = any(r.get('offer_ids') for r in source_result['results'])
                 if existing and not accepted_offers:

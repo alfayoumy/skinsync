@@ -4,6 +4,7 @@ from typing import Any,Optional,Literal
 from fastapi import APIRouter,HTTPException,Query
 from pydantic import BaseModel,Field
 from pipeline.db_manager import get_connection
+from security.admin import reviewer_name
 
 router=APIRouter(prefix='/admin/aggregation',tags=['Source aggregation'])
 
@@ -50,7 +51,7 @@ class SourceToggle(BaseModel):
 
 
 class RolloutRequest(ReviewedOperation):
-    report: dict
+    evaluation_id: int = Field(gt=0)
 
 
 class BrandAliasRequest(ReviewedOperation):
@@ -120,7 +121,7 @@ def coverage(source_id:str):
 @router.post('/sources/{source_id}/rollout')
 def rollout(source_id:str,request:RolloutRequest):
     from pipeline.aggregation_benchmark import enable_source_rollout
-    return operation(lambda conn:enable_source_rollout(conn,source_id,request.report,request.reviewer,request.reason))
+    return operation(lambda conn:enable_source_rollout(conn,source_id,request.evaluation_id,reviewer_name(request.reviewer),request.reason))
 
 
 @router.get('/observations')
@@ -149,13 +150,13 @@ def reviews(kind:Optional[str]=None,status:str='pending',limit:int=Query(50,ge=1
 @router.post('/reviews/{review_id}')
 def review(review_id:int,request:ReviewRequest):
     from pipeline.review_service import resolve_review
-    return operation(lambda conn:resolve_review(conn,review_id,request.action,request.reviewer,request.reason,request.canonical_id,request.category))
+    return operation(lambda conn:resolve_review(conn,review_id,request.action,reviewer_name(request.reviewer),request.reason,request.canonical_id,request.category))
 
 
 @router.post('/brands/aliases')
 def brand_alias(request:BrandAliasRequest):
     from pipeline.brand_registry import approve_brand_alias
-    return operation(lambda conn:{'brand_id':approve_brand_alias(conn,request.alias,request.canonical_name,request.reviewer)})
+    return operation(lambda conn:{'brand_id':approve_brand_alias(conn,request.alias,request.canonical_name,reviewer_name(request.reviewer))})
 
 
 @router.post('/identity/constraints')
@@ -165,9 +166,9 @@ def cannot_link(request:CanonicalConstraintRequest):
         pair=sorted([request.left_id,request.right_id])
         if conn.execute('SELECT COUNT(*) FROM canonical_products WHERE id IN (?,?)',pair).fetchone()[0]!=2:raise ValueError('Canonical ID not found.')
         from pipeline.review_service import require_review
-        require_review(request.reviewer,request.reason)
+        require_review(reviewer_name(request.reviewer),request.reason)
         conn.execute('''INSERT INTO canonical_identity_constraints(left_id,right_id,relation,reviewed_by,reason) VALUES (?,?,'cannot_link',?,?)
-            ON CONFLICT(left_id,right_id) DO UPDATE SET relation='cannot_link',reviewed_by=excluded.reviewed_by,reason=excluded.reason''',(*pair,request.reviewer,request.reason))
+            ON CONFLICT(left_id,right_id) DO UPDATE SET relation='cannot_link',reviewed_by=excluded.reviewed_by,reason=excluded.reason''',(*pair,reviewer_name(request.reviewer),request.reason))
         return {'canonical_ids':pair,'relation':'cannot_link'}
     return operation(run)
 
@@ -175,19 +176,19 @@ def cannot_link(request:CanonicalConstraintRequest):
 @router.post('/identity/merge')
 def merge(request:MergeRequest):
     from pipeline.review_service import merge_canonicals
-    return operation(lambda conn:{'history_id':merge_canonicals(conn,request.survivor_id,request.merged_id,request.reviewer,request.reason)})
+    return operation(lambda conn:{'history_id':merge_canonicals(conn,request.survivor_id,request.merged_id,reviewer_name(request.reviewer),request.reason)})
 
 
 @router.post('/identity/{canonical_id}/split')
 def split(canonical_id:int,request:SplitRequest):
     from pipeline.review_service import split_canonical
-    return operation(lambda conn:split_canonical(conn,canonical_id,request.product_ids,request.offer_ids,request.title,request.attributes,request.reviewer,request.reason))
+    return operation(lambda conn:split_canonical(conn,canonical_id,request.product_ids,request.offer_ids,request.title,request.attributes,reviewer_name(request.reviewer),request.reason))
 
 
 @router.post('/identity/history/{history_id}/reverse')
 def reverse(history_id:int,request:ReviewedOperation):
     from pipeline.review_service import reverse_identity_operation
-    return operation(lambda conn:{'history_id':reverse_identity_operation(conn,history_id,request.reviewer,request.reason)})
+    return operation(lambda conn:{'history_id':reverse_identity_operation(conn,history_id,reviewer_name(request.reviewer),request.reason)})
 
 
 @router.get('/identity/history')
@@ -221,13 +222,13 @@ class FormulationEvidenceApproval(ReviewedOperation):
 @router.post('/formulations/evidence/{evidence_id}/approve')
 def approve_evidence(evidence_id:int,request:FormulationEvidenceApproval):
     from pipeline.source_formulations import approve_formulation_evidence
-    return operation(lambda conn:approve_formulation_evidence(conn,evidence_id,request.reviewer,request.reason,request.correction,request.market_compatible))
+    return operation(lambda conn:approve_formulation_evidence(conn,evidence_id,reviewer_name(request.reviewer),request.reason,request.correction,request.market_compatible))
 
 
 @router.post('/identity/{canonical_id}/publish')
 def publish_identity(canonical_id:int,request:ReviewedOperation):
     from pipeline.review_service import publish_canonical_identity
-    return operation(lambda conn:{'history_id':publish_canonical_identity(conn,canonical_id,request.reviewer,request.reason)})
+    return operation(lambda conn:{'history_id':publish_canonical_identity(conn,canonical_id,reviewer_name(request.reviewer),request.reason)})
 
 class ConnectionTestRequest(BaseModel):
     kind: Literal['source', 'api']
@@ -271,3 +272,52 @@ def run_connection_tests(body: ConnectionTestRequest):
     finally:
         conn.close()
     return start('source', items)
+
+
+class EvaluationLabel(ReviewedOperation):
+    observation_id: int
+    expected_canonical_id: Optional[int] = None
+    expected_new: bool = False
+    category: str
+    is_skincare: bool
+
+
+@router.post('/sources/{source_id}/evaluations')
+def create_source_evaluation(source_id:str,request:ReviewedOperation):
+    from pipeline.source_evaluation import create_evaluation
+    return operation(lambda conn:create_evaluation(conn,source_id,reviewer_name(request.reviewer)))
+
+
+@router.get('/evaluations/{run_id}')
+def evaluation_details(run_id:int):
+    def run(conn):
+        row=conn.execute('SELECT * FROM source_evaluations WHERE id=?',(run_id,)).fetchone()
+        if not row:raise ValueError('Evaluation not found.')
+        return {'evaluation_id':run_id,'source_id':row['source_id'],'samples':json.loads(row['samples']),
+                'labels':[dict(r) for r in conn.execute('SELECT * FROM source_evaluation_labels WHERE run_id=?',(run_id,))]}
+    return operation(run)
+
+
+@router.post('/evaluations/{run_id}/labels')
+def label_evaluation(run_id:int,request:EvaluationLabel):
+    from pipeline.source_evaluation import label_example
+    return operation(lambda conn:label_example(conn,run_id,request.observation_id,request.expected_canonical_id,
+        request.expected_new,request.category,request.is_skincare,reviewer_name(request.reviewer),request.reason))
+
+
+@router.post('/evaluations/{run_id}/finalize')
+def finalize_source_evaluation(run_id:int,request:ReviewedOperation):
+    from pipeline.source_evaluation import finalize_evaluation
+    return operation(lambda conn:finalize_evaluation(conn,run_id,reviewer_name(request.reviewer)))
+
+
+@router.post('/reconciliation/previews')
+def reconciliation_preview(request:ReviewedOperation):
+    from pipeline.reconciliation_service import save_reconciliation_preview
+    return operation(lambda conn:save_reconciliation_preview(conn,reviewer_name(request.reviewer)))
+
+
+@router.post('/reconciliation/previews/{preview_id}/findings')
+def reconciliation_findings(preview_id:int,request:ReviewedOperation):
+    from pipeline.reconciliation_service import persist_reconciliation_findings
+    return operation(lambda conn:persist_reconciliation_findings(conn,preview_id,reviewer_name(request.reviewer),request.reason))

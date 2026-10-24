@@ -6,8 +6,7 @@ import time
 from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timezone
 from urllib.error import HTTPError
-from urllib.request import Request, urlopen, build_opener, HTTPRedirectHandler
-from urllib.parse import urlsplit
+from urllib.request import Request, urlopen
 from urllib.robotparser import RobotFileParser
 from pipeline.config import cfg
 from pipeline.source_registry import url_matches_source
@@ -27,14 +26,10 @@ SAMPLES = {
 def request(url, payload=None, headers=None, source=None):
     req = Request(url, data=json.dumps(payload).encode() if payload is not None else None,
                   headers={'User-Agent': USER_AGENT, 'Content-Type': 'application/json', **(headers or {})})
-    class SourceRedirects(HTTPRedirectHandler):
-        def redirect_request(self, req, fp, code, msg, headers, newurl):
-            if source and (not url_matches_source(source, newurl) or urlsplit(newurl).port not in (None, 443)):
-                raise ValueError('Redirect outside registered source')
-            return super().redirect_request(req, fp, code, msg, headers, newurl)
-    if source and urlsplit(url).port not in (None, 443):
-        raise ValueError('Unsupported source port')
-    opener = build_opener(SourceRedirects()).open if source else urlopen
+    if source:
+        from pipeline.source_http import read_source
+        return read_source(source,url,timeout=15,max_response=MAX_RESPONSE)[0]
+    opener = urlopen
     with opener(req, timeout=15) as response:
         if source and not url_matches_source(source, response.geturl()):
             raise ValueError('Unexpected redirect outside registered source')

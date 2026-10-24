@@ -30,6 +30,14 @@ def resolve_review(conn,review_id,action,reviewer,reason,canonical_id=None,categ
         if case['source_id'] in (None,'canonical'):raise ValueError('Use the audited merge or canonical constraint workflow for canonical-only cases.')
         if canonical_id is None:raise ValueError('Canonical ID is required.')
         if not conn.execute('SELECT 1 FROM canonical_products WHERE id=?',(canonical_id,)).fetchone():raise ValueError('Canonical ID not found.')
+        if action=='link' and details.get('product_id') and not details.get('observation_id'):
+            product=conn.execute('SELECT * FROM products WHERE id=?',(details['product_id'],)).fetchone()
+            canonical=conn.execute('SELECT * FROM canonical_products WHERE id=?',(canonical_id,)).fetchone()
+            if not product or product['store_id']!=case['source_id']:raise ValueError('Legacy product not found for this review.')
+            attrs=extract_identity(product['original_title'] or product['title'],product['brand'])
+            known=json.loads(canonical['identity_attributes'] or '{}') or extract_identity(canonical['canonical_title'],canonical['brand'])
+            if compare_attributes(attrs,known)['conflicts']:raise ValueError('Hard identity conflicts must be resolved before accepting this mapping.')
+            CanonicalIdentityResolver(conn).add_aliases(canonical_id,attrs,case['source_id'])
         if action=='link' and details.get('observation_id'):
             observation=conn.execute('SELECT identity_attributes FROM source_product_observations WHERE id=?',(details['observation_id'],)).fetchone()
             canonical=conn.execute('SELECT * FROM canonical_products WHERE id=?',(canonical_id,)).fetchone()
@@ -199,6 +207,8 @@ def publish_canonical_identity(conn,canonical_id,reviewer,reason):
     row=conn.execute('SELECT * FROM canonical_products WHERE id=?',(canonical_id,)).fetchone()
     if not row:raise ValueError('Canonical record not found.')
     row=dict(row)
+    from pipeline.identity_trust import pending_identity_review
+    if pending_identity_review(conn,canonical_id):raise ValueError('Resolve pending identity conflicts before publication.')
     if row['identity_status'] in ('redirected','reversed_split'):raise ValueError('This identity is superseded.')
     classification=json.loads(row['classification'] or '{}')
     if classification.get('classification_status') not in ('auto_approved','approved'):

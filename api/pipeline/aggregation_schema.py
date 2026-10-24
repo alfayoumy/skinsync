@@ -73,7 +73,8 @@ def init_aggregation_schema(conn):
         'canonical_products': [('brand_id','INTEGER REFERENCES brands(id)'),('identity_attributes',"TEXT NOT NULL DEFAULT '{}'"),
             ('identity_status',"TEXT NOT NULL DEFAULT 'legacy'"),('classification',"TEXT NOT NULL DEFAULT '{}'"),
             ('classification_status',"TEXT NOT NULL DEFAULT 'legacy'"),('catalog_visible','INTEGER NOT NULL DEFAULT 1'),
-            ('family_name','TEXT'),('market','TEXT'),('formula_region','TEXT'),('formula_revision','TEXT')],
+            ('family_name','TEXT'),('market','TEXT'),('formula_region','TEXT'),('formula_revision','TEXT'),('formulation_provenance',"TEXT NOT NULL DEFAULT 'legacy_unverified'")],
+        'product_identity_links': [('identity_status',"TEXT NOT NULL DEFAULT 'legacy_preserved_unverified'")],
         'products': [('original_title','TEXT'),('original_brand','TEXT'),('original_category','TEXT'),
             ('classification',"TEXT NOT NULL DEFAULT '{}'"),('brand_id','INTEGER REFERENCES brands(id)')],
         'inci_audit_evidence': [('observation_id','INTEGER REFERENCES source_product_observations(id)'),
@@ -86,3 +87,20 @@ def init_aggregation_schema(conn):
             if name not in columns:
                 conn.execute(f'ALTER TABLE {table} ADD COLUMN {name} {definition}')
     conn.execute('INSERT OR IGNORE INTO legacy_identity_mapping(product_id,canonical_product_id) SELECT id,canonical_product_id FROM products')
+
+    conn.execute('''CREATE TABLE IF NOT EXISTS source_evaluations(id INTEGER PRIMARY KEY,source_id TEXT NOT NULL REFERENCES sources(id),
+        samples TEXT NOT NULL,baseline TEXT NOT NULL,created_by TEXT NOT NULL,policy_hash TEXT NOT NULL,created_at TEXT DEFAULT CURRENT_TIMESTAMP)''')
+    if 'policy_hash' not in {r[1] for r in conn.execute('PRAGMA table_info(source_evaluations)')}:
+        conn.execute("ALTER TABLE source_evaluations ADD COLUMN policy_hash TEXT NOT NULL DEFAULT ''")
+    conn.execute('''CREATE TABLE IF NOT EXISTS source_evaluation_labels(run_id INTEGER NOT NULL REFERENCES source_evaluations(id),
+        observation_id INTEGER NOT NULL,expected_canonical_id INTEGER,expected_new INTEGER NOT NULL,
+        category TEXT NOT NULL,is_skincare INTEGER NOT NULL,reviewed_by TEXT NOT NULL,reason TEXT NOT NULL,
+        PRIMARY KEY(run_id,observation_id))''')
+    conn.execute('''CREATE TABLE IF NOT EXISTS source_evaluation_results(run_id INTEGER PRIMARY KEY REFERENCES source_evaluations(id),
+        report TEXT NOT NULL,report_hash TEXT NOT NULL,finalized_by TEXT NOT NULL,created_at TEXT DEFAULT CURRENT_TIMESTAMP)''')
+    conn.execute('''CREATE TABLE IF NOT EXISTS reconciliation_previews(id INTEGER PRIMARY KEY,baseline_hash TEXT NOT NULL,
+        report TEXT NOT NULL,created_by TEXT NOT NULL,created_at TEXT DEFAULT CURRENT_TIMESTAMP)''')
+    for table in ('source_evaluations','source_evaluation_labels','source_evaluation_results','reconciliation_previews'):
+        for action in ('UPDATE','DELETE'):
+            conn.execute(f"CREATE TRIGGER IF NOT EXISTS immutable_{table}_{action.lower()} BEFORE {action} ON {table} BEGIN SELECT RAISE(ABORT,'Evaluation and preview artifacts are immutable'); END")
+    conn.execute("CREATE TRIGGER IF NOT EXISTS evaluation_labels_closed BEFORE INSERT ON source_evaluation_labels WHEN EXISTS (SELECT 1 FROM source_evaluation_results WHERE run_id=NEW.run_id) BEGIN SELECT RAISE(ABORT,'Evaluation already finalized'); END")
