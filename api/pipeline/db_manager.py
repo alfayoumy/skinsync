@@ -438,6 +438,14 @@ def init_db(db_path=DB_PATH, seed_defaults: bool = True, conn=None):
     cur.execute("CREATE INDEX IF NOT EXISTS idx_audit_evidence_canonical ON inci_audit_evidence(canonical_product_id);")
     cur.execute("CREATE INDEX IF NOT EXISTS idx_audit_evidence_source ON inci_audit_evidence(source_name);")
 
+    from pipeline.aggregation_schema import init_aggregation_schema
+    from pipeline.brand_registry import seed_brands, register_legacy_brands
+    from pipeline.taxonomy_service import seed_taxonomy
+    init_aggregation_schema(conn)
+    seed_brands(conn)
+    register_legacy_brands(conn)
+    seed_taxonomy(conn)
+
     # Indexes for sub-millisecond query performance
     cur.execute("CREATE INDEX IF NOT EXISTS idx_products_category ON products(category);")
     cur.execute("CREATE INDEX IF NOT EXISTS idx_products_brand ON products(brand);")
@@ -459,6 +467,10 @@ def init_db(db_path=DB_PATH, seed_defaults: bool = True, conn=None):
                 seed_all_defaults(conn=conn, db_path=db_path)
             except Exception as se:
                 logger.warning(f"Could not automatically seed defaults: {se}")
+
+    from pipeline.source_registry import seed_sources
+    seed_sources(conn)
+    conn.commit()
 
     if should_close:
         conn.close()

@@ -313,6 +313,14 @@ class FormulationRepository:
                 logger.error(f"Cannot publish formulation: canonical product #{candidate.canonical_product_id} not found.")
                 return False
 
+            has_versions = bool(conn.execute("SELECT 1 FROM sqlite_master WHERE type='table' AND name='formulation_versions'").fetchone())
+            if has_versions and existing.get("ingredients_raw"):
+                conn.execute("""INSERT OR IGNORE INTO formulation_versions(canonical_product_id,formula_version,formula_hash,
+                    raw_ingredients,parsed_tokens,source_name,source_url,approval_reason) VALUES (?,?,?,?,?,?,?,?)""",
+                    (candidate.canonical_product_id,existing.get("formula_version") or 1,existing.get("formula_hash"),
+                     existing["ingredients_raw"],json.dumps(existing.get("ingredients_parsed") or []),existing.get("ingredient_source"),
+                     existing.get("ingredient_source_url"),existing.get("formulation_approval_reason")))
+
             curr_raw = existing.get("ingredients_raw")
             curr_src = existing.get("ingredient_source")
             curr_hash = existing.get("formula_hash")
@@ -432,6 +440,11 @@ class FormulationRepository:
                 audited_by
             ))
 
+            if has_versions:
+                conn.execute("""INSERT INTO formulation_versions(canonical_product_id,formula_version,formula_hash,raw_ingredients,
+                    parsed_tokens,source_name,source_url,approval_reason) VALUES (?,?,?,?,?,?,?,?)""",
+                    (candidate.canonical_product_id,new_version,new_ordered_hash,candidate.raw_ingredients,parsed_json,
+                     candidate.source_name,candidate.evidence_url,approval_reason))
             if should_close:
                 conn.commit()
             logger.info(

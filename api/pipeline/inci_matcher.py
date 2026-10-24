@@ -209,6 +209,13 @@ def extract_ingredients_from_html(body_html: str) -> Optional[str]:
     if not body_html or not isinstance(body_html, str):
         return None
 
+    from pipeline.source_adapters.extraction import extract_sections, preferred_section
+    section = preferred_section(extract_sections(body_html))
+    if section and section.section_type == 'full' and section.completeness == 'full' and is_valid_inci_list(section.text):
+        if len(section.text) > cfg.MAX_INGREDIENT_RAW_LEN:
+            return section.text[:cfg.MAX_INGREDIENT_RAW_LEN].rsplit(',', 1)[0] + ', ...'
+        return section.text
+
     text = re.sub(r'<br\s*/?>', '\n', body_html, flags=re.IGNORECASE)
     text = re.sub(r'</(p|div|li|h\d)>', '\n', text, flags=re.IGNORECASE)
     text = re.sub(r'<[^>]+>', ' ', text)

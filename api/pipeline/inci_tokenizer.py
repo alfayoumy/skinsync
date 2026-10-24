@@ -177,7 +177,18 @@ def tokenize_inci_string(raw_text: Optional[str], product_title: Optional[str] =
 
     # 4. Split by primary delimiters: comma, semicolon, bullet, newline, or em-dash surrounded by spaces
     # Notice: WE DO NOT SPLIT ON SLASH (/)
-    raw_segments = re.split(r'[,;•●⦁\*|\n\r]+|\s+[\-–—]\s+', preprocessed_text)
+    # Commas in botanical aliases or ppm values are not ingredient separators.
+    raw_segments = []
+    start = 0
+    depth = 0
+    for index, character in enumerate(preprocessed_text):
+        if character in '([': depth += 1
+        elif character in ')]': depth = max(0, depth - 1)
+        elif character in ',;•●⦁*|\n\r' and depth == 0:
+            raw_segments.append(preprocessed_text[start:index])
+            start = index + 1
+    raw_segments.append(preprocessed_text[start:])
+    raw_segments = [part for segment in raw_segments for part in re.split(r'\s+[\-–—]\s+', segment)]
 
     tokens = []
     has_composite_slashes = False

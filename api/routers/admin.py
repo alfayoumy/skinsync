@@ -107,6 +107,18 @@ def get_admin_overview():
         """)
         stores_breakdown = [dict(r) for r in cur.fetchall()]
 
+        registry_sources = []
+        if conn.execute("SELECT 1 FROM sqlite_master WHERE type='table' AND name='sources'").fetchone():
+            from pipeline.source_registry import list_source_inventory
+            registry_sources = list_source_inventory(conn)
+        source_summary = {
+            'registered': len(registry_sources),
+            'collection_enabled': sum(bool(s['enabled']) for s in registry_sources),
+            'staged': sum(not s['enabled'] for s in registry_sources),
+            'publication_approved': sum(bool(s['publish_enabled']) for s in registry_sources),
+            'legacy_stores': len(stores_breakdown)
+        }
+
         # Recent Tasks
         cur.execute("""
         SELECT task_id, task_type, target_source, status, progress_percent,
@@ -133,6 +145,8 @@ def get_admin_overview():
                 "coverage_percent": round((products_with_ingredients / total_products * 100.0), 1) if total_products else 0.0
             },
             "stores": stores_breakdown,
+            "sources": registry_sources,
+            "source_summary": source_summary,
             "recent_tasks": recent_tasks,
             "langsearch_quota": ls_quota
         }

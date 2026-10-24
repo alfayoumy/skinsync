@@ -42,7 +42,7 @@ def is_skincare_or_beauty(title: str, product_type: str = "", tags: Optional[Lis
             return False
     return True
 
-def classify_and_tag(title: str, brand: str = "", product_type: str = "") -> Tuple[str, bool]:
+def _legacy_classify_and_tag(title: str, brand: str = "", product_type: str = "") -> Tuple[str, bool]:
     """
     Deterministic rule-based cosmetic & pharmacy classifier.
     Returns:
@@ -173,6 +173,12 @@ def classify_and_tag(title: str, brand: str = "", product_type: str = "") -> Tup
     # Default fallback: Non-skincare
     return 'Other Non-Skincare', False
 
+def classify_and_tag(title: str, brand: str = "", product_type: str = "") -> Tuple[str, bool]:
+    from pipeline.taxonomy_service import classify_product_attributes
+    result = classify_product_attributes(title, brand, product_type)
+    return result.primary_category, result.is_skincare
+
+
 def classify_product(title: str, brand_or_type: str = "", product_type: str = "") -> str:
     """
     Convenience wrapper returning category name only for existing pipeline compatibility.
@@ -224,7 +230,9 @@ def classify_catalog_products(db_path=None) -> dict:
             if not new_title:
                 new_title = orig_title
 
-            new_cat, is_skincare = classify_and_tag(new_title, brand=brand)
+            from pipeline.taxonomy_service import classify_product_attributes
+            classification = classify_product_attributes(orig_title, brand)
+            new_cat, is_skincare = classification.primary_category, classification.is_skincare
             is_skin_int = 1 if is_skincare else 0
 
             if is_skincare:
@@ -242,9 +250,10 @@ def classify_catalog_products(db_path=None) -> dict:
 
             cur.execute("""
             UPDATE products
-            SET title = ?, category = ?, is_skincare = ?
+            SET original_title = COALESCE(original_title,title),original_brand = COALESCE(original_brand,brand),
+                original_category = COALESCE(original_category,category),category = ?, is_skincare = ?,classification = ?
             WHERE id = ?;
-            """, (new_title, new_cat, is_skin_int, pid))
+            """, (new_cat, is_skin_int, __import__('json').dumps(classification.to_dict()), pid))
 
         conn.commit()
 

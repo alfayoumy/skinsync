@@ -28,6 +28,13 @@ def get_canonical_price_comparison(canonical_id: int, conn=None) -> Optional[Dic
         close_on_exit = True
 
     try:
+        if conn.execute("SELECT 1 FROM sqlite_master WHERE type='table' AND name='canonical_redirects'").fetchone():
+            from pipeline.review_service import resolve_canonical_redirect
+            canonical_id = resolve_canonical_redirect(conn, canonical_id)
+        columns = {r[1] for r in conn.execute('PRAGMA table_info(canonical_products)')}
+        if 'catalog_visible' in columns:
+            visible = conn.execute('SELECT catalog_visible FROM canonical_products WHERE id=?',(canonical_id,)).fetchone()
+            if visible and not visible[0]: return None
         cur = conn.cursor()
         cur.execute("""
         SELECT id, canonical_title, brand, category, ingredients_raw, ingredients_parsed,
@@ -56,6 +63,26 @@ def get_canonical_price_comparison(canonical_id: int, conn=None) -> Optional[Dic
         ORDER BY p.price ASC;
         """, (canonical_id,))
         listings = [dict(r) for r in cur.fetchall()]
+        has_variants = bool(conn.execute("SELECT 1 FROM sqlite_master WHERE type='table' AND name='product_offers'").fetchone())
+        for item in listings:
+            item['offer_namespace'] = 'legacy'
+            item['offer_id'] = item['product_id']
+        if has_variants:
+            variant_rows = [dict(r) for r in conn.execute("""SELECT o.id as offer_id,'variant' as offer_namespace,
+                o.legacy_product_id as product_id,o.source_id as store_id,s.name as store_name,o.title as store_title,
+                o.price,o.compare_at_price,o.is_available,o.product_url,o.image_url,o.source_product_id,o.source_variant_id,
+                o.sku,o.gtin,o.pack_count,o.unit_size,o.unit_size_unit,o.total_quantity,
+                CASE WHEN o.unit_size IS NULL THEN NULL WHEN o.pack_count>1 THEN printf('%d × %g %s',o.pack_count,o.unit_size,o.unit_size_unit)
+                     ELSE printf('%g %s',o.unit_size,o.unit_size_unit) END as size_raw,
+                o.unit_size as size_value,o.unit_size_unit as size_unit,o.normalized_size_ml,o.normalized_size_g,o.unit_price,o.unit_measure
+                FROM product_offers o JOIN sources s ON s.id=o.source_id
+                WHERE o.canonical_product_id=? AND s.provides_prices=1 AND (s.wave<=1 OR s.publish_enabled=1) AND o.currency='EGP'""", (canonical_id,))]
+            represented = {r['product_id'] for r in variant_rows if r['product_id'] is not None}
+            listings = [r for r in listings if r['product_id'] not in represented] + variant_rows
+            listings.sort(key=lambda r:r['price'])
+        def offer_key(item):
+            return (item['offer_namespace'],item['offer_id']) if item else None
+
 
         # Filter active available offers vs out of stock offers
         in_stock_offers = [o for o in listings if o.get("is_available") and (o.get("price") or 0) > 0]
@@ -89,7 +116,7 @@ def get_canonical_price_comparison(canonical_id: int, conn=None) -> Optional[Dic
             grp_savings = round((grp_diff / grp_max * 100.0), 1) if grp_max > 0 else 0.0
 
             for o in group_offers:
-                o["is_best_size_deal"] = (grp_best is not None and o["product_id"] == grp_best["product_id"])
+                o["is_best_size_deal"] = (grp_best is not None and offer_key(o) == offer_key(grp_best))
 
             size_groups_formatted.append({
                 "size": size_key,
@@ -126,11 +153,11 @@ def get_canonical_price_comparison(canonical_id: int, conn=None) -> Optional[Dic
         best_unit_wt = min(wt_offers, key=lambda x: x["unit_price"]) if wt_offers else None
 
         for o in listings:
-            o["is_best_deal"] = (best_deal is not None and o["product_id"] == best_deal["product_id"])
+            o["is_best_deal"] = (best_deal is not None and offer_key(o) == offer_key(best_deal))
             is_best_unit = False
-            if best_unit_vol and o["product_id"] == best_unit_vol["product_id"]:
+            if best_unit_vol and offer_key(o) == offer_key(best_unit_vol):
                 is_best_unit = True
-            if best_unit_wt and o["product_id"] == best_unit_wt["product_id"]:
+            if best_unit_wt and offer_key(o) == offer_key(best_unit_wt):
                 is_best_unit = True
             o["is_best_unit_deal"] = is_best_unit
 
@@ -205,14 +232,16 @@ def get_price_arbitrage_deals(limit: int = 20, min_savings_egp: float = 20.0, co
 
     try:
         cur = conn.cursor()
-        cur.execute("""
+        columns = {r[1] for r in conn.execute('PRAGMA table_info(canonical_products)')}
+        visibility = 'AND catalog_visible=1' if 'catalog_visible' in columns else ''
+        cur.execute(f"""
         SELECT id, canonical_title, brand, category, min_price, max_price,
                ROUND(max_price - min_price, 2) as diff,
                ROUND((max_price - min_price) / max_price * 100.0, 1) as savings_pct,
                store_count, primary_image_url
         FROM canonical_products
         WHERE store_count > 1
-          AND is_skincare = 1
+          AND is_skincare = 1 {visibility}
           AND min_price > 0
           AND (max_price - min_price) >= ?
         ORDER BY diff DESC

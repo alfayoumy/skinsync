@@ -59,6 +59,9 @@ def _resolve_product_for_similarity(
     # Explicit Canonical Resolution
     target_canonical_id = canonical_pid if canonical_pid is not None else (pid if entity_type == "canonical" else None)
     if target_canonical_id is not None:
+        if conn.execute("SELECT 1 FROM sqlite_master WHERE type='table' AND name='canonical_redirects'").fetchone():
+            from pipeline.review_service import resolve_canonical_redirect
+            target_canonical_id = resolve_canonical_redirect(conn, target_canonical_id)
         cur.execute("""
         SELECT id, canonical_title as title, brand, ingredients_raw, ingredients_parsed, actives
         FROM canonical_products

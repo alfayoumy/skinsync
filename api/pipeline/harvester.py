@@ -108,6 +108,26 @@ def sync_store(store_cfg: dict, max_pages: int = None, conn=None, fields: list =
         conn = get_connection()
         should_close = True
 
+    from pipeline.aggregation_schema import init_aggregation_schema
+    from pipeline.brand_registry import seed_brands, register_legacy_brands
+    from pipeline.source_registry import seed_sources, get_source
+    init_aggregation_schema(conn)
+    seed_brands(conn); register_legacy_brands(conn); seed_sources(conn)
+    source = get_source(conn, store_cfg['id'])
+    if not source['enabled']:
+        if should_close: conn.close()
+        return {'store_id':store_cfg['id'],'status':'skipped','reason':'Collection paused in Source Registry.',
+                'fetched':0,'added':0,'updated':0,'price_changes':0}
+    if source['adapter_type'] != 'shopify':
+        from pipeline.source_collection import collect_source
+        if not store_cfg.get('product_urls'):
+            raise ValueError('Non-Shopify sources require explicit, bounded product URLs.')
+        result = collect_source(conn, source['id'], store_cfg['product_urls'], max_products=max_pages * 100)
+        conn.commit()
+        if should_close: conn.close()
+        return {'store_id':store_cfg['id'],'status':'success','fetched':result['observations'],
+                'added':0,'updated':result['observations'],'price_changes':0,'source_results':result}
+
     # Normalize fields filter
     clean_fields = None
     if fields:
@@ -219,9 +239,10 @@ def sync_store(store_cfg: dict, max_pages: int = None, conn=None, fields: list =
                 size_data = extract_size_details(title, handle, price)
 
                 # Check if product exists in DB
-                cur.execute("SELECT id, price, canonical_product_id, ingredients_raw FROM products WHERE product_url = ?;", (product_url,))
+                cur.execute("SELECT * FROM products WHERE product_url = ?;", (product_url,))
                 existing = cur.fetchone()
 
+                price_history_id = None
                 if existing:
                     pid = existing["id"]
                     old_price = float(existing["price"])
@@ -235,6 +256,7 @@ def sync_store(store_cfg: dict, max_pages: int = None, conn=None, fields: list =
                             INSERT INTO price_history (product_id, old_price, new_price)
                             VALUES (?, ?, ?);
                             """, (pid, old_price, price))
+                            price_history_id = cur.lastrowid
                             price_changes += 1
                             price_has_changed = True
 
@@ -322,8 +344,36 @@ def sync_store(store_cfg: dict, max_pages: int = None, conn=None, fields: list =
                         size_data["normalized_size_ml"], size_data["normalized_size_g"],
                         size_data["unit_price"], size_data["unit_measure"]
                     ))
+                    pid = cur.lastrowid
                     total_added += 1
                     page_added += 1
+
+                # Preserve the original source record and every trade-item variant.
+                # Legacy products remains a page-level compatibility representative.
+                from pipeline.source_adapters import ShopifyAdapter
+                from pipeline.aggregation_service import process_source_observation
+                from pipeline.canonical_identity_resolver import CanonicalIdentityResolver
+                original = ShopifyAdapter(source).parse({'product': p})[0]
+                linked = conn.execute('SELECT canonical_product_id FROM products WHERE id=?',(pid,)).fetchone()
+                if linked and linked[0]:
+                    CanonicalIdentityResolver(conn).record_link(source['id'],original.source_product_id,linked[0],
+                        'accepted','legacy_preserved',{'legacy_product_id':pid})
+                source_result = process_source_observation(conn,original,legacy_product_id=pid,offer_fields=clean_fields)
+                accepted_offers = any(r.get('offer_ids') for r in source_result['results'])
+                if existing and not accepted_offers:
+                    # A repurposed/ambiguous page cannot move its new price onto
+                    # the previously accepted product through the legacy row.
+                    preserved = ['title','brand','category','price','compare_at_price','is_available','image_url','description_html',
+                        'size_raw','size_value','size_unit','normalized_size_ml','normalized_size_g','unit_price','unit_measure']
+                    preserved = [key for key in preserved if key in existing.keys()]
+                    conn.execute('UPDATE products SET '+','.join(key+'=?' for key in preserved)+' WHERE id=?',
+                        [existing[key] for key in preserved]+[pid])
+                    if price_history_id is not None:
+                        conn.execute('DELETE FROM price_history WHERE id=?',(price_history_id,))
+                        price_changes -= 1
+                    if linked and linked[0]:
+                        from pipeline.offer_service import refresh_offer_aggregates
+                        refresh_offer_aggregates(conn,linked[0])
 
             conn.commit()
 
@@ -393,6 +443,7 @@ def sync_store(store_cfg: dict, max_pages: int = None, conn=None, fields: list =
             )
 
     except Exception as e:
+        conn.rollback()
         error_msg = str(e)
         logger.error(f"Sync failed for {name}: {e}")
         cur.execute("""

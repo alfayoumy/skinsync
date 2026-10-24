@@ -151,9 +151,11 @@ def load_catalog_from_db():
         df_cache['std_category'] = df_cache.get('std_category', 'Other')
     else:
         conn = sqlite3.connect(DB_PATH)
+        columns = {row[1] for row in conn.execute('PRAGMA table_info(canonical_products)')}
+        visibility = ' AND c.catalog_visible = 1' if 'catalog_visible' in columns else ''
         # Authoritative Canonical Index: Exactly ONE record per unique product formulation.
         # Retailer listings are store offers and are NOT duplicated in search or recommendation indices.
-        df_cache = pd.read_sql_query("""
+        df_cache = pd.read_sql_query(f"""
         SELECT c.id,
                c.id as canonical_product_id,
                c.canonical_title as title,
@@ -164,7 +166,7 @@ def load_catalog_from_db():
                COALESCE(c.primary_image_url, (SELECT p.image_url FROM products p WHERE p.canonical_product_id = c.id AND p.image_url IS NOT NULL LIMIT 1)) as image_url,
                COALESCE((SELECT p.product_url FROM products p WHERE p.canonical_product_id = c.id AND p.product_url IS NOT NULL LIMIT 1), '') as url,
                COALESCE((SELECT p.store_id FROM products p WHERE p.canonical_product_id = c.id AND p.store_id IS NOT NULL LIMIT 1), 'canonical') as store_id,
-               COALESCE((SELECT MAX(p.is_available) FROM products p WHERE p.canonical_product_id = c.id), 1) as is_available,
+               COALESCE((SELECT MAX(p.is_available) FROM products p WHERE p.canonical_product_id = c.id), 0) as is_available,
                c.ingredients_raw as ingredients,
                c.ingredients_parsed,
                c.actives,
@@ -177,8 +179,23 @@ def load_catalog_from_db():
                c.max_price,
                c.is_skincare
         FROM canonical_products c
-        WHERE c.is_skincare = 1;
+        WHERE c.is_skincare = 1 {visibility};
         """, conn)
+        has_offers = conn.execute("SELECT 1 FROM sqlite_master WHERE type='table' AND name='product_offers'").fetchone()
+        if has_offers:
+            variants = {r[0]: r[1:] for r in conn.execute("""SELECT canonical_product_id,MAX(is_available),MIN(product_url),MIN(source_id) FROM (
+                SELECT o.canonical_product_id,o.is_available,o.product_url,o.source_id FROM product_offers o JOIN sources s ON s.id=o.source_id
+                WHERE s.provides_prices=1 AND (s.wave<=1 OR s.publish_enabled=1)
+                UNION ALL SELECT p.canonical_product_id,p.is_available,p.product_url,p.store_id FROM products p
+                WHERE NOT EXISTS(SELECT 1 FROM product_offers o JOIN sources s ON s.id=o.source_id
+                    WHERE o.legacy_product_id=p.id AND s.provides_prices=1 AND (s.wave<=1 OR s.publish_enabled=1)))
+                GROUP BY canonical_product_id""")}
+            for idx, row in df_cache.iterrows():
+                extra = variants.get(row['canonical_product_id'])
+                if extra:
+                    df_cache.at[idx,'is_available'] = extra[0]
+                    if not row['url']: df_cache.at[idx,'url'] = extra[1]
+                    if row['store_id']=='canonical': df_cache.at[idx,'store_id'] = extra[2]
         conn.close()
 
     df_cache['title'] = df_cache['title'].fillna('').astype(str).str.strip()

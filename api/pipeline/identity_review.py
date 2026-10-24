@@ -104,7 +104,7 @@ def audit_canonical_identity(conn, persist=False):
     offers = [dict(r) for r in conn.execute('SELECT * FROM products WHERE canonical_product_id IS NOT NULL ORDER BY id')]
     groups, linked = defaultdict(list), defaultdict(list)
     for c in canonicals:
-        groups[(canonicalize_brand(c['brand']), c['category'])].append(c)
+        groups[canonicalize_brand(c['brand'])].append(c)
     for p in offers:
         linked[p['canonical_product_id']].append(p)
     findings = []

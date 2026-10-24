@@ -1367,6 +1367,14 @@ def resolve_waterfall_for_canonical_product(
     - Tier 5: Store description whitelist extraction across linked offers (partial candidate).
     Returns (candidate_or_none, tier3_ambiguous_candidate_or_none).
     """
+    if conn and conn.execute("SELECT 1 FROM sqlite_master WHERE type='table' AND name='sources'").fetchone():
+        from pipeline.source_formulations import source_candidate_for_waterfall
+        candidate, source_status = source_candidate_for_waterfall(conn, canonical_prod["id"])
+        if candidate is not None:
+            return candidate, None
+        if source_status == 'conflict':
+            return None, None
+
     c_id = canonical_prod["id"]
     brand = canonical_prod.get("brand") or ""
     title = canonical_prod.get("canonical_title") or ""
