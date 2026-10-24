@@ -4,7 +4,8 @@ import {
   ExternalLink, Eye, X, Loader2, Store, BadgePercent, TrendingDown, 
   Check, AlertTriangle, Activity, Sparkles, CheckCircle2, ArrowRight,
   RefreshCw, SlidersHorizontal, RotateCcw, ArrowUpDown, Tag, DollarSign,
-  Layers, Settings2, Plus, Trash2, ListChecks, Zap, Copy, Clock
+  Layers, Settings2, Plus, Trash2, ListChecks, Zap, Copy, Clock,
+  Cpu, Globe, Server, AlertOctagon, CheckCircle
 } from 'lucide-react';
 
 const SKINCARE_CATEGORIES = [
@@ -59,6 +60,13 @@ const AdminObservatory = ({ onBackToApp }) => {
   const [tierSuccessMsg, setTierSuccessMsg] = useState(null);
   const [copiedTier, setCopiedTier] = useState(null);
   const [langsearchQuota, setLangsearchQuota] = useState(null);
+
+  // 3-API Status & Quotas Modal States (Gemini, Jev, LangSearch)
+  const [showApiStatusModal, setShowApiStatusModal] = useState(false);
+  const [apiStatusData, setApiStatusData] = useState(null);
+  const [loadingApiStatus, setLoadingApiStatus] = useState(false);
+  const [apiActionLoading, setApiActionLoading] = useState(null);
+  const [apiActionMessage, setApiActionMessage] = useState(null);
 
   // Similar Alternatives Filter States
   const [altCategoryMode, setAltCategoryMode] = useState('same_category'); // 'same_category', 'cross_category', 'specific'
@@ -208,6 +216,7 @@ const AdminObservatory = ({ onBackToApp }) => {
   useEffect(() => {
     fetchOverview();
     fetchBrands();
+    fetchAllApisStatus();
   }, []);
 
   const fetchOverview = async () => {
@@ -237,6 +246,61 @@ const AdminObservatory = ({ onBackToApp }) => {
       }
     } catch (err) {
       console.error('Failed to fetch LangSearch quota:', err);
+    }
+  };
+
+  const fetchAllApisStatus = async () => {
+    try {
+      setLoadingApiStatus(true);
+      const res = await fetch('http://127.0.0.1:8000/admin/apis/status');
+      if (res.ok) {
+        const data = await res.json();
+        setApiStatusData(data);
+        if (data.langsearch) {
+          setLangsearchQuota(data.langsearch);
+        }
+      }
+    } catch (err) {
+      console.error('Failed to fetch APIs status:', err);
+    } finally {
+      setLoadingApiStatus(false);
+    }
+  };
+
+  const handleResetLangsearchQuota = async () => {
+    try {
+      setApiActionLoading('reset_ls');
+      const res = await fetch('http://127.0.0.1:8000/admin/langsearch/reset-quota', { method: 'POST' });
+      if (res.ok) {
+        await fetchAllApisStatus();
+        setApiActionMessage({ type: 'success', text: 'LangSearch quota counter reset to 0. All 10M daily tokens restored!' });
+        setTimeout(() => setApiActionMessage(null), 4000);
+      }
+    } catch (err) {
+      console.error('Failed to reset LangSearch quota:', err);
+      alert('Failed to reset LangSearch quota.');
+    } finally {
+      setApiActionLoading(null);
+    }
+  };
+
+  const handleSetLangsearchExhausted = async () => {
+    try {
+      setApiActionLoading('exhaust_ls');
+      const res = await fetch('http://127.0.0.1:8000/admin/langsearch/set-quota-exhausted', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ tokens_used: 10000000, reason: 'Manual Admin 100% allowance simulation' })
+      });
+      if (res.ok) {
+        await fetchAllApisStatus();
+        setApiActionMessage({ type: 'warning', text: 'LangSearch marked as 100% daily allowance exhausted until 00:00 UTC.' });
+        setTimeout(() => setApiActionMessage(null), 4000);
+      }
+    } catch (err) {
+      console.error('Failed to set quota exhausted:', err);
+    } finally {
+      setApiActionLoading(null);
     }
   };
 
@@ -587,6 +651,25 @@ const AdminObservatory = ({ onBackToApp }) => {
           </div>
 
           <div className="flex items-center gap-2.5 flex-wrap">
+            <button
+              onClick={() => {
+                fetchAllApisStatus();
+                setShowApiStatusModal(true);
+              }}
+              className={`text-xs font-bold px-3 py-2 rounded-xl border transition-all flex items-center gap-1.5 cursor-pointer shadow-sm ${
+                apiStatusData?.summary?.has_issues
+                  ? 'border-amber-300 bg-amber-50 text-amber-900 hover:bg-amber-100'
+                  : 'border-blue-200 bg-blue-50 text-blue-800 hover:bg-blue-100'
+              }`}
+              title="Inspect Real-time Status, Rate Limits, and Quotas for Gemini, Jev, and LangSearch APIs"
+            >
+              <Cpu className="w-3.5 h-3.5 text-blue-600" />
+              <span>3-API Status & Quotas</span>
+              {apiStatusData?.summary?.has_issues && (
+                <span className="w-2 h-2 rounded-full bg-amber-500 animate-pulse ml-0.5" />
+              )}
+            </button>
+
             <button
               onClick={() => setShowWhitelistModal(true)}
               className="text-xs font-bold px-3 py-2 rounded-xl border border-teal-200 bg-teal-50 text-teal-800 hover:bg-teal-100 transition-all flex items-center gap-1.5 cursor-pointer shadow-sm"
@@ -1932,20 +2015,15 @@ const AdminObservatory = ({ onBackToApp }) => {
 
                           <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 shrink-0">
                             {/* LangSearch Toggle Checkbox */}
-                            <label className={`flex items-center gap-2 px-3 py-2 bg-white rounded-xl border border-gray-200 select-none text-xs transition-all ${
-                              langsearchQuota?.is_daily_exhausted ? 'opacity-65 cursor-not-allowed bg-amber-50/50' : 'cursor-pointer hover:bg-gray-50'
-                            }`}
-                            title={langsearchQuota?.is_daily_exhausted ? `LangSearch Daily Quota (10M tokens) is 100% exhausted until 00:00 UTC (Resets in ${langsearchQuota.resets_in_human})` : 'Include live LangSearch Web Search API for product formulation'}
-                            >
+                            <label className="flex items-center gap-2 px-3 py-2 bg-white rounded-xl border border-gray-200 select-none text-xs cursor-pointer hover:bg-gray-50 transition-all shadow-2xs">
                               <input
                                 type="checkbox"
-                                checked={includeLangSearch && !langsearchQuota?.is_daily_exhausted}
-                                disabled={langsearchQuota?.is_daily_exhausted}
+                                checked={includeLangSearch}
                                 onChange={(e) => setIncludeLangSearch(e.target.checked)}
-                                className="w-4 h-4 text-purple-600 rounded border-gray-300 focus:ring-purple-500 disabled:opacity-50"
+                                className="w-4 h-4 text-purple-600 rounded border-gray-300 focus:ring-purple-500 cursor-pointer"
                               />
                               <span className="font-semibold text-gray-700">
-                                {langsearchQuota?.is_daily_exhausted ? 'Tier 4 Paused (100% Quota Used)' : 'Include Tier 4 Web Search'}
+                                Include Tier 4 (Web Search)
                               </span>
                             </label>
 
@@ -1973,53 +2051,6 @@ const AdminObservatory = ({ onBackToApp }) => {
                             </button>
                           </div>
                         </div>
-
-                        {/* LangSearch Live Quota & Rate Limit Widget */}
-                        {langsearchQuota && (
-                          <div className={`p-3.5 rounded-xl border flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs ${
-                            langsearchQuota.is_daily_exhausted
-                              ? 'bg-amber-50/90 border-amber-300 text-amber-950 shadow-sm'
-                              : 'bg-indigo-50/80 border-indigo-200 text-indigo-950'
-                          }`}>
-                            <div className="flex items-center gap-2.5">
-                              <span className="text-lg shrink-0">
-                                {langsearchQuota.is_daily_exhausted ? '🛑' : '🌐'}
-                              </span>
-                              <div>
-                                <div className="flex items-center gap-2 flex-wrap font-black">
-                                  <span>LangSearch Engine (Tier 4)</span>
-                                  {langsearchQuota.is_daily_exhausted ? (
-                                    <span className="px-2 py-0.5 bg-red-100 text-red-800 rounded-full font-extrabold text-[10px] border border-red-200">
-                                      Daily Allowance 100% Used ({langsearchQuota.tokens_used_today.toLocaleString()} / {langsearchQuota.daily_token_limit.toLocaleString()} Tokens)
-                                    </span>
-                                  ) : (
-                                    <span className="px-2 py-0.5 bg-emerald-100 text-emerald-800 rounded-full font-bold text-[10px] border border-emerald-200">
-                                      Active · {langsearchQuota.tokens_used_today.toLocaleString()} / {langsearchQuota.daily_token_limit.toLocaleString()} Tokens ({langsearchQuota.daily_used_percentage}%)
-                                    </span>
-                                  )}
-                                </div>
-                                <div className="text-[11px] opacity-80 mt-1 flex items-center gap-1.5 flex-wrap">
-                                  <span>Hard Caps: <strong>5 RPS</strong> · <strong>1M TPM</strong> rolling</span>
-                                  <span>·</span>
-                                  <span>Daily Allowance: <strong>10M Tokens</strong></span>
-                                  <span>·</span>
-                                  <span className="font-bold text-purple-900">
-                                    Resets in {langsearchQuota.resets_in_human} (00:00 UTC)
-                                  </span>
-                                </div>
-                              </div>
-                            </div>
-
-                            <button
-                              type="button"
-                              onClick={fetchLangSearchQuota}
-                              className="px-2.5 py-1 bg-white hover:bg-gray-100 text-gray-700 rounded-lg border border-gray-200 text-[10px] font-bold flex items-center gap-1 cursor-pointer self-end sm:self-center shrink-0 shadow-xs"
-                              title="Refresh live LangSearch quota status from backend"
-                            >
-                              <RefreshCw className="w-3 h-3 text-gray-500" /> Refresh Quota
-                            </button>
-                          </div>
-                        )}
 
                         {/* Success / Status Notification Banner */}
                         {tierSuccessMsg && (
@@ -2140,13 +2171,6 @@ const AdminObservatory = ({ onBackToApp }) => {
                                     {isNotFound && (
                                       <span className="px-2 py-0.5 bg-gray-100 text-gray-400 rounded-full font-medium text-[10px]">
                                         Not Found
-                                      </span>
-                                    )}
-
-                                    {/* LangSearch Quota Exhaustion Badge */}
-                                    {key === 'tier4' && (tierData.metadata?.quota_status?.is_daily_exhausted || langsearchQuota?.is_daily_exhausted) && (
-                                      <span className="px-2 py-0.5 bg-red-50 text-red-700 border border-red-200 rounded-full font-bold text-[10px] flex items-center gap-1">
-                                        🛑 Quota 100% Used · Resets in {langsearchQuota?.resets_in_human || tierData.metadata?.quota_status?.resets_in_human || '00:00 UTC'}
                                       </span>
                                     )}
 
@@ -3024,6 +3048,346 @@ const AdminObservatory = ({ onBackToApp }) => {
               </div>
             </div>
 
+          </div>
+        </div>
+      )}
+
+      {/* 6. 3-API Status & Quotas Modal (Gemini, Jev, LangSearch) */}
+      {showApiStatusModal && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl max-w-5xl w-full max-h-[92vh] shadow-2xl flex flex-col overflow-hidden animate-scale-in border border-gray-100">
+            {/* Modal Header */}
+            <div className="p-6 border-b border-gray-200 flex items-start justify-between bg-gradient-to-r from-blue-50 via-indigo-50 to-white shrink-0">
+              <div className="flex items-center gap-3">
+                <div className="w-12 h-12 bg-gradient-to-tr from-blue-600 to-indigo-600 rounded-2xl flex items-center justify-center text-white shadow-md">
+                  <Cpu className="w-6 h-6" />
+                </div>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <h2 className="text-xl font-black text-gray-900">External Services & API Quotas</h2>
+                    <span className="bg-blue-100 text-blue-800 text-xs px-2.5 py-0.5 rounded-full font-bold">
+                      Gemini · Jev · LangSearch
+                    </span>
+                  </div>
+                  <p className="text-xs text-gray-500 mt-0.5">
+                    Live operational telemetry, rate limits, daily token quotas, and worker queue metrics across all 3 AI & search providers.
+                  </p>
+                </div>
+              </div>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={fetchAllApisStatus}
+                  disabled={loadingApiStatus}
+                  className="px-3 py-1.5 rounded-xl border border-gray-200 bg-white hover:bg-gray-50 text-gray-700 text-xs font-bold flex items-center gap-1.5 cursor-pointer shadow-xs disabled:opacity-50"
+                  title="Refresh live status from all 3 APIs"
+                >
+                  <RefreshCw className={`w-3.5 h-3.5 text-gray-500 ${loadingApiStatus ? 'animate-spin' : ''}`} />
+                  <span>Refresh</span>
+                </button>
+                <button
+                  onClick={() => setShowApiStatusModal(false)}
+                  className="w-8 h-8 rounded-full bg-white hover:bg-gray-100 border border-gray-200 flex items-center justify-center text-gray-400 hover:text-gray-600 transition cursor-pointer"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+            </div>
+
+            {/* Modal Body */}
+            <div className="p-6 overflow-y-auto space-y-6 flex-1 bg-gray-50/50">
+              {/* Alert Notification if any API has issues */}
+              {apiStatusData?.summary?.has_issues && (
+                <div className="p-4 bg-amber-50 border border-amber-300 rounded-2xl flex items-start gap-3 text-xs text-amber-950 shadow-xs">
+                  <AlertTriangle className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
+                  <div className="space-y-1">
+                    <span className="font-extrabold text-amber-900">Attention Required:</span>
+                    {apiStatusData.summary.issues.map((iss, i) => (
+                      <div key={i} className="leading-relaxed font-medium text-amber-900/90">• {iss}</div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Action Message Banner */}
+              {apiActionMessage && (
+                <div className={`p-3.5 rounded-2xl border text-xs font-semibold flex items-center gap-2 shadow-xs ${
+                  apiActionMessage.type === 'success' 
+                    ? 'bg-emerald-50 border-emerald-300 text-emerald-800' 
+                    : 'bg-amber-50 border-amber-300 text-amber-900'
+                }`}>
+                  <CheckCircle2 className="w-4 h-4 shrink-0" />
+                  <span>{apiActionMessage.text}</span>
+                </div>
+              )}
+
+              {/* 3 API Cards Grid */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+                {/* 1. Google Gemini API Card */}
+                <div className="bg-white rounded-2xl border border-gray-200 shadow-xs p-5 flex flex-col justify-between hover:border-purple-300 transition-all">
+                  <div className="space-y-4">
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="flex items-center gap-2">
+                        <div className="w-8 h-8 rounded-xl bg-purple-100 text-purple-700 flex items-center justify-center font-bold text-xs">
+                          ✨
+                        </div>
+                        <div>
+                          <h3 className="font-black text-sm text-gray-900">Google Gemini</h3>
+                          <div className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">Tier 7 Fallback</div>
+                        </div>
+                      </div>
+                      <span className={`px-2 py-0.5 rounded-full text-[10px] font-extrabold flex items-center gap-1 border ${
+                        apiStatusData?.gemini?.status === 'operational'
+                          ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                          : 'bg-red-50 text-red-700 border-red-200'
+                      }`}>
+                        <span className={`w-1.5 h-1.5 rounded-full ${apiStatusData?.gemini?.status === 'operational' ? 'bg-emerald-500' : 'bg-red-500'}`} />
+                        {apiStatusData?.gemini?.status === 'operational' ? 'Active' : 'Missing Key'}
+                      </span>
+                    </div>
+
+                    <p className="text-xs text-gray-500 leading-relaxed">
+                      {apiStatusData?.gemini?.role || 'Gate 4 Disambiguation & Tier 7 Fallback Validator'}
+                    </p>
+
+                    <div className="p-3 bg-gray-50 rounded-xl space-y-2 text-xs border border-gray-100">
+                      <div className="flex justify-between items-center text-gray-600">
+                        <span className="text-[11px] font-medium">Model:</span>
+                        <code className="px-1.5 py-0.5 bg-white border border-gray-200 rounded font-mono text-[10px] text-purple-700 font-bold">
+                          {apiStatusData?.gemini?.model || 'gemini-3.5-flash-lite'}
+                        </code>
+                      </div>
+                      <div className="flex justify-between items-center text-gray-600">
+                        <span className="text-[11px] font-medium">Rate Limits:</span>
+                        <span className="font-bold text-gray-800">
+                          {apiStatusData?.gemini?.limits?.max_rpm || 15} RPM · {apiStatusData?.gemini?.limits?.max_rpd || 1500} RPD
+                        </span>
+                      </div>
+                      <div className="flex justify-between items-center text-gray-600">
+                        <span className="text-[11px] font-medium">Batch Size:</span>
+                        <span className="font-bold text-gray-800">{apiStatusData?.gemini?.limits?.batch_size || 10} items / call</span>
+                      </div>
+                      <div className="flex justify-between items-center text-gray-600">
+                        <span className="text-[11px] font-medium">Pace Delay:</span>
+                        <span className="font-bold text-gray-800">{apiStatusData?.gemini?.limits?.pace_delay_seconds || 4.0}s</span>
+                      </div>
+                    </div>
+
+                    <div className="space-y-1.5 pt-1">
+                      <div className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Queue Metrics</div>
+                      <div className="grid grid-cols-3 gap-2">
+                        <div className="p-2 bg-purple-50 rounded-xl border border-purple-100 text-center">
+                          <div className="text-[10px] text-purple-600 font-bold">Pending</div>
+                          <div className="text-sm font-extrabold text-purple-900 mt-0.5">
+                            {apiStatusData?.gemini?.queue_metrics?.pending_count || 0}
+                          </div>
+                        </div>
+                        <div className="p-2 bg-emerald-50 rounded-xl border border-emerald-100 text-center">
+                          <div className="text-[10px] text-emerald-600 font-bold">Approved</div>
+                          <div className="text-sm font-extrabold text-emerald-900 mt-0.5">
+                            {apiStatusData?.gemini?.queue_metrics?.approved_count || 0}
+                          </div>
+                        </div>
+                        <div className="p-2 bg-rose-50 rounded-xl border border-rose-100 text-center">
+                          <div className="text-[10px] text-rose-600 font-bold">Rejected</div>
+                          <div className="text-sm font-extrabold text-rose-900 mt-0.5">
+                            {apiStatusData?.gemini?.queue_metrics?.rejected_count || 0}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* 2. Jev 1.13 Semantic Matcher Card */}
+                <div className="bg-white rounded-2xl border border-gray-200 shadow-xs p-5 flex flex-col justify-between hover:border-indigo-300 transition-all">
+                  <div className="space-y-4">
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="flex items-center gap-2">
+                        <div className="w-8 h-8 rounded-xl bg-indigo-100 text-indigo-700 flex items-center justify-center font-bold text-xs">
+                          ⚡
+                        </div>
+                        <div>
+                          <h3 className="font-black text-sm text-gray-900">Jev 1.13 Semantic</h3>
+                          <div className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">Tier 7 Primary</div>
+                        </div>
+                      </div>
+                      <span className={`px-2 py-0.5 rounded-full text-[10px] font-extrabold flex items-center gap-1 border ${
+                        apiStatusData?.jev?.status === 'operational'
+                          ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                          : 'bg-amber-50 text-amber-800 border-amber-300'
+                      }`}>
+                        <span className={`w-1.5 h-1.5 rounded-full ${apiStatusData?.jev?.status === 'operational' ? 'bg-emerald-500' : 'bg-amber-500'}`} />
+                        {apiStatusData?.jev?.status === 'operational' ? 'Active' : 'Rate Limited'}
+                      </span>
+                    </div>
+
+                    <p className="text-xs text-gray-500 leading-relaxed">
+                      {apiStatusData?.jev?.role || 'Gate 4 Primary Semantic Matcher & Tier 7 Pre-Filter'}
+                    </p>
+
+                    <div className="p-3 bg-gray-50 rounded-xl space-y-2 text-xs border border-gray-100">
+                      <div className="flex justify-between items-center text-gray-600">
+                        <span className="text-[11px] font-medium">Model:</span>
+                        <code className="px-1.5 py-0.5 bg-white border border-gray-200 rounded font-mono text-[10px] text-indigo-700 font-bold">
+                          {apiStatusData?.jev?.model || 'jev-1.13-free'}
+                        </code>
+                      </div>
+                      <div className="flex justify-between items-center text-gray-600">
+                        <span className="text-[11px] font-medium">Pacing & Interval:</span>
+                        <span className="font-bold text-gray-800">
+                          {apiStatusData?.jev?.limits?.pace_interval_seconds || 2.0}s ({apiStatusData?.jev?.limits?.max_rps || 0.5} RPS)
+                        </span>
+                      </div>
+                      <div className="flex justify-between items-center text-gray-600">
+                        <span className="text-[11px] font-medium">HTTP 429 Backoff:</span>
+                        <span className="font-bold text-gray-800">{apiStatusData?.jev?.limits?.backoff_seconds || 10.0}s</span>
+                      </div>
+                      <div className="flex justify-between items-center text-gray-600">
+                        <span className="text-[11px] font-medium">Timeout:</span>
+                        <span className="font-bold text-gray-800">{apiStatusData?.jev?.limits?.timeout_seconds || 8.0}s</span>
+                      </div>
+                    </div>
+
+                    <div className="space-y-1.5 pt-1">
+                      <div className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Queue Metrics</div>
+                      <div className="grid grid-cols-3 gap-2">
+                        <div className="p-2 bg-indigo-50 rounded-xl border border-indigo-100 text-center">
+                          <div className="text-[10px] text-indigo-600 font-bold">Pending</div>
+                          <div className="text-sm font-extrabold text-indigo-900 mt-0.5">
+                            {apiStatusData?.jev?.queue_metrics?.pending_count || 0}
+                          </div>
+                        </div>
+                        <div className="p-2 bg-emerald-50 rounded-xl border border-emerald-100 text-center">
+                          <div className="text-[10px] text-emerald-600 font-bold">Approved</div>
+                          <div className="text-sm font-extrabold text-emerald-900 mt-0.5">
+                            {apiStatusData?.jev?.queue_metrics?.approved_count || 0}
+                          </div>
+                        </div>
+                        <div className="p-2 bg-amber-50 rounded-xl border border-amber-100 text-center">
+                          <div className="text-[10px] text-amber-700 font-bold">To Gemini</div>
+                          <div className="text-sm font-extrabold text-amber-950 mt-0.5">
+                            {apiStatusData?.jev?.queue_metrics?.rate_limited_handoff_count || 0}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* 3. LangSearch Web Search Engine Card */}
+                <div className="bg-white rounded-2xl border border-gray-200 shadow-xs p-5 flex flex-col justify-between hover:border-amber-300 transition-all">
+                  <div className="space-y-4">
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="flex items-center gap-2">
+                        <div className="w-8 h-8 rounded-xl bg-amber-100 text-amber-800 flex items-center justify-center font-bold text-xs">
+                          🌐
+                        </div>
+                        <div>
+                          <h3 className="font-black text-sm text-gray-900">LangSearch</h3>
+                          <div className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">Tier 4 Web INCI</div>
+                        </div>
+                      </div>
+                      <span className={`px-2 py-0.5 rounded-full text-[10px] font-extrabold flex items-center gap-1 border ${
+                        apiStatusData?.langsearch?.is_daily_exhausted
+                          ? 'bg-red-100 text-red-800 border-red-300'
+                          : 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                      }`}>
+                        <span className={`w-1.5 h-1.5 rounded-full ${apiStatusData?.langsearch?.is_daily_exhausted ? 'bg-red-500' : 'bg-emerald-500'}`} />
+                        {apiStatusData?.langsearch?.is_daily_exhausted ? '100% Quota Used' : 'Operational'}
+                      </span>
+                    </div>
+
+                    <p className="text-xs text-gray-500 leading-relaxed">
+                      {apiStatusData?.langsearch?.role || 'Tier 4 Web INCI Retrieval & INKEEDecoder Scraper'}
+                    </p>
+
+                    {/* Token Quota Progress Meter */}
+                    <div className="p-3 bg-gray-50 rounded-xl space-y-2 text-xs border border-gray-100">
+                      <div className="flex justify-between items-center font-bold">
+                        <span className="text-[11px] text-gray-700">Daily Token Allowance:</span>
+                        <span className={apiStatusData?.langsearch?.is_daily_exhausted ? 'text-red-700' : 'text-gray-900'}>
+                          {(apiStatusData?.langsearch?.tokens_used_today || 0).toLocaleString()} / {(apiStatusData?.langsearch?.daily_token_limit || 10000000).toLocaleString()}
+                        </span>
+                      </div>
+                      
+                      {/* Bar */}
+                      <div className="w-full h-2.5 bg-gray-200 rounded-full overflow-hidden">
+                        <div 
+                          className={`h-full transition-all duration-500 ${
+                            apiStatusData?.langsearch?.is_daily_exhausted 
+                              ? 'bg-red-500' 
+                              : (apiStatusData?.langsearch?.daily_used_percentage > 80 ? 'bg-amber-500' : 'bg-emerald-500')
+                          }`}
+                          style={{ width: `${Math.min(100, Math.max(3, apiStatusData?.langsearch?.daily_used_percentage || 0))}%` }}
+                        />
+                      </div>
+
+                      <div className="flex justify-between items-center text-[11px] text-gray-500 pt-0.5">
+                        <span>Used: <strong>{apiStatusData?.langsearch?.daily_used_percentage || 0}%</strong></span>
+                        <span className="font-semibold text-purple-900">
+                          Resets in {apiStatusData?.langsearch?.resets_in_human || '00:00 UTC'}
+                        </span>
+                      </div>
+                    </div>
+
+                    <div className="p-3 bg-gray-50 rounded-xl space-y-1.5 text-xs border border-gray-100">
+                      <div className="flex justify-between items-center text-gray-600">
+                        <span className="text-[11px] font-medium">RPS Hard Cap:</span>
+                        <span className="font-bold text-gray-800">{apiStatusData?.langsearch?.limits?.max_rps || 5.0} RPS</span>
+                      </div>
+                      <div className="flex justify-between items-center text-gray-600">
+                        <span className="text-[11px] font-medium">TPM Rolling Cap:</span>
+                        <span className="font-bold text-gray-800">1,000,000 TPM</span>
+                      </div>
+                      <div className="flex justify-between items-center text-gray-600">
+                        <span className="text-[11px] font-medium">Priority Domain:</span>
+                        <span className="font-bold text-emerald-700">inkeedecoder.com</span>
+                      </div>
+                      <div className="flex justify-between items-center text-gray-600">
+                        <span className="text-[11px] font-medium">Blacklisted:</span>
+                        <span className="font-bold text-red-600">incibeauty.com (hidden)</span>
+                      </div>
+                    </div>
+
+                    {/* Quota Management Actions */}
+                    <div className="pt-2 flex items-center gap-2">
+                      <button
+                        onClick={handleResetLangsearchQuota}
+                        disabled={apiActionLoading !== null}
+                        className="flex-1 py-1.5 px-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-200 rounded-xl text-[11px] font-bold transition flex items-center justify-center gap-1 cursor-pointer disabled:opacity-50 shadow-2xs"
+                        title="Reset daily token counter back to 0 (Unpause LangSearch)"
+                      >
+                        <RotateCcw className={`w-3 h-3 ${apiActionLoading === 'reset_ls' ? 'animate-spin' : ''}`} />
+                        <span>Reset Quota</span>
+                      </button>
+                      <button
+                        onClick={handleSetLangsearchExhausted}
+                        disabled={apiActionLoading !== null}
+                        className="py-1.5 px-2 bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-200 rounded-xl text-[11px] font-bold transition flex items-center justify-center gap-1 cursor-pointer disabled:opacity-50 shadow-2xs"
+                        title="Simulate 100% daily quota exhaustion (Pause LangSearch)"
+                      >
+                        <AlertTriangle className={`w-3 h-3 ${apiActionLoading === 'exhaust_ls' ? 'animate-spin' : ''}`} />
+                        <span>100% Used</span>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Modal Footer */}
+            <div className="p-4 bg-white border-t border-gray-200 flex items-center justify-between shrink-0 text-xs text-gray-500">
+              <div className="flex items-center gap-2">
+                <span className="w-2 h-2 rounded-full bg-emerald-500" />
+                <span>Centralized Circuit Breakers active · Auto-resets at 00:00 UTC</span>
+              </div>
+              <button
+                onClick={() => setShowApiStatusModal(false)}
+                className="px-4 py-2 bg-gray-900 hover:bg-gray-800 text-white font-bold rounded-xl transition cursor-pointer"
+              >
+                Close
+              </button>
+            </div>
           </div>
         </div>
       )}

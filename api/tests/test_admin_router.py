@@ -77,6 +77,52 @@ class TestAdminObservatory(unittest.TestCase):
         resp = self.client.get("/admin/products/9999999/telemetry")
         self.assertEqual(resp.status_code, 404)
 
+    def test_get_all_apis_status_endpoint(self):
+        resp = self.client.get("/admin/apis/status")
+        self.assertEqual(resp.status_code, 200)
+        data = resp.json()
+        self.assertIn("summary", data)
+        self.assertIn("gemini", data)
+        self.assertIn("jev", data)
+        self.assertIn("langsearch", data)
+
+        # Gemini
+        gemini = data["gemini"]
+        self.assertIn("model", gemini)
+        self.assertIn("limits", gemini)
+        self.assertIn("queue_metrics", gemini)
+
+        # Jev
+        jev = data["jev"]
+        self.assertIn("model", jev)
+        self.assertIn("limits", jev)
+        self.assertIn("queue_metrics", jev)
+
+        # LangSearch
+        ls = data["langsearch"]
+        self.assertIn("is_daily_exhausted", ls)
+        self.assertIn("tokens_used_today", ls)
+        self.assertIn("daily_token_limit", ls)
+        self.assertIn("resets_in_human", ls)
+        self.assertIn("limits", ls)
+
+    def test_langsearch_reset_quota_endpoint(self):
+        # Reset quota
+        resp = self.client.post("/admin/langsearch/reset-quota")
+        self.assertEqual(resp.status_code, 200)
+        data = resp.json()
+        self.assertEqual(data["tokens_used_today"], 0)
+        self.assertFalse(data["is_daily_exhausted"])
+
+        # Re-exhaust quota for test realism
+        resp2 = self.client.post(
+            "/admin/langsearch/set-quota-exhausted",
+            json={"tokens_used": 10000000, "reason": "Test Exhaustion"}
+        )
+        self.assertEqual(resp2.status_code, 200)
+        data2 = resp2.json()
+        self.assertTrue(data2["is_daily_exhausted"])
+
 
 if __name__ == "__main__":
     unittest.main()

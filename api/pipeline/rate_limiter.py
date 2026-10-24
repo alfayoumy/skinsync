@@ -317,6 +317,26 @@ class LangSearchRateLimiter:
         finally:
             conn.close()
 
+    def reset_daily_quota(self):
+        """
+        Manually clears the daily exhaustion flag and resets token counter in SQLite.
+        """
+        today = self._get_utc_today()
+        conn = get_connection(self.db_path)
+        try:
+            cur = conn.cursor()
+            cur.execute("""
+            UPDATE api_rate_limits
+            SET is_exhausted = 0, exhausted_until = 0.0, token_count = 0
+            WHERE provider = 'langsearch' AND usage_date = ?;
+            """, (today,))
+            conn.commit()
+            logger.info(f"LangSearch quota manually reset for {today}.")
+        except Exception as e:
+            logger.error(f"Failed to reset LangSearch quota in database: {e}")
+        finally:
+            conn.close()
+
     def record_usage(self, input_tokens: int = 0, output_tokens: int = 0, total_tokens: Optional[int] = None):
         """
         Records actual token usage from an API response and updates cumulative daily count.

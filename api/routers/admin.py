@@ -5,6 +5,7 @@ cross-store linking audit, INCI matching gate logs, and similar product breakdow
 
 import json
 import sqlite3
+from datetime import datetime, timezone
 from typing import Dict, List, Any, Optional
 from fastapi import APIRouter, HTTPException, Query
 from pydantic import BaseModel
@@ -1164,5 +1165,136 @@ def set_langsearch_quota_exhausted_endpoint(req: Optional[OverrideLangSearchQuot
     reason = req.reason if req else "Daily allowance exhausted"
     langsearch_limiter.mark_daily_quota_exhausted(tokens_used=toks, reason=reason)
     return langsearch_limiter.get_quota_status()
+
+
+@router.post("/langsearch/reset-quota")
+def reset_langsearch_quota_endpoint():
+    """
+    Manually resets LangSearch token usage counter back to 0 and clears the exhaustion flag.
+    """
+    from pipeline.rate_limiter import langsearch_limiter
+    langsearch_limiter.reset_daily_quota()
+    return langsearch_limiter.get_quota_status()
+
+
+@router.get("/apis/status")
+def get_all_apis_status_endpoint():
+    """
+    Aggregates real-time health, rate limits, daily quotas, and queue metrics
+    for all 3 external APIs: Google Gemini, Jev 1.13, and LangSearch.
+    """
+    from pipeline.rate_limiter import langsearch_limiter
+    from pipeline.config import cfg
+
+    conn = get_connection()
+    try:
+        cur = conn.cursor()
+
+        # 1. Gemini Metrics
+        cur.execute("SELECT COUNT(*) FROM products WHERE gate4_gemini_status = 'pending_gemini';")
+        gemini_pending = cur.fetchone()[0]
+        cur.execute("SELECT COUNT(*) FROM products WHERE gate4_gemini_status = 'gemini_approved';")
+        gemini_approved = cur.fetchone()[0]
+        cur.execute("SELECT COUNT(*) FROM products WHERE gate4_gemini_status = 'gemini_rejected';")
+        gemini_rejected = cur.fetchone()[0]
+
+        gemini_api_key = getattr(cfg, "GEMINI_API_KEY", "") or ""
+        gemini_configured = bool(gemini_api_key.strip() and len(gemini_api_key.strip()) > 5)
+
+        # 2. Jev Metrics
+        cur.execute("SELECT COUNT(*) FROM products WHERE gate4_jev_status = 'pending_jev';")
+        jev_pending = cur.fetchone()[0]
+        cur.execute("SELECT COUNT(*) FROM products WHERE gate4_jev_status = 'jev_approved';")
+        jev_approved = cur.fetchone()[0]
+        cur.execute("SELECT COUNT(*) FROM products WHERE gate4_jev_status = 'jev_rejected';")
+        jev_rejected = cur.fetchone()[0]
+        cur.execute("SELECT COUNT(*) FROM products WHERE gate4_jev_status = 'jev_rate_limited';")
+        jev_rate_limited = cur.fetchone()[0]
+
+        # 3. LangSearch Metrics
+        ls_quota = langsearch_limiter.get_quota_status()
+        cur.execute("SELECT COUNT(*) FROM products WHERE ingredient_source = 'langsearch_web_search';")
+        ls_resolved = cur.fetchone()[0]
+
+        # Issues aggregation
+        issues = []
+        if ls_quota.get("is_daily_exhausted"):
+            issues.append(f"LangSearch daily token allowance is 100% exhausted ({ls_quota.get('tokens_used_today', 0):,} / {ls_quota.get('daily_token_limit', 0):,} tokens). Paused until 00:00 UTC (Resets in {ls_quota.get('resets_in_human', '')}).")
+        if jev_rate_limited > 0:
+            issues.append(f"Jev has {jev_rate_limited} products in backoff/rate-limited status, routed to Gemini queue.")
+        if not gemini_configured:
+            issues.append("Gemini API key is not configured in environment (GEMINI_API_KEY).")
+
+        return {
+            "summary": {
+                "has_issues": len(issues) > 0,
+                "issues": issues,
+                "timestamp": datetime.now(timezone.utc).isoformat()
+            },
+            "gemini": {
+                "name": "Google Gemini API",
+                "role": "Gate 4 Disambiguation & Tier 7 Fallback Validator",
+                "model": getattr(cfg, "GEMINI_MODEL_NAME", "gemini-3.5-flash-lite"),
+                "is_configured": gemini_configured,
+                "status": "operational" if gemini_configured else "not_configured",
+                "limits": {
+                    "max_rpm": getattr(cfg, "GEMINI_MAX_RPM", 15),
+                    "max_rpd": getattr(cfg, "GEMINI_MAX_RPD", 1500),
+                    "batch_size": getattr(cfg, "GEMINI_BATCH_SIZE", 10),
+                    "pace_delay_seconds": getattr(cfg, "GEMINI_PACE_DELAY_SECONDS", 4.0),
+                    "timeout_seconds": getattr(cfg, "GEMINI_TIMEOUT_SECONDS", 35.0)
+                },
+                "queue_metrics": {
+                    "pending_count": gemini_pending,
+                    "approved_count": gemini_approved,
+                    "rejected_count": gemini_rejected
+                }
+            },
+            "jev": {
+                "name": "Jev 1.13 Semantic Engine",
+                "role": "Gate 4 Primary Semantic Matcher & Tier 7 Pre-Filter",
+                "model": getattr(cfg, "JEV_MODEL_NAME", "jev-1.13-free"),
+                "is_configured": True,
+                "status": "rate_limited" if jev_rate_limited > 0 else "operational",
+                "limits": {
+                    "pace_interval_seconds": getattr(cfg, "JEV_REQUEST_INTERVAL_SECONDS", 2.0),
+                    "backoff_seconds": getattr(cfg, "JEV_RATE_LIMIT_BACKOFF_SECONDS", 10.0),
+                    "timeout_seconds": getattr(cfg, "JEV_TIMEOUT_SECONDS", 8.0),
+                    "max_rps": round(1.0 / max(0.1, getattr(cfg, "JEV_REQUEST_INTERVAL_SECONDS", 2.0)), 2)
+                },
+                "queue_metrics": {
+                    "pending_count": jev_pending,
+                    "approved_count": jev_approved,
+                    "rejected_count": jev_rejected,
+                    "rate_limited_handoff_count": jev_rate_limited
+                }
+            },
+            "langsearch": {
+                "name": "LangSearch Web Search Engine",
+                "role": "Tier 4 Web INCI Retrieval & INKEEDecoder Scraper",
+                "is_configured": bool(getattr(cfg, "LANGSEARCH_API_KEY", "")),
+                "status": "daily_exhausted" if ls_quota.get("is_daily_exhausted") else "operational",
+                "is_daily_exhausted": bool(ls_quota.get("is_daily_exhausted")),
+                "exhausted_reason": ls_quota.get("exhausted_reason"),
+                "tokens_used_today": ls_quota.get("tokens_used_today", 0),
+                "daily_token_limit": ls_quota.get("daily_token_limit", 10_000_000),
+                "daily_used_percentage": ls_quota.get("daily_used_percentage", 0.0),
+                "resets_in_human": ls_quota.get("resets_in_human", ""),
+                "resets_at_utc": ls_quota.get("resets_at_utc", ""),
+                "limits": {
+                    "max_rps": ls_quota.get("max_rps", 5.0),
+                    "rolling_tpm_limit": ls_quota.get("rolling_tpm_limit", 1_000_000),
+                    "daily_token_limit": ls_quota.get("daily_token_limit", 10_000_000),
+                    "preferred_domains": ["inkeedecoder.com", "incidecoder.com"],
+                    "blacklisted_domains": ["incibeauty.com"]
+                },
+                "metrics": {
+                    "resolved_products_count": ls_resolved
+                }
+            }
+        }
+    finally:
+        conn.close()
+
 
 
