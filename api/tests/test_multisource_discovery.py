@@ -24,7 +24,10 @@ class MultiSourceDiscoveryTests(unittest.TestCase):
             _multisource_worker('test-task',ids,1,1,True,{})
         self.assertFalse(failed.called)
         self.assertTrue(done.called)
-        self.assertEqual(progress.call_count,len(ids))
+        # Every completed source gets a final checkpoint; Shopify also emits
+        # page-level telemetry so the count may be greater than source count.
+        self.assertGreaterEqual(progress.call_count,len(ids))
+        self.assertEqual(progress.call_args.kwargs['processed_items'],len(ids))
         return done.call_args.kwargs['metadata']['sources']
 
 
