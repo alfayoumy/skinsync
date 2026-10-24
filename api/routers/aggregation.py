@@ -191,7 +191,7 @@ def gemini_identity_enqueue(request:GeminiEnqueueRequest):
 
 @router.post('/reviews/gemini/run')
 def gemini_identity_run(request:GeminiRunRequest,background_tasks:BackgroundTasks):
-    from pipeline.product_identity_gemini import run_identity_gemini_queue
+    from pipeline.product_identity_gemini import run_identity_gemini_queue,recover_abandoned_cases
     from pipeline.task_tracker import create_task
     from pipeline.inci_matcher import _load_env
     from pipeline.config import cfg
@@ -201,7 +201,9 @@ def gemini_identity_run(request:GeminiRunRequest,background_tasks:BackgroundTask
         raise HTTPException(status_code=409,detail='Configure GEMINI_API_KEY before starting product identity review.')
     conn=get_connection()
     try:
+        recover_abandoned_cases(conn)
         ready=conn.execute("SELECT COUNT(*) FROM identity_gemini_queue WHERE status='queued'").fetchone()[0]
+        conn.commit()
         active=conn.execute("""SELECT task_id FROM pipeline_tasks WHERE task_type='product_identity_gemini'
             AND status='running' LIMIT 1""").fetchone()
     finally:conn.close()

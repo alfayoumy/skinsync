@@ -44,8 +44,20 @@ def equivalent_brand(conn,left,right):
     return bool(family_a and family_a==family_b)
 
 
+
+def recover_abandoned_cases(conn):
+    """Reset cases owned by terminated workers, but never steal an active batch."""
+    cursor=conn.execute("""UPDATE identity_gemini_queue SET status='queued',
+        updated_at=CURRENT_TIMESTAMP WHERE status='processing'
+        AND (task_id IS NULL OR NOT EXISTS(
+            SELECT 1 FROM pipeline_tasks t
+            WHERE t.task_id=identity_gemini_queue.task_id AND t.status='running'))""")
+    return cursor.rowcount
+
+
 def queue_cases(conn,review_ids=None,limit=20000,queued_by='admin'):
     if limit<1 or limit>20000:raise ValueError('Limit must be between 1 and 20000 cases.')
+    recover_abandoned_cases(conn)
     if review_ids is not None and (not review_ids or len(review_ids)>20000):
         raise ValueError('Provide 1–20000 review IDs.')
     query="""SELECT r.id,r.evidence_hash FROM product_review_queue r
@@ -153,6 +165,7 @@ def _all_current_offers(conn,cid,declared):
         COALESCE(original_brand,brand) brand,store_product_id,ingredients_raw,ingredient_source
         FROM products WHERE canonical_product_id=? ORDER BY id""",(cid,))]
     if not actual:return None
+    if len({o['store_id'] for o in actual}) < 2:return None
     declared_ids={x.get('product_id') for x in declared if isinstance(x,dict)}
     if {o['id'] for o in actual}!=declared_ids:
         return None
@@ -230,6 +243,7 @@ def run_identity_gemini_queue(task_id,limit=500,batch_size=DEFAULT_BATCH,provide
     while scanned<limit:
         conn=get_connection()
         try:
+            recover_abandoned_cases(conn)
             task=conn.execute('SELECT status FROM pipeline_tasks WHERE task_id=?',(task_id,)).fetchone()
             if task and task[0]=='cancelled':return {'status':'cancelled',**dict(counts)}
             cases=_load_cases(conn,limit-scanned,batch_size)
