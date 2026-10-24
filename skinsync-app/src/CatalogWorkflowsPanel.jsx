@@ -38,6 +38,8 @@ export default function CatalogWorkflowsPanel({onClose, initialTab='products',on
   const [result,setResult]=useState(null);
   const [eligibility,setEligibility]=useState(null);
   const [queues,setQueues]=useState(null);
+  const [identityResult,setIdentityResult]=useState(null);
+  const [identityBusy,setIdentityBusy]=useState(false);
   const [scope,setScope]=useState('unmatched_only');
   const source=sources.find(s=>s.id===sourceId);
   useEffect(()=>{
@@ -55,6 +57,16 @@ export default function CatalogWorkflowsPanel({onClose, initialTab='products',on
       .then(x=>{if(active)setQueues(x)}).catch(e=>{if(active)setError(e.message)});
     return ()=>{active=false};
   },[tab,scope]);
+  async function checkExisting(dryRun) {
+    if(!dryRun&&!window.confirm('Automatically verify only legacy products with matching brand, product identity and variants, with no conflicts or duplicate canonical identity? No prices or ingredients will change.'))return;
+    setIdentityBusy(true);setError('');
+    try {
+      const report=await call('/admin/workflows/products/verify-existing',json({
+        dry_run:dryRun,max_verified:500
+      }));
+      setIdentityResult(report);
+    } catch(e){setError(e.message)} finally {setIdentityBusy(false)}
+  }
   async function run() {
     setBusy(true);setError('');setResult(null);
     try {
@@ -149,7 +161,27 @@ export default function CatalogWorkflowsPanel({onClose, initialTab='products',on
             </div>
             <p className="text-sm text-gray-600">{result.note || 'Review source observations and products that need a decision.'}</p>
           </section>}
-          {tab==='products'&&<button type="button" className="rounded-lg border px-4 py-2 text-sm font-bold" onClick={onOpenSources}>Product review & source settings</button>}
+          {tab==='products'&&<section className="rounded-xl border bg-white p-5 space-y-3">
+            <h3 className="font-bold text-gray-900">Check existing products automatically</h3>
+            <p className="text-sm text-gray-600">A product can be verified without a person when its brand and product identity match, its variants are compatible, and no competing product or ingredient conflict exists. Uncertain records stay unchanged for review.</p>
+            <div className="flex flex-wrap gap-3">
+              <button type="button" disabled={identityBusy} className="rounded-lg border px-3 py-2 text-sm font-bold disabled:opacity-50" onClick={()=>checkExisting(true)}>
+                Find safe exact matches
+              </button>
+              {identityResult?.safe_exact_matches_found>0&&
+                <button type="button" disabled={identityBusy} className={button} onClick={()=>checkExisting(false)}>
+                  Apply verified matches
+                </button>}
+            </div>
+            {identityResult&&<div role="status" className="rounded-lg border border-purple-100 bg-purple-50 p-3 text-sm space-y-2">
+              <p className="font-semibold">{identityResult.safe_exact_matches_found} legacy product identities passed automatic checks.{identityResult.dry_run?' Preview only.':' Changes saved.'}</p>
+              <p className="text-xs text-gray-700">{identityResult.note}</p>
+              <details><summary className="cursor-pointer text-xs font-semibold">Why other records were not matched automatically</summary>
+                <ul className="text-xs mt-2 space-y-1">{Object.entries(identityResult.reasons_not_auto_matched||{}).map(([name,value])=><li key={name}>{name.replaceAll('_',' ')}: {value}</li>)}</ul>
+              </details>
+            </div>}
+            <button type="button" className="rounded-lg border px-4 py-2 text-sm font-bold" onClick={onOpenSources}>Review unclear matches & manage sources</button>
+          </section>}
         </div>}
         {tab==='inci'&&<section className="max-w-3xl mx-auto rounded-xl border bg-white p-5 space-y-4">
           <h3 className="text-lg font-bold">Find ingredients for existing products</h3>
