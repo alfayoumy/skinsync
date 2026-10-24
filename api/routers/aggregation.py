@@ -334,6 +334,73 @@ def stop_saved_gemini_application(task_id:str):
     return {'cancelled':bool(cancel_task(task_id,reason='Admin stopped saved Gemini decision application'))}
 
 
+@router.get('/reviews/gemini/results')
+def gemini_identity_results(
+    verdict:Optional[Literal['same_product','different_product','uncertain']]=None,
+    outcome:Optional[Literal['queued','processing','auto_resolved','needs_manual']]=None,
+    review_status:Optional[Literal['pending','confirmed']]=None,
+    confidence_min:float=Query(0,ge=0,le=1),
+    confidence_max:float=Query(1,ge=0,le=1),
+    search:str=Query('',max_length=120),
+    sort_by:Literal['confidence','review_id','updated_at','verdict','outcome']='confidence',
+    sort_order:Literal['asc','desc']='desc',
+    limit:int=Query(50,ge=1,le=200),
+    offset:int=Query(0,ge=0)
+):
+    """Server-side, paginated view of persisted Gemini outputs. No model calls."""
+    if confidence_min>confidence_max:
+        raise HTTPException(status_code=422,detail='Minimum confidence cannot exceed maximum.')
+    from pipeline.aggregation_schema import ensure_identity_gemini_schema
+    order_fields={'confidence':'q.confidence','review_id':'r.id',
+                  'updated_at':'q.updated_at','verdict':'q.verdict',
+                  'outcome':'q.status'}
+    def fn(conn):
+        ensure_identity_gemini_schema(conn)
+        where=["q.verdict IS NOT NULL","q.confidence BETWEEN ? AND ?"]
+        args=[confidence_min,confidence_max]
+        if verdict:where.append('q.verdict=?');args.append(verdict)
+        if outcome:where.append('q.status=?');args.append(outcome)
+        if review_status:where.append('r.status=?');args.append(review_status)
+        if search.strip():
+            where.append("""(r.details LIKE ? OR
+                CAST(r.id AS TEXT) LIKE ? OR CAST(r.canonical_product_id AS TEXT) LIKE ?)""")
+            term='%'+search.strip()+'%'
+            args.extend([term,term,term])
+        joins=""" FROM identity_gemini_queue q
+            JOIN product_review_queue r ON r.id=q.review_id """
+        filter_sql=' WHERE '+' AND '.join(where)
+        total=conn.execute('SELECT COUNT(*)'+joins+filter_sql,args).fetchone()[0]
+        order=order_fields[sort_by]+' '+sort_order.upper()+', r.id DESC'
+        sql="""SELECT r.id review_id,r.kind,r.status review_status,
+            r.canonical_product_id,r.details,r.decision,r.review_notes,
+            q.status outcome,q.verdict,q.confidence,q.model_name,
+            q.explanation,q.attempts,q.queued_at,q.updated_at,
+            q.evidence_hash queued_evidence_hash,r.evidence_hash current_evidence_hash
+            """+joins+filter_sql+' ORDER BY '+order+' LIMIT ? OFFSET ?'
+        records=[]
+        for row in conn.execute(sql,args+[limit,offset]):
+            data=dict(row)
+            try:details=json.loads(data.pop('details') or '{}')
+            except (ValueError,TypeError):details={}
+            try:decision=json.loads(data['decision']) if data['decision'] else None
+            except (ValueError,TypeError):decision=None
+            data['decision']=decision
+            data['title']=details.get('title') or details.get('original_title') or (
+                'Canonical #'+str(data['canonical_product_id']))
+            data['brand']=details.get('brand')
+            data['issue']=details.get('reason_code')
+            data['offers']=[{'product_id':o.get('product_id'),
+                'store_id':o.get('store_id'),'brand':o.get('brand'),
+                'title':o.get('title')} for o in (details.get('offers') or [])[:30]
+                if isinstance(o,dict)]
+            data['evidence_current']=data.pop('queued_evidence_hash')==data.pop('current_evidence_hash')
+            records.append(data)
+        return {'results':records,'total':total,'limit':limit,'offset':offset,
+                'sort_by':sort_by,'sort_order':sort_order,
+                'no_gemini_calls':True}
+    return operation(fn)
+
+
 @router.post('/reviews/{review_id}')
 def review(review_id:int,request:ReviewRequest):
     from pipeline.review_service import resolve_review
