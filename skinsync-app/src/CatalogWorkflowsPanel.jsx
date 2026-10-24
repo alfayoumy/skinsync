@@ -22,10 +22,14 @@ const Metric=({label,value})=><div className="rounded-xl border bg-white p-3">
   <div className="text-xs text-gray-600">{label}</div>
 </div>;
 
-export default function CatalogWorkflowsPanel({onClose, initialTab='products',onOpenSources,onOpenIngredients,onOpenQueues}) {
+export default function CatalogWorkflowsPanel({onClose, initialTab='products',onOpenSources,onOpenReviews,onOpenIngredients,onOpenQueues}) {
   const [tab,setTab]=useState(initialTab);
   const [sources,setSources]=useState([]);
   const [sourceId,setSourceId]=useState('sourcebeauty');
+  const [multiSource,setMultiSource]=useState(true);
+  const [selectedSources,setSelectedSources]=useState([]);
+  const [discoveryJob,setDiscoveryJob]=useState(null);
+  const [jobStatus,setJobStatus]=useState(null);
   const [method,setMethod]=useState('shopify');
   const [startPage,setStartPage]=useState(1);
   const [pages,setPages]=useState(1);
@@ -44,7 +48,12 @@ export default function CatalogWorkflowsPanel({onClose, initialTab='products',on
   const source=sources.find(s=>s.id===sourceId);
   useEffect(()=>{
     let active=true;
-    call('/admin/aggregation/sources').then(x=>{if(active)setSources(x.sources || [])})
+    call('/admin/aggregation/sources').then(x=>{if(active){
+      setSources(x.sources || []);
+      const enabled=(x.sources || []).filter(z=>z.enabled).map(z=>z.id);
+      setSelectedSources(enabled);
+      if(enabled.length)setSourceId(enabled[0]);
+    }})
       .catch(e=>{if(active)setError(e.message)});
     return ()=>{active=false};
   },[]);
@@ -57,6 +66,36 @@ export default function CatalogWorkflowsPanel({onClose, initialTab='products',on
       .then(x=>{if(active)setQueues(x)}).catch(e=>{if(active)setError(e.message)});
     return ()=>{active=false};
   },[tab,scope]);
+  useEffect(()=>{
+    if(!discoveryJob)return;
+    let active=true;
+    const check=()=>call('/admin/workflows/products/discover-multiple/'+encodeURIComponent(discoveryJob))
+      .then(status=>{
+        if(!active)return;
+        setJobStatus(status);
+        if(!['running','pending'].includes(status.status)){
+          setResult({workflow:'multi_source_discovery',dry_run:preview,sources:status.metadata?.sources||[],
+            summary:status.metadata?.summary||{},task_status:status.status});
+          setDiscoveryJob(null);
+        }
+      }).catch(e=>{if(active){setError(e.message);setDiscoveryJob(null);}});
+    check();
+    const id=setInterval(check,1700);
+    return ()=>{active=false;clearInterval(id);};
+  },[discoveryJob]);
+  async function prepareAndOpenReviews() {
+    setIdentityBusy(true);setError('');
+    try {
+      const report=await call('/admin/workflows/products/prepare-reviews',json({}));
+      setIdentityResult(report);
+      if(!dryRun && report.auto_verified>0){
+        // The server scans all legacy identities, so the remaining count
+        // is genuinely lower after a committed application.
+        setEligibility(null);
+      }
+      onOpenReviews();
+    } catch(e){setError(e.message)} finally {setIdentityBusy(false);}
+  }
   async function checkExisting(dryRun) {
     if(!dryRun&&!window.confirm('Automatically verify only legacy products with matching brand, product identity and variants, with no conflicts or duplicate canonical identity? No prices or ingredients will change.'))return;
     setIdentityBusy(true);setError('');
@@ -71,7 +110,22 @@ export default function CatalogWorkflowsPanel({onClose, initialTab='products',on
     setBusy(true);setError('');setResult(null);
     try {
       let response;
-      if(tab==='products' && method==='shopify') {
+      if(tab==='products' && multiSource) {
+        if(!selectedSources.length)throw new Error('Select at least one enabled source.');
+        const urlsBySource={};
+        for(const line of urls.split('\n').map(x=>x.trim()).filter(Boolean)){
+          const parts=line.split('|');
+          if(parts.length!==2)throw new Error('For multiple sources, enter URLs as source_id | https://product-url');
+          const id=parts[0].trim(),url=parts[1].trim();
+          if(!selectedSources.includes(id))throw new Error('The source '+id+' must be selected first.');
+          (urlsBySource[id]??=[]).push(url);
+        }
+        response=await call('/admin/workflows/products/discover-multiple',json({
+          source_ids:selectedSources,start_page:Number(startPage),pages:Number(pages),
+          dry_run:preview,urls_by_source:urlsBySource
+        }));
+        setJobStatus(null);setDiscoveryJob(response.task_id);return;
+      } else if(tab==='products' && method==='shopify') {
         response=await call('/admin/workflows/products/discover',json({
           source_id:sourceId,start_page:Number(startPage),pages:Number(pages),dry_run:preview
         }));
@@ -118,22 +172,50 @@ export default function CatalogWorkflowsPanel({onClose, initialTab='products',on
             <p className="text-sm text-gray-600">{tab==='products'
               ?'Confident matches link automatically. New products are staged and unclear matches go to review. This does not launch INCI or AI queues.'
               :'Prices and availability are updated only for already-linked offers. Unknown products and variants are skipped. No identity or ingredient changes.'}</p>
-            <label className="block text-sm font-semibold">Source</label>
-            <select className={input} value={sourceId} onChange={e=>setSourceId(e.target.value)}>
-              {sources.map(s=><option key={s.id} value={s.id}>{s.name} · {s.enabled?'Ready':'Paused'} · {s.adapter_type}</option>)}
-            </select>
-            {source&&!source.enabled&&<p className="rounded-lg bg-amber-50 p-3 text-sm text-amber-950">
-              Collection is paused. <button type="button" className="underline font-semibold" onClick={onOpenSources}>Open source settings</button>
-            </p>}
-            {tab==='products'&&<div className="flex gap-4 text-sm">
-              <label><input type="radio" checked={method==='shopify'} onChange={()=>setMethod('shopify')}/> Shopify catalog pages</label>
+            {tab==='products'&&<div className="rounded-xl border border-purple-200 bg-purple-50 p-3 space-y-2">
+              <label className="flex items-center gap-2 text-sm font-bold"><input type="checkbox"
+                checked={multiSource} onChange={e=>setMultiSource(e.target.checked)}/>
+                Discover from multiple collection sources at once
+              </label>
+              {multiSource&&<>
+                <div className="flex items-center gap-3 text-xs">
+                  <button type="button" className="underline text-purple-800 font-bold"
+                    onClick={()=>setSelectedSources(sources.filter(x=>x.enabled).map(x=>x.id))}>Select all collection-enabled sources</button>
+                  <button type="button" className="underline" onClick={()=>setSelectedSources([])}>Clear</button>
+                  <span>{selectedSources.length} selected</span>
+                </div>
+                <div className="max-h-40 overflow-auto grid sm:grid-cols-2 gap-1 bg-white rounded-lg p-2">
+                  {sources.filter(x=>x.enabled).map(src=><label key={src.id} className="flex gap-2 items-center text-xs py-1">
+                    <input type="checkbox" checked={selectedSources.includes(src.id)}
+                      onChange={e=>setSelectedSources(prev=>e.target.checked?[...prev,src.id]:prev.filter(x=>x!==src.id))}/>
+                    <span>{src.name} ({src.adapter_type})</span>
+                  </label>)}
+                </div>
+                <p className="text-xs text-gray-600">Shopify sources scan the selected catalog pages. Other websites use supplied or previously observed product URLs. Sources without a catalog feed or known URLs will be reported as needing URLs, not counted as successfully crawled.</p>
+                <label className="block text-xs font-semibold">Optional product URLs for non-Shopify sources
+                  <textarea className={input} rows={3} value={urls} onChange={e=>setUrls(e.target.value)}
+                    placeholder="zahra | https://zahraegypt.com/products/example"/>
+                </label>
+              </>}
+            </div>}
+            {(!multiSource||tab==='offers')&&<>
+              <label className="block text-sm font-semibold">Source</label>
+              <select className={input} value={sourceId} onChange={e=>setSourceId(e.target.value)}>
+                {sources.map(src=><option key={src.id} value={src.id}>{src.name} · {src.enabled?'Enabled':'Paused'} · {src.adapter_type}</option>)}
+              </select>
+              {source&&!source.enabled&&<p className="rounded-lg bg-amber-50 p-3 text-sm text-amber-950">
+                Collection is paused. <button type="button" className="underline font-semibold" onClick={onOpenSources}>Open source settings</button>
+              </p>}
+            </>}
+            {tab==='products'&&!multiSource&&<div className="flex gap-4 text-sm">
+              <label><input type="radio" checked={method==='shopify'} onChange={()=>setMethod('shopify')}/> Shopify pages</label>
               <label><input type="radio" checked={method==='urls'} onChange={()=>setMethod('urls')}/> Specific product URLs</label>
             </div>}
-            {(tab==='offers'||method==='shopify')?<div className="grid grid-cols-2 gap-3">
+            {(tab==='offers'||multiSource||method==='shopify')?<div className="grid grid-cols-2 gap-3">
               <label className="text-xs font-semibold">Starting page<input className={input} type="number" min="1" max="5000" value={startPage} onChange={e=>setStartPage(e.target.value)}/></label>
-              <label className="text-xs font-semibold">Pages to scan (1–3)<input className={input} type="number" min="1" max="3" value={pages} onChange={e=>setPages(e.target.value)}/></label>
+              <label className="text-xs font-semibold">Pages per Shopify source (1–3)<input className={input} type="number" min="1" max="3" value={pages} onChange={e=>setPages(e.target.value)}/></label>
             </div>:<label className="block text-sm font-semibold">Product URLs, one per line (max 25)
-              <textarea className={input} rows={5} value={urls} onChange={e=>setUrls(e.target.value)} placeholder="https://source-domain.com/products/example"/>
+              <textarea className={input} rows={5} value={urls} onChange={e=>setUrls(e.target.value)}/>
             </label>}
             {tab==='offers'&&<div className="flex gap-4 text-sm">
               <label><input type="checkbox" checked={price} onChange={e=>setPrice(e.target.checked)}/> Price</label>
@@ -142,17 +224,35 @@ export default function CatalogWorkflowsPanel({onClose, initialTab='products',on
             <div className="flex items-center justify-between flex-wrap gap-3">
               <label className="text-sm"><input type="checkbox" checked={preview} onChange={e=>setPreview(e.target.checked)}/> Preview only — save nothing</label>
               <button type="button" className={button} onClick={run}
-                disabled={busy||!source?.enabled||((tab==='offers'||method==='shopify')&&source?.adapter_type!=='shopify')||(tab==='offers'&&(!price&&!stock||source?.source_type!=='retailer'))}>
+                disabled={busy||Boolean(discoveryJob)||(tab==='products'&&multiSource
+                  ? selectedSources.length===0
+                  : !source?.enabled||((tab==='offers'||method==='shopify')&&source?.adapter_type!=='shopify'))
+                  ||(tab==='offers'&&(!price&&!stock||source?.source_type!=='retailer'))}>
                 {busy?'Checking source...':preview?'Preview changes':tab==='products'?'Import and match':'Update existing offers'}
               </button>
             </div>
-            {source?.adapter_type!=='shopify'&&(tab==='offers'||method==='shopify')&&<p className="text-xs text-amber-800">
+            {!multiSource&&source?.adapter_type!=='shopify'&&(tab==='offers'||method==='shopify')&&<p className="text-xs text-amber-800">
               This source is not Shopify. Product pages can be imported using Specific product URLs; automated offer refresh is not supported yet.
             </p>}
           </section>
+          {jobStatus&&<section className="rounded-xl border bg-white p-4 space-y-2" role="status">
+            <h4 className="font-bold">Multi-source discovery: {jobStatus.status}</h4>
+            <p className="text-xs text-gray-600">{jobStatus.processed_items||0} / {jobStatus.total_items||selectedSources.length} sources finished</p>
+            {(jobStatus.metadata?.sources||[]).map(entry=><p key={entry.source_id} className="text-xs">
+              {entry.name||entry.source_id}: {entry.status} {entry.reason||''}
+            </p>)}
+          </section>}
           {result&&<section role="status" className="rounded-xl border bg-white p-5 space-y-3">
             <h4 className="font-bold">{result.dry_run?'Preview — nothing saved':'Operation completed'}</h4>
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+            {result.workflow==='multi_source_discovery'&&<div className="space-y-1">
+              {result.sources.map(entry=><div key={entry.source_id} className="rounded-lg border bg-gray-50 p-2 text-xs">
+                <strong>{entry.name||entry.source_id}</strong> — {entry.status}
+                <span className="ml-2">{entry.fetched??0} found · {entry.existing_products_matched??0} linked · {entry.new_products_staged??0} staged</span>
+                {entry.reason&&<p className="text-amber-800 mt-1">{entry.reason}</p>}
+                {entry.coverage&&<p className="text-gray-600 mt-1">{entry.coverage}</p>}
+              </div>)}
+            </div>}
+            {result.workflow!=='multi_source_discovery'&&<div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
               {tab==='offers'?<>
                 <Metric label="Offers updated" value={result.offers_updated}/><Metric label="Already current" value={result.unchanged_offers}/>
                 <Metric label="Unknown variants skipped" value={result.unknown_variants_skipped}/>
@@ -163,7 +263,7 @@ export default function CatalogWorkflowsPanel({onClose, initialTab='products',on
                 <Metric label="New products staged" value={result.new_products_staged??'—'}/>
                 <Metric label="Needs review" value={result.needs_review??'—'}/>
               </>}
-            </div>
+            </div>}
             <p className="text-sm text-gray-600">{result.note || 'Review source observations and products that need a decision.'}</p>
           </section>}
           {tab==='products'&&<section className="rounded-xl border bg-white p-5 space-y-3">
@@ -175,17 +275,27 @@ export default function CatalogWorkflowsPanel({onClose, initialTab='products',on
               </button>
               {identityResult?.safe_exact_matches_found>0&&
                 <button type="button" disabled={identityBusy} className={button} onClick={()=>checkExisting(false)}>
-                  Apply verified matches
+                  Apply next {Math.min(500,identityResult.safe_exact_matches_found)} safe matches
                 </button>}
             </div>
             {identityResult&&<div role="status" className="rounded-lg border border-purple-100 bg-purple-50 p-3 text-sm space-y-2">
-              <p className="font-semibold">{identityResult.safe_exact_matches_found} legacy product identities passed automatic checks.{identityResult.dry_run?' Preview only.':' Changes saved.'}</p>
+              <p className="font-semibold">{identityResult.dry_run
+                ? identityResult.safe_exact_matches_found+' safe legacy matches available — preview only'
+                : identityResult.auto_verified+' product identities verified and saved'}</p>
+              <p className="text-xs font-medium">{identityResult.remaining_safe_matches} safe matches still eligible for the next batch · {identityResult.pending_review_cases} pending review cases</p>
               <p className="text-xs text-gray-700">{identityResult.note}</p>
               <details><summary className="cursor-pointer text-xs font-semibold">Why other records were not matched automatically</summary>
                 <ul className="text-xs mt-2 space-y-1">{Object.entries(identityResult.reasons_not_auto_matched||{}).map(([name,value])=><li key={name}>{name.replaceAll('_',' ')}: {value}</li>)}</ul>
               </details>
             </div>}
-            <button type="button" className="rounded-lg border px-4 py-2 text-sm font-bold" onClick={onOpenSources}>Review unclear matches & manage sources</button>
+            <div className="flex flex-wrap gap-2">
+              <button type="button" disabled={identityBusy} className="rounded-lg border px-4 py-2 text-sm font-bold disabled:opacity-50" onClick={prepareAndOpenReviews}>
+                Prepare review cases & open Product Reviews
+              </button>
+              <button type="button" className="rounded-lg border px-4 py-2 text-sm font-bold" onClick={onOpenSources}>
+                Manage product sources
+              </button>
+            </div>
           </section>}
         </div>}
         {tab==='inci'&&<section className="max-w-3xl mx-auto rounded-xl border bg-white p-5 space-y-4">
