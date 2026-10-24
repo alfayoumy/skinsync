@@ -24,7 +24,9 @@ router=APIRouter(prefix='/admin/workflows',tags=['Catalog workflows'])
 class ShopifyScan(BaseModel):
     source_id: str
     start_page: int=Field(default=1,ge=1)
-    pages: int=Field(default=0,ge=0)
+    # Legacy synchronous endpoint must remain bounded per request.
+    # For unbounded scans use POST /products/discover-multiple with pages=0.
+    pages: int=Field(default=1,ge=1)
     dry_run: bool=True
 
 
