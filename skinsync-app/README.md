@@ -1,16 +1,38 @@
-# React + Vite
+# SkinSync frontend
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+React 19 + Vite 7 frontend for the SkinSync product catalog, recommendation interface and administrator observatory.
 
-Currently, two official plugins are available:
+## Local development
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+Requires Node.js 22/npm (matching GitHub Actions). The API should be started separately from `api/app.py` at `http://127.0.0.1:8000`.
 
-## React Compiler
+```bash
+cd skinsync-app
+npm ci
+npm run dev
+npm run build
+npm run lint
+```
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+Development origin defaults to `http://127.0.0.1:5173`. The API permits known origins through `SKINSYNC_ALLOWED_ORIGINS` (do not use a wildcard). Admin requests use `src/apiFetch.js`, which attaches an administrator Bearer token to requests sent to `localhost:8000` or `127.0.0.1:8000`. For remote hosts the API URL and credential forwarding must be explicitly configured; this is not a generic production-host selector.
 
-## Expanding the ESLint configuration
+## Admin screens
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+- **Catalog operations → Add & match products:** source selection, tracked multi-source discovery, Shopify All pages, dry run, classification/identity linking, safe legacy auto-verification and review preparation.
+- **Catalog operations → Update prices & stock:** existing linked retailer offers only; finite page count and dry-run first.
+- **Catalog operations → Find ingredients:** identity-approved existing skincare products, INCI waterfall, evidence-only versus published formulations.
+- **Catalog operations → AI review queues:** separate Jev/Gemini **INCI** queues; Gemini **product identity** actions appear in Product Matching Reviews.
+- **Manage product sources:** registered source settings, coverage and connection tests, independent of review decisions.
+- **Product Matching Reviews:** pending identity/duplicate/variant cases, batch Gemini identity enqueue/run, saved-decision preview/apply (no Gemini calls), manual actions, and the sortable/paginated **Gemini Decisions** history table.
+- **Gemini Decisions table:** filters by verdict, application outcome, review status and confidence range; search by product/ID; sortable columns; expandable original retailer evidence and separate model/application explanations.
+
+The UI uses the current FastAPI backend and does not itself guarantee that a remote provider request or asynchronous job succeeded. Always inspect the job status and stored outcome.
+
+## Engineering references
+
+- [Architecture](../docs/system_architecture_and_api_documentation.md)
+- [HTTP API reference](../docs/api-reference.md)
+- [Operations and security](../docs/workflows-and-operations.md)
+- [Database](../docs/database-reference.md)
+
+Frontend source: `src/AdminObservatory.jsx`, `src/CatalogWorkflowsPanel.jsx`, `src/AggregationReviewPanel.jsx`, `src/GeminiDecisionsTable.jsx` and `src/apiFetch.js`.
