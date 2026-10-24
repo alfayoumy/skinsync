@@ -1,34 +1,46 @@
-# Catalog operations — distinct admin workflows
+# Catalog operations — operator guide
 
-## Product sources versus Product Reviews
+Open **Admin → Catalog Operations**. Sources are administered in **Manage Product Sources**; review cases are examined in **Product Matching Reviews**. These are independent screens.
 
-**Manage product sources:** collection enable/disable, connection diagnostics, source coverage. This is a separate screen from product identity decisions.
+## 1. Add & match products
 
-**Product matching reviews:** persisted ambiguous identities, potential duplicate canonicals, conflicting formula evidence, and classification questions. Review only shows saved cases, not read-only preview diagnostics.
+Select one or multiple enabled collection sources. **Select all enabled sources** chooses every currently allowed source.
 
-From Product Reviews, select **Find legacy products needing review**. This creates up to 250 review cases without certifying any product. Repeating it advances through remaining eligible conflicts without duplicating already pending cases. The Add & match products workflow also has **Prepare review cases & open Product Reviews**.
+- Shopify sources: choose **All pages** (continues until an empty page, `pages=0`) or any positive finite number of pages. Per-page and per-source progress, errors, cancellation and resume position are reported by the tracked job.
+- Other source adapters: provide 1–25 known URLs for each selected source using source-ID/URL rows, or rely on previously observed URLs. The importer reports `needs_urls` if none exist; it cannot claim whole-site coverage.
+- Dry-run is default and does not persist catalog mutations. Real runs persist original observations/variants, match existing canonical identity where independently supported, stage genuinely new provisional canonicals, attach initial retailer offers, and generate review cases for ambiguities.
+- **Check existing products automatically** is a separate exact legacy validation operation: preview all remaining historical identities; apply at most the chosen safe batch. The saved count must decrease remaining safe candidates. **Find legacy products needing review** creates review cases, rather than confusing a diagnostic count with queue state.
 
-## Import from many sources
+Endpoints: `POST /admin/workflows/products/discover-multiple`, `GET /admin/workflows/products/discover-multiple/{task_id}`, `POST /admin/workflows/products/discover-multiple/{task_id}/cancel`, `POST /admin/workflows/products/verify-existing` and `POST /admin/workflows/products/prepare-reviews`.
 
-Use **Catalog operations → Add & match products**, enable multi-source mode and select all enabled collection sources or any subset.
+## 2. Update prices & stock
 
-Shopify sources scan the requested catalog pages. Other sources collect supplied product URLs (entered as source_id | URL) or URLs already observed. Sources without known URLs or a supported catalog feed are explicitly marked needs_urls; they are NOT reported as successfully crawled. One source's error does not stop the rest. The tracked job reports findings per source.
+This is **existing-offer only**. Pick an enabled Shopify retailer, a positive finite number of pages, and choose price updates, stock updates or both. Unknown product/variant keys, unapproved brands, incompatible SKU/GTIN or variant attributes are skipped, not imported. Ingredient text and canonical identity are never changed here. Default is preview.
 
-## Automatic verification
+Endpoint: `POST /admin/workflows/offers/refresh`. This flow currently has no indefinite tracked scan; "All pages" belongs to new product discovery.
 
-**Find safe exact matches** scans ALL remaining legacy skincare identities and reports total safe candidates. **Apply next 500 safe matches** changes only a bounded number of identity records, reports the actual number saved and the number remaining, and creates pending review cases for conflicts. Repeating it progresses to the next records rather than repeating the first 500. It does not modify ingredient formulas or retail prices.
+## 3. Find ingredients
 
-A product with incompatible variants, conflicting credible INCI, unresolved brands or a duplicate canonical identity is not auto-verified.
+Run the INCI waterfall **only for existing identity-approved skincare products**. Preflight clearly distinguishes in-scope, verified, pending-review and blocked-unverified identity counts. A 0/0 result means nothing qualified for this flow—not that any products were imported. Dry-run is available; candidate evidence does not imply approved INCI publication. Optional Jev/Gemini staging only adds tasks to the **INCI** queue.
 
-## Deployment checklist
+Endpoints: `/admin/waterfall/batch/eligibility`, `start`, `status` and `cancel`; canonical formulation operations are under `/admin/aggregation/formulations/*`.
 
-Pull latest main, restart the API and rebuild/reload the frontend. Preview legacy identity matches, apply one safe batch and verify the saved count and smaller remaining count. Open Product Reviews to see the persisted cases. Run a multi-source dry run and inspect the outcome for each selected source. GitHub commits and CI do not mutate the running local product database.
+## 4. AI review queues
 
+**INCI** Jev/Gemini workers use `/admin/queues/*`. **Product identity** Gemini uses Product Matching Reviews with its own queue and jobs. They are different. Model identity approval cannot publish full ingredients.
 
-## Shopify catalog pages
+## Product Matching Reviews (separate screen)
 
-The former 1–3 page testing limit was not a Shopify limit. Under **Add & match products**, choose **All pages** to continue from the starting page until an empty Shopify catalog page is returned. Alternatively disable **All pages** and specify any positive number of pages. Single-store discovery also uses a tracked background job.
+Use **Find legacy products needing review** if necessary, then enqueue all/selected identity cases for Gemini. Review only unresolved conflicting cases manually. Gemini analyzes several product cases per call (configured 1–20), records structured verdicts and reasons, and can automatically verify safe high-confidence exact matches under deterministic gates.
 
-For large jobs, the UI shows the current source/page and permits **Stop scan after the current page**. Completed pages of a real import are committed separately; the response includes the last completed page and the next page for manual resumption. Dry-run records are rolled back immediately per observation. Source-specific rate limiting and retry/backoff are preserved. HTTP errors or repeated identical pages are NOT classified as successful end-of-catalog completion.
+Use **Preview saved decisions** → **Apply confident decisions — no Gemini calls** to re-evaluate *existing* Gemini verdicts ≥0.90 and apply safe identity verifications or explicit audited variant splits. It skips stale or ambiguous cases, does not spend tokens and never auto-merges distinct canonical IDs.
 
-**Update prices & stock** remains a separate offer-only operation. Its manual page-count field no longer has a three-page validation cap, but that synchronous endpoint does not yet implement indefinite background crawling. For a full initial product catalog, use **Add & match products → All pages**.
+**Gemini Decisions table:** paged, server-side verdict/outcome/review status and confidence-range filters; sort on confidence, verdict, review ID, outcome or time; search titles and IDs; expand a row to see original store listings, Gemini reasoning, SkinSync application reason, and saved audited action (even for completed cases).
+
+## Before every release
+
+- Check admin credentials/scope, source policy and correct `SKINSYNC_DB_PATH`.
+- Back up SQLite consistently under WAL before any real bulk operation.
+- Start with a bounded dry run, review result counts and independent sample cases, then apply and inspect task status/history.
+- Do not mistake a successful start HTTP response for task completion.
+- For troubleshooting and precise API examples see [operations runbook](../workflows-and-operations.md) and [API reference](../api-reference.md).

@@ -1,133 +1,57 @@
 # Product identity and multi-source aggregation
 
-Implemented on top of the canonical-publication remediation. This is an additive architecture migration, not a production reclustering or a full waterfall run.
+**Current implementation guide — 25 October 2026.** This replaces the older patch-status narrative. For every endpoint see [HTTP API reference](../api-reference.md); for all tables see [database reference](../database-reference.md); for end-to-end operations see [workflows runbook](../workflows-and-operations.md).
 
-## What changed
+## Scope
 
-| Area | Implementation |
-| --- | --- |
-| Baseline | Read-only catalog profiler with record-level category, eligibility, orphan, evidence, size, category-disagreement, barcode and identity anomalies. |
-| Taxonomy | Structured classification with original evidence, function, area, vehicle, usage, features, concerns, confidence, source and review status. Compatibility category labels remain available through `classify_and_tag()`. Fragrance-free creams, tinted sunscreens, baby creams and cleanser/exfoliator overlaps have regression coverage. |
-| Brands | Persistent brands and explicit approved aliases. Unknown brands go to review. Exact legacy labels are preserved separately; fuzzy brand strings never approve identity. |
-| Resolution | `CanonicalIdentityResolver` retrieves by durable mapping, validated GTIN, manufacturer ID, brand profile and normalized aliases. Similarity retrieves candidates; it does not approve a merge. Missing critical attributes mean unknown. Contradictory attributes block the association. Identical INCI and shared reference IDs are not identity proof. |
-| Stable IDs | Incremental linker replaces union-find. Existing IDs, canonical names and formulas remain stable. Old normalized keys remain preserved. Explicit merge/split operations have before/after history, redirects and guarded reversal. Cannot-link decisions persist. |
-| Observations | Immutable, content-addressed source snapshots retain original title, brand, category, payload, URL, timestamp, market, language, identifiers, variants and ingredient-section context. Identical repeat acquisition reuses the snapshot; changed content creates a new version. |
-| Sources | Registry with source type, domain, platform adapter, market, language, evidence reliability, section rules, collection delay, collection status and separate publication gate. 31 source entries cover existing stores and staged onboarding waves. Registration is not a quality certification. |
-| Adapters | Shopify, WooCommerce with expanded variations, product-page/JSON-LD, and Open Beauty Facts contracts. Existing Shopify synchronization retains its compatibility rows while capturing every variant in `product_offers`. Non-Shopify sources dispatch through their registered adapter. |
-| Offers | Composite source/product/variant uniqueness allows the same URL to have several prices, SKUs and stock states. Multipacks carry count, unit size and total quantity. Mass and volume remain separate. Public price queries suppress duplicate legacy page representatives and exclude unapproved expansion-source offers. |
-| Ingredients | Identity is resolved first. Declarations become evidence and a resolution-queue item. Exact source evidence enters the controlled waterfall. Regional compatibility, completeness and order are required. Conflicts go to review; authority chooses a representative only after declarations agree. No generated ingredients are accepted. |
-| History | Approved formulation versions are retained separately. Retail ingestion cannot replace canonical INCI. Explicit evidence corrections still pass repository validation. |
-| Review | Unified identity, duplicate, category and formulation queue, with remembered decisions. The hamburger menu’s **Source Registry** entry opens all registered sources, including staged sources with no products, source-specific setup and review coverage. The main dashboard keeps the catalog explorer and its dynamic retailer filter. Reviewed aliases, categories, links and mismatches are durable. |
-| Rollout | Collection and publication are separate switches. New-source canonical products are provisional and hidden. Activation requires a named reviewer, an immutable server evaluation ID, reviewed labels and passing quality gates. No source was activated by this implementation. |
+Registered sources fall into **retailer**, **manufacturer** and **reference** categories. Registry entries are not automatically collected, and an enabled source is not automatically approved for authoritative ingredient publication.
 
-Classification confidence is a deterministic rule score, not a calibrated probability. The 30-item engineering gold set is deliberately difficult but small; its score is not a population accuracy claim. International manufacturer declarations remain ineligible for automatic publication until regional compatibility is explicitly reviewed. Bundles and unresolved categories remain staged; they do not receive a shared canonical INCI.
+- `source_registry.py` defines source inventory and policy (domain, adapter, region, access flags, rates, evidence confidence).
+- `source_collection.py` validates registered URLs and robots policy for the bounded URL collector.
+- Shopify product discovery supports tracked multi-source **All pages** mode (`pages=0`); HTML/other sources need provided or previously recorded product URLs, and missing coverage is explicitly reported as `needs_urls`.
+- `aggregation_service.process_source_observation` records source observations, variants, classification and identity candidates and creates initial offers where applicable.
+- `brand_registry.py` / `taxonomy_service.py` / `canonical_identity_resolver.py` provide brand aliases, taxonomy, identity attributes, approved source links, explicit cannot-link constraints and provisional identity handling.
 
-## Safe migration
+## Separate operational tracks
 
-Run from the repository root, with the API/workers stopped for an actual deployment migration. The default command snapshots the real database but applies the migration only to a disposable copy:
+| Track | UI | Primary backend |
+|---|---|---|
+| New source discovery and identity | Catalog Operations → Add & match products | `/admin/workflows/products/discover-multiple` and `/admin/aggregation/sources/{source_id}/collect` |
+| Existing retailer price/stock | Catalog Operations → Update prices & stock | `/admin/workflows/offers/refresh` |
+| Full INCI evidence/publication | Catalog Operations → Find ingredients | `/admin/waterfall/batch/*` and `/admin/aggregation/formulations/*` |
+| INCI model queue | Catalog Operations → AI review queues | `/admin/queues/*`, separate Jev/Gemini |
+| Product identity Gemini queue | Product Matching Reviews | `/admin/aggregation/reviews/gemini/*` |
+| Apply already stored identity Gemini verdicts | Product Matching Reviews → Apply saved decisions | `/admin/aggregation/reviews/gemini/saved/*` (no model calls) |
+| Browse decisions and confidence | Product Matching Reviews → Gemini Decisions | `GET /admin/aggregation/reviews/gemini/results` |
+| Manage source policies | Manage Product Sources | `/admin/aggregation/sources*` |
+| Manually resolve genuine ambiguity | Product Matching Reviews | `/admin/aggregation/reviews/{review_id}` and audited identity operations |
 
-```bash
-python3 api/scripts/migrate_aggregation.py --backup /tmp/skinsync-before-aggregation.db
-```
+**Important:** source discovery can create provisional identities and initial offers; existing offer-only refresh never imports unknown variants. Source collection, price updates, INCI waterfall and model worker calls do **not** imply one another.
 
-For an approved deployment, choose a new backup path and add `--apply`:
+## Identity integrity
 
-```bash
-python3 api/scripts/migrate_aggregation.py --backup /path/to/new-backup.db --apply
-```
+Canonical IDs are durable, and distinct from `products.id` (legacy source row) or `product_offers.id` (saleable variant). A normalized title or identical ingredient-reference hit alone cannot justify a merge. Rules test marketed product line, actual brand registry, SPF, percentages, fragrance, tint/shade, vehicle and known formula differences.
 
-`--database` or `SKINSYNC_DB_PATH` selects another catalog. Existing tables are not rebuilt. `products.product_url` remains unique for page-level compatibility; the new `product_offers` table provides variant-level uniqueness. Every existing product/canonical ID mapping is captured and checked. New tables include brands, aliases, taxonomy, sources, snapshots, variants, offers, links, constraints, redirects/history, formulation versions, review cases and release approvals.
+Legacy exact identity check (`/admin/workflows/products/verify-existing`) previews all eligible historical canonicals and applies bounded batches; cases it cannot safely verify can be persisted through `/admin/workflows/products/prepare-reviews`. Human review is reserved for unresolved structural conflicts rather than every accent/marketing naming difference.
 
-The migration was dry-run against the actual catalog: **22,800 of 22,800 mappings preserved**. The additive migration was applied to `api/skincare.db` on 24 October 2026. The pre-migration backup and verification report are retained in `data/backups/` outside the repository. Existing product rows, canonical data and audit evidence were verified against that snapshot; integrity is `ok`, with no new foreign-key violations. Source publication remains disabled.
+The identity Gemini worker sends multiple cases per provider call and stores verdict, score and reason in `identity_gemini_queue`; model confidence **≥0.90** is only a gate, not proof. Guarded same-product outcomes can verify identities, and explicit variant partitions can be split by replaying saved verdicts. Ambiguous cases stay for manual review. The [Gemini review guide](gemini-product-identity-review.md) and [saved-decision replay](saved-gemini-decisions.md) detail the rules.
 
-## Diagnostics and reconciliation
+## INCI provenance
 
-```bash
-python3 api/scripts/profile_aggregation.py --output /tmp/catalog-baseline.json
-```
+`inci_audit_evidence` stores source candidates/approvals/rejections. Controlled publisher/versioning in `FormulationRepository` owns authoritative canonical INCI; source identity, region, ingredient-list completeness/order and conflicts matter. An LLM verdict about product identity never auto-approves INCI. See [INCI status](../inci-remediation-status.md) and [refresh readiness](refresh-runbook.md).
 
-Baseline over the real catalog:
+## Governed rollout and evidence
 
-- 22,800 retailer records; 14,710 canonicals; six stores; zero unlinked records or orphan canonicals.
-- 1,606 proposed category changes and 737 potentially excluded skincare records.
-- 2,542 formula-bearing canonicals without an `approved_authoritative` evidence record.
+Source evaluations, labels and finalized reports persist separately with immutable SQL triggers. `/admin/aggregation/sources/{source_id}/evaluations`, `/admin/aggregation/evaluations/{run_id}/labels` and `.../finalize` support independent labeled review. Reconciliation previews persist a baseline hash; published rollout remains a separate approval step.
 
-These are review candidates, not proven errors. Reports retain source URLs and record IDs.
+The JSON/CSV files in this directory (`catalog-review-manifest.json`, `taxonomy-benchmark.json`, `source-smoke-manifest.json`, `validation-results.json` and `review-samples/*`) are historical validation artifacts, not continuously updated production telemetry. Recompute benchmarks and refresh evidence before asserting current precision, coverage or accuracy.
 
-`POST /admin/aggregation/reconcile` builds a disposable SQLite copy, runs the incremental resolver there, and returns proposed associations and review cases. The full-catalog preview preserved all **14,710 existing canonical identities**, created **zero** new canonicals, changed **zero** product/canonical associations and made **zero** live writes. It produced 1,347 pending review cases. Existing associations are intentionally reviewed rather than silently reassigned.
+## Operational links
 
-A pending caller transaction must be committed or rolled back before requesting a reconciliation snapshot.
-
-## Source onboarding and coverage
-
-`GET /admin/aggregation/sources` lists registry entries. Existing six-store collection remains operational; expansion sources remain disabled by default. `PATCH /admin/aggregation/sources/{id}` changes collection status only. It cannot approve publication.
-
-- `POST .../sources/{id}/ingest`: normalize supplied source payloads; defaults to `dry_run: true`.
-- `POST .../sources/{id}/collect`: bounded explicit URLs, registered domains, robots policy and collection delays. HTML-backed product detail enrichment also works for Shopify sources. Unknown/disallowed access is deferred.
-- `GET .../sources/{id}/coverage`: distinct discovered products, canonical matches, offers, candidate lists, full ordered declarations, pending review and publications.
-- `POST .../sources/{id}/rollout`: finalized server-side `evaluation_id`; caller-supplied metrics are rejected. Enforces category macro-F1 ≥ .95, skincare false exclusion ≤ .01, automatic-link precision ≥ .995, exact offer/durability/preservation results, and zero critical merges, wrong-product formulas or unintended new entities. These are release gates, not measured production claims.
-
-For a read-only live benchmark on explicit product pages:
-
-```bash
-python3 api/scripts/benchmark_sources.py \
-  --manifest docs/aggregation/source-smoke-manifest.json \
-  --output /tmp/source-coverage.json
-```
-
-This snapshots the catalog, checks access rules and measures extraction and identity outcomes without enabling sources or publishing. Expected canonical IDs can be supplied as independently reviewed labels. An unlabeled smoke run does not establish automatic-link precision or catalog-wide coverage.
-
-Live smoke pages were checked for Source Beauty, Feel22, ZYNAH, Zahra Egypt, CeraVe Egypt and Jamila Egypt. Extraction handles dedicated tabs/accordions, full versus key-active sections, bullets, English/Arabic headings, chemical slashes, ppm commas and formula codes. Related-product JSON-LD must match the requested page before its identity can be used. Jamila's Arabic full-list heading was verified against captured live HTML, added to regression tests and rechecked live successfully. All six smoke pages produced full-declaration candidates; none were published. See `validation-results.json` for the measured sample results.
-
-Source examples and domain verification:
-
-- [Source Beauty product](https://sourcebeauty.com/products/eveline-serum-shot-multi-peptides-rejuvenation-serum)
-- [Feel22 product](https://eg.feel22.com/products/skin1004-hyalu-cica-brightening-toner)
-- [ZYNAH product](https://zynah.me/products/dermacy-pore-cleansing-face-gel-200ml)
-- [Zahra product](https://zahraegypt.com/en/shop/product/2954/810400030824)
-- [CeraVe Egypt product](https://www.cerave.eg/en/skincare/cleansers/hydrating-facial-cleanser)
-- [Jamila product](https://jamila-eg.net/collections/acne/products/dr-althea-345-relief-cream)
-
-## Review and controlled publication
-
-All routes below use the `/admin/aggregation` prefix:
-
-| Route | Purpose |
-| --- | --- |
-| `GET /observations`, `GET /reviews` | Paginated source records and review evidence. |
-| `POST /reviews/{id}` | Reviewed link, cannot-link, category, keep-separate, dismissal or evidence request. |
-| `POST /brands/aliases` | Explicit brand-name equivalence; conflicting alias reassignment is rejected. |
-| `POST /identity/constraints` | Record a cannot-link relationship between canonicals. |
-| `POST /identity/merge` | Reviewed duplicate merge; contradictory brands, attributes or accepted formulas block it. |
-| `POST /identity/{id}/split` | Move selected legacy/variant offers to a new provisional identity, without copying INCI. |
-| `GET /identity/history`, `POST /identity/history/{id}/reverse` | Audited history and reversal; intervening changes block automatic reversal. |
-| `POST /identity/{id}/publish` | Explicit approval of a resolved, classified provisional identity. |
-| `GET /formulations/{id}` | Assess source evidence without publishing. |
-| `POST /formulations/{id}/resolve` | Publish concordant eligible evidence only after source release approval. |
-| `POST /formulations/evidence/{id}/approve` | Named, reasoned approval/correction of a selected declaration; foreign-market compatibility requires explicit confirmation. |
-
-Re-ingest an observation after accepting its identity or category review. Decisions are tied to evidence; changed evidence reopens review. A repurposed source page cannot inherit a former product's association just because its source ID is unchanged. Legacy prices are preserved when the new page identity is not accepted.
-
-## Verification
-
-```bash
-python3 api/tests/run_regressions.py
-npm --prefix skinsync-app run build
-```
-
-The regression runner uses a disposable database copy and mocks external providers and model downloads; HTTP routes execute normally. It must run outside restricted loopback environments where FastAPI TestClient cannot operate. The pre-hardening suite passed **234 tests**, including HTTP integration tests. Current hardening results are recorded in `validation-results.json`. The new panel also passes its ESLint check. Additional merge/reversal guards were verified in the focused aggregation suite.
-
-The checked-in taxonomy benchmark and source manifest are reproducible validation artifacts. No production category mass update, canonical merge/split, source activation, full waterfall or external catalog export was performed. The previously modified `api/skincare.db` is retained and excluded from implementation artifacts.
-
-Live diagnostics are available in the hamburger Source Registry (per source, all sources,
-and a selected product URL) and the 3-API Status & Quotas dialog (per provider and all).
-Reachability and functional results are separate. Source tests parse one bounded sample,
-check expected prices and ordered ingredient evidence, honor robots and collector pacing,
-and never ingest or publish products. An incomplete sample does not establish catalog-wide
-failure; HTML sources without a sample explicitly require a product URL. API tests send one
-small request using the production protocol and validate response content/schema. HTTP
-401/403/429 means reachable with an unsuccessful functional check. Results and running
-state are process-local, shared across dialogs, and reset on backend restart. At most three
-tests run concurrently; repeated clicks do not duplicate an already queued/running target.
-
-See [hardening.md](hardening.md) for administrator setup, verified identity enforcement, immutable evaluation gates and the remaining independent review requirements.
+- [Catalog operations](catalog-operations.md)
+- [Gemini identity review](gemini-product-identity-review.md)
+- [Stored decisions](saved-gemini-decisions.md)
+- [Hardening requirements](hardening.md)
+- [Refresh runbook](refresh-runbook.md)
+- [Complete API](../api-reference.md)
+- [Complete database](../database-reference.md)

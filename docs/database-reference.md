@@ -689,6 +689,19 @@ Source: [`api/pipeline/identity_review.py`](../api/pipeline/identity_review.py).
 | `updated_at` | `TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP` |
 
 
+### Addendum: evaluation tables created inside initialization
+
+These four tables are created in `init_aggregation_schema` by separate `conn.execute` statements rather than the main `TABLES` list. They are part of the current schema and protected by immutability triggers.
+
+| Table | Columns and declared constraints |
+|---|---|
+| `source_evaluations` | `id INTEGER PRIMARY KEY`, `source_id TEXT NOT NULL REFERENCES sources(id)`, `samples TEXT NOT NULL`, `baseline TEXT NOT NULL`, `created_by TEXT NOT NULL`, `policy_hash TEXT NOT NULL`, `created_at TEXT DEFAULT CURRENT_TIMESTAMP` |
+| `source_evaluation_labels` | `run_id INTEGER NOT NULL REFERENCES source_evaluations(id)`, `observation_id INTEGER NOT NULL`, `expected_canonical_id INTEGER`, `expected_new INTEGER NOT NULL`, `category TEXT NOT NULL`, `is_skincare INTEGER NOT NULL`, `reviewed_by TEXT NOT NULL`, `reason TEXT NOT NULL`; composite primary key (`run_id`, `observation_id`) |
+| `source_evaluation_results` | `run_id INTEGER PRIMARY KEY REFERENCES source_evaluations(id)`, `report TEXT NOT NULL`, `report_hash TEXT NOT NULL`, `finalized_by TEXT NOT NULL`, `created_at TEXT DEFAULT CURRENT_TIMESTAMP` |
+| `reconciliation_previews` | `id INTEGER PRIMARY KEY`, `baseline_hash TEXT NOT NULL`, `report TEXT NOT NULL`, `created_by TEXT NOT NULL`, `created_at TEXT DEFAULT CURRENT_TIMESTAMP` |
+
+Source: [aggregation_schema.py](../api/pipeline/aggregation_schema.py). `source_evaluations` uses a guarded `policy_hash` additive migration. The evaluation and reconciliation records are protected against SQL UPDATE/DELETE; finalized evaluation labels are closed to new inserts.
+
 ## Additive migrations and indexes
 
 `init_db` adds missing fields to older tables after checking their column inventory.
