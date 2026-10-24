@@ -322,3 +322,15 @@ Source: [`api/routers/catalog_reset.py`](../api/routers/catalog_reset.py).
 | POST | `/admin/workflows/catalog/reset` | `reset_catalog()` | `operations` |
 
 The preview returns `can_reset`, product-derived table row counts, active jobs, preserved-table counts, and a fingerprint without modifying data. The reset accepts `{"fingerprint":"<64-character preview fingerprint>","confirmation":"RESET ALL PRODUCT DATA"}`, creates and checks a private SQLite backup before mutating rows, refuses active/background jobs, and transactionally purges dependent catalog records. The reset response returns the backup path and deleted record counts. Saved Gemini verdicts remain in the backup, not in the new live catalog.
+
+### selective catalog rebuild router
+
+Source: [`api/routers/catalog_reset.py`](../api/routers/catalog_reset.py).
+
+| Method | Path | Handler | Permission |
+|---|---|---|---|
+| GET | `/admin/workflows/catalog/selective-rebuild/preview` | `selective_rebuild_preview()` | `read` |
+| POST | `/admin/workflows/catalog/selective-rebuild` | `selective_rebuild()` | `operations` |
+| GET | `/admin/workflows/catalog/selective-rebuild/jobs/{job_id}` | `selective_rebuild_job()` | `read` |
+
+The selective preview chooses the latest multi-source discovery, checks that it is persisted and all catalogs reached their end, inspects stored-source coverage and returns a fingerprint. POST accepts `{"fingerprint":"...","discovery_task_id":"...","confirmation":"REBUILD FROM SAVED DISCOVERY"}` and schedules a backup-first atomic offline rebuild. Poll the returned job ID for the outcome. Unlike the full reset, source observations and their variants survive and are replayed to rebuild products and offers.
