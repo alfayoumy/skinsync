@@ -408,7 +408,7 @@ class TestBulkWaterfallCanonicalArchitecture(unittest.TestCase):
         self.assertFalse(result["published"])
         self.assertIsNone(self.conn.execute("SELECT ingredients_raw FROM canonical_products WHERE id=200").fetchone()[0])
 
-    def test_approved_jev_sqlite_row_publishes_once_without_offer_write(self):
+    def test_approved_jev_sqlite_row_records_evidence_without_offer_write(self):
         from pipeline.jev_worker import run_jev_verification_queue
         from pipeline.config import cfg
         raw = "Water, Glycerin, Panthenol, Sodium Hyaluronate, Phenoxyethanol"
@@ -423,9 +423,11 @@ class TestBulkWaterfallCanonicalArchitecture(unittest.TestCase):
              patch("pipeline.jev_worker.cfg", replace(cfg, JEV_REQUEST_INTERVAL_SECONDS=0)):
             result = run_jev_verification_queue(limit=1)
         self.assertEqual(result["approved"], 1)
-        self.assertEqual(self.conn.execute("SELECT ingredients_raw FROM canonical_products WHERE id=200").fetchone()[0], raw)
+        self.assertIsNone(self.conn.execute("SELECT ingredients_raw FROM canonical_products WHERE id=200").fetchone()[0])
         self.assertIsNone(self.conn.execute("SELECT ingredients_raw FROM products WHERE id=201").fetchone()[0])
-        self.assertEqual(self.conn.execute("SELECT COUNT(*) FROM inci_audit_evidence WHERE canonical_product_id=200").fetchone()[0], 1)
+        evidence=self.conn.execute("SELECT decision,raw_ingredients_found FROM inci_audit_evidence WHERE canonical_product_id=200 ORDER BY id DESC LIMIT 1").fetchone()
+        self.assertEqual(evidence["decision"], "identity_blocked")
+        self.assertEqual(evidence["raw_ingredients_found"], raw)
 
     def test_threaded_bulk_reads_the_supplied_database(self):
         with tempfile.TemporaryDirectory() as directory:
@@ -487,7 +489,7 @@ class TestFormulationProtectionAndIntegrity(unittest.TestCase):
         # A conflicting candidate from another source with DIFFERENT formula arrives
         cand_conflict = FormulationCandidate(
             canonical_product_id=300,
-            source_name="openbeauty_api",
+            source_name="admin_override",
             raw_ingredients="Water, Alcohol Denat, Fragrance, Salicylic Acid, Glycerin",
             parsed_tokens=["water", "alcohol denat", "fragrance", "salicylic acid", "glycerin"],
             actives=["salicylic_acid"],

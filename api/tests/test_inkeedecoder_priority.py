@@ -238,15 +238,18 @@ class TestInkeeDecoderAndInciBeautyGuards(unittest.TestCase):
             cur.execute("UPDATE products SET tier_resolutions = ? WHERE id = 1;", (json.dumps(tier4_resolutions),))
             conn.commit()
 
-            apply_tier_resolution_for_product(1, "tier4", conn=conn)
+            # A web-search match is evidence, NOT an exact identity verified formula.
+            with self.assertRaisesRegex(ValueError, "authoritative publication"):
+                apply_tier_resolution_for_product(1, "tier4", conn=conn)
 
-            # Verify persisted database row
             cur.execute("SELECT ingredient_source, ingredient_source_url, ingredients_raw FROM canonical_products WHERE id = 1;")
             row = cur.fetchone()
-
-            self.assertEqual(row["ingredient_source"], "langsearch_web_search")
-            self.assertEqual(row["ingredient_source_url"], "https://inkeedecoder.com/products/la-roche-posay-effaclar-duo")
-            self.assertIn("Niacinamide", row["ingredients_raw"])
+            self.assertIsNone(row["ingredient_source"])
+            self.assertIsNone(row["ingredients_raw"])
+            cur.execute("SELECT evidence_url,decision FROM inci_audit_evidence WHERE canonical_product_id=1 ORDER BY id DESC LIMIT 1")
+            evidence=cur.fetchone()
+            self.assertEqual(evidence["evidence_url"], "https://inkeedecoder.com/products/la-roche-posay-effaclar-duo")
+            self.assertEqual(evidence["decision"], "identity_blocked")
             conn.close()
 
         finally:

@@ -182,7 +182,8 @@ class TestIdentityReviewApi(unittest.TestCase):
             connection=sqlite3.connect(self.path)
             connection.row_factory=sqlite3.Row
             return connection
-        for status, expected in [('pending_jev',None),('jev_approved',proposed)]:
+        # Approval of the language-model match does not verify the INCI source identity.
+        for status, expected in [('pending_jev',None),('jev_approved',None)]:
             with self.subTest(status=status):
                 match=dict(ingredients=proposed,matched_id=10,matched_name='Brand Hydrating Cream',
                     hybrid_score=.95,gate4_jev_status=status)
