@@ -5,7 +5,7 @@ import {
   Check, AlertTriangle, Activity, Sparkles, CheckCircle2, ArrowRight,
   RefreshCw, SlidersHorizontal, RotateCcw, ArrowUpDown, Tag, DollarSign,
   Layers, Settings2, Plus, Trash2, ListChecks, Zap, Copy, Clock,
-  Cpu, Globe, Server, AlertOctagon, CheckCircle
+  Cpu, Globe, Server, AlertOctagon, CheckCircle, Menu
 } from 'lucide-react';
 
 const SKINCARE_CATEGORIES = [
@@ -68,6 +68,9 @@ const AdminObservatory = ({ onBackToApp }) => {
   const [apiActionLoading, setApiActionLoading] = useState(null);
   const [apiActionMessage, setApiActionMessage] = useState(null);
 
+  // Left Slide-Over Menu State
+  const [showSideMenu, setShowSideMenu] = useState(false);
+
   // Similar Alternatives Filter States
   const [altCategoryMode, setAltCategoryMode] = useState('same_category'); // 'same_category', 'cross_category', 'specific'
   const [altSelectedCategory, setAltSelectedCategory] = useState('');
@@ -121,6 +124,16 @@ const AdminObservatory = ({ onBackToApp }) => {
       fetchWhitelist(whitelistPage, whitelistQuery, whitelistCategory);
     }
   }, [showWhitelistModal, whitelistPage, whitelistCategory]);
+
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape' && showSideMenu) {
+        setShowSideMenu(false);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [showSideMenu]);
 
   const handleAddIngredient = async (e) => {
     e.preventDefault();
@@ -632,87 +645,240 @@ const AdminObservatory = ({ onBackToApp }) => {
 
   return (
     <div className="min-h-screen bg-gray-50 text-gray-900 font-sans pb-20">
-      {/* Top Navigation */}
-      <div className="bg-white border-b border-gray-200 sticky top-0 z-40 shadow-sm">
-        <div className="max-w-7xl mx-auto px-6 py-4 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-gradient-to-tr from-purple-700 to-indigo-600 rounded-xl flex items-center justify-center text-white shadow-md">
-              <ShieldCheck className="w-6 h-6" />
-            </div>
-            <div>
-              <div className="flex items-center gap-2">
-                <h1 className="text-xl font-black text-gray-900">Admin Observatory & Telemetry Portal</h1>
-                <span className="bg-purple-100 text-purple-700 text-xs px-2.5 py-0.5 rounded-full font-bold">
-                  v3.0 Production
-                </span>
+      {/* Left Slide-Over Menu Drawer */}
+      {showSideMenu && (
+        <div className="fixed inset-0 z-50 overflow-hidden">
+          {/* Backdrop Overlay */}
+          <div 
+            className="fixed inset-0 bg-black/50 backdrop-blur-xs transition-opacity duration-200 cursor-pointer"
+            onClick={() => setShowSideMenu(false)}
+          />
+
+          {/* Slide-out Menu Panel */}
+          <div className="fixed inset-y-0 left-0 max-w-full flex">
+            <div className="w-84 sm:w-96 bg-white shadow-2xl flex flex-col border-r border-gray-200 relative z-10 transition-transform duration-300 ease-out">
+              
+              {/* Drawer Header */}
+              <div className="p-5 border-b border-gray-200 bg-gradient-to-r from-gray-50 to-purple-50/30 flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 bg-gradient-to-tr from-purple-700 to-indigo-600 rounded-xl flex items-center justify-center text-white shadow-md">
+                    <ShieldCheck className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <h2 className="text-base font-black text-gray-900">Admin Console</h2>
+                    <p className="text-[11px] text-gray-500 font-medium">Observatory Tools & Pipeline</p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => setShowSideMenu(false)}
+                  className="p-2 text-gray-400 hover:text-gray-700 hover:bg-gray-200/60 rounded-xl transition cursor-pointer"
+                  title="Close Menu (Esc)"
+                >
+                  <X className="w-5 h-5" />
+                </button>
               </div>
-              <p className="text-xs text-gray-500 font-medium">Deep Forensics, INCI Decision Logs & Multi-Store Telemetry</p>
+
+              {/* Drawer Body - Actions List */}
+              <div className="flex-1 overflow-y-auto p-5 space-y-6">
+                
+                {/* Section 1: Monitoring & Quotas */}
+                <div>
+                  <div className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-2.5 px-1">
+                    System Telemetry & APIs
+                  </div>
+                  <div className="space-y-2">
+                    {/* 3-API Status & Quotas */}
+                    <button
+                      onClick={() => {
+                        fetchAllApisStatus();
+                        setShowApiStatusModal(true);
+                        setShowSideMenu(false);
+                      }}
+                      className={`w-full p-3 rounded-2xl border text-left transition-all flex items-center justify-between group cursor-pointer shadow-xs ${
+                        apiStatusData?.summary?.has_issues
+                          ? 'border-amber-300 bg-amber-50/70 hover:bg-amber-100/80 text-amber-950'
+                          : 'border-blue-200 bg-blue-50/50 hover:bg-blue-100/70 text-blue-950'
+                      }`}
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 shadow-xs ${
+                          apiStatusData?.summary?.has_issues ? 'bg-amber-200 text-amber-800' : 'bg-blue-100 text-blue-700'
+                        }`}>
+                          <Cpu className="w-4 h-4" />
+                        </div>
+                        <div>
+                          <div className="text-xs font-bold flex items-center gap-1.5">
+                            <span>3-API Status & Quotas</span>
+                            {apiStatusData?.summary?.has_issues && (
+                              <span className="w-2 h-2 rounded-full bg-amber-500 animate-pulse" />
+                            )}
+                          </div>
+                          <div className="text-[11px] text-gray-500 mt-0.5">Gemini, Jev & LangSearch tokens</div>
+                        </div>
+                      </div>
+                      <ChevronRight className="w-4 h-4 text-gray-400 group-hover:text-gray-700 group-hover:translate-x-0.5 transition shrink-0" />
+                    </button>
+
+                    {/* Refresh Stats */}
+                    <button
+                      onClick={() => {
+                        fetchOverview();
+                        setShowSideMenu(false);
+                      }}
+                      className="w-full p-3 rounded-2xl border border-gray-200 bg-gray-50/70 hover:bg-gray-100 text-gray-800 text-left transition-all flex items-center justify-between group cursor-pointer shadow-xs"
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className="w-9 h-9 rounded-xl bg-gray-200 text-gray-700 flex items-center justify-center shrink-0 shadow-xs">
+                          <Activity className="w-4 h-4" />
+                        </div>
+                        <div>
+                          <div className="text-xs font-bold">Refresh Stats</div>
+                          <div className="text-[11px] text-gray-500 mt-0.5">Reload catalog vitals & counters</div>
+                        </div>
+                      </div>
+                      <RefreshCw className="w-3.5 h-3.5 text-gray-400 group-hover:text-gray-700 group-hover:rotate-180 transition duration-300 shrink-0" />
+                    </button>
+                  </div>
+                </div>
+
+                {/* Section 2: Data Pipeline & Whitelist */}
+                <div>
+                  <div className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-2.5 px-1">
+                    Catalog Pipeline & Whitelist
+                  </div>
+                  <div className="space-y-2">
+                    {/* Whitelist Manager */}
+                    <button
+                      onClick={() => {
+                        setShowWhitelistModal(true);
+                        setShowSideMenu(false);
+                      }}
+                      className="w-full p-3 rounded-2xl border border-teal-200 bg-teal-50/50 hover:bg-teal-100/70 text-teal-950 text-left transition-all flex items-center justify-between group cursor-pointer shadow-xs"
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className="w-9 h-9 rounded-xl bg-teal-100 text-teal-700 flex items-center justify-center shrink-0 shadow-xs">
+                          <Sparkles className="w-4 h-4" />
+                        </div>
+                        <div>
+                          <div className="text-xs font-bold">Whitelist Manager</div>
+                          <div className="text-[11px] text-teal-700/80 mt-0.5">19,000+ verified INCI ingredients</div>
+                        </div>
+                      </div>
+                      <ChevronRight className="w-4 h-4 text-teal-600 group-hover:translate-x-0.5 transition shrink-0" />
+                    </button>
+
+                    {/* Re-Link Catalog */}
+                    <button
+                      onClick={() => {
+                        handleTriggerLinker();
+                        setShowSideMenu(false);
+                      }}
+                      disabled={actionLoading !== null}
+                      className="w-full p-3 rounded-2xl border border-purple-200 bg-purple-50/50 hover:bg-purple-100/70 text-purple-950 text-left transition-all flex items-center justify-between group cursor-pointer disabled:opacity-50 shadow-xs"
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className="w-9 h-9 rounded-xl bg-purple-100 text-purple-700 flex items-center justify-center shrink-0 shadow-xs">
+                          <Layers className={`w-4 h-4 ${actionLoading === 'linker' ? 'animate-spin' : ''}`} />
+                        </div>
+                        <div>
+                          <div className="text-xs font-bold">
+                            {actionLoading === 'linker' ? 'Linking in Progress...' : 'Re-Link Catalog'}
+                          </div>
+                          <div className="text-[11px] text-purple-700/80 mt-0.5">2-Pass Cross-Store Variant Alignment</div>
+                        </div>
+                      </div>
+                      <ArrowRight className="w-4 h-4 text-purple-600 group-hover:translate-x-0.5 transition shrink-0" />
+                    </button>
+
+                    {/* Re-Run Classifier */}
+                    <button
+                      onClick={() => {
+                        handleTriggerClassifier();
+                        setShowSideMenu(false);
+                      }}
+                      disabled={actionLoading !== null}
+                      className="w-full p-3 rounded-2xl border border-indigo-200 bg-indigo-50/50 hover:bg-indigo-100/70 text-indigo-950 text-left transition-all flex items-center justify-between group cursor-pointer disabled:opacity-50 shadow-xs"
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className="w-9 h-9 rounded-xl bg-indigo-100 text-indigo-700 flex items-center justify-center shrink-0 shadow-xs">
+                          <Tag className={`w-4 h-4 ${actionLoading === 'classifier' ? 'animate-spin' : ''}`} />
+                        </div>
+                        <div>
+                          <div className="text-xs font-bold">
+                            {actionLoading === 'classifier' ? 'Classifying...' : 'Re-Run Classifier'}
+                          </div>
+                          <div className="text-[11px] text-indigo-700/80 mt-0.5">Skincare & Beauty taxonomy rules</div>
+                        </div>
+                      </div>
+                      <ArrowRight className="w-4 h-4 text-indigo-600 group-hover:translate-x-0.5 transition shrink-0" />
+                    </button>
+                  </div>
+                </div>
+
+              </div>
+
+              {/* Drawer Footer */}
+              <div className="p-4 bg-gray-50 border-t border-gray-200 space-y-3">
+                <button
+                  onClick={() => {
+                    setShowSideMenu(false);
+                    onBackToApp();
+                  }}
+                  className="w-full py-2.5 px-4 bg-gray-900 hover:bg-purple-600 text-white font-bold text-xs rounded-xl transition-all flex items-center justify-center gap-2 cursor-pointer shadow-sm"
+                >
+                  <ChevronLeft className="w-4 h-4" />
+                  <span>Back to SkinSync App</span>
+                </button>
+                <div className="text-[10px] text-center text-gray-400 font-medium">
+                  SkinSync Telemetry & Control · v3.0 Production
+                </div>
+              </div>
+
             </div>
           </div>
+        </div>
+      )}
 
-          <div className="flex items-center gap-2.5 flex-wrap">
+      {/* Top Navigation */}
+      <div className="bg-white border-b border-gray-200 sticky top-0 z-40 shadow-sm">
+        <div className="max-w-7xl mx-auto px-6 py-3.5 flex items-center justify-between gap-4">
+          <div className="flex items-center gap-3">
+            {/* Toggle Menu Button */}
             <button
-              onClick={() => {
-                fetchAllApisStatus();
-                setShowApiStatusModal(true);
-              }}
-              className={`text-xs font-bold px-3 py-2 rounded-xl border transition-all flex items-center gap-1.5 cursor-pointer shadow-sm ${
-                apiStatusData?.summary?.has_issues
-                  ? 'border-amber-300 bg-amber-50 text-amber-900 hover:bg-amber-100'
-                  : 'border-blue-200 bg-blue-50 text-blue-800 hover:bg-blue-100'
-              }`}
-              title="Inspect Real-time Status, Rate Limits, and Quotas for Gemini, Jev, and LangSearch APIs"
+              onClick={() => setShowSideMenu(true)}
+              className="p-2.5 rounded-xl border border-gray-200 bg-white hover:bg-purple-50 hover:border-purple-200 text-gray-700 hover:text-purple-700 transition cursor-pointer shadow-xs flex items-center gap-2 group"
+              title="Open Admin Actions & Tools Menu"
             >
-              <Cpu className="w-3.5 h-3.5 text-blue-600" />
-              <span>3-API Status & Quotas</span>
+              <Menu className="w-5 h-5 text-gray-700 group-hover:text-purple-700 transition" />
+              <span className="text-xs font-bold text-gray-700 group-hover:text-purple-700 hidden sm:inline">Admin Menu</span>
               {apiStatusData?.summary?.has_issues && (
-                <span className="w-2 h-2 rounded-full bg-amber-500 animate-pulse ml-0.5" />
+                <span className="w-2 h-2 rounded-full bg-amber-500 animate-pulse" />
               )}
             </button>
 
-            <button
-              onClick={() => setShowWhitelistModal(true)}
-              className="text-xs font-bold px-3 py-2 rounded-xl border border-teal-200 bg-teal-50 text-teal-800 hover:bg-teal-100 transition-all flex items-center gap-1.5 cursor-pointer shadow-sm"
-              title="Inspect & Curate 19,000+ Verified Ingredients in SQLite Whitelist"
-            >
-              <Sparkles className="w-3.5 h-3.5 text-teal-600" />
-              <span>Whitelist Manager</span>
-            </button>
+            <div className="w-9 h-9 bg-gradient-to-tr from-purple-700 to-indigo-600 rounded-xl flex items-center justify-center text-white shadow-md shrink-0">
+              <ShieldCheck className="w-5 h-5" />
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <h1 className="text-lg md:text-xl font-black text-gray-900">Admin Observatory & Telemetry Portal</h1>
+                <span className="bg-purple-100 text-purple-700 text-[10px] px-2 py-0.5 rounded-full font-bold hidden md:inline">
+                  v3.0 Production
+                </span>
+              </div>
+              <p className="text-xs text-gray-500 font-medium hidden sm:block">Deep Forensics, INCI Decision Logs & Multi-Store Telemetry</p>
+            </div>
+          </div>
 
-            <button
-              onClick={handleTriggerLinker}
-              disabled={actionLoading !== null}
-              className="text-xs font-bold px-3 py-2 rounded-xl border border-purple-200 bg-purple-50 text-purple-700 hover:bg-purple-100 disabled:opacity-50 transition-all flex items-center gap-1.5 cursor-pointer shadow-sm"
-              title="Run 2-Pass Cross-Store Variant Alignment"
-            >
-              <Layers className={`w-3.5 h-3.5 ${actionLoading === 'linker' ? 'animate-spin' : ''}`} />
-              <span>{actionLoading === 'linker' ? 'Linking...' : 'Re-Link Catalog'}</span>
-            </button>
-
-            <button
-              onClick={handleTriggerClassifier}
-              disabled={actionLoading !== null}
-              className="text-xs font-bold px-3 py-2 rounded-xl border border-indigo-200 bg-indigo-50 text-indigo-700 hover:bg-indigo-100 disabled:opacity-50 transition-all flex items-center gap-1.5 cursor-pointer shadow-sm"
-              title="Re-run Rule-based Skincare & Beauty Taxonomy Classifier"
-            >
-              <Tag className={`w-3.5 h-3.5 ${actionLoading === 'classifier' ? 'animate-spin' : ''}`} />
-              <span>{actionLoading === 'classifier' ? 'Classifying...' : 'Re-Run Classifier'}</span>
-            </button>
-
-            <button
-              onClick={fetchOverview}
-              className="text-xs text-gray-600 hover:text-purple-600 font-semibold px-3 py-2 rounded-xl border border-gray-200 bg-gray-50 hover:bg-gray-100 transition-all flex items-center gap-1.5 cursor-pointer shadow-sm"
-            >
-              <Activity className="w-3.5 h-3.5" />
-              <span>Refresh Stats</span>
-            </button>
-
+          <div className="flex items-center gap-2.5">
             <button
               onClick={onBackToApp}
-              className="bg-gray-900 hover:bg-purple-600 text-white font-bold text-xs px-4 py-2 rounded-xl transition-all flex items-center gap-1.5 cursor-pointer shadow-sm"
+              className="bg-gray-900 hover:bg-purple-600 text-white font-bold text-xs px-4 py-2.5 rounded-xl transition-all flex items-center gap-1.5 cursor-pointer shadow-sm"
+              title="Return to SkinSync Application"
             >
               <ChevronLeft className="w-4 h-4" />
-              <span>Back to SkinSync App</span>
+              <span className="hidden sm:inline">Back to SkinSync App</span>
+              <span className="sm:hidden">Back</span>
             </button>
           </div>
         </div>
