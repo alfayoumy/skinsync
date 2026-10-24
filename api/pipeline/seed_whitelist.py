@@ -28,13 +28,22 @@ logger = logging.getLogger("skincare_pipeline.seed_whitelist")
 # Standalone words that MUST NEVER match or exist as a standalone ingredient on their own
 # because they are ubiquitous common English words or non-specific descriptors
 EXCLUDED_STANDALONE = {
+    # Colors & pigments
+    'black', 'white', 'blue', 'green', 'red', 'yellow', 'brown', 'pink', 'purple', 
+    'violet', 'orange', 'grey', 'gray', 'gold', 'silver', 'bronze', 'copper',
+    'pigment', 'pigments', 'color', 'colors', 'colour', 'colours', 'shade', 'shades', 
+    'tint', 'tints', 'natural color', 'natural colors', 'artificial color', 'artificial colors',
+    'natural colorant', 'natural colorants', 'colorant', 'colorants', 'mineral pigment',
+    'mineral pigments', 'mineral pigment or vegetable color', 'mica color', 'oxide color',
+    'pigment powder', 'vegetable coloring', 'fd&c colors', 'natural mineral pigments',
+    # Common English words, vehicles & descriptors
     'oil', 'acid', 'water', 'extract', 'butter', 'wax', 'gum', 'juice', 'leaf', 
     'flower', 'root', 'fruit', 'seed', 'peel', 'bark', 'stem', 'gel', 'cream', 
     'drops', 'sun', 'spf', 'skin', 'face', 'body', 'daily', 'care', 'beauty', 
     'pure', 'natural', 'organic', 'active', 'free', 'clean', 'soft', 'smooth', 
     'bright', 'anti', 'complex', 'solution', 'formula', 'treatment', 'repair', 
-    'mineral', 'gold', 'clear', 'light', 'dark', 'rose', 'tea', 'milk', 'sugar',
-    'honey', 'salt', 'clay', 'mud', 'berry', 'orange', 'lemon', 'apple', 'grape',
+    'mineral', 'clear', 'light', 'dark', 'rose', 'tea', 'milk', 'sugar',
+    'honey', 'salt', 'clay', 'mud', 'berry', 'lemon', 'apple', 'grape',
     'iron', 'steel', 'cloth', 'cotton', 'bottle', 'tube', 'paper', 'towel',
     'redness', 'irritation', 'acne', 'inflammation', 'itchiness', 'dryness',
     'blemish', 'blemishes', 'spots', 'wrinkle', 'wrinkles', 'eczema', 'psoriasis',
@@ -45,7 +54,12 @@ EXCLUDED_STANDALONE = {
     'vegan', 'cruelty', 'paraben', 'fragrance', 'flavor', 'scent',
     'ingredients', 'alcohol-free', 'lock in moisture', 'plant', 'balm', 'birch',
     'micellar water', 'sunscreen', 'essence', 'vaseline', 'serum', 'lotion',
-    'cleanser', 'toner', 'shampoo', 'conditioner', 'wash', 'pad', 'pads', 'mist'
+    'cleanser', 'toner', 'shampoo', 'conditioner', 'wash', 'pad', 'pads', 'mist',
+    # Foods, alcohol, materials & nonsense words
+    'vodka', 'beer', 'wine', 'donut', 'sand', 'soap', 'lard', 'fatty', 'dragon', 
+    'tree', 'wood', 'woody', 'bumps', 'note', 'date', 'roses', 'coll', 'alpha', 
+    'beta', 'nano', 'pearl', 'silk', 'cell', 'cells', 'cellular', 'power', 'boost',
+    'lift', 'firm', 'tight', 'savior', 'secret', 'magic', 'miracle', 'wonder'
 }
 
 ACTIVE_KEYWORDS = {

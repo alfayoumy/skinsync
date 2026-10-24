@@ -280,7 +280,7 @@ def load_skinsafe_reference_index(conn=None) -> Dict[str, List[Tuple]]:
 
         try:
             cur = conn.cursor()
-            cur.execute("SELECT id, product_name, brand, ingredients FROM inci_reference WHERE source = 'skinsafe';")
+            cur.execute("SELECT id, product_name, brand, ingredients FROM inci_reference WHERE ingredients IS NOT NULL AND TRIM(ingredients) != '';")
             rows = cur.fetchall()
             index: Dict[str, List[Tuple]] = {}
             for r in rows:
@@ -1391,7 +1391,7 @@ def run_waterfall_pipeline(
                 OR ingredient_source IS NULL 
                 OR ingredient_source NOT IN (
                     'store_page_tab', 'historical_store_scrape', 'openbeauty_api', 
-                    'skinsafe_high_match', 'langsearch_web_search', 'whitelist_description', 'cluster_propagation'
+                    'skinsafe_high_match', 'langsearch_web_search'
                 )
             )"""
         query += " ORDER BY id ASC"

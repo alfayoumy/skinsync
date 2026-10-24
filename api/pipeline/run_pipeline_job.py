@@ -120,7 +120,14 @@ def run_full_pipeline(
             title = row["title"]
             curr_raw = row["ingredients_raw"]
 
-            has_source_ings = bool(curr_raw and len(curr_raw.strip()) >= 15 and row.get("ingredient_source") != "inci_matched")
+            AUTHENTIC_SOURCE_TYPES = {
+                "store_tab", "store_page_tab", "historical_store_scrape", 
+                "current_store_scrape", "store_scrape", "store_description", "v10_curated"
+            }
+            has_source_ings = bool(
+                curr_raw and len(curr_raw.strip()) >= 15 and 
+                row.get("ingredient_source") in AUTHENTIC_SOURCE_TYPES
+            )
             m_res = match_with_inci_db(
                 brand=brand,
                 title=title,
@@ -176,8 +183,10 @@ def run_full_pipeline(
                 ]
 
                 # Only fill ingredients immediately if auto-approved locally (not ambiguous / pending gemini)
+                # and product doesn't possess genuine store ground truth (or currently only has fallback tokens)
                 ref_ings = m_res.get("ingredients")
-                if gemini_status != "pending_gemini" and (not curr_raw or len(curr_raw.strip()) < 10) and ref_ings and len(ref_ings.strip()) >= 15:
+                can_overwrite = (not has_source_ings) or (row.get("ingredient_source") in ("whitelist_description", "whitelist_extracted", "cluster_propagation", "unmatched", "pending_tier7_match", None))
+                if gemini_status != "pending_gemini" and can_overwrite and ref_ings and len(ref_ings.strip()) >= 15:
                     parsed, acts = parse_and_normalize_ingredients(ref_ings)
                     update_sql += """,
                     ingredients_raw = ?,

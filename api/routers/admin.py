@@ -354,7 +354,14 @@ def get_product_telemetry_forensics(
                 acts = acts.union(p_acts)
             actives_list = sorted(list(acts))
 
-        has_source_ings = bool(raw_ings and len(raw_ings.strip()) >= 15 and product.get("ingredient_source") != "inci_matched")
+        AUTHENTIC_SOURCE_TYPES = {
+            "store_tab", "store_page_tab", "historical_store_scrape", 
+            "current_store_scrape", "store_scrape", "store_description", "v10_curated"
+        }
+        has_source_ings = bool(
+            raw_ings and len(raw_ings.strip()) >= 15 and 
+            product.get("ingredient_source") in AUTHENTIC_SOURCE_TYPES
+        )
 
         # 3. Reference INCI Information & Forensic Candidate Resolution
         reference_info = None
