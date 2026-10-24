@@ -112,6 +112,9 @@ def get_admin_overview():
         """)
         recent_tasks = [dict(r) for r in cur.fetchall()]
 
+        from pipeline.rate_limiter import langsearch_limiter
+        ls_quota = langsearch_limiter.get_quota_status()
+
         return {
             "catalog_vitals": {
                 "total_store_listings": total_products,
@@ -125,7 +128,8 @@ def get_admin_overview():
                 "coverage_percent": round((products_with_ingredients / total_products * 100.0), 1) if total_products else 0.0
             },
             "stores": stores_breakdown,
-            "recent_tasks": recent_tasks
+            "recent_tasks": recent_tasks,
+            "langsearch_quota": ls_quota
         }
     finally:
         conn.close()
@@ -1124,5 +1128,31 @@ def apply_tier_resolution_endpoint(product_id: int, req: ApplyTierRequest):
         raise HTTPException(status_code=500, detail=f"Failed to apply tier resolution: {e}")
     finally:
         conn.close()
+
+
+class OverrideLangSearchQuotaRequest(BaseModel):
+    tokens_used: Optional[int] = None
+    reason: str = "Manual Admin / Daily Allowance Quota Update"
+
+
+@router.get("/langsearch/quota-status")
+def get_langsearch_quota_endpoint():
+    """
+    Returns real-time LangSearch token quota, rate limits (5 RPS, 1M TPM), and 00:00 UTC countdown.
+    """
+    from pipeline.rate_limiter import langsearch_limiter
+    return langsearch_limiter.get_quota_status()
+
+
+@router.post("/langsearch/set-quota-exhausted")
+def set_langsearch_quota_exhausted_endpoint(req: Optional[OverrideLangSearchQuotaRequest] = None):
+    """
+    Sets the LangSearch daily token usage / exhaustion state until 00:00 UTC.
+    """
+    from pipeline.rate_limiter import langsearch_limiter
+    toks = req.tokens_used if req else None
+    reason = req.reason if req else "Daily allowance exhausted"
+    langsearch_limiter.mark_daily_quota_exhausted(tokens_used=toks, reason=reason)
+    return langsearch_limiter.get_quota_status()
 
 

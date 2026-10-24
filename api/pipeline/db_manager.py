@@ -293,6 +293,9 @@ def init_db(db_path=DB_PATH):
         usage_date TEXT NOT NULL, -- YYYY-MM-DD UTC
         request_count INTEGER NOT NULL DEFAULT 0,
         last_request_ts REAL NOT NULL DEFAULT 0.0,
+        token_count INTEGER NOT NULL DEFAULT 0,
+        is_exhausted INTEGER NOT NULL DEFAULT 0,
+        exhausted_until REAL NOT NULL DEFAULT 0.0,
         PRIMARY KEY (provider, usage_date)
     );
     """)
@@ -301,10 +304,26 @@ def init_db(db_path=DB_PATH):
     CREATE TABLE IF NOT EXISTS api_request_log (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         provider TEXT NOT NULL,
-        ts REAL NOT NULL
+        ts REAL NOT NULL,
+        tokens INTEGER NOT NULL DEFAULT 0
     );
     """)
     cur.execute("CREATE INDEX IF NOT EXISTS idx_api_request_log ON api_request_log(provider, ts);")
+
+    # Safe migrations for rate limit tracking tables
+    cur.execute("PRAGMA table_info(api_rate_limits);")
+    rate_cols = {r[1] for r in cur.fetchall()}
+    if "token_count" not in rate_cols:
+        cur.execute("ALTER TABLE api_rate_limits ADD COLUMN token_count INTEGER NOT NULL DEFAULT 0;")
+    if "is_exhausted" not in rate_cols:
+        cur.execute("ALTER TABLE api_rate_limits ADD COLUMN is_exhausted INTEGER NOT NULL DEFAULT 0;")
+    if "exhausted_until" not in rate_cols:
+        cur.execute("ALTER TABLE api_rate_limits ADD COLUMN exhausted_until REAL NOT NULL DEFAULT 0.0;")
+
+    cur.execute("PRAGMA table_info(api_request_log);")
+    req_cols = {r[1] for r in cur.fetchall()}
+    if "tokens" not in req_cols:
+        cur.execute("ALTER TABLE api_request_log ADD COLUMN tokens INTEGER NOT NULL DEFAULT 0;")
 
     # 7. INCI Ingredient Synonyms & Normalization Table (Database-backed)
     cur.execute("""

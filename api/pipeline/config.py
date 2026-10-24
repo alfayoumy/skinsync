@@ -151,5 +151,15 @@ class PipelineConfig:
     LOG_TO_FILE: bool = _env_bool("LOG_TO_FILE", True)
     LOG_JSON_FORMAT: bool = _env_bool("LOG_JSON_FORMAT", False)
 
+    # -------------------------------------------------------------------------
+    # 11. LangSearch Web Search API Quotas & Rate Limits
+    # -------------------------------------------------------------------------
+    LANGSEARCH_API_KEY: str = _env_str("LANGSEARCH_API_KEY", "")
+    LANGSEARCH_DAILY_TOKEN_LIMIT: int = _env_int("LANGSEARCH_DAILY_TOKEN_LIMIT", 10_000_000)
+    LANGSEARCH_MAX_RPS: float = _env_float("LANGSEARCH_MAX_RPS", 5.0)
+    LANGSEARCH_ROLLING_TPM_LIMIT: int = _env_int("LANGSEARCH_ROLLING_TPM_LIMIT", 1_000_000)
+    LANGSEARCH_PACE_DELAY_SECONDS: float = _env_float("LANGSEARCH_PACE_DELAY_SECONDS", 0.20)
+    LANGSEARCH_TIMEOUT_SECONDS: float = _env_float("LANGSEARCH_TIMEOUT_SECONDS", 15.0)
+
 # Global singleton configuration instance
 cfg = PipelineConfig()

@@ -473,16 +473,23 @@ def resolve_tier4_langsearch(brand: str, title: str, api_key: Optional[str] = No
     """
     Tier 4: Queries LangSearch Web Search API for '{brand} {title} inci ingredients'
     and extracts authentic INCI formulation from top beauty/retailer results.
+    Strictly rate limited to 5 RPS, 1,000,000 TPM, and 10,000,000 daily tokens.
     """
-    global _LANGSEARCH_EXHAUSTED
-    if _LANGSEARCH_EXHAUSTED:
+    from pipeline.rate_limiter import langsearch_limiter
+
+    quota_status = langsearch_limiter.get_quota_status()
+    if quota_status.get("is_daily_exhausted"):
+        logger.debug(
+            f"LangSearch skipped: Daily allowance ({quota_status['tokens_used_today']:,}/{quota_status['daily_token_limit']:,} tokens, "
+            f"{quota_status['daily_used_percentage']}%) used. Resets in {quota_status['resets_in_human']} at 00:00 UTC."
+        )
         return None
 
     if not brand or not title:
         return None
 
     if not api_key:
-        api_key = os.getenv("LANGSEARCH_API_KEY")
+        api_key = os.getenv("LANGSEARCH_API_KEY") or cfg.LANGSEARCH_API_KEY
     if not api_key:
         return None
 
@@ -492,7 +499,10 @@ def resolve_tier4_langsearch(brand: str, title: str, api_key: Optional[str] = No
         if cache_key in _LANGSEARCH_CACHE:
             return _LANGSEARCH_CACHE[cache_key]
 
-    _throttle_langsearch()
+    # Acquire rate limit slot (enforcing 5 RPS and 1M TPM)
+    acquired = langsearch_limiter.acquire(estimated_tokens=1500)
+    if not acquired:
+        return None
 
     query = f"{brand} {clean_t} inci ingredients"
 
@@ -514,9 +524,23 @@ def resolve_tier4_langsearch(brand: str, title: str, api_key: Optional[str] = No
             headers=headers,
             method="POST"
         )
-        with urllib.request.urlopen(req, timeout=15) as resp:
-            data = json.loads(resp.read().decode("utf-8"))
+        with urllib.request.urlopen(req, timeout=cfg.LANGSEARCH_TIMEOUT_SECONDS) as resp:
+            resp_bytes = resp.read()
+            resp_headers = dict(resp.headers)
+            data = json.loads(resp_bytes.decode("utf-8"))
+
+            # Token tracking: extract usage object or estimate accurately
+            usage = data.get("usage") or data.get("data", {}).get("usage") or {}
+            in_tok = usage.get("input_tokens", 0)
+            out_tok = usage.get("output_tokens", 0)
+
             pages = data.get("data", {}).get("webPages", {}).get("value", [])
+            if in_tok == 0 and out_tok == 0:
+                in_tok = len(query.split()) * 2
+                tot_chars = sum(len(p.get("text", "") or p.get("snippet", "")) for p in pages)
+                out_tok = int(tot_chars / 4.0)
+
+            langsearch_limiter.record_usage(input_tokens=in_tok, output_tokens=out_tok)
 
             for p in pages:
                 p_name = (p.get("name") or "").lower()
@@ -559,11 +583,20 @@ def resolve_tier4_langsearch(brand: str, title: str, api_key: Optional[str] = No
                     with _LANGSEARCH_LOCK:
                         _LANGSEARCH_CACHE[cache_key] = res
                     return res
+    except urllib.error.HTTPError as http_err:
+        err_body = ""
+        try:
+            err_body = http_err.read().decode("utf-8", errors="replace")
+        except Exception:
+            pass
+        if http_err.code == 429:
+            langsearch_limiter.record_429_exhaustion(response_body=err_body, headers=dict(http_err.headers))
+        else:
+            logger.warning(f"LangSearch HTTP {http_err.code} error: {http_err.reason} - {err_body[:200]}")
     except Exception as ex:
         err_str = str(ex).lower()
-        if "429" in err_str or "allowance" in err_str or "rate" in err_str:
-            _LANGSEARCH_EXHAUSTED = True
-            logger.warning(f"LangSearch API allowance exceeded or rate limited ({ex}). Circuit-breaker activated for remainder of run.")
+        if "429" in err_str:
+            langsearch_limiter.record_429_exhaustion(response_body=str(ex))
         else:
             logger.debug(f"LangSearch query failed for {query}: {ex}")
 
@@ -962,18 +995,29 @@ def execute_all_tiers_for_product(
         )
 
         # 4. Tier 4: LangSearch Web Search API
-        if langsearch_enabled:
-            res_t4 = resolve_tier4_langsearch(brand, title)
-            t4 = _format_tier(
-                4, "tier4", "LangSearch Web Search INCI",
-                res_t4,
-                default_details=f"Extracted and validated INCI list from web search ({res_t4.get('url', '')})" if res_t4 else "No valid INCI list found via web search."
-            )
-        else:
+        from pipeline.rate_limiter import langsearch_limiter
+        quota_status = langsearch_limiter.get_quota_status()
+
+        if not langsearch_enabled:
             t4 = _format_tier(
                 4, "tier4", "LangSearch Web Search INCI",
                 None,
                 default_details="LangSearch web search disabled."
+            )
+        elif quota_status.get("is_daily_exhausted"):
+            t4 = _format_tier(
+                4, "tier4", "LangSearch Web Search INCI",
+                None,
+                default_details=f"LangSearch skipped: Daily allowance ({quota_status['tokens_used_today']:,}/{quota_status['daily_token_limit']:,} tokens, {quota_status['daily_used_percentage']}%) used. Resets in {quota_status['resets_in_human']} at 00:00 UTC.",
+                extra_meta={"quota_status": quota_status}
+            )
+        else:
+            res_t4 = resolve_tier4_langsearch(brand, title)
+            t4 = _format_tier(
+                4, "tier4", "LangSearch Web Search INCI",
+                res_t4,
+                default_details=f"Extracted authentic INCI list from {res_t4.get('source_url', 'web search')}." if res_t4 else "No valid INCI list found in top search results.",
+                extra_meta={"source_url": res_t4.get("source_url") if res_t4 else None, "quota_status": quota_status}
             )
 
         # 5. Tier 5: Store Description Whitelist Extraction
