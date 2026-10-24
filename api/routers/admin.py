@@ -9,7 +9,13 @@ from typing import Dict, List, Any, Optional
 from fastapi import APIRouter, HTTPException, Query
 from pydantic import BaseModel
 
-from pipeline.db_manager import get_connection
+from pipeline.db_manager import (
+    get_connection, load_whitelist_from_db, add_whitelist_ingredient,
+    delete_whitelist_ingredient, update_whitelist_ingredient, get_whitelist_stats
+)
+from pipeline.whitelist_matcher import (
+    extract_ingredients_via_whitelist, reload_whitelist_cache
+)
 from pipeline.logging_config import get_logger
 from services.catalog_service import parse_and_clean_ingredients, extract_actives_from_title
 from services.recommender import compute_weighted_jaccard, get_recommendations
@@ -18,6 +24,27 @@ from dermo_data import evaluate_product_dermo
 logger = get_logger("skincare_engine.routers.admin")
 
 router = APIRouter(prefix="/admin", tags=["Admin & Observatory"])
+
+
+class WhitelistIngredientCreate(BaseModel):
+    name: str
+    canonical_name: Optional[str] = None
+    category: str = "general"
+    is_active: bool = True
+
+
+class WhitelistIngredientUpdate(BaseModel):
+    name: Optional[str] = None
+    canonical_name: Optional[str] = None
+    category: Optional[str] = None
+    is_active: Optional[bool] = None
+
+
+class WhitelistReconcileRequest(BaseModel):
+    limit: int = 100
+    category: Optional[str] = None
+    store_id: Optional[str] = None
+    min_ingredients: int = 1
 
 
 @router.get("/overview")
@@ -658,3 +685,255 @@ def trigger_catalog_classifier():
     from pipeline.classifier import classify_catalog_products
     metrics = classify_catalog_products()
     return metrics
+
+
+# ==============================================================================
+# INGREDIENT WHITELIST MANAGEMENT ENDPOINTS
+# ==============================================================================
+
+@router.get("/whitelist")
+def get_whitelist_ingredients(
+    q: Optional[str] = Query(None, description="Search by ingredient name or canonical name"),
+    category: Optional[str] = Query(None, description="Filter by functional category (active, botanical, humectant, etc.)"),
+    is_active: Optional[bool] = Query(None, description="Filter by active status (true/false)"),
+    limit: int = Query(50, ge=1, le=200, description="Items per page"),
+    offset: int = Query(0, ge=0, description="Pagination offset")
+):
+    """
+    Returns paginated list of verified ingredients in SQLite whitelist with search and category filters.
+    """
+    conn = get_connection()
+    try:
+        cur = conn.cursor()
+        where_clauses = []
+        params = []
+
+        if q and q.strip():
+            where_clauses.append("(name LIKE ? OR canonical_name LIKE ?)")
+            q_param = f"%{q.strip()}%"
+            params.extend([q_param, q_param])
+
+        if category and category.strip():
+            where_clauses.append("category = ?")
+            params.append(category.strip().lower())
+
+        if is_active is not None:
+            where_clauses.append("is_active = ?")
+            params.append(1 if is_active else 0)
+
+        where_sql = f"WHERE {' AND '.join(where_clauses)}" if where_clauses else ""
+
+        # Total count query
+        count_sql = f"SELECT COUNT(*) FROM ingredient_whitelist {where_sql};"
+        cur.execute(count_sql, params)
+        total = cur.fetchone()[0]
+
+        # Paginated items query
+        data_sql = f"""
+        SELECT id, name, canonical_name, category, is_active, created_at, updated_at
+        FROM ingredient_whitelist
+        {where_sql}
+        ORDER BY LENGTH(name) DESC, name ASC
+        LIMIT ? OFFSET ?;
+        """
+        cur.execute(data_sql, params + [limit, offset])
+        items = [dict(r) for r in cur.fetchall()]
+
+        stats = get_whitelist_stats(conn=conn)
+
+        return {
+            "items": items,
+            "total": total,
+            "limit": limit,
+            "offset": offset,
+            "stats": stats
+        }
+    finally:
+        conn.close()
+
+
+@router.post("/whitelist")
+def create_whitelist_ingredient(req: WhitelistIngredientCreate):
+    """
+    Adds a new verified ingredient to the SQLite whitelist and refreshes in-memory matcher cache.
+    """
+    conn = get_connection()
+    try:
+        clean_name = req.name.strip()
+        if not clean_name:
+            raise HTTPException(status_code=400, detail="Ingredient name cannot be empty.")
+
+        new_id = add_whitelist_ingredient(
+            name=clean_name,
+            canonical_name=req.canonical_name,
+            category=req.category,
+            is_active=1 if req.is_active else 0,
+            conn=conn
+        )
+        if not new_id:
+            raise HTTPException(status_code=500, detail="Failed to insert ingredient into whitelist.")
+
+        # Invalidate in-memory matcher cache
+        reload_whitelist_cache(conn=conn)
+
+        cur = conn.cursor()
+        cur.execute("SELECT id, name, canonical_name, category, is_active, created_at, updated_at FROM ingredient_whitelist WHERE id = ?;", (new_id,))
+        created = dict(cur.fetchone())
+
+        logger.info(f"Added verified whitelist ingredient #{new_id}: '{clean_name}' (category={req.category})")
+        return {"status": "success", "ingredient": created}
+    finally:
+        conn.close()
+
+
+@router.put("/whitelist/{ingredient_id}")
+def update_whitelist_ingredient_endpoint(ingredient_id: int, req: WhitelistIngredientUpdate):
+    """
+    Updates an existing ingredient in the SQLite whitelist and refreshes in-memory matcher cache.
+    """
+    conn = get_connection()
+    try:
+        cur = conn.cursor()
+        cur.execute("SELECT id FROM ingredient_whitelist WHERE id = ?;", (ingredient_id,))
+        if not cur.fetchone():
+            raise HTTPException(status_code=404, detail=f"Whitelist ingredient #{ingredient_id} not found.")
+
+        updates = {k: v for k, v in req.dict().items() if v is not None}
+        if not updates:
+            raise HTTPException(status_code=400, detail="No fields provided for update.")
+
+        success = update_whitelist_ingredient(ingredient_id, updates, conn=conn)
+        if not success:
+            raise HTTPException(status_code=500, detail="Failed to update whitelist ingredient.")
+
+        reload_whitelist_cache(conn=conn)
+
+        cur.execute("SELECT id, name, canonical_name, category, is_active, created_at, updated_at FROM ingredient_whitelist WHERE id = ?;", (ingredient_id,))
+        updated = dict(cur.fetchone())
+
+        logger.info(f"Updated whitelist ingredient #{ingredient_id}: {updates}")
+        return {"status": "success", "ingredient": updated}
+    finally:
+        conn.close()
+
+
+@router.delete("/whitelist/{ingredient_id}")
+def delete_whitelist_ingredient_endpoint(ingredient_id: int):
+    """
+    Deletes an ingredient from the SQLite whitelist by ID and refreshes in-memory matcher cache.
+    """
+    conn = get_connection()
+    try:
+        success = delete_whitelist_ingredient(ingredient_id, conn=conn)
+        if not success:
+            raise HTTPException(status_code=404, detail=f"Whitelist ingredient #{ingredient_id} not found.")
+
+        reload_whitelist_cache(conn=conn)
+        logger.info(f"Deleted whitelist ingredient #{ingredient_id}")
+        return {"status": "success", "message": f"Whitelist ingredient #{ingredient_id} deleted."}
+    finally:
+        conn.close()
+
+
+@router.post("/whitelist/reconcile-pending")
+def reconcile_pending_products_with_whitelist(req: WhitelistReconcileRequest):
+    """
+    Strict Fallback Pipeline Runner:
+    Scans products that have NO ingredients after failing direct store INCI extraction
+    and failing SkinSAFE / BeautyAPI match.
+    Runs the whitelist lookup extractor on their authentic source descriptions.
+    """
+    conn = get_connection()
+    try:
+        cur = conn.cursor()
+
+        # Target products: skincare items with no ingredients and non-empty description
+        # that have no INCI match or failed INCI match
+        query = """
+        SELECT id, title, brand, category, store_id, description_html
+        FROM products
+        WHERE is_skincare = 1
+          AND (ingredients_raw IS NULL OR TRIM(ingredients_raw) = '')
+          AND description_html IS NOT NULL
+          AND LENGTH(TRIM(description_html)) > 30
+          AND (inci_matched_id IS NULL OR ingredient_source IS NULL OR ingredient_source = 'unmatched')
+        """
+        params = []
+        if req.category:
+            query += " AND category = ?"
+            params.append(req.category)
+        if req.store_id:
+            query += " AND store_id = ?"
+            params.append(req.store_id)
+
+        query += " ORDER BY id ASC LIMIT ?;"
+        params.append(min(max(1, req.limit), 500))
+
+        cur.execute(query, params)
+        pending = cur.fetchall()
+
+        logger.info(f"--- Starting Whitelist Fallback Reconciliation for {len(pending)} pending products ---")
+
+        extracted_count = 0
+        still_empty_count = 0
+        samples = []
+
+        for p in pending:
+            pid = p["id"]
+            desc = p["description_html"]
+            res = extract_ingredients_via_whitelist(desc, conn=conn, min_ingredients=req.min_ingredients)
+
+            if res and res.get("ingredients_raw"):
+                raw_ings = res["ingredients_raw"]
+                parsed_ings = res["ingredients_parsed"]
+                actives = res["actives"]
+                matched_count = res["matched_count"]
+
+                cur.execute("""
+                UPDATE products
+                SET ingredients_raw = ?,
+                    ingredients_parsed = ?,
+                    actives = ?,
+                    ingredient_source = 'whitelist_extracted',
+                    inci_safeguard_log = ?,
+                    updated_at = CURRENT_TIMESTAMP
+                WHERE id = ?;
+                """, (
+                    raw_ings,
+                    json.dumps(parsed_ings),
+                    json.dumps(actives),
+                    f"Extracted {matched_count} verified ingredients via description whitelist fallback",
+                    pid
+                ))
+                extracted_count += 1
+                if len(samples) < 10:
+                    samples.append({
+                        "product_id": pid,
+                        "title": p["title"],
+                        "brand": p["brand"],
+                        "matched_count": matched_count,
+                        "ingredients_raw": raw_ings[:80] + "..." if len(raw_ings) > 80 else raw_ings,
+                        "actives": actives
+                    })
+            else:
+                still_empty_count += 1
+
+        conn.commit()
+
+        if extracted_count > 0:
+            try:
+                from services.catalog_service import load_catalog_from_db
+                load_catalog_from_db()
+            except Exception as e:
+                logger.warning(f"Could not refresh catalog service: {e}")
+
+        logger.info(f"Whitelist Reconciliation complete: {extracted_count} extracted, {still_empty_count} still empty out of {len(pending)}.")
+        return {
+            "status": "success",
+            "processed": len(pending),
+            "extracted": extracted_count,
+            "still_empty": still_empty_count,
+            "sample_extractions": samples
+        }
+    finally:
+        conn.close()

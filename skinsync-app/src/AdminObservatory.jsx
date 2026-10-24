@@ -4,7 +4,7 @@ import {
   ExternalLink, Eye, X, Loader2, Store, BadgePercent, TrendingDown, 
   Check, AlertTriangle, Activity, Sparkles, CheckCircle2, ArrowRight,
   RefreshCw, SlidersHorizontal, RotateCcw, ArrowUpDown, Tag, DollarSign,
-  Layers, Settings2
+  Layers, Settings2, Plus, Trash2, ListChecks
 } from 'lucide-react';
 
 const SKINCARE_CATEGORIES = [
@@ -57,7 +57,144 @@ const AdminObservatory = ({ onBackToApp }) => {
   const [altSelectedCategory, setAltSelectedCategory] = useState('');
   const [loadingAlternatives, setLoadingAlternatives] = useState(false);
 
+  // Whitelist Manager States
+  const [showWhitelistModal, setShowWhitelistModal] = useState(false);
+  const [whitelistItems, setWhitelistItems] = useState([]);
+  const [whitelistTotal, setWhitelistTotal] = useState(0);
+  const [whitelistStats, setWhitelistStats] = useState(null);
+  const [loadingWhitelist, setLoadingWhitelist] = useState(false);
+  const [whitelistQuery, setWhitelistQuery] = useState('');
+  const [whitelistCategory, setWhitelistCategory] = useState('');
+  const [whitelistPage, setWhitelistPage] = useState(0);
+  const [whitelistPageSize, setWhitelistPageSize] = useState(25);
+  const [showAddIngForm, setShowAddIngForm] = useState(false);
+  const [newIngName, setNewIngName] = useState('');
+  const [newIngCanonical, setNewIngCanonical] = useState('');
+  const [newIngCategory, setNewIngCategory] = useState('general');
+  const [submittingIng, setSubmittingIng] = useState(false);
+  const [reconcilingPending, setReconcilingPending] = useState(false);
+  const [reconcileResult, setReconcileResult] = useState(null);
+
   const searchDebounceRef = useRef(null);
+  const whitelistDebounceRef = useRef(null);
+
+  const fetchWhitelist = async (pageToFetch = whitelistPage, query = whitelistQuery, cat = whitelistCategory) => {
+    try {
+      setLoadingWhitelist(true);
+      const params = new URLSearchParams();
+      params.append('limit', whitelistPageSize.toString());
+      params.append('offset', (pageToFetch * whitelistPageSize).toString());
+      if (query.trim()) params.append('q', query.trim());
+      if (cat) params.append('category', cat);
+      const res = await fetch(`http://127.0.0.1:8000/admin/whitelist?${params.toString()}`);
+      if (res.ok) {
+        const data = await res.json();
+        setWhitelistItems(data.items || []);
+        setWhitelistTotal(data.total || 0);
+        setWhitelistStats(data.stats || null);
+      }
+    } catch (err) {
+      console.error('Failed to fetch whitelist:', err);
+    } finally {
+      setLoadingWhitelist(false);
+    }
+  };
+
+  useEffect(() => {
+    if (showWhitelistModal) {
+      fetchWhitelist(whitelistPage, whitelistQuery, whitelistCategory);
+    }
+  }, [showWhitelistModal, whitelistPage, whitelistCategory]);
+
+  const handleAddIngredient = async (e) => {
+    e.preventDefault();
+    if (!newIngName.trim()) return;
+    try {
+      setSubmittingIng(true);
+      const res = await fetch('http://127.0.0.1:8000/admin/whitelist', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: newIngName.trim(),
+          canonical_name: newIngCanonical.trim() || newIngName.trim(),
+          category: newIngCategory,
+          is_active: true
+        })
+      });
+      if (res.ok) {
+        setNewIngName('');
+        setNewIngCanonical('');
+        setShowAddIngForm(false);
+        setActionMessage({ type: 'success', text: `Added "${newIngName.trim()}" to verified whitelist.` });
+        fetchWhitelist(0, whitelistQuery, whitelistCategory);
+      } else {
+        const err = await res.json();
+        setActionMessage({ type: 'error', text: err.detail || 'Failed to add ingredient.' });
+      }
+    } catch (err) {
+      setActionMessage({ type: 'error', text: 'Network error adding ingredient.' });
+    } finally {
+      setSubmittingIng(false);
+    }
+  };
+
+  const handleToggleActive = async (item) => {
+    try {
+      const res = await fetch(`http://127.0.0.1:8000/admin/whitelist/${item.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ is_active: !item.is_active })
+      });
+      if (res.ok) {
+        fetchWhitelist(whitelistPage, whitelistQuery, whitelistCategory);
+      }
+    } catch (err) {
+      console.error('Failed to toggle ingredient active status:', err);
+    }
+  };
+
+  const handleDeleteIngredient = async (item) => {
+    if (!window.confirm(`Delete "${item.name}" from whitelist?`)) return;
+    try {
+      const res = await fetch(`http://127.0.0.1:8000/admin/whitelist/${item.id}`, {
+        method: 'DELETE'
+      });
+      if (res.ok) {
+        setActionMessage({ type: 'success', text: `Deleted "${item.name}" from whitelist.` });
+        fetchWhitelist(whitelistPage, whitelistQuery, whitelistCategory);
+      }
+    } catch (err) {
+      console.error('Failed to delete ingredient:', err);
+    }
+  };
+
+  const handleReconcilePending = async () => {
+    try {
+      setReconcilingPending(true);
+      setReconcileResult(null);
+      const res = await fetch('http://127.0.0.1:8000/admin/whitelist/reconcile-pending', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ limit: 250, min_ingredients: 1 })
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setReconcileResult(data);
+        setActionMessage({
+          type: 'success',
+          text: `Whitelist Fallback Complete: Extracted verified ingredients for ${data.extracted} products (${data.still_empty} still empty)!`
+        });
+        fetchProducts(page, searchQuery);
+        fetchOverview();
+      } else {
+        setActionMessage({ type: 'error', text: 'Failed to run whitelist fallback.' });
+      }
+    } catch (err) {
+      setActionMessage({ type: 'error', text: 'Network error running whitelist fallback.' });
+    } finally {
+      setReconcilingPending(false);
+    }
+  };
 
   // Load Overview Data & Brands
   useEffect(() => {
@@ -363,6 +500,15 @@ const AdminObservatory = ({ onBackToApp }) => {
           </div>
 
           <div className="flex items-center gap-2.5 flex-wrap">
+            <button
+              onClick={() => setShowWhitelistModal(true)}
+              className="text-xs font-bold px-3 py-2 rounded-xl border border-teal-200 bg-teal-50 text-teal-800 hover:bg-teal-100 transition-all flex items-center gap-1.5 cursor-pointer shadow-sm"
+              title="Inspect & Curate 19,000+ Verified Ingredients in SQLite Whitelist"
+            >
+              <Sparkles className="w-3.5 h-3.5 text-teal-600" />
+              <span>Whitelist Manager</span>
+            </button>
+
             <button
               onClick={handleTriggerLinker}
               disabled={actionLoading !== null}
@@ -738,8 +884,10 @@ const AdminObservatory = ({ onBackToApp }) => {
                 >
                   <option value="">Ingredients: All Sources</option>
                   <option value="store_description">Store Scraped HTML</option>
+                  <option value="skinsafe_matched">SkinSAFE Matched</option>
+                  <option value="whitelist_extracted">Whitelist Description Lookup</option>
                   <option value="cross_store_linked">Cross-Store Clustered</option>
-                  <option value="v10_curated">SkinSafe / Curated DB</option>
+                  <option value="v10_curated">Curated DB</option>
                 </select>
 
                 {/* Gate Status */}
@@ -954,9 +1102,15 @@ const AdminObservatory = ({ onBackToApp }) => {
                       {/* Ingredients Column */}
                       <td className="py-3.5 px-4 whitespace-nowrap">
                         {p.has_ingredients ? (
-                          <span className="bg-emerald-100 text-emerald-800 font-bold px-2 py-0.5 rounded-full text-[10px] flex items-center gap-1 w-fit">
-                            <Check className="w-3 h-3" /> {p.ingredient_source || 'Available'}
-                          </span>
+                          p.ingredient_source === 'whitelist_extracted' ? (
+                            <span className="bg-teal-100 text-teal-800 font-bold px-2 py-0.5 rounded-full text-[10px] flex items-center gap-1 w-fit" title="Extracted from store description via verified ingredient whitelist fallback">
+                              <Sparkles className="w-3 h-3 text-teal-600" /> Whitelist Lookup
+                            </span>
+                          ) : (
+                            <span className="bg-emerald-100 text-emerald-800 font-bold px-2 py-0.5 rounded-full text-[10px] flex items-center gap-1 w-fit">
+                              <Check className="w-3 h-3" /> {p.ingredient_source || 'Available'}
+                            </span>
+                          )
                         ) : (
                           <span className="bg-gray-100 text-gray-400 font-medium px-2 py-0.5 rounded text-[10px]">
                             Missing
@@ -2058,6 +2212,276 @@ const AdminObservatory = ({ onBackToApp }) => {
               >
                 Close Forensics
               </button>
+            </div>
+
+          </div>
+        </div>
+      )}
+
+      {/* 5. Verified Ingredient Whitelist Management Modal */}
+      {showWhitelistModal && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl max-w-5xl w-full max-h-[90vh] shadow-2xl flex flex-col overflow-hidden animate-scale-in border border-gray-100">
+            {/* Modal Header */}
+            <div className="p-6 border-b border-gray-200 flex items-start justify-between bg-gradient-to-r from-teal-50 via-emerald-50 to-white shrink-0">
+              <div className="flex items-center gap-3">
+                <div className="w-12 h-12 bg-gradient-to-tr from-teal-600 to-emerald-500 rounded-2xl flex items-center justify-center text-white shadow-md">
+                  <Sparkles className="w-6 h-6" />
+                </div>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <h2 className="text-xl font-black text-gray-900">Verified Ingredient Whitelist</h2>
+                    <span className="bg-teal-100 text-teal-800 text-xs px-2.5 py-0.5 rounded-full font-bold">
+                      {whitelistStats?.total_ingredients ? whitelistStats.total_ingredients.toLocaleString() : '19,716'} Chemicals & Botanicals
+                    </span>
+                  </div>
+                  <p className="text-xs text-gray-500 mt-0.5">
+                    Authoritative SQLite database whitelist used for fallback description extraction when direct INCI lists or SkinSAFE matches are absent.
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={() => setShowWhitelistModal(false)}
+                className="w-8 h-8 rounded-full bg-white hover:bg-gray-100 border border-gray-200 flex items-center justify-center text-gray-400 hover:text-gray-600 transition cursor-pointer"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            {/* Sub-header Controls Bar */}
+            <div className="p-4 bg-gray-50 border-b border-gray-200 flex flex-wrap items-center justify-between gap-3 shrink-0">
+              <div className="flex items-center gap-2 flex-1 max-w-md">
+                <div className="relative flex-1">
+                  <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                  <input
+                    type="text"
+                    value={whitelistQuery}
+                    onChange={(e) => {
+                      setWhitelistQuery(e.target.value);
+                      if (whitelistDebounceRef.current) clearTimeout(whitelistDebounceRef.current);
+                      whitelistDebounceRef.current = setTimeout(() => {
+                        setWhitelistPage(0);
+                        fetchWhitelist(0, e.target.value, whitelistCategory);
+                      }, 300);
+                    }}
+                    placeholder="Search whitelist (e.g. Niacinamide, Centella, Glycerin)..."
+                    className="w-full pl-9 pr-3 py-2 bg-white border border-gray-200 rounded-xl text-xs focus:outline-none focus:border-teal-500"
+                  />
+                </div>
+
+                <select
+                  value={whitelistCategory}
+                  onChange={(e) => {
+                    setWhitelistCategory(e.target.value);
+                    setWhitelistPage(0);
+                    fetchWhitelist(0, whitelistQuery, e.target.value);
+                  }}
+                  className="px-3 py-2 bg-white border border-gray-200 rounded-xl text-xs focus:outline-none focus:border-teal-500 font-medium"
+                >
+                  <option value="">All Categories</option>
+                  <option value="active">Active ({whitelistStats?.categories?.active || 0})</option>
+                  <option value="botanical">Botanical ({whitelistStats?.categories?.botanical || 0})</option>
+                  <option value="emollient">Emollient ({whitelistStats?.categories?.emollient || 0})</option>
+                  <option value="humectant">Humectant ({whitelistStats?.categories?.humectant || 0})</option>
+                  <option value="preservative">Preservative ({whitelistStats?.categories?.preservative || 0})</option>
+                  <option value="surfactant">Surfactant ({whitelistStats?.categories?.surfactant || 0})</option>
+                  <option value="general">General ({whitelistStats?.categories?.general || 0})</option>
+                </select>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => setShowAddIngForm(!showAddIngForm)}
+                  className="px-3 py-2 bg-white hover:bg-gray-100 border border-teal-300 text-teal-800 rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer shadow-sm"
+                >
+                  <Plus className="w-3.5 h-3.5 text-teal-600" />
+                  <span>{showAddIngForm ? 'Cancel' : 'Add Ingredient'}</span>
+                </button>
+
+                <button
+                  onClick={handleReconcilePending}
+                  disabled={reconcilingPending}
+                  className="px-3 py-2 bg-gradient-to-r from-teal-600 to-emerald-600 hover:from-teal-700 hover:to-emerald-700 text-white rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer shadow-sm disabled:opacity-50"
+                  title="Run Fallback Whitelist Lookup on Products with No Ingredients"
+                >
+                  <RefreshCw className={`w-3.5 h-3.5 ${reconcilingPending ? 'animate-spin' : ''}`} />
+                  <span>{reconcilingPending ? 'Extracting...' : 'Run Fallback on Pending'}</span>
+                </button>
+              </div>
+            </div>
+
+            {/* Add Ingredient Inline Form */}
+            {showAddIngForm && (
+              <form onSubmit={handleAddIngredient} className="p-4 bg-teal-50/60 border-b border-teal-200 shrink-0 space-y-3">
+                <div className="text-xs font-bold text-teal-900 flex items-center gap-1.5">
+                  <Plus className="w-3.5 h-3.5 text-teal-700" />
+                  <span>Add New Verified Cosmetic Chemical / Botanical</span>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                  <div>
+                    <label className="text-[10px] font-bold text-gray-500 uppercase">Ingredient Name *</label>
+                    <input
+                      type="text"
+                      required
+                      value={newIngName}
+                      onChange={(e) => setNewIngName(e.target.value)}
+                      placeholder="e.g. Ectoin"
+                      className="w-full mt-1 px-3 py-1.5 bg-white border border-gray-200 rounded-lg text-xs focus:outline-none focus:border-teal-500"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-[10px] font-bold text-gray-500 uppercase">Canonical Name (Optional)</label>
+                    <input
+                      type="text"
+                      value={newIngCanonical}
+                      onChange={(e) => setNewIngCanonical(e.target.value)}
+                      placeholder="e.g. Ectoin"
+                      className="w-full mt-1 px-3 py-1.5 bg-white border border-gray-200 rounded-lg text-xs focus:outline-none focus:border-teal-500"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-[10px] font-bold text-gray-500 uppercase">Category</label>
+                    <select
+                      value={newIngCategory}
+                      onChange={(e) => setNewIngCategory(e.target.value)}
+                      className="w-full mt-1 px-3 py-1.5 bg-white border border-gray-200 rounded-lg text-xs focus:outline-none focus:border-teal-500"
+                    >
+                      <option value="active">Active</option>
+                      <option value="botanical">Botanical</option>
+                      <option value="emollient">Emollient</option>
+                      <option value="humectant">Humectant</option>
+                      <option value="preservative">Preservative</option>
+                      <option value="surfactant">Surfactant</option>
+                      <option value="general">General</option>
+                    </select>
+                  </div>
+                </div>
+                <div className="flex justify-end gap-2 pt-1">
+                  <button
+                    type="button"
+                    onClick={() => setShowAddIngForm(false)}
+                    className="px-3 py-1.5 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg text-xs font-semibold cursor-pointer"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={submittingIng}
+                    className="px-4 py-1.5 bg-teal-600 hover:bg-teal-700 text-white rounded-lg text-xs font-bold disabled:opacity-50 cursor-pointer"
+                  >
+                    {submittingIng ? 'Adding...' : 'Save to Whitelist'}
+                  </button>
+                </div>
+              </form>
+            )}
+
+            {/* Whitelist Table Body */}
+            <div className="flex-1 overflow-y-auto p-4">
+              {loadingWhitelist ? (
+                <div className="p-12 text-center text-gray-400 flex flex-col items-center justify-center gap-3">
+                  <Loader2 className="w-8 h-8 animate-spin text-teal-600" />
+                  <span className="text-xs font-semibold">Loading verified ingredients from database...</span>
+                </div>
+              ) : whitelistItems.length === 0 ? (
+                <div className="p-12 text-center text-gray-400">
+                  <p className="text-sm font-semibold">No whitelist ingredients matched your search.</p>
+                </div>
+              ) : (
+                <div className="overflow-x-auto border border-gray-200 rounded-2xl">
+                  <table className="w-full text-left text-xs">
+                    <thead className="bg-gray-50 border-b border-gray-200 text-[10px] uppercase font-bold text-gray-500">
+                      <tr>
+                        <th className="py-2.5 px-3">ID</th>
+                        <th className="py-2.5 px-3">Verified Ingredient Name</th>
+                        <th className="py-2.5 px-3">Canonical Target</th>
+                        <th className="py-2.5 px-3">Category</th>
+                        <th className="py-2.5 px-3 text-center">Status</th>
+                        <th className="py-2.5 px-3 text-right">Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-100">
+                      {whitelistItems.map((item) => (
+                        <tr key={item.id} className="hover:bg-gray-50/80 transition-colors">
+                          <td className="py-2.5 px-3 font-mono text-gray-400 text-[11px]">{item.id}</td>
+                          <td className="py-2.5 px-3 font-bold text-gray-900">{item.name}</td>
+                          <td className="py-2.5 px-3 text-gray-600">{item.canonical_name || item.name}</td>
+                          <td className="py-2.5 px-3">
+                            <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                              item.category === 'active' ? 'bg-purple-100 text-purple-800' :
+                              item.category === 'botanical' ? 'bg-emerald-100 text-emerald-800' :
+                              item.category === 'emollient' ? 'bg-amber-100 text-amber-800' :
+                              item.category === 'humectant' ? 'bg-cyan-100 text-cyan-800' :
+                              item.category === 'preservative' ? 'bg-rose-100 text-rose-800' :
+                              item.category === 'surfactant' ? 'bg-indigo-100 text-indigo-800' :
+                              'bg-gray-100 text-gray-700'
+                            }`}>
+                              {item.category}
+                            </span>
+                          </td>
+                          <td className="py-2.5 px-3 text-center">
+                            <button
+                              onClick={() => handleToggleActive(item)}
+                              className={`px-2 py-0.5 rounded-full text-[10px] font-bold cursor-pointer transition ${
+                                item.is_active ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 'bg-gray-100 text-gray-400'
+                              }`}
+                            >
+                              {item.is_active ? 'Active' : 'Disabled'}
+                            </button>
+                          </td>
+                          <td className="py-2.5 px-3 text-right">
+                            <button
+                              onClick={() => handleDeleteIngredient(item)}
+                              className="text-gray-400 hover:text-red-600 p-1 rounded transition cursor-pointer"
+                              title="Delete from whitelist"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
+
+            {/* Whitelist Modal Pagination Footer */}
+            <div className="p-4 bg-gray-50 border-t border-gray-200 flex items-center justify-between shrink-0 text-xs">
+              <span className="text-gray-500 font-medium">
+                Showing {whitelistItems.length} of {whitelistTotal.toLocaleString()} ingredients (Page {whitelistPage + 1} of {Math.ceil(whitelistTotal / whitelistPageSize) || 1})
+              </span>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => {
+                    const prev = Math.max(0, whitelistPage - 1);
+                    setWhitelistPage(prev);
+                    fetchWhitelist(prev, whitelistQuery, whitelistCategory);
+                  }}
+                  disabled={whitelistPage === 0 || loadingWhitelist}
+                  className="px-3 py-1.5 bg-white border border-gray-200 text-gray-700 font-bold rounded-xl disabled:opacity-40 hover:bg-gray-100 cursor-pointer"
+                >
+                  Previous
+                </button>
+                <button
+                  onClick={() => {
+                    const next = whitelistPage + 1;
+                    if (next * whitelistPageSize < whitelistTotal) {
+                      setWhitelistPage(next);
+                      fetchWhitelist(next, whitelistQuery, whitelistCategory);
+                    }
+                  }}
+                  disabled={(whitelistPage + 1) * whitelistPageSize >= whitelistTotal || loadingWhitelist}
+                  className="px-3 py-1.5 bg-white border border-gray-200 text-gray-700 font-bold rounded-xl disabled:opacity-40 hover:bg-gray-100 cursor-pointer"
+                >
+                  Next
+                </button>
+                <button
+                  onClick={() => setShowWhitelistModal(false)}
+                  className="px-4 py-1.5 bg-gray-900 text-white font-bold rounded-xl hover:bg-gray-800 cursor-pointer ml-2"
+                >
+                  Done
+                </button>
+              </div>
             </div>
 
           </div>

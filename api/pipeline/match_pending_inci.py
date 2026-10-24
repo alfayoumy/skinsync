@@ -14,6 +14,7 @@ import argparse
 sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
 from pipeline.db_manager import get_connection
 from pipeline.inci_matcher import match_with_inci_db, parse_and_normalize_ingredients
+from pipeline.whitelist_matcher import extract_ingredients_via_whitelist
 try:
     from pipeline.config import cfg
 except ImportError:
@@ -35,7 +36,7 @@ def run_inci_backfill(limit: int = None, category_filter: str = None):
     cur = conn.cursor()
 
     query = """
-    SELECT id, title, brand, category, product_url 
+    SELECT id, title, brand, category, product_url, description_html 
     FROM products 
     WHERE (ingredients_raw IS NULL OR ingredients_raw = '')
       AND ingredient_source IS NULL
@@ -109,20 +110,48 @@ def run_inci_backfill(limit: int = None, category_filter: str = None):
             g4 = match_res.get("gate4_jev_status", "pending")
             logger.info(f"[{idx}/{len(pending)}] [MATCHED via {src} ({h_score:.2f}) | Gate 4: {g4}] {brand} - {title[:35]}...")
         else:
-            cur.execute("""
-            UPDATE products 
-            SET ingredient_source = 'unmatched',
-                gate1_quality_status = 'failed_no_match',
-                gate2_safeguard_status = 'failed_no_match',
-                gate3_active_status = 'failed_no_match',
-                gate4_jev_status = 'skipped_no_match',
-                updated_at = CURRENT_TIMESTAMP
-            WHERE id = ?;
-            """, (pid,))
-            conn.commit()
-            skipped_count += 1
+            # Fallback Priority 3: Whitelist Lookup on Description
+            # STRICT PRECEDENCE: only executed for products with no ingredients after no skinsafe/beautyapi match
+            desc = p.get("description_html")
+            w_res = extract_ingredients_via_whitelist(desc, conn=conn) if desc else None
+            if w_res and w_res.get("ingredients_raw"):
+                raw_ings = w_res["ingredients_raw"]
+                parsed_ings = w_res["ingredients_parsed"]
+                actives = w_res["actives"]
+                cur.execute("""
+                UPDATE products 
+                SET ingredients_raw = ?, ingredients_parsed = ?, actives = ?,
+                    ingredient_source = 'whitelist_extracted',
+                    gate1_quality_status = 'passed_whitelist_extracted',
+                    gate2_safeguard_status = 'passed_direct',
+                    gate3_active_status = 'passed_active_verified',
+                    gate4_cross_status = 'whitelist_extracted',
+                    gate4_jev_status = 'bypassed_whitelist_lookup',
+                    inci_safeguard_log = ?, updated_at = CURRENT_TIMESTAMP
+                WHERE id = ?;
+                """, (
+                    raw_ings, json.dumps(parsed_ings), json.dumps(actives),
+                    f"Extracted {w_res['matched_count']} verified ingredients via description whitelist fallback",
+                    pid
+                ))
+                conn.commit()
+                matched_count += 1
+                logger.info(f"[{idx}/{len(pending)}] [EXTRACTED via Whitelist ({w_res['matched_count']} ings)] {brand} - {title[:35]}...")
+            else:
+                cur.execute("""
+                UPDATE products 
+                SET ingredient_source = 'unmatched',
+                    gate1_quality_status = 'failed_no_match',
+                    gate2_safeguard_status = 'failed_no_match',
+                    gate3_active_status = 'failed_no_match',
+                    gate4_jev_status = 'skipped_no_match',
+                    updated_at = CURRENT_TIMESTAMP
+                WHERE id = ?;
+                """, (pid,))
+                conn.commit()
+                skipped_count += 1
             if idx % 10 == 0 or idx == len(pending):
-                logger.info(f"[{idx}/{len(pending)}] Progress: {matched_count} matched, {skipped_count} unmatched/skipped")
+                logger.info(f"[{idx}/{len(pending)}] Progress: {matched_count} matched/extracted, {skipped_count} unmatched/skipped")
 
     conn.close()
     logger.info(f"--- INCI Backfill Worker Complete ---")

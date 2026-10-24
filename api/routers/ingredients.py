@@ -79,6 +79,16 @@ def _fill_single_product_ingredients(product_row, source: str, overwrite: bool, 
                 raw_text = m_res["ingredients"]
                 source_used = "skinsafe_matched"
 
+    # Step 3: Whitelist Description Lookup Fallback (STRICT PRECEDENCE: only if Steps 1 & 2 yield no ingredients)
+    if (not raw_text or len(raw_text) < 10) and source in ("whitelist", "auto"):
+        desc = product_row["description_html"]
+        if desc:
+            from pipeline.whitelist_matcher import extract_ingredients_via_whitelist
+            w_res = extract_ingredients_via_whitelist(desc, conn=conn)
+            if w_res and w_res.get("ingredients_raw"):
+                raw_text = w_res["ingredients_raw"]
+                source_used = "whitelist_extracted"
+
     if not raw_text or len(raw_text.strip()) < 10:
         return {
             "status": "not_found",

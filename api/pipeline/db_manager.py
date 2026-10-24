@@ -335,6 +335,22 @@ def init_db(db_path=DB_PATH):
     """)
     cur.execute("CREATE INDEX IF NOT EXISTS idx_clinical_ingredients_inci ON clinical_ingredients(inci);")
 
+    # 8b. Verified Ingredient Whitelist (Database-backed for description lookup fallback)
+    cur.execute("""
+    CREATE TABLE IF NOT EXISTS ingredient_whitelist (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        name TEXT NOT NULL UNIQUE COLLATE NOCASE,
+        canonical_name TEXT,
+        category TEXT DEFAULT 'general', -- 'active', 'botanical', 'emollient', 'humectant', 'preservative', 'surfactant', 'general'
+        is_active INTEGER NOT NULL DEFAULT 1,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    );
+    """)
+    cur.execute("CREATE INDEX IF NOT EXISTS idx_ingredient_whitelist_name ON ingredient_whitelist(name);")
+    cur.execute("CREATE INDEX IF NOT EXISTS idx_ingredient_whitelist_active ON ingredient_whitelist(is_active);")
+    cur.execute("CREATE INDEX IF NOT EXISTS idx_ingredient_whitelist_cat ON ingredient_whitelist(category);")
+
     # 9. Control Table: Pipeline Tasks (Scraping, Ingestion, Refreshes, Batch Jobs)
     cur.execute("""
     CREATE TABLE IF NOT EXISTS pipeline_tasks (
@@ -637,6 +653,153 @@ def add_clinical_ingredient_to_db(inci: str, common_name: str = None, functional
     except Exception as e:
         logger.error(f"Failed to save clinical ingredient '{inci}': {e}")
         return False
+    finally:
+        if should_close:
+            conn.close()
+
+def load_whitelist_from_db(conn=None, db_path=DB_PATH, active_only: bool = True) -> List[Dict[str, Any]]:
+    """
+    Loads verified ingredients from SQLite whitelist sorted by length of name DESC.
+    Sorting by length descending is essential for greedy longest-match first extraction.
+    """
+    should_close = False
+    if conn is None:
+        conn = get_connection(db_path)
+        should_close = True
+    try:
+        cur = conn.cursor()
+        query = """
+        SELECT id, name, canonical_name, category, is_active, created_at, updated_at
+        FROM ingredient_whitelist
+        """
+        if active_only:
+            query += " WHERE is_active = 1"
+        query += " ORDER BY LENGTH(name) DESC, name ASC;"
+        cur.execute(query)
+        rows = cur.fetchall()
+        return [dict(r) for r in rows]
+    except Exception as e:
+        logger.warning(f"Failed to load ingredient whitelist: {e}")
+        return []
+    finally:
+        if should_close:
+            conn.close()
+
+def add_whitelist_ingredient(name: str, canonical_name: str = None, category: str = "general",
+                             is_active: int = 1, conn=None, db_path=DB_PATH) -> Optional[int]:
+    """Inserts or updates a verified ingredient in SQLite whitelist."""
+    if not name or not isinstance(name, str) or not name.strip():
+        return None
+    clean_name = name.strip()
+    clean_canon = canonical_name.strip() if canonical_name and isinstance(canonical_name, str) else clean_name
+    cat = (category or "general").strip().lower()
+
+    should_close = False
+    if conn is None:
+        conn = get_connection(db_path)
+        should_close = True
+    try:
+        cur = conn.cursor()
+        cur.execute("""
+        INSERT INTO ingredient_whitelist (name, canonical_name, category, is_active)
+        VALUES (?, ?, ?, ?)
+        ON CONFLICT(name) DO UPDATE SET
+            canonical_name = excluded.canonical_name,
+            category = excluded.category,
+            is_active = excluded.is_active,
+            updated_at = CURRENT_TIMESTAMP;
+        """, (clean_name, clean_canon, cat, 1 if is_active else 0))
+        conn.commit()
+        return cur.lastrowid
+    except Exception as e:
+        logger.error(f"Failed to add whitelist ingredient '{name}': {e}")
+        return None
+    finally:
+        if should_close:
+            conn.close()
+
+def delete_whitelist_ingredient(ingredient_id: int, conn=None, db_path=DB_PATH) -> bool:
+    """Deletes an ingredient from the whitelist by ID."""
+    should_close = False
+    if conn is None:
+        conn = get_connection(db_path)
+        should_close = True
+    try:
+        cur = conn.cursor()
+        cur.execute("DELETE FROM ingredient_whitelist WHERE id = ?;", (ingredient_id,))
+        conn.commit()
+        return cur.rowcount > 0
+    except Exception as e:
+        logger.error(f"Failed to delete whitelist ingredient ID {ingredient_id}: {e}")
+        return False
+    finally:
+        if should_close:
+            conn.close()
+
+def update_whitelist_ingredient(ingredient_id: int, updates: Dict[str, Any], conn=None, db_path=DB_PATH) -> bool:
+    """Updates an existing whitelist ingredient record."""
+    if not updates:
+        return False
+    should_close = False
+    if conn is None:
+        conn = get_connection(db_path)
+        should_close = True
+    try:
+        cur = conn.cursor()
+        cols = []
+        vals = []
+        allowed = {"name", "canonical_name", "category", "is_active"}
+        for k, v in updates.items():
+            if k in allowed:
+                cols.append(f"{k} = ?")
+                if k == "is_active":
+                    vals.append(1 if v else 0)
+                elif isinstance(v, str):
+                    vals.append(v.strip())
+                else:
+                    vals.append(v)
+        if not cols:
+            return False
+        cols.append("updated_at = CURRENT_TIMESTAMP")
+        vals.append(ingredient_id)
+        sql = f"UPDATE ingredient_whitelist SET {', '.join(cols)} WHERE id = ?;"
+        cur.execute(sql, tuple(vals))
+        conn.commit()
+        return cur.rowcount > 0
+    except Exception as e:
+        logger.error(f"Failed to update whitelist ingredient ID {ingredient_id}: {e}")
+        return False
+    finally:
+        if should_close:
+            conn.close()
+
+def get_whitelist_stats(conn=None, db_path=DB_PATH) -> Dict[str, Any]:
+    """Returns total count, active count, and category breakdown for ingredient whitelist."""
+    should_close = False
+    if conn is None:
+        conn = get_connection(db_path)
+        should_close = True
+    try:
+        cur = conn.cursor()
+        cur.execute("SELECT COUNT(*) FROM ingredient_whitelist;")
+        total = cur.fetchone()[0]
+        cur.execute("SELECT COUNT(*) FROM ingredient_whitelist WHERE is_active = 1;")
+        active = cur.fetchone()[0]
+        cur.execute("""
+        SELECT category, COUNT(*) as cnt 
+        FROM ingredient_whitelist 
+        GROUP BY category 
+        ORDER BY cnt DESC;
+        """)
+        cats = {r["category"]: r["cnt"] for r in cur.fetchall()}
+        return {
+            "total_ingredients": total,
+            "active_ingredients": active,
+            "categories": cats
+        }
+    except Exception as e:
+        logger.warning(f"Failed to get whitelist stats: {e}")
+        return {"total_ingredients": 0, "active_ingredients": 0, "categories": {}}
     finally:
         if should_close:
             conn.close()
