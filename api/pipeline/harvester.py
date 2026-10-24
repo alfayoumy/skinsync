@@ -240,40 +240,21 @@ def sync_store(store_cfg: dict, max_pages: int = None, conn=None, fields: list =
 
                     if clean_fields is None:
                         # Full update of offer fields (Zero canonical ingredient writes)
-                        if not existing["ingredients_raw"] and raw_ings:
-                            cur.execute("""
-                            UPDATE products
-                            SET title = ?, brand = ?, category = ?, price = ?, compare_at_price = ?,
-                                is_available = ?, image_url = ?, ingredients_raw = ?,
-                                ingredients_parsed = ?, actives = ?, ingredient_source = ?,
-                                description_html = COALESCE(?, description_html),
-                                size_raw = ?, size_value = ?, size_unit = ?,
-                                normalized_size_ml = ?, normalized_size_g = ?,
-                                unit_price = ?, unit_measure = ?,
-                                updated_at = CURRENT_TIMESTAMP
-                            WHERE id = ?;
-                            """, (title, vendor, category, price, compare_price, is_available, image_url,
-                                  raw_ings, json.dumps(parsed_ings), json.dumps(actives),
-                                  ing_source, body_html,
-                                  size_data["size_raw"], size_data["size_value"], size_data["size_unit"],
-                                  size_data["normalized_size_ml"], size_data["normalized_size_g"],
-                                  size_data["unit_price"], size_data["unit_measure"], pid))
-                        else:
-                            cur.execute("""
-                            UPDATE products
-                            SET title = ?, brand = ?, category = ?, price = ?, compare_at_price = ?,
-                                is_available = ?, image_url = ?,
-                                description_html = COALESCE(?, description_html),
-                                size_raw = ?, size_value = ?, size_unit = ?,
-                                normalized_size_ml = ?, normalized_size_g = ?,
-                                unit_price = ?, unit_measure = ?,
-                                updated_at = CURRENT_TIMESTAMP
-                            WHERE id = ?;
-                            """, (title, vendor, category, price, compare_price, is_available, image_url,
-                                  body_html,
-                                  size_data["size_raw"], size_data["size_value"], size_data["size_unit"],
-                                  size_data["normalized_size_ml"], size_data["normalized_size_g"],
-                                  size_data["unit_price"], size_data["unit_measure"], pid))
+                        cur.execute("""
+                        UPDATE products
+                        SET title = ?, brand = ?, category = ?, price = ?, compare_at_price = ?,
+                            is_available = ?, image_url = ?,
+                            description_html = COALESCE(?, description_html),
+                            size_raw = ?, size_value = ?, size_unit = ?,
+                            normalized_size_ml = ?, normalized_size_g = ?,
+                            unit_price = ?, unit_measure = ?,
+                            updated_at = CURRENT_TIMESTAMP
+                        WHERE id = ?;
+                        """, (title, vendor, category, price, compare_price, is_available, image_url,
+                              body_html,
+                              size_data["size_raw"], size_data["size_value"], size_data["size_unit"],
+                              size_data["normalized_size_ml"], size_data["normalized_size_g"],
+                              size_data["unit_price"], size_data["unit_measure"], pid))
                     else:
                         # Granular field updates
                         upd_cols = []
@@ -290,9 +271,9 @@ def sync_store(store_cfg: dict, max_pages: int = None, conn=None, fields: list =
                         if "title" in clean_fields:
                             upd_cols.extend(["title = ?", "category = ?"])
                             upd_vals.extend([title, category])
-                        if "ingredients" in clean_fields and raw_ings:
-                            upd_cols.extend(["ingredients_raw = ?", "ingredients_parsed = ?", "actives = ?", "ingredient_source = ?"])
-                            upd_vals.extend([raw_ings, json.dumps(parsed_ings), json.dumps(actives), ing_source])
+                        if "ingredients" in clean_fields:
+                            upd_cols.append("description_html = ?")
+                            upd_vals.append(body_html)
 
                         # Always refresh size & unit pricing attributes on offer
                         upd_cols.extend([
@@ -336,7 +317,7 @@ def sync_store(store_cfg: dict, max_pages: int = None, conn=None, fields: list =
                     """, (
                         store_id, prod_id, handle, title, vendor, category,
                         price, compare_price, is_available, image_url, product_url,
-                        body_html, raw_ings, json.dumps(parsed_ings), json.dumps(actives), ing_source,
+                        body_html, None, None, None, None,
                         size_data["size_raw"], size_data["size_value"], size_data["size_unit"],
                         size_data["normalized_size_ml"], size_data["normalized_size_g"],
                         size_data["unit_price"], size_data["unit_measure"]

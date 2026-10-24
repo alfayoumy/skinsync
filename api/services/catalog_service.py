@@ -10,14 +10,13 @@ import sqlite3
 import pandas as pd
 from typing import Dict, Set, List, Tuple, Optional, Any
 
-from pipeline.db_manager import load_synonyms_from_db
+from pipeline.db_manager import load_synonyms_from_db, DB_PATH
 from pipeline.logging_config import get_logger
 from pipeline.inci_tokenizer import tokenize_inci_string
 
 
 logger = get_logger("skincare_engine.catalog_service")
 
-DB_PATH = os.path.join(os.path.dirname(os.path.dirname(__file__)), "skincare.db")
 
 KEY_ACTIVES = {
     'hyaluronic_acid': ['hyaluronic acid', 'sodium hyaluronate', 'hydrolyzed hyaluronic', 'hyaluronate', 'hyaluron', 'hyaluro', 'hyalu', 'h.a', 'ha'],

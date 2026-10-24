@@ -195,17 +195,28 @@ def tokenize_inci_string(raw_text: Optional[str], product_title: Optional[str] =
                 cleaned_token = _clean_token(segment)
                 if cleaned_token:
                     tokens.append(cleaned_token)
-            else:
-                # Check if it contains slash between two distinct ingredients (e.g. "Glycerin / Niacinamide")
+            elif ' / ' in segment:
+                # Explicit whitespace around slash indicates distinct ingredients (e.g. "Glycerin / Niacinamide")
                 parts = [p.strip() for p in segment.split('/') if p.strip()]
-                # If both parts look like distinct multi-character words and not numbers/monomers
-                if len(parts) >= 2 and all(len(p) >= 3 and not re.match(r'^\d+$', p) for p in parts):
+                for p in parts:
+                    cleaned = _clean_token(p)
+                    if cleaned:
+                        tokens.append(cleaned)
+            else:
+                # Slashes without surrounding whitespace (e.g. chemical nomenclature or polymers)
+                # Only split if all parts are recognized cosmetic ingredients or synonyms
+                parts = [p.strip() for p in segment.split('/') if p.strip()]
+                both_known = len(parts) >= 2 and all(
+                    _clean_token(p) in SYNONYMS.values() or _clean_token(p) in CARRIER_BASE_MARKERS
+                    for p in parts
+                )
+                if both_known:
                     for p in parts:
                         cleaned = _clean_token(p)
                         if cleaned:
                             tokens.append(cleaned)
                 else:
-                    # Keep as single token if uncertain
+                    # Keep intact as single chemical entity to avoid fragment junk
                     cleaned_token = _clean_token(segment)
                     if cleaned_token:
                         tokens.append(cleaned_token)
@@ -240,7 +251,11 @@ def tokenize_inci_string(raw_text: Optional[str], product_title: Optional[str] =
 
     # 7. Completeness Determination
     completeness = "full"
-    if is_pure_single:
+    if is_truncated:
+        # Visibly truncated lists must NEVER qualify as authoritative full formulations
+        completeness = "partial"
+        validation_flags["partial_reason"] = "truncated_ingredient_list"
+    elif is_pure_single:
         completeness = "full"
     elif is_callout_header:
         completeness = "partial"
@@ -254,8 +269,6 @@ def tokenize_inci_string(raw_text: Optional[str], product_title: Optional[str] =
         elif len(tokens) <= 2:
             completeness = "partial"
             validation_flags["partial_reason"] = "short_callout_under_3_tokens"
-    elif is_truncated:
-        validation_flags["is_truncated_warning"] = True
 
     return InciValidationResult(
         raw_text=raw_text,

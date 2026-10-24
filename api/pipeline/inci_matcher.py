@@ -230,7 +230,15 @@ def extract_ingredients_from_html(body_html: str) -> Optional[str]:
                 candidate = bullet_split[0].strip()
 
             if is_valid_inci_list(candidate):
-                return candidate[:cfg.MAX_INGREDIENT_RAW_LEN]
+                if len(candidate) > cfg.MAX_INGREDIENT_RAW_LEN:
+                    # Truncate at last comma before max length and append '...' so truncation is explicitly flagged
+                    truncated = candidate[:cfg.MAX_INGREDIENT_RAW_LEN]
+                    last_comma = truncated.rfind(',')
+                    if last_comma > 20:
+                        candidate = truncated[:last_comma] + ", ..."
+                    else:
+                        candidate = truncated.rstrip() + "..."
+                return candidate
 
     return None
 

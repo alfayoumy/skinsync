@@ -101,7 +101,7 @@ def run_full_pipeline(
 
         cur = conn.cursor()
         cur.execute("""
-        SELECT id, brand, title, ingredients_raw, ingredient_source, store_id
+        SELECT id, brand, title, ingredients_raw, ingredient_source, store_id, canonical_product_id
         FROM products
         WHERE (inci_matched_id IS NULL AND (gate4_cross_status IS NULL OR gate4_cross_status = 'pending'))
            OR gate4_gemini_status = 'pending_gemini'
@@ -122,11 +122,11 @@ def run_full_pipeline(
             curr_raw = row_dict.get("ingredients_raw")
 
             AUTHENTIC_SOURCE_TYPES = {
-                "store_tab", "store_page_tab", "historical_store_scrape", 
+                "store_tab", "store_page_tab", "historical_store_scrape",
                 "current_store_scrape", "store_scrape", "store_description", "v10_curated"
             }
             has_source_ings = bool(
-                curr_raw and len(curr_raw.strip()) >= 15 and 
+                curr_raw and len(curr_raw.strip()) >= 15 and
                 row_dict.get("ingredient_source") in AUTHENTIC_SOURCE_TYPES
             )
             m_res = match_with_inci_db(
@@ -186,17 +186,34 @@ def run_full_pipeline(
                 # Only fill ingredients immediately if auto-approved locally (not ambiguous / pending gemini)
                 # and product doesn't possess genuine store ground truth (or currently only has fallback tokens)
                 ref_ings = m_res.get("ingredients")
-                can_overwrite = (not has_source_ings) or (row_dict.get("ingredient_source") in ("whitelist_description", "whitelist_extracted", "cluster_propagation", "unmatched", "pending_tier7_match", None))
-                if gemini_status != "pending_gemini" and can_overwrite and ref_ings and len(ref_ings.strip()) >= 15:
+                if gemini_status != "pending_gemini" and ref_ings and len(ref_ings.strip()) >= 15:
                     parsed, acts = parse_and_normalize_ingredients(ref_ings)
-                    update_sql += """,
-                    ingredients_raw = ?,
-                    ingredients_parsed = ?,
-                    actives = ?,
-                    ingredient_source = 'skinsafe_matched'
-                    """
-                    params.extend([ref_ings, json.dumps(parsed), json.dumps(acts)])
-                    filled_ingredients_count += 1
+
+
+                    canon_id = row_dict.get("canonical_product_id")
+                    if canon_id:
+                        from pipeline.formulation_service import FormulationRepository, FormulationCandidate, match_is_verified
+                        from pipeline.inci_tokenizer import tokenize_inci_string
+                        tok_res = tokenize_inci_string(ref_ings, product_title=title)
+                        cand = FormulationCandidate(
+                            canonical_product_id=canon_id,
+                            source_name="skinsafe_matched",
+                            raw_ingredients=ref_ings,
+                            parsed_tokens=tok_res.tokens,
+                            actives=tok_res.declared_actives,
+                            confidence_score=float(h_score or 0.80),
+                            source_record_id=str(pid),
+                            completeness=tok_res.completeness if match_is_verified(m_res) else "unverified",
+                            validation_flags={"is_truncated": tok_res.is_truncated},
+                            inci_matched_id=m_res.get("matched_id"),
+                            inci_matched_name=matched_name
+                        )
+                        repo = FormulationRepository()
+                        if tok_res.completeness == "full":
+                            if repo.publish_formulation(candidate=cand, approval_reason="Matched in Phase 3 run_pipeline_job", force=False, conn=conn):
+                                filled_ingredients_count += 1
+                        else:
+                            repo.record_candidate_evidence(candidate=cand, decision="candidate_evidence", discrepancy_notes="Candidate from Phase 3 INCI match logged as audit evidence.", conn=conn)
 
                 update_sql += " WHERE id = ?;"
                 params.append(pid)

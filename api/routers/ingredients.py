@@ -45,13 +45,12 @@ class BatchFillIngredientsRequest(BaseModel):
 
 def _fill_single_product_ingredients(product_row, source: str, overwrite: bool, conn):
     cur = conn.cursor()
-    curr_raw = product_row["ingredients_raw"]
-    if curr_raw and len(curr_raw.strip()) >= 15 and not overwrite:
-        return {
-            "status": "skipped",
-            "message": "Product already has ingredients. Set overwrite=True to replace.",
-            "ingredients_raw": curr_raw
-        }
+    cur.execute("SELECT c.ingredients_raw FROM products p LEFT JOIN canonical_products c ON c.id=p.canonical_product_id WHERE p.id=?", (product_row["id"],))
+    current = cur.fetchone()
+    curr_raw = current[0] if current else None
+    if curr_raw and curr_raw.strip() and not overwrite:
+        return {"status": "skipped", "message": "Canonical product already has an authoritative formulation.", "ingredients_raw": curr_raw}
+    identity_verified = True
 
     raw_text = None
     source_used = None
@@ -65,19 +64,14 @@ def _fill_single_product_ingredients(product_row, source: str, overwrite: bool, 
                 raw_text = extracted
                 source_used = "store_description"
 
-    # Step 2: INCI Reference DB
+    # Step 2: Reference IDs alone are proposals; require a verified identity match.
     if (not raw_text or len(raw_text) < 15) and source in ("inci", "auto"):
-        if product_row["inci_matched_id"]:
-            cur.execute("SELECT ingredients FROM inci_reference WHERE id = ?;", (product_row["inci_matched_id"],))
-            i_row = cur.fetchone()
-            if i_row and i_row["ingredients"]:
-                raw_text = i_row["ingredients"]
-                source_used = "skinsafe_matched"
-        if not raw_text:
-            m_res = match_with_inci_db(product_row["brand"], product_row["title"], conn, allow_synchronous_jev=False, scoring_mode="local")
-            if m_res and m_res.get("ingredients"):
-                raw_text = m_res["ingredients"]
-                source_used = "skinsafe_matched"
+        from pipeline.formulation_service import match_is_verified
+        m_res = match_with_inci_db(product_row["brand"], product_row["title"], conn, allow_synchronous_jev=False, scoring_mode="local")
+        if m_res and m_res.get("ingredients"):
+            raw_text = m_res["ingredients"]
+            source_used = "skinsafe_matched"
+            identity_verified = match_is_verified(m_res)
 
     # Step 3: Whitelist Description Lookup Fallback (STRICT PRECEDENCE: only if Steps 1 & 2 yield no ingredients)
     if (not raw_text or len(raw_text) < 10) and source in ("whitelist", "auto"):
@@ -95,20 +89,43 @@ def _fill_single_product_ingredients(product_row, source: str, overwrite: bool, 
             "message": f"No ingredients found using source mode '{source}'."
         }
 
-    parsed, actives = parse_and_normalize_ingredients(raw_text)
-    cur.execute("""
-    UPDATE products
-    SET ingredients_raw = ?,
-        ingredients_parsed = ?,
-        actives = ?,
-        ingredient_source = ?,
-        updated_at = CURRENT_TIMESTAMP
-    WHERE id = ?;
-    """, (raw_text, json.dumps(parsed), json.dumps(actives), source_used, product_row["id"]))
+    from pipeline.formulation_service import FormulationRepository, FormulationCandidate
+    from pipeline.inci_tokenizer import tokenize_inci_string
+
+    tok_res = tokenize_inci_string(raw_text, product_title=product_row["title"] if "title" in product_row.keys() else None)
+    parsed = tok_res.tokens
+    actives = tok_res.declared_actives
+
+    canon_id = product_row["canonical_product_id"] if "canonical_product_id" in product_row.keys() else None
+    if not canon_id:
+        cur.execute("SELECT canonical_product_id FROM products WHERE id = ?;", (product_row["id"],))
+        c_row = cur.fetchone()
+        if c_row:
+            canon_id = c_row["canonical_product_id"]
+
+    published = False
+    if canon_id:
+        repo = FormulationRepository()
+        cand = FormulationCandidate(
+            canonical_product_id=canon_id,
+            source_name=source_used,
+            raw_ingredients=raw_text,
+            parsed_tokens=parsed,
+            actives=actives,
+            confidence_score=0.90 if source_used == "store_description" else (0.80 if source_used == "skinsafe_matched" else 0.50),
+            source_record_id=str(product_row["id"]),
+            completeness="partial" if source_used == "whitelist_extracted" else (tok_res.completeness if identity_verified else "unverified"),
+            validation_flags={"source_used": source_used, "is_truncated": tok_res.is_truncated}
+        )
+        if tok_res.completeness == "full":
+            published = repo.publish_formulation(cand, approval_reason=f"Filled via ingredients router ({source_used})", force=False, conn=conn)
+        else:
+            repo.record_candidate_evidence(cand, decision="candidate_evidence", discrepancy_notes="Incomplete ingredients from ingredients router logged as audit evidence.", conn=conn)
+
     conn.commit()
 
     return {
-        "status": "success",
+        "status": "success" if published else "candidate_only",
         "product_id": product_row["id"],
         "source_used": source_used,
         "ingredients_raw": raw_text,

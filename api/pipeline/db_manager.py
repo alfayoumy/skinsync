@@ -12,7 +12,7 @@ try:
 except ImportError:
     logger = logging.getLogger("skincare_pipeline.db")
 
-DB_PATH = os.path.join(os.path.dirname(os.path.dirname(__file__)), "skincare.db")
+DB_PATH = os.getenv("SKINSYNC_DB_PATH") or os.path.join(os.path.dirname(os.path.dirname(__file__)), "skincare.db")
 
 def get_connection(db_path=DB_PATH):
     """
@@ -394,6 +394,7 @@ def init_db(db_path=DB_PATH, seed_defaults: bool = True, conn=None):
         ('gate4_gemini_status', 'TEXT'),
         ('formula_version', 'INTEGER DEFAULT 1'),
         ('formula_hash', 'TEXT'),
+        ('formula_hash_unordered', 'TEXT'),
         ('formulation_published_at', 'TIMESTAMP'),
         ('formulation_approval_reason', 'TEXT'),
     ]

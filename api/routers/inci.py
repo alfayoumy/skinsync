@@ -64,7 +64,7 @@ def _run_batch_inci_match(req: BatchInciMatchRequest, task_id: Optional[str] = N
         conn = get_connection()
         try:
             cur = conn.cursor()
-            query = "SELECT id, brand, title, ingredients_raw FROM products WHERE 1=1"
+            query = "SELECT id, brand, title, ingredients_raw, canonical_product_id FROM products WHERE 1=1"
             params = []
             if req.product_ids:
                 placeholders = ",".join("?" for _ in req.product_ids)
@@ -78,7 +78,7 @@ def _run_batch_inci_match(req: BatchInciMatchRequest, task_id: Optional[str] = N
             query += f" LIMIT {max(1, min(req.limit, 200))};"
 
             cur.execute(query, params)
-            rows = cur.fetchall()
+            rows = [dict(r) for r in cur.fetchall()]
 
             update_task_progress(task_id, total_items=len(rows), current_stage="matching_inci_records", conn=conn)
 
@@ -118,10 +118,33 @@ def _run_batch_inci_match(req: BatchInciMatchRequest, task_id: Optional[str] = N
                         m_res.get("gate2_safeguard_status"), m_res.get("gate3_active_status"), m_res.get("gate4_cross_status"),
                         m_res.get("gate4_jev_status"), m_res.get("gate4_gemini_status"), m_res.get("safeguard_log")
                     ]
-                    if (not curr_raw or len(curr_raw.strip()) < 10) and m_res.get("ingredients"):
+                    if m_res.get("ingredients"):
                         parsed, acts = parse_and_normalize_ingredients(m_res["ingredients"])
-                        update_sql += ", ingredients_raw = ?, ingredients_parsed = ?, actives = ?, ingredient_source = 'skinsafe_matched'"
-                        u_params.extend([m_res["ingredients"], json.dumps(parsed), json.dumps(acts)])
+
+                        canon_id = r.get("canonical_product_id")
+                        if canon_id:
+                            from pipeline.formulation_service import FormulationRepository, FormulationCandidate, match_is_verified
+                            from pipeline.inci_tokenizer import tokenize_inci_string
+                            tok_res = tokenize_inci_string(m_res["ingredients"], product_title=title)
+                            cand = FormulationCandidate(
+                                canonical_product_id=canon_id,
+                                source_name="skinsafe_matched",
+                                raw_ingredients=m_res["ingredients"],
+                                parsed_tokens=tok_res.tokens,
+                                actives=tok_res.declared_actives,
+                                confidence_score=float(m_res.get("hybrid_score") or 0.80),
+                                source_record_id=str(pid),
+                                completeness=tok_res.completeness if match_is_verified(m_res) else "unverified",
+                                validation_flags={"is_truncated": tok_res.is_truncated},
+                                inci_matched_id=m_res.get("matched_id"),
+                                inci_matched_name=m_res.get("matched_name")
+                            )
+                            repo = FormulationRepository()
+                            if tok_res.completeness == "full":
+                                repo.publish_formulation(cand, approval_reason="Batch matched via INCI router", force=False, conn=conn)
+                            else:
+                                repo.record_candidate_evidence(cand, decision="candidate_evidence", discrepancy_notes="Candidate from batch INCI match logged as audit evidence.", conn=conn)
+
                     update_sql += " WHERE id = ?;"
                     u_params.append(pid)
                     cur.execute(update_sql, u_params)
@@ -209,7 +232,7 @@ def match_product_inci_endpoint(product_id: int, req: ProductInciMatchRequest):
     conn = get_connection()
     try:
         cur = conn.cursor()
-        cur.execute("SELECT id, brand, title, ingredients_raw FROM products WHERE id = ?;", (product_id,))
+        cur.execute("SELECT id, brand, title, ingredients_raw, canonical_product_id FROM products WHERE id = ?;", (product_id,))
         row = cur.fetchone()
         if not row:
             raise HTTPException(status_code=404, detail=f"Product ID {product_id} not found.")
@@ -217,6 +240,7 @@ def match_product_inci_endpoint(product_id: int, req: ProductInciMatchRequest):
         brand = row["brand"]
         title = row["title"]
         curr_raw = row["ingredients_raw"]
+        canon_id = row["canonical_product_id"]
 
         match_res = match_with_inci_db(
             brand=brand,
@@ -275,15 +299,32 @@ def match_product_inci_endpoint(product_id: int, req: ProductInciMatchRequest):
                 match_res.get("safeguard_log"),
             ]
 
-            if (not curr_raw or len(curr_raw.strip()) < 10) and match_res.get("ingredients"):
+            if match_res.get("ingredients"):
                 parsed, acts = parse_and_normalize_ingredients(match_res["ingredients"])
-                update_sql += """,
-                ingredients_raw = ?,
-                ingredients_parsed = ?,
-                actives = ?,
-                ingredient_source = 'skinsafe_matched'
-                """
-                params.extend([match_res["ingredients"], json.dumps(parsed), json.dumps(acts)])
+
+
+                if canon_id:
+                    from pipeline.formulation_service import FormulationRepository, FormulationCandidate, match_is_verified
+                    from pipeline.inci_tokenizer import tokenize_inci_string
+                    tok_res = tokenize_inci_string(match_res["ingredients"], product_title=title)
+                    cand = FormulationCandidate(
+                        canonical_product_id=canon_id,
+                        source_name="skinsafe_matched",
+                        raw_ingredients=match_res["ingredients"],
+                        parsed_tokens=tok_res.tokens,
+                        actives=tok_res.declared_actives,
+                        confidence_score=float(match_res.get("hybrid_score") or 0.80),
+                        source_record_id=str(product_id),
+                        completeness=tok_res.completeness if match_is_verified(match_res) else "unverified",
+                        validation_flags={"is_truncated": tok_res.is_truncated},
+                        inci_matched_id=match_res.get("matched_id"),
+                        inci_matched_name=match_res.get("matched_name")
+                    )
+                    repo = FormulationRepository()
+                    if tok_res.completeness == "full":
+                        repo.publish_formulation(cand, approval_reason="Single product matched via INCI router", force=False, conn=conn)
+                    else:
+                        repo.record_candidate_evidence(cand, decision="candidate_evidence", discrepancy_notes="Candidate from single INCI match logged as audit evidence.", conn=conn)
 
             update_sql += " WHERE id = ?;"
             params.append(product_id)

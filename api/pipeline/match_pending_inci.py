@@ -36,8 +36,8 @@ def run_inci_backfill(limit: int = None, category_filter: str = None):
     cur = conn.cursor()
 
     query = """
-    SELECT id, title, brand, category, product_url, description_html 
-    FROM products 
+    SELECT id, title, brand, category, product_url, description_html, canonical_product_id
+    FROM products
     WHERE (ingredients_raw IS NULL OR ingredients_raw = '')
       AND ingredient_source IS NULL
       AND brand IS NOT NULL AND LOWER(brand) NOT IN ('unknown', 'general')
@@ -59,7 +59,7 @@ def run_inci_backfill(limit: int = None, category_filter: str = None):
         params.append(limit)
 
     cur.execute(query, params)
-    pending = cur.fetchall()
+    pending = [dict(r) for r in cur.fetchall()]
 
     logger.info(f"--- Starting INCI Backfill Worker ---")
     logger.info(f"Found {len(pending)} priority skincare products awaiting formulation matching.")
@@ -72,17 +72,41 @@ def run_inci_backfill(limit: int = None, category_filter: str = None):
         title = p["title"]
         brand = p["brand"]
         cat = p["category"]
+        canon_id = p.get("canonical_product_id")
 
         match_res = match_with_inci_db(brand, title, conn)
 
         if match_res and isinstance(match_res, dict):
             raw_ings = match_res["ingredients"]
             parsed_ings, actives = parse_and_normalize_ingredients(raw_ings)
+
+            # Route authoritative publication to canonical_products via FormulationRepository
+            if canon_id and raw_ings and len(raw_ings.strip()) >= 15:
+                from pipeline.formulation_service import FormulationRepository, FormulationCandidate, match_is_verified
+                from pipeline.inci_tokenizer import tokenize_inci_string
+                tok_res = tokenize_inci_string(raw_ings, product_title=title)
+                cand = FormulationCandidate(
+                    canonical_product_id=canon_id,
+                    source_name=match_res.get("source", "skinsafe_matched"),
+                    raw_ingredients=raw_ings,
+                    parsed_tokens=tok_res.tokens,
+                    actives=tok_res.declared_actives,
+                    confidence_score=float(match_res.get("hybrid_score", 0.80)),
+                    source_record_id=str(pid),
+                    completeness=tok_res.completeness if match_is_verified(match_res) else "unverified",
+                    validation_flags={"is_truncated": tok_res.is_truncated},
+                    inci_matched_id=match_res.get("matched_id"),
+                    inci_matched_name=match_res.get("matched_name")
+                )
+                repo = FormulationRepository()
+                if tok_res.completeness == "full":
+                    repo.publish_formulation(candidate=cand, approval_reason=f"Matched via INCI backfill worker ({match_res.get('source', 'skinsafe')})", force=False, conn=conn)
+                else:
+                    repo.record_candidate_evidence(candidate=cand, decision="candidate_evidence", discrepancy_notes="Candidate from INCI backfill logged as audit evidence.", conn=conn)
+
             cur.execute("""
-            UPDATE products 
-            SET ingredients_raw = ?, ingredients_parsed = ?, actives = ?,
-                ingredient_source = ?,
-                inci_matched_id = ?, inci_matched_name = ?,
+            UPDATE products
+            SET inci_matched_id = ?, inci_matched_name = ?,
                 inci_vector_score = ?, inci_token_score = ?,
                 inci_hybrid_score = ?, inci_cross_score = ?,
                 inci_jev_score = ?, inci_gemini_score = ?,
@@ -92,8 +116,6 @@ def run_inci_backfill(limit: int = None, category_filter: str = None):
                 inci_safeguard_log = ?, updated_at = CURRENT_TIMESTAMP
             WHERE id = ?;
             """, (
-                raw_ings, json.dumps(parsed_ings), json.dumps(actives),
-                match_res.get("source", "skinsafe_matched"),
                 match_res.get("matched_id"), match_res.get("matched_name"),
                 match_res.get("vector_score"), match_res.get("token_score"),
                 match_res.get("hybrid_score"), match_res.get("inci_cross_score"),
@@ -116,12 +138,32 @@ def run_inci_backfill(limit: int = None, category_filter: str = None):
             w_res = extract_ingredients_via_whitelist(desc, conn=conn) if desc else None
             if w_res and w_res.get("ingredients_raw"):
                 raw_ings = w_res["ingredients_raw"]
-                parsed_ings = w_res["ingredients_parsed"]
-                actives = w_res["actives"]
+                # Whitelist results are strictly partial callouts: record in audit evidence, never publish as full formulation
+                if canon_id:
+                    from pipeline.formulation_service import FormulationRepository, FormulationCandidate, match_is_verified
+                    from pipeline.inci_tokenizer import tokenize_inci_string
+                    tok_res = tokenize_inci_string(raw_ings, product_title=title)
+                    cand = FormulationCandidate(
+                        canonical_product_id=canon_id,
+                        source_name="whitelist_extracted",
+                        raw_ingredients=raw_ings,
+                        parsed_tokens=tok_res.tokens,
+                        actives=tok_res.declared_actives,
+                        confidence_score=0.50,
+                        source_record_id=str(pid),
+                        completeness="partial",
+                        validation_flags={"is_truncated": tok_res.is_truncated, "partial_reason": "whitelist_description_fallback"}
+                    )
+                    FormulationRepository().record_candidate_evidence(
+                        candidate=cand,
+                        decision="candidate_evidence",
+                        discrepancy_notes=f"Extracted {w_res['matched_count']} verified whitelist ingredients. Preserved as audit evidence.",
+                        conn=conn
+                    )
+
                 cur.execute("""
-                UPDATE products 
-                SET ingredients_raw = ?, ingredients_parsed = ?, actives = ?,
-                    ingredient_source = 'whitelist_extracted',
+                UPDATE products
+                SET ingredient_source = 'whitelist_extracted',
                     gate1_quality_status = 'passed_whitelist_extracted',
                     gate2_safeguard_status = 'passed_direct',
                     gate3_active_status = 'passed_active_verified',
@@ -130,8 +172,7 @@ def run_inci_backfill(limit: int = None, category_filter: str = None):
                     inci_safeguard_log = ?, updated_at = CURRENT_TIMESTAMP
                 WHERE id = ?;
                 """, (
-                    raw_ings, json.dumps(parsed_ings), json.dumps(actives),
-                    f"Extracted {w_res['matched_count']} verified ingredients via description whitelist fallback",
+                    f"Extracted {w_res['matched_count']} verified ingredients via description whitelist fallback (partial evidence)",
                     pid
                 ))
                 conn.commit()
@@ -139,7 +180,7 @@ def run_inci_backfill(limit: int = None, category_filter: str = None):
                 logger.info(f"[{idx}/{len(pending)}] [EXTRACTED via Whitelist ({w_res['matched_count']} ings)] {brand} - {title[:35]}...")
             else:
                 cur.execute("""
-                UPDATE products 
+                UPDATE products
                 SET ingredient_source = 'unmatched',
                     gate1_quality_status = 'failed_no_match',
                     gate2_safeguard_status = 'failed_no_match',

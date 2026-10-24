@@ -13,6 +13,7 @@ import argparse
 sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
 from pipeline.db_manager import get_connection, DB_PATH
 from pipeline.inci_matcher import verify_match_with_jev, score_cross_encoder
+from pipeline.identity_gates import validate_identity_gates
 try:
     from pipeline.config import cfg
 except ImportError:
@@ -66,7 +67,7 @@ def run_jev_verification_queue(
         LIMIT ?;
         """, (limit,))
 
-        queue = cur.fetchall()
+        queue = [dict(r) for r in cur.fetchall()]
         emit_log(f"=== Starting Gate 4 Jev Verification Worker ===")
         emit_log(f"Found {len(queue)} products queued for Jev semantic evaluation (Limit: {limit}).")
 
@@ -123,7 +124,8 @@ def run_jev_verification_queue(
             cross_status = "cross_approved" if cross_score >= getattr(cfg, "CROSS_ENCODER_CONFIDENCE_THRESHOLD", 0.70) else "cross_ambiguous"
 
             # 2. Primary: Try Jev 1.13
-            verdict = verify_match_with_jev(title, cand_name)
+            compatible, _ = validate_identity_gates(title, cand_name)
+            verdict = verify_match_with_jev(title, cand_name) if compatible else False
 
             if verdict is True:
                 cur.execute("""
@@ -135,8 +137,8 @@ def run_jev_verification_queue(
                 ref_row = cur.fetchone()
                 ref_ings = ref_row[0] if ref_row else None
 
-                curr_raw = p.get("ingredients_raw") if isinstance(p, dict) else p["ingredients_raw"]
-                canon_id = p.get("canonical_product_id") if isinstance(p, dict) else p.get("canonical_product_id")
+                curr_raw = p.get("ingredients_raw")
+                canon_id = p.get("canonical_product_id")
                 from pipeline.inci_matcher import parse_and_normalize_ingredients
                 import json
 
@@ -144,24 +146,13 @@ def run_jev_verification_queue(
                 if ref_ings and len(ref_ings.strip()) >= 15:
                     parsed, acts = parse_and_normalize_ingredients(ref_ings)
 
-                if (not curr_raw or len(curr_raw.strip()) < 10) and ref_ings and len(ref_ings.strip()) >= 15:
-                    cur.execute("""
-                    UPDATE products
-                    SET gate4_jev_status = 'jev_approved', inci_jev_score = 0.95,
-                        gate4_cross_status = ?, inci_cross_score = ?,
-                        ingredients_raw = ?, ingredients_parsed = ?, actives = ?,
-                        ingredient_source = 'skinsafe_matched',
-                        updated_at = CURRENT_TIMESTAMP
-                    WHERE id = ?;
-                    """, (cross_status, cross_score, ref_ings, json.dumps(parsed), json.dumps(acts), pid))
-                else:
-                    cur.execute("""
-                    UPDATE products
-                    SET gate4_jev_status = 'jev_approved', inci_jev_score = 0.95,
-                        gate4_cross_status = ?, inci_cross_score = ?,
-                        updated_at = CURRENT_TIMESTAMP
-                    WHERE id = ?;
-                    """, (cross_status, cross_score, pid))
+                cur.execute("""
+                UPDATE products
+                SET gate4_jev_status = 'jev_approved', inci_jev_score = 0.95,
+                    gate4_cross_status = ?, inci_cross_score = ?,
+                    updated_at = CURRENT_TIMESTAMP
+                WHERE id = ?;
+                """, (cross_status, cross_score, pid))
 
                 # Publish authoritative formulation to canonical_products & inci_audit_evidence
                 if canon_id and ref_ings and len(ref_ings.strip()) >= 15:
@@ -191,10 +182,10 @@ def run_jev_verification_queue(
                 UPDATE products
                 SET gate4_jev_status = 'jev_rejected', inci_jev_score = 0.15,
                     gate4_cross_status = ?, inci_cross_score = ?,
-                    ingredients_raw = CASE WHEN ingredient_source IN ('skinsafe_matched', 'pending_tier7_match') THEN NULL ELSE ingredients_raw END,
-                    ingredients_parsed = CASE WHEN ingredient_source IN ('skinsafe_matched', 'pending_tier7_match') THEN NULL ELSE ingredients_parsed END,
-                    actives = CASE WHEN ingredient_source IN ('skinsafe_matched', 'pending_tier7_match') THEN NULL ELSE actives END,
-                    ingredient_source = CASE WHEN ingredient_source IN ('skinsafe_matched', 'pending_tier7_match') THEN NULL ELSE ingredient_source END,
+
+
+
+
                     updated_at = CURRENT_TIMESTAMP
                 WHERE id = ?;
                 """, (cross_status, cross_score, pid))

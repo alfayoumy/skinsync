@@ -14,6 +14,7 @@ from typing import List, Dict, Any, Optional, Callable
 sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
 from pipeline.db_manager import get_connection
 from pipeline.inci_matcher import verify_batch_with_gemini, score_cross_encoder
+from pipeline.identity_gates import validate_identity_gates
 try:
     from pipeline.config import cfg
 except ImportError:
@@ -210,6 +211,9 @@ def run_gemini_verification_queue(
 
                 if pid in evaluations:
                     is_same, conf, reason = evaluations[pid]
+                    compatible, identity_reason = validate_identity_gates(title, cand_name)
+                    if not compatible:
+                        is_same, reason = False, identity_reason
                     if is_same and conf >= gemini_threshold:
                         # If product has no ingredients, backfill from matched inci_reference
                         cur.execute("""
@@ -229,24 +233,13 @@ def run_gemini_verification_queue(
                         if ref_ings and len(ref_ings.strip()) >= 15:
                             parsed, acts = parse_and_normalize_ingredients(ref_ings)
 
-                        if (not curr_raw or len(curr_raw.strip()) < 10) and ref_ings and len(ref_ings.strip()) >= 15:
-                            cur.execute("""
-                            UPDATE products
-                            SET gate4_gemini_status = 'gemini_approved', inci_gemini_score = ?,
-                                gate4_cross_status = ?, inci_cross_score = ?,
-                                ingredients_raw = ?, ingredients_parsed = ?, actives = ?,
-                                ingredient_source = 'skinsafe_matched',
-                                updated_at = CURRENT_TIMESTAMP
-                            WHERE id = ?;
-                            """, (conf, c_status, c_score, ref_ings, json.dumps(parsed), json.dumps(acts), pid))
-                        else:
-                            cur.execute("""
-                            UPDATE products
-                            SET gate4_gemini_status = 'gemini_approved', inci_gemini_score = ?,
-                                gate4_cross_status = ?, inci_cross_score = ?,
-                                updated_at = CURRENT_TIMESTAMP
-                            WHERE id = ?;
-                            """, (conf, c_status, c_score, pid))
+                        cur.execute("""
+                        UPDATE products
+                        SET gate4_gemini_status = 'gemini_approved', inci_gemini_score = ?,
+                            gate4_cross_status = ?, inci_cross_score = ?,
+                            updated_at = CURRENT_TIMESTAMP
+                        WHERE id = ?;
+                        """, (conf, c_status, c_score, pid))
 
                         # Publish authoritative formulation to canonical_products & inci_audit_evidence
                         if canon_id and ref_ings and len(ref_ings.strip()) >= 15:
@@ -276,10 +269,10 @@ def run_gemini_verification_queue(
                         UPDATE products
                         SET gate4_gemini_status = 'gemini_rejected', inci_gemini_score = ?,
                             gate4_cross_status = ?, inci_cross_score = ?,
-                            ingredients_raw = CASE WHEN ingredient_source IN ('skinsafe_matched', 'pending_tier7_match') THEN NULL ELSE ingredients_raw END,
-                            ingredients_parsed = CASE WHEN ingredient_source IN ('skinsafe_matched', 'pending_tier7_match') THEN NULL ELSE ingredients_parsed END,
-                            actives = CASE WHEN ingredient_source IN ('skinsafe_matched', 'pending_tier7_match') THEN NULL ELSE actives END,
-                            ingredient_source = CASE WHEN ingredient_source IN ('skinsafe_matched', 'pending_tier7_match') THEN NULL ELSE ingredient_source END,
+
+
+
+
                             updated_at = CURRENT_TIMESTAMP
                         WHERE id = ?;
                         """, (conf, c_status, c_score, pid))
