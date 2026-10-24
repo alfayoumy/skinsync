@@ -257,6 +257,83 @@ def gemini_identity_job_stop(task_id:str):
     return {'cancelled':cancel_task(task_id,reason='Admin stopped Gemini product reviews')}
 
 
+
+class SavedGeminiDecisionsRequest(BaseModel):
+    limit:int=Field(default=5000,ge=1,le=20000)
+    confidence_threshold:float=Field(default=0.90,ge=0.90,le=1.0)
+
+
+@router.post('/reviews/gemini/saved/preview')
+def preview_saved_gemini(request:SavedGeminiDecisionsRequest):
+    """Re-evaluate persisted Gemini verdicts locally: zero model calls and zero writes."""
+    from pipeline.saved_gemini_decisions import apply_saved_decisions
+    from pipeline.aggregation_schema import ensure_identity_gemini_schema
+    conn=get_connection()
+    try:
+        ensure_identity_gemini_schema(conn)
+        report=apply_saved_decisions(conn,request.limit,request.confidence_threshold,dry_run=True)
+        conn.rollback()
+        return report
+    except Exception:
+        conn.rollback()
+        raise
+    finally:
+        conn.close()
+
+
+@router.post('/reviews/gemini/saved/apply')
+def start_saved_gemini_application(request:SavedGeminiDecisionsRequest,
+                                   background_tasks:BackgroundTasks):
+    """Apply stored decisions in a checkpointed task; Gemini is NEVER called."""
+    from pipeline.saved_gemini_decisions import candidate_rows,background_apply_saved
+    from pipeline.aggregation_schema import ensure_identity_gemini_schema
+    from pipeline.task_tracker import create_task
+    conn=get_connection()
+    try:
+        ensure_identity_gemini_schema(conn)
+        total=len(candidate_rows(conn,request.limit,request.confidence_threshold))
+        active=conn.execute("""SELECT task_id FROM pipeline_tasks WHERE task_type='apply_saved_gemini'
+            AND status='running' LIMIT 1""").fetchone()
+        conn.commit()
+    finally:conn.close()
+    if active:raise HTTPException(status_code=409,detail='Saved-decision application is already running.')
+    if total==0:raise HTTPException(status_code=409,detail='No saved Gemini decisions qualify. Preview the current queue.')
+    task_id=create_task('apply_saved_gemini',target_source='review_queue',
+        params={'confidence_threshold':request.confidence_threshold,'limit':request.limit,
+                'calls_gemini':False},total_items=total,auto_start=True)
+    background_tasks.add_task(background_apply_saved,task_id,request.limit,
+                              request.confidence_threshold)
+    return {'task_id':task_id,'status':'running','saved_decisions':total,
+            'gemini_calls':0,'message':'Applying stored Gemini decisions only; no provider requests.'}
+
+
+@router.get('/reviews/gemini/saved/jobs/{task_id}')
+def saved_gemini_job_status(task_id:str):
+    conn=get_connection()
+    try:
+        row=conn.execute("""SELECT task_id,status,processed_items,total_items,metadata,
+            error_message,current_stage FROM pipeline_tasks
+            WHERE task_id=? AND task_type='apply_saved_gemini'""",(task_id,)).fetchone()
+        if not row:raise HTTPException(status_code=404,detail='Saved Gemini application job not found.')
+        result=dict(row);result['metadata']=json.loads(result['metadata'] or '{}')
+        return result
+    finally:conn.close()
+
+
+@router.post('/reviews/gemini/saved/jobs/{task_id}/cancel')
+def stop_saved_gemini_application(task_id:str):
+    from pipeline.task_tracker import cancel_task
+    conn=get_connection()
+    try:
+        row=conn.execute("""SELECT status FROM pipeline_tasks
+            WHERE task_id=? AND task_type='apply_saved_gemini'""",(task_id,)).fetchone()
+        if not row:raise HTTPException(status_code=404,detail='Saved decision application job not found.')
+        if row['status']!='running':
+            return {'cancelled':False,'status':row['status']}
+    finally:conn.close()
+    return {'cancelled':bool(cancel_task(task_id,reason='Admin stopped saved Gemini decision application'))}
+
+
 @router.post('/reviews/{review_id}')
 def review(review_id:int,request:ReviewRequest):
     from pipeline.review_service import resolve_review
