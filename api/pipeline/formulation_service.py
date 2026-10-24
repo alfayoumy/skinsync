@@ -190,6 +190,11 @@ class FormulationRepository:
 
     def publish_formulation(self, candidate, approval_reason, force=False, audited_by="pipeline", conn=None):
         """Publish and audit atomically without committing a caller's transaction."""
+        # Legacy CSV ingredients are untrusted even if their syntax looks valid.
+        if (candidate.source_name == 'historical_store_scrape'
+                or (candidate.validation_flags or {}).get('method') == 'historical_store_scrape'):
+            logger.warning("Refusing untrusted historical INCI for canonical #%s", candidate.canonical_product_id)
+            return False
         owned = conn is None
         if owned:
             conn = get_connection(self.db_path)

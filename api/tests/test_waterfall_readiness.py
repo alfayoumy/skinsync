@@ -32,6 +32,16 @@ class WaterfallReadinessTests(unittest.TestCase):
         resolver.assert_not_called()
         self.assertEqual(result['eligibility']['blocked_unverified'],1)
 
+    def test_historical_scraped_formula_is_not_a_trusted_match(self):
+        self.conn.execute("""UPDATE canonical_products
+            SET identity_status='verified',
+                ingredients_raw='Water, Glycerin, Panthenol, Phenoxyethanol',
+                ingredient_source='historical_store_scrape'
+            WHERE id=?""", (self.cid,))
+        self.assertEqual(eligible_waterfall(self.conn)['eligible_ids'], [self.cid])
+        self.conn.execute("UPDATE canonical_products SET ingredient_source='store_page_tab' WHERE id=?", (self.cid,))
+        self.assertEqual(eligible_waterfall(self.conn)['eligible'], 0)
+
     def test_two_agreeing_stores_can_be_explicitly_certified(self):
         for i,store in enumerate(('store_one','store_two'),1):
             self.conn.execute("INSERT INTO stores(id,name,domain) VALUES (?,?,?)",(store,store,store+'.test'))

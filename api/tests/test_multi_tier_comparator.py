@@ -125,7 +125,6 @@ class TestMultiTierComparator(unittest.TestCase):
         res = execute_all_tiers_for_product(
             prod,
             conn=self.conn,
-            historical_index={},
             langsearch_enabled=False,
             write_to_db=True
         )
@@ -170,7 +169,6 @@ class TestMultiTierComparator(unittest.TestCase):
         execute_all_tiers_for_product(
             prod,
             conn=self.conn,
-            historical_index={},
             langsearch_enabled=False,
             write_to_db=True
         )
@@ -190,7 +188,6 @@ class TestMultiTierComparator(unittest.TestCase):
         execute_all_tiers_for_product(
             prod,
             conn=self.conn,
-            historical_index={},
             langsearch_enabled=False,
             write_to_db=True
         )
@@ -208,7 +205,6 @@ class TestMultiTierComparator(unittest.TestCase):
         execute_all_tiers_for_product(
             prod,
             conn=self.conn,
-            historical_index={},
             langsearch_enabled=False,
             write_to_db=True
         )

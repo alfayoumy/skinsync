@@ -2575,7 +2575,7 @@ const AdminObservatory = ({ onBackToApp }) => {
                       {telemetry?.tier_resolutions?.tiers && (
                         <div className="space-y-4">
                           {[
-                            { key: 'tier1', label: 'Tier 1', title: 'Current/Historical Store Page INCI Tab' },
+                            { key: 'tier1', label: 'Tier 1', title: 'Verified Current Store INCI Declaration' },
                             { key: 'tier2', label: 'Tier 2', title: 'OpenBeauty Facts API' },
                             { key: 'tier3', label: 'Tier 3', title: 'High SkinSAFE Formulation Match (≥95%)' },
                             { key: 'tier4', label: 'Tier 4', title: 'LangSearch INCI Web Search & Extraction' },
@@ -4008,7 +4008,7 @@ const AdminObservatory = ({ onBackToApp }) => {
                     <div className="p-2.5 rounded-xl bg-gray-50 border border-gray-200">
                       <div className="text-[10px] font-bold text-gray-600">Tier 1: Store</div>
                       <div className="text-base font-bold text-gray-800 mt-0.5">
-                        {(waterfallBatchStatus?.stats?.by_method?.store_page_tab || 0) + (waterfallBatchStatus?.stats?.by_method?.historical_store_scrape || 0) + (waterfallBatchStatus?.stats?.by_method?.tier1_store_match || 0)}
+                        {(waterfallBatchStatus?.stats?.by_method?.store_page_tab || 0) + (waterfallBatchStatus?.stats?.by_method?.tier1_store_match || 0)}
                       </div>
                     </div>
 

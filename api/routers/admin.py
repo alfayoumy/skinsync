@@ -375,7 +375,7 @@ def get_product_telemetry_forensics(
             actives_list = sorted(list(acts))
 
         AUTHENTIC_SOURCE_TYPES = {
-            "store_tab", "store_page_tab", "historical_store_scrape", 
+            "store_tab", "store_page_tab", 
             "current_store_scrape", "store_scrape", "store_description", "v10_curated"
         }
         has_source_ings = bool(

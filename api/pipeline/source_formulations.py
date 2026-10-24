@@ -18,15 +18,15 @@ def resolve_source_formulations(conn,canonical_id,publish=False):
     for item in evidence:
         flags=json.loads(item.get('validation_flags') or '{}')
         validation=tokenize_inci_string(item['raw_ingredients_found'],product_title=canonical['canonical_title'])
-        reason=None
+        reason='untrusted_historical_scrape' if (item.get('source_name')=='historical_store_scrape' or flags.get('method')=='historical_store_scrape') else None
         from pipeline.identity_trust import verified_link
         source_obs=conn.execute('SELECT source_id,source_product_id FROM source_product_observations WHERE id=?',(item['observation_id'],)).fetchone()
-        if not source_obs or not verified_link(conn,source_obs[0],flags.get('identity_link_product_id') or source_obs[1],canonical_id):reason='identity_unverified'
-        elif item['completeness']!='full' or not item['order_verified'] or validation.is_truncated:reason='incomplete_or_unordered'
-        elif not flags.get('identity_resolved'):reason='identity_unresolved'
-        elif item['source_type']=='manufacturer' and item['market'] not in ('EG','MENA') and not flags.get('region_compatibility_approved'):
+        if reason is None and (not source_obs or not verified_link(conn,source_obs[0],flags.get('identity_link_product_id') or source_obs[1],canonical_id)):reason='identity_unverified'
+        elif reason is None and (item['completeness']!='full' or not item['order_verified'] or validation.is_truncated):reason='incomplete_or_unordered'
+        elif reason is None and not flags.get('identity_resolved'):reason='identity_unresolved'
+        elif reason is None and item['source_type']=='manufacturer' and item['market'] not in ('EG','MENA') and not flags.get('region_compatibility_approved'):
             reason='regional_compatibility_requires_review'
-        elif canonical.get('market') and canonical.get('identity_attributes'):
+        elif reason is None and canonical.get('market') and canonical.get('identity_attributes'):
             identity=json.loads(canonical['identity_attributes'])
             if identity.get('region_defining') and item['market']!=canonical['market']:reason='regional_formula_conflict'
         if reason:
@@ -76,6 +76,8 @@ def approve_formulation_evidence(conn,evidence_id,reviewer,reason,correction=Fal
         JOIN source_product_observations o ON o.id=e.observation_id JOIN sources s ON s.id=o.source_id WHERE e.id=?''',(evidence_id,)).fetchone()
     if not row:raise ValueError('Source evidence not found.')
     row=dict(row);flags=json.loads(row['validation_flags'] or '{}')
+    if row.get('source_name')=='historical_store_scrape' or flags.get('method')=='historical_store_scrape':
+        raise ValueError('Historical scraped INCI evidence is not approvable.')
     if not flags.get('identity_resolved') or row['completeness']!='full' or not row['order_verified']:
         raise ValueError('Only complete, ordered, identity-resolved evidence can be approved.')
     if row['source_type']=='manufacturer' and row['market'] not in ('EG','MENA') and not market_compatible:

@@ -148,7 +148,6 @@ class TestTier7PendingLLM(unittest.TestCase):
         res = execute_inci_waterfall_for_product(
             prod,
             conn=self.conn,
-            historical_index={},
             langsearch_enabled=False,
             allow_tier7=True,
             write_to_db=True

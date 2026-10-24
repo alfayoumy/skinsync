@@ -122,7 +122,7 @@ def run_full_pipeline(
             curr_raw = row_dict.get("ingredients_raw")
 
             AUTHENTIC_SOURCE_TYPES = {
-                "store_tab", "store_page_tab", "historical_store_scrape",
+                "store_tab", "store_page_tab",
                 "current_store_scrape", "store_scrape", "store_description", "v10_curated"
             }
             has_source_ings = bool(

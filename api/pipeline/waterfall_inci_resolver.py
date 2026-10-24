@@ -1,7 +1,7 @@
 """
 Authoritative Waterfall INCI Resolver Pipeline.
 Implements the 7-tier waterfall methodology for resolving cosmetic ingredients:
-1. Current store page ingredient list (then Historical Store Scrapes Jan 10-12, 2026) - dedicated tab only
+1. Verified current store ingredient declaration; no historical CSV backfill
 2. OpenBeauty API (world.openbeautyfacts.org)
 3. High SkinSAFE Match (strict brand, vehicle, and line alignment against inci_reference >= 0.50 overlap)
 4. LangSearch Web Search API (searches '{brand} {title} inci ingredients' and parses INCI from top results)
@@ -60,9 +60,6 @@ VEHICLES = [
     'oil', 'spray', 'balm', 'toner', 'scrub', 'shampoo', 'sunscreen', 
     'fluid', 'stick', 'pads', 'foam', 'ampoule', 'essence', 'peel', 'micellar'
 ]
-
-# Historical store scrapes cache
-_HISTORICAL_SCRAPES_CACHE: Optional[Dict[str, str]] = None
 
 def get_vehicles(text: str) -> List[str]:
     """Extracts all cosmetic vehicles present in text."""
@@ -142,99 +139,18 @@ def sanitize_inci_list(text: str) -> str:
     return s
 
 # ==============================================================================
-# TIER 1: STORE INGREDIENTS TAB & HISTORICAL STORE SCRAPES
+# TIER 1: VERIFIED CURRENT STORE INGREDIENT DECLARATION
 # ==============================================================================
 
-def load_historical_scrapes_index() -> Dict[str, str]:
-    """Loads and caches authentic store scrapes from Jan 10-12, 2026."""
-    global _HISTORICAL_SCRAPES_CACHE
-    if _HISTORICAL_SCRAPES_CACHE is not None:
-        return _HISTORICAL_SCRAPES_CACHE
+def resolve_tier1_store_tab(product: Dict[str, Any]) -> Optional[Dict[str, Any]]:
+    """Use only verified current-store full INCI; historical CSVs are untrusted.
 
-    import csv
-    cache: Dict[str, str] = {}
-    candidates_root = [
-        os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(__file__)))),
-        os.path.dirname(os.path.dirname(os.path.dirname(__file__))),
-        os.getcwd(),
-        "/mnt/windows/Users/AmrAlfayoumy/Downloads/skincare"
-    ]
-    base_dir = next((d for d in candidates_root if os.path.isdir(os.path.join(d, "data", "legacy_csvs"))), candidates_root[0])
-
-    scrape_files = [
-        os.path.join(base_dir, "data", "legacy_csvs", "store_scrapes", "sourcebeauty_corrected_details.csv"),
-        os.path.join(base_dir, "data", "legacy_csvs", "store_scrapes", "feel22_enriched_final.csv"),
-        os.path.join(base_dir, "data", "legacy_csvs", "store_scrapes", "bloom_pharmacy_ready.csv"),
-        os.path.join(base_dir, "data", "legacy_csvs", "master", "master_product_database.csv")
-    ]
-
-    for fpath in scrape_files:
-        if not os.path.exists(fpath):
-            continue
-        try:
-            with open(fpath, "r", encoding="utf-8", errors="ignore") as f:
-                reader = csv.DictReader(f)
-                for r in reader:
-                    url = (r.get("url") or r.get("product_url") or "").strip()
-                    title = (r.get("title") or "").strip().lower()
-                    ings = (r.get("ingredients") or "").strip()
-                    if ings and is_valid_inci_list(ings):
-                        if url:
-                            cache[url] = ings
-                        if title and title not in cache:
-                            cache[title] = ings
-                        clean_t = re.sub(r'\b\d+(?:\.\d+)?\s*(?:ml|g|gm|oz|fl\s*oz)\b|[()\[\]\+]', ' ', title, flags=re.I).strip()
-                        clean_t = re.sub(r'\s+', ' ', clean_t)
-                        if clean_t and clean_t not in cache:
-                            cache[clean_t] = ings
-        except Exception as ex:
-            logger.warning(f"Error loading historical scrape file {fpath}: {ex}")
-
-    _HISTORICAL_SCRAPES_CACHE = cache
-    logger.info(f"Loaded {len(_HISTORICAL_SCRAPES_CACHE)} verified historical store scrape formulations.")
-    return _HISTORICAL_SCRAPES_CACHE
-
-def resolve_tier1_store_tab(product: Dict[str, Any], historical_index: Dict[str, str]) -> Optional[Dict[str, Any]]:
+    A title/URL match and valid INCI syntax do not establish product identity.
+    Current source observations have separate exact-link and completeness checks.
     """
-    Tier 1: Checks dedicated ingredients tab from current scrape or Jan 2026 historical scrape.
-    Only accepts if source had a dedicated ingredients tab and passes is_valid_inci_list.
-    """
-    curr_raw = product.get("ingredients_raw")
-    curr_src = product.get("ingredient_source")
-
-    # Only accept current product ingredients if it was verified from a dedicated store tab
-    if curr_raw and is_valid_inci_list(curr_raw) and curr_src == "store_page_tab":
-        return {
-            "ingredients_raw": curr_raw.strip(),
-            "method": "store_page_tab"
-        }
-
-    # Check dedicated description HTML if available
-    desc_html = product.get("description_html")
-    if desc_html:
-        from pipeline.inci_matcher import extract_ingredients_from_html
-        extracted = extract_ingredients_from_html(desc_html)
-        if extracted and is_valid_inci_list(extracted):
-            return {
-                "ingredients_raw": extracted.strip(),
-                "method": "store_page_tab"
-            }
-
-    # Check historical store scrape index by URL, Title, or Clean Title
-    url = (product.get("product_url") or "").strip()
-    title = (product.get("title") or "").strip().lower()
-    clean_t = re.sub(r'\b\d+(?:\.\d+)?\s*(?:ml|g|gm|oz|fl\s*oz)\b|[()\[\]\+]', ' ', title, flags=re.I).strip()
-    clean_t = re.sub(r'\s+', ' ', clean_t)
-
-    for key in (url, title, clean_t):
-        if key and key in historical_index:
-            hist_ings = historical_index[key]
-            if is_valid_inci_list(hist_ings):
-                return {
-                    "ingredients_raw": hist_ings.strip(),
-                    "method": "historical_store_scrape"
-                }
-
+    raw = product.get("ingredients_raw")
+    if product.get("ingredient_source") == "store_page_tab" and raw and is_valid_inci_list(raw):
+        return {"ingredients_raw": raw.strip(), "method": "store_page_tab"}
     return None
 
 # ==============================================================================
@@ -819,7 +735,6 @@ def resolve_tier7_pending_llm(
 def execute_inci_waterfall_for_product(
     product: Dict[str, Any],
     conn=None,
-    historical_index: Optional[Dict[str, str]] = None,
     langsearch_enabled: bool = True,
     allow_tier7: bool = True,
     queue_jev: bool = True,
@@ -831,9 +746,6 @@ def execute_inci_waterfall_for_product(
     Executes the 7-tier waterfall resolution for a single skincare product.
     Returns resolution result with exact method recorded.
     """
-    if historical_index is None:
-        historical_index = load_historical_scrapes_index()
-
     p_id = product.get("id")
     title = product.get("title") or ""
     brand = product.get("brand") or ""
@@ -843,8 +755,8 @@ def execute_inci_waterfall_for_product(
     res = None
     tier3_candidate = None
 
-    # Tier 1: Current store tab / Historical store scrapes
-    res = resolve_tier1_store_tab(product, historical_index)
+    # Tier 1: Verified current store declaration only
+    res = resolve_tier1_store_tab(product)
 
     # Tier 2: OpenBeauty API
     if not res:
@@ -858,9 +770,9 @@ def execute_inci_waterfall_for_product(
     if not res and langsearch_enabled:
         res = resolve_tier4_langsearch(brand, title)
 
-    curr_raw = product.get("ingredients_raw")
-
-    # Tier 5: Store Page Description Whitelisted Ingredients
+    # Tier 5 must never reuse a historical backfilled INCI string.
+    curr_raw = (product.get("ingredients_raw")
+                if product.get("ingredient_source") != "historical_store_scrape" else None)
     if not res and (desc_html or curr_raw):
         res = resolve_tier5_whitelist_description(desc_html, conn=conn, fallback_raw=curr_raw)
 
@@ -957,7 +869,6 @@ def execute_inci_waterfall_for_product(
 def execute_all_tiers_for_product(
     product: Dict[str, Any],
     conn=None,
-    historical_index: Optional[Dict[str, str]] = None,
     langsearch_enabled: bool = True,
     write_to_db: bool = True
 ) -> Dict[str, Any]:
@@ -973,9 +884,6 @@ def execute_all_tiers_for_product(
         should_close = True
 
     try:
-        if historical_index is None:
-            historical_index = load_historical_scrapes_index()
-
         p_id = product.get("id")
         title = product.get("title") or ""
         brand = product.get("brand") or ""
@@ -1052,12 +960,12 @@ def execute_all_tiers_for_product(
                     "metadata": meta
                 }
 
-        # 1. Tier 1: Store Dedicated Tab / Historical Scrape
-        res_t1 = resolve_tier1_store_tab(product, historical_index)
+        # 1. Tier 1: Verified current-store declaration
+        res_t1 = resolve_tier1_store_tab(product)
         t1 = _format_tier(
-            1, "tier1", "Store Dedicated Tab / Historical Scrape",
+            1, "tier1", "Verified Current Store INCI",
             res_t1,
-            default_details="Found in store dedicated tab / historical scrape (Bashrety Jan 10-12, 2026)" if res_t1 else "No dedicated ingredients tab in current store listing or historical scrape."
+            default_details="Verified current-store full INCI declaration." if res_t1 else "No verified current-store full INCI declaration."
         )
 
         # 2. Tier 2: OpenBeauty API
@@ -1153,7 +1061,7 @@ def execute_all_tiers_for_product(
 
         # Determine currently active tier
         selected_tier = None
-        if current_source in ("historical_store_scrape", "store_tab"):
+        if current_source == "store_page_tab":
             selected_tier = "tier1"
         elif current_source == "openbeauty_api":
             selected_tier = "tier2"
@@ -1355,12 +1263,11 @@ def close_all_thread_connections():
 def resolve_waterfall_for_canonical_product(
     canonical_prod: Dict[str, Any],
     conn=None,
-    historical_index: Optional[Dict[str, str]] = None,
     langsearch_enabled: bool = True
 ) -> Tuple[Optional[FormulationCandidate], Optional[Dict[str, Any]]]:
     """
     Executes Tiers 1-5 for a canonical product:
-    - Tier 1: Store dedicated tab and historical scrapes across linked retailer offers.
+    - Tier 1: Verified current-store declarations across linked retailer offers.
     - Tier 2: OpenBeauty API on canonical brand and title.
     - Tier 3: SkinSAFE High Match on canonical brand and title (with identity gates).
     - Tier 4: LangSearch Web Search API on canonical brand and title.
@@ -1394,13 +1301,13 @@ def resolve_waterfall_for_canonical_product(
     res = None
     source_offer_id = None
 
-    # Tier 1: Check linked offers for dedicated store tab or historical scrapes
+    # Tier 1: Check linked offers for verified current-store declarations
     for offer in offers:
         from pipeline.identity_trust import verified_link
         link = conn.execute('SELECT store_product_id FROM products WHERE id=?',(offer['id'],)).fetchone()
         if not link or not verified_link(conn,offer['store_id'],link[0] or str(offer['id']),c_id):
             continue
-        t1_res = resolve_tier1_store_tab(offer, historical_index)
+        t1_res = resolve_tier1_store_tab(offer)
         if t1_res and t1_res.get("ingredients_raw"):
             res = t1_res
             source_offer_id = offer["id"]
@@ -1485,7 +1392,6 @@ def run_waterfall_pipeline(
 
     try:
         cur = conn.cursor()
-        historical_index = load_historical_scrapes_index()
         load_skinsafe_reference_index(conn=conn)
         from pipeline.whitelist_matcher import load_and_compile_whitelist
         load_and_compile_whitelist(conn=conn)
@@ -1503,7 +1409,7 @@ def run_waterfall_pipeline(
                 OR TRIM(ingredients_raw) = '' 
                 OR ingredient_source IS NULL 
                 OR ingredient_source NOT IN (
-                    'store_page_tab', 'historical_store_scrape', 'openbeauty_api', 
+                    'store_page_tab', 'openbeauty_api', 
                     'skinsafe_high_match', 'langsearch_web_search', 'admin_override',
                     'curated_v10', 'jev_verified_skinsafe', 'gemini_verified_skinsafe'
                 )
@@ -1553,7 +1459,7 @@ def run_waterfall_pipeline(
             t_conn = get_connection(db_file)
             try:
                 cand, t3_cand = resolve_waterfall_for_canonical_product(
-                    can_prod, conn=t_conn, historical_index=historical_index,
+                    can_prod, conn=t_conn, 
                     langsearch_enabled=langsearch_enabled
                 )
             finally:
@@ -1638,7 +1544,7 @@ def run_waterfall_pipeline(
                     cand, t3_cand = resolve_waterfall_for_canonical_product(
                         row,
                         conn=conn,
-                        historical_index=historical_index,
+                        
                         langsearch_enabled=langsearch_enabled
                     )
                     item_res = {

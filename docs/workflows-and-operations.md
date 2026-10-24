@@ -43,6 +43,8 @@ Use `POST /admin/workflows/offers/refresh` with a known retailer Shopify source 
 2. Choose `scope=unmatched_only` for items missing approved ingredients; `all_skincare` rechecks verified skincare identities. Identity review/certification belongs in Workflow 1, not a hidden INCI modal step.
 3. Use `POST /admin/waterfall/batch/start` with a small `dry_run=true` batch and inspect `GET /admin/waterfall/batch/status`. It must distinguish published formulations, evidence-only outcomes and unresolved products; a zero-target batch means eligibility is zero, not that scraping took place.
 4. Ingredient source precedence, ordered tokenization, region, exact source-product link, completeness and version conflict checks live in `FormulationRepository` and `source_formulations.py`. Candidate web-search/INCI database matches, LLM approval or partially listed actives are **not** equivalent to authoritative full INCI.
+**Historical INCI safety:** Tier 1 no longer loads January 2026 historical CSV ingredient exports. Product-title/URL matching and valid INCI syntax are not proof of formulation identity. Tier 1 accepts only explicitly verified current-page `store_page_tab` ingredients; exact-source observation evidence is checked separately for identity, ordering, completeness and provenance. Previously saved `historical_store_scrape` formulations are eligible for reprocessing, but are not deleted or automatically corrected. A stored conflicting formulation requires audited remediation/rebuild.
+
 5. `queue_jev` and `queue_gemini` in the waterfall *stage* work. They do not automatically execute the old INCI workers. Monitor/start/pause/stop with `/admin/queues/status|start|pause|resume|stop`.
 6. Use `POST /admin/aggregation/formulations/{canonical_id}/resolve` and the explicitly reviewed evidence-approval APIs for controlled formulation publications/corrections. Restricted formula correction operations need both `formula` and `formula_correction` scopes.
 
@@ -131,3 +133,9 @@ python api/tests/run_regressions.py
 3. The old mixed-purpose `daily_sync.py` and older reclassifier/linker endpoints still exist for compatibility. Prefer the separated workflows for controlled new operations.
 4. Product identity Gemini decisions are not a licensed authority for complete INCI provenance. A confident different-product verdict without deterministic, explicit per-offer partition remains structural review.
 5. Some historical evaluation and benchmarking documents are preserved as dated baselines, not up-to-date production evidence.
+
+### Safe clean-catalog rebuild
+
+There is no catalog-wide purge action in the current Catalog Operations UI or `/admin/workflows/*` endpoints. Do not delete the database or product tables while tracked discovery is running. Shopify discovery commits every completed page, and source observations, canonical products, identity links, offers, formulation evidence and saved review decisions are related.
+
+Finish or cancel discovery at a page boundary, take a consistent SQLite backup, and inventory records to retain (source configurations, curated INCI/whitelist/taxonomy, manual approvals and saved Gemini decisions). Build and validate a new initialized database separately, re-ingest product discovery, then run identity reviews and INCI matching; only switch databases after validation. Resetting without explicitly migrating decisions discards saved decisions.

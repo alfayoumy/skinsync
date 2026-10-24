@@ -13,7 +13,7 @@ from pipeline.canonical_identity_resolver import (
 from pipeline.identity_gates import validate_identity_gates
 
 ACCEPTED_SOURCES = {
-    'store_page_tab', 'historical_store_scrape', 'openbeauty_api',
+    'store_page_tab', 'openbeauty_api',
     'skinsafe_high_match', 'langsearch_web_search', 'admin_override',
     'curated_v10', 'jev_verified_skinsafe', 'gemini_verified_skinsafe',
 }
@@ -98,7 +98,7 @@ def certifiable_cross_store(conn, limit=None):
             if canonical_hash:hashes.add(canonical_hash)
             for offer in offers:
                 if offer.get('ingredient_source') in (
-                    'store_page_tab','historical_store_scrape','admin_override','curated_v10'
+                    'store_page_tab','admin_override','curated_v10'
                 ):
                     existing_hash=formula_fingerprint(offer)
                     if existing_hash:hashes.add(existing_hash)
