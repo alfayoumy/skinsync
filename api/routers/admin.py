@@ -457,17 +457,41 @@ def get_product_telemetry_forensics(
         if product.get("canonical_product_id"):
             cur.execute("""
             SELECT id, canonical_title, brand, category, normalized_key,
-                   min_price, max_price, store_count, primary_image_url
+                   min_price, max_price, store_count, primary_image_url,
+                   ingredients_raw, ingredients_parsed, actives,
+                   ingredient_source, ingredient_source_url,
+                   formula_version, formula_hash, formulation_published_at,
+                   formulation_approval_reason
             FROM canonical_products
             WHERE id = ?;
             """, (product["canonical_product_id"],))
             canon_row = cur.fetchone()
             if canon_row:
                 canonical_info = dict(canon_row)
+                if canonical_info.get("ingredients_parsed") and isinstance(canonical_info["ingredients_parsed"], str):
+                    try:
+                        canonical_info["ingredients_parsed"] = json.loads(canonical_info["ingredients_parsed"])
+                    except Exception:
+                        pass
+                if canonical_info.get("actives") and isinstance(canonical_info["actives"], str):
+                    try:
+                        canonical_info["actives"] = json.loads(canonical_info["actives"])
+                    except Exception:
+                        pass
                 price_diff = round(max(0.0, canonical_info["max_price"] - canonical_info["min_price"]), 2)
                 savings_pct = round((price_diff / canonical_info["max_price"] * 100.0), 1) if canonical_info["max_price"] > 0 else 0.0
                 canonical_info["price_difference_egp"] = price_diff
                 canonical_info["savings_percent"] = savings_pct
+
+                # Query audit evidence history
+                cur.execute("""
+                SELECT source_name, source_record_id, evidence_url, confidence_score, completeness,
+                       decision, discrepancy_notes, audited_by, created_at
+                FROM inci_audit_evidence
+                WHERE canonical_product_id = ?
+                ORDER BY created_at DESC;
+                """, (product["canonical_product_id"],))
+                canonical_info["audit_evidence"] = [dict(r) for r in cur.fetchall()]
 
                 # Sibling store listings
                 cur.execute("""
@@ -890,7 +914,7 @@ def reconcile_pending_products_with_whitelist(req: WhitelistReconcileRequest):
         # Target products: skincare items with no ingredients and non-empty description
         # that have no INCI match or failed INCI match
         query = """
-        SELECT id, title, brand, category, store_id, description_html
+        SELECT id, title, brand, category, store_id, description_html, canonical_product_id
         FROM products
         WHERE is_skincare = 1
           AND (ingredients_raw IS NULL OR TRIM(ingredients_raw) = '')
@@ -921,6 +945,7 @@ def reconcile_pending_products_with_whitelist(req: WhitelistReconcileRequest):
         for p in pending:
             pid = p["id"]
             desc = p["description_html"]
+            canon_id = p["canonical_product_id"]
             res = extract_ingredients_via_whitelist(desc, conn=conn, min_ingredients=req.min_ingredients)
 
             if res and res.get("ingredients_raw"):
@@ -945,6 +970,22 @@ def reconcile_pending_products_with_whitelist(req: WhitelistReconcileRequest):
                     f"Extracted {matched_count} verified ingredients via description whitelist fallback",
                     pid
                 ))
+
+                # Log to inci_audit_evidence as partial candidate evidence only (never authoritative canonical formulation)
+                if canon_id:
+                    cur.execute("""
+                    INSERT INTO inci_audit_evidence (
+                        canonical_product_id, source_name, source_record_id,
+                        raw_ingredients_found, parsed_tokens, confidence_score,
+                        completeness, decision, discrepancy_notes, audited_by
+                    ) VALUES (?, 'whitelist_description', ?, ?, ?, 0.60, 'partial', 'candidate_evidence', ?, 'admin_whitelist_reconciler');
+                    """, (
+                        canon_id,
+                        str(pid),
+                        raw_ings,
+                        json.dumps(parsed_ings),
+                        f"Extracted {matched_count} verified ingredients via description whitelist fallback"
+                    ))
                 extracted_count += 1
                 if len(samples) < 10:
                     samples.append({

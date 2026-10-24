@@ -101,7 +101,7 @@ def run_full_pipeline(
 
         cur = conn.cursor()
         cur.execute("""
-        SELECT id, brand, title, ingredients_raw, store_id
+        SELECT id, brand, title, ingredients_raw, ingredient_source, store_id
         FROM products
         WHERE (inci_matched_id IS NULL AND (gate4_cross_status IS NULL OR gate4_cross_status = 'pending'))
            OR gate4_gemini_status = 'pending_gemini'
@@ -115,10 +115,11 @@ def run_full_pipeline(
         pending_gemini_count = 0
 
         for idx, row in enumerate(unmatched_rows, 1):
-            pid = row["id"]
-            brand = row["brand"]
-            title = row["title"]
-            curr_raw = row["ingredients_raw"]
+            row_dict = dict(row)
+            pid = row_dict["id"]
+            brand = row_dict["brand"]
+            title = row_dict["title"]
+            curr_raw = row_dict.get("ingredients_raw")
 
             AUTHENTIC_SOURCE_TYPES = {
                 "store_tab", "store_page_tab", "historical_store_scrape", 
@@ -126,7 +127,7 @@ def run_full_pipeline(
             }
             has_source_ings = bool(
                 curr_raw and len(curr_raw.strip()) >= 15 and 
-                row.get("ingredient_source") in AUTHENTIC_SOURCE_TYPES
+                row_dict.get("ingredient_source") in AUTHENTIC_SOURCE_TYPES
             )
             m_res = match_with_inci_db(
                 brand=brand,
@@ -185,7 +186,7 @@ def run_full_pipeline(
                 # Only fill ingredients immediately if auto-approved locally (not ambiguous / pending gemini)
                 # and product doesn't possess genuine store ground truth (or currently only has fallback tokens)
                 ref_ings = m_res.get("ingredients")
-                can_overwrite = (not has_source_ings) or (row.get("ingredient_source") in ("whitelist_description", "whitelist_extracted", "cluster_propagation", "unmatched", "pending_tier7_match", None))
+                can_overwrite = (not has_source_ings) or (row_dict.get("ingredient_source") in ("whitelist_description", "whitelist_extracted", "cluster_propagation", "unmatched", "pending_tier7_match", None))
                 if gemini_status != "pending_gemini" and can_overwrite and ref_ings and len(ref_ings.strip()) >= 15:
                     parsed, acts = parse_and_normalize_ingredients(ref_ings)
                     update_sql += """,

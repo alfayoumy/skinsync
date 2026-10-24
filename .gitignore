@@ -52,3 +52,4 @@ tmp/
 *.db-shm
 *.db.bak
 *.db.backup*
+*backup*.db

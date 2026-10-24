@@ -654,12 +654,7 @@ def link_catalog_products(conn=None, task_id: Optional[str] = None) -> Dict[str,
                 pid
             ))
 
-    # Purge deprecated canonical clusters not referenced by any products
-    cur.execute("""
-    DELETE FROM canonical_products
-    WHERE id NOT IN (SELECT DISTINCT canonical_product_id FROM products WHERE canonical_product_id IS NOT NULL);
-    """)
-
+    # Note: Canonical records and their inci_audit_evidence are durable entities and are never purged.
     conn.commit()
 
     logger.info("=================================================================")

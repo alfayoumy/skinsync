@@ -12,6 +12,8 @@ from typing import Dict, Set, List, Tuple, Optional, Any
 
 from pipeline.db_manager import load_synonyms_from_db
 from pipeline.logging_config import get_logger
+from pipeline.inci_tokenizer import tokenize_inci_string
+
 
 logger = get_logger("skincare_engine.catalog_service")
 
@@ -84,33 +86,13 @@ SKIN_RISKS = {
 
 def parse_and_clean_ingredients(text: Optional[str]) -> Tuple[List[str], Set[str]]:
     """
-    Parses comma/semicolon/bullet-separated raw ingredient text, cleans percentages and noise,
-    maps aliases to canonical names via database synonyms, and extracts active categories.
+    Parses comma/semicolon/bullet-separated raw ingredient text using chemical-aware inci_tokenizer,
+    cleans percentages and noise, maps aliases to canonical names, and extracts active categories.
     """
     if not isinstance(text, str) or not text.strip():
         return [], set()
-    raw_tokens = re.split(r'[,;•\n\r/]+', text)
-    cleaned = []
-    found_actives = set()
-    for token in raw_tokens:
-        token = token.strip().lower()
-        if not token or len(token) < 2:
-            continue
-        token = re.sub(r'^\d+(\.\d+)?%\s*(pure\s*)?', '', token)
-        token = token.rstrip('.').strip()
-        for act_cat, keywords in KEY_ACTIVES.items():
-            for k in keywords:
-                if len(k) <= 3:
-                    if re.search(r'\b' + re.escape(k) + r'\b', token):
-                        found_actives.add(act_cat)
-                        break
-                else:
-                    if k in token:
-                        found_actives.add(act_cat)
-                        break
-        canon = SYNONYMS.get(token, token)
-        cleaned.append(canon)
-    return cleaned, found_actives
+    res = tokenize_inci_string(text)
+    return res.tokens, set(res.declared_actives)
 
 def extract_actives_from_title(title: Optional[str]) -> Set[str]:
     """Extracts known active categories present in the product title with boundary safety."""

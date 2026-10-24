@@ -152,9 +152,15 @@ def init_db(db_path=DB_PATH, seed_defaults: bool = True, conn=None):
         brand TEXT NOT NULL,
         product_name TEXT NOT NULL,
         ingredients TEXT NOT NULL,
-        source TEXT DEFAULT 'skinsafe'
+        source TEXT DEFAULT 'skinsafe',
+        embedding BLOB
     );
     """)
+    cur.execute("PRAGMA table_info(inci_reference);")
+    existing_ref_cols = {r[1] for r in cur.fetchall()}
+    if "embedding" not in existing_ref_cols:
+        cur.execute("ALTER TABLE inci_reference ADD COLUMN embedding BLOB;")
+
 
     # 5. Pipeline Sync Log
     cur.execute("""
@@ -386,6 +392,10 @@ def init_db(db_path=DB_PATH, seed_defaults: bool = True, conn=None):
         ('gate4_cross_status', 'TEXT'),
         ('gate4_jev_status', 'TEXT'),
         ('gate4_gemini_status', 'TEXT'),
+        ('formula_version', 'INTEGER DEFAULT 1'),
+        ('formula_hash', 'TEXT'),
+        ('formulation_published_at', 'TIMESTAMP'),
+        ('formulation_approval_reason', 'TEXT'),
     ]
     for col_name, col_type in can_cols:
         if col_name not in existing_can_cols:
@@ -397,17 +407,33 @@ def init_db(db_path=DB_PATH, seed_defaults: bool = True, conn=None):
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         canonical_product_id INTEGER NOT NULL,
         source_name TEXT NOT NULL,       -- 'skinsafe', 'openbeauty', 'langsearch_inkeedecoder', 'curated_v10', 'admin_override'
+        source_record_id TEXT,
         evidence_url TEXT,
+        evidence_hash TEXT,
         raw_ingredients_found TEXT,
         parsed_tokens TEXT,
         confidence_score REAL,
+        completeness TEXT DEFAULT 'full', -- 'full', 'partial', 'unverified'
         decision TEXT NOT NULL,          -- 'approved_authoritative', 'candidate_evidence', 'rejected_discrepancy'
         discrepancy_notes TEXT,
+        validation_flags TEXT,
         audited_by TEXT DEFAULT 'pipeline',
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         FOREIGN KEY (canonical_product_id) REFERENCES canonical_products(id) ON DELETE CASCADE
     );
     """)
+    cur.execute("PRAGMA table_info(inci_audit_evidence);")
+    existing_evidence_cols = {r[1] for r in cur.fetchall()}
+    evidence_cols = [
+        ('source_record_id', 'TEXT'),
+        ('evidence_hash', 'TEXT'),
+        ('completeness', "TEXT DEFAULT 'full'"),
+        ('validation_flags', 'TEXT'),
+    ]
+    for col_name, col_type in evidence_cols:
+        if col_name not in existing_evidence_cols:
+            cur.execute(f"ALTER TABLE inci_audit_evidence ADD COLUMN {col_name} {col_type};")
+
     cur.execute("CREATE INDEX IF NOT EXISTS idx_audit_evidence_canonical ON inci_audit_evidence(canonical_product_id);")
     cur.execute("CREATE INDEX IF NOT EXISTS idx_audit_evidence_source ON inci_audit_evidence(source_name);")
 

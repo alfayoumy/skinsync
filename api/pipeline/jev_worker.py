@@ -11,7 +11,7 @@ import logging
 import argparse
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
-from pipeline.db_manager import get_connection
+from pipeline.db_manager import get_connection, DB_PATH
 from pipeline.inci_matcher import verify_match_with_jev, score_cross_encoder
 try:
     from pipeline.config import cfg
@@ -20,6 +20,9 @@ except ImportError:
 
 from pipeline.logging_config import setup_logging, get_logger
 logger = get_logger("skincare_pipeline.jev_worker")
+
+from pipeline.formulation_service import FormulationRepository, FormulationCandidate
+formulation_repo = FormulationRepository()
 
 from typing import Optional, Callable, Dict, Any
 
@@ -54,7 +57,7 @@ def run_jev_verification_queue(
         cur = conn.cursor()
 
         cur.execute("""
-        SELECT id, title, brand, inci_matched_name, inci_hybrid_score, ingredients_raw
+        SELECT id, title, brand, inci_matched_name, inci_hybrid_score, ingredients_raw, canonical_product_id
         FROM products
         WHERE gate4_jev_status = 'pending_jev'
           AND inci_matched_name IS NOT NULL
@@ -133,10 +136,15 @@ def run_jev_verification_queue(
                 ref_ings = ref_row[0] if ref_row else None
 
                 curr_raw = p.get("ingredients_raw") if isinstance(p, dict) else p["ingredients_raw"]
-                if (not curr_raw or len(curr_raw.strip()) < 10) and ref_ings and len(ref_ings.strip()) >= 15:
-                    from pipeline.inci_matcher import parse_and_normalize_ingredients
-                    import json
+                canon_id = p.get("canonical_product_id") if isinstance(p, dict) else p.get("canonical_product_id")
+                from pipeline.inci_matcher import parse_and_normalize_ingredients
+                import json
+
+                parsed, acts = ([], [])
+                if ref_ings and len(ref_ings.strip()) >= 15:
                     parsed, acts = parse_and_normalize_ingredients(ref_ings)
+
+                if (not curr_raw or len(curr_raw.strip()) < 10) and ref_ings and len(ref_ings.strip()) >= 15:
                     cur.execute("""
                     UPDATE products
                     SET gate4_jev_status = 'jev_approved', inci_jev_score = 0.95,
@@ -154,6 +162,27 @@ def run_jev_verification_queue(
                         updated_at = CURRENT_TIMESTAMP
                     WHERE id = ?;
                     """, (cross_status, cross_score, pid))
+
+                # Publish authoritative formulation to canonical_products & inci_audit_evidence
+                if canon_id and ref_ings and len(ref_ings.strip()) >= 15:
+                    c_obj = FormulationCandidate(
+                        canonical_product_id=canon_id,
+                        source_name="jev_verified_skinsafe",
+                        raw_ingredients=ref_ings,
+                        parsed_tokens=parsed,
+                        actives=acts,
+                        confidence_score=0.95,
+                        source_record_id=str(pid),
+                        completeness="full",
+                        validation_flags={"evaluator": "jev_1.13", "cross_score": cross_score}
+                    )
+                    formulation_repo.publish_formulation(
+                        candidate=c_obj,
+                        approval_reason=f"Approved by Jev 1.13 worker for candidate '{cand_name}'",
+                        force=False,
+                        conn=conn
+                    )
+
                 conn.commit()
                 approved += 1
                 emit_log(f"[{idx}/{len(queue)}] [JEV APPROVED] '{title[:35]}' == '{cand_name[:35]}' (Score: {(h_score or 0.0):.2f} | Cross: {cross_score:.2f})")

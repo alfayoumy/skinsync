@@ -54,6 +54,12 @@ try:
 except ImportError:
     logger = logging.getLogger("skincare_pipeline.inci_matcher")
 
+try:
+    from pipeline.inci_tokenizer import tokenize_inci_string, InciValidationResult
+except ImportError:
+    from inci_tokenizer import tokenize_inci_string, InciValidationResult
+
+
 KEY_ACTIVES = {
     'hyaluronic_acid': ['hyaluronic acid', 'sodium hyaluronate', 'hydrolyzed hyaluronic', 'hyaluronate', 'hayluronic'],
     'vitamin_b5': ['panthenol', 'd-panthenol', 'pro-vitamin b5'],
@@ -228,30 +234,12 @@ def extract_ingredients_from_html(body_html: str) -> Optional[str]:
 
     return None
 
-def parse_and_normalize_ingredients(text: str) -> Tuple[List[str], List[str]]:
-    """Cleans raw ingredient string into normalized list and detects key actives."""
+def parse_and_normalize_ingredients(text: str, product_title: Optional[str] = None) -> Tuple[List[str], List[str]]:
+    """Cleans raw ingredient string into normalized list and detects key actives using inci_tokenizer."""
     if not text or not isinstance(text, str):
         return [], []
-
-    raw_tokens = re.split(r'[,;•●\n\r/]+|\s+[\-–—]\s+', text)
-    cleaned = []
-    actives = set()
-
-    for token in raw_tokens:
-        token = token.strip().lower()
-        if not token or len(token) < 2:
-            continue
-        token = re.sub(r'^\d+(\.\d+)?%\s*(pure\s*)?', '', token)
-        token = token.rstrip('.').strip()
-
-        for act_cat, keywords in KEY_ACTIVES.items():
-            if any(k in token for k in keywords):
-                actives.add(act_cat)
-
-        canon = SYNONYMS.get(token, token)
-        cleaned.append(canon)
-
-    return cleaned, sorted(list(actives))
+    res = tokenize_inci_string(text, product_title=product_title)
+    return res.tokens, res.declared_actives
 
 def _load_env():
     candidates = [

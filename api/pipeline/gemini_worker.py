@@ -22,6 +22,9 @@ except ImportError:
 from pipeline.logging_config import setup_logging, get_logger
 logger = get_logger("skincare_pipeline.gemini_worker")
 
+from pipeline.formulation_service import FormulationRepository, FormulationCandidate
+formulation_repo = FormulationRepository()
+
 def chunk_list(lst: List[Any], chunk_size: int) -> List[List[Any]]:
     """Splits a list into chunks of at most chunk_size items."""
     return [lst[i:i + chunk_size] for i in range(0, len(lst), chunk_size)]
@@ -71,7 +74,7 @@ def run_gemini_verification_queue(
 
     if all_pending:
         query = """
-        SELECT id, title, brand, inci_matched_name, inci_hybrid_score, ingredients_raw
+        SELECT id, title, brand, inci_matched_name, inci_hybrid_score, ingredients_raw, canonical_product_id
         FROM products
         WHERE inci_matched_name IS NOT NULL
           AND (gate4_gemini_status IS NULL OR gate4_gemini_status = 'pending_gemini')
@@ -82,7 +85,7 @@ def run_gemini_verification_queue(
         """
     else:
         query = """
-        SELECT id, title, brand, inci_matched_name, inci_hybrid_score, ingredients_raw
+        SELECT id, title, brand, inci_matched_name, inci_hybrid_score, ingredients_raw, canonical_product_id
         FROM products
         WHERE inci_matched_name IS NOT NULL
           AND (
@@ -219,10 +222,14 @@ def run_gemini_verification_queue(
                         ref_ings = ref_row[0] if ref_row else None
 
                         curr_raw = p.get("ingredients_raw") if isinstance(p, dict) else p["ingredients_raw"]
-                        if (not curr_raw or len(curr_raw.strip()) < 10) and ref_ings and len(ref_ings.strip()) >= 15:
-                            from pipeline.inci_matcher import parse_and_normalize_ingredients
-                            import json
+                        canon_id = p.get("canonical_product_id") if isinstance(p, dict) else p.get("canonical_product_id")
+                        from pipeline.inci_matcher import parse_and_normalize_ingredients
+                        import json
+                        parsed, acts = ([], [])
+                        if ref_ings and len(ref_ings.strip()) >= 15:
                             parsed, acts = parse_and_normalize_ingredients(ref_ings)
+
+                        if (not curr_raw or len(curr_raw.strip()) < 10) and ref_ings and len(ref_ings.strip()) >= 15:
                             cur.execute("""
                             UPDATE products
                             SET gate4_gemini_status = 'gemini_approved', inci_gemini_score = ?,
@@ -240,6 +247,27 @@ def run_gemini_verification_queue(
                                 updated_at = CURRENT_TIMESTAMP
                             WHERE id = ?;
                             """, (conf, c_status, c_score, pid))
+
+                        # Publish authoritative formulation to canonical_products & inci_audit_evidence
+                        if canon_id and ref_ings and len(ref_ings.strip()) >= 15:
+                            cand_obj = FormulationCandidate(
+                                canonical_product_id=canon_id,
+                                source_name="gemini_verified_skinsafe",
+                                raw_ingredients=ref_ings,
+                                parsed_tokens=parsed,
+                                actives=acts,
+                                confidence_score=conf,
+                                source_record_id=str(pid),
+                                completeness="full",
+                                validation_flags={"evaluator": "gemini", "reason": reason, "cross_score": c_score}
+                            )
+                            formulation_repo.publish_formulation(
+                                candidate=cand_obj,
+                                approval_reason=f"Approved by Gemini batch worker (conf: {conf:.2f}). {reason}",
+                                force=False,
+                                conn=conn
+                            )
+
                         approved += 1
                         batch_approved += 1
                         emit_log(f"  [GEMINI BATCH APPROVED] ID {pid}: '{title[:32]}' == '{cand_name[:32]}' (Conf: {conf:.2f} | Reason: {reason[:40]})")

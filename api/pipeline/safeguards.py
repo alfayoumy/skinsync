@@ -11,6 +11,14 @@ from typing import Tuple, Optional
 
 logger = logging.getLogger("skincare_pipeline.safeguards")
 
+try:
+    from pipeline.identity_gates import validate_identity_gates
+except ImportError:
+    try:
+        from identity_gates import validate_identity_gates
+    except ImportError:
+        validate_identity_gates = None
+
 class CosmeticCompatibilityValidator:
     """
     Deterministic rule-based firewall for cosmetic formulation compatibility.
@@ -57,6 +65,13 @@ class CosmeticCompatibilityValidator:
         """
         if not title_a or not title_b:
             return False, "Empty title provided"
+
+        # Delegate first to comprehensive hard identity gates (SPF rating, potency %, day/night, fragrance, lines)
+        if validate_identity_gates:
+            is_valid, reason = validate_identity_gates(title_a, title_b, brand_a, brand_b)
+            if not is_valid:
+                return False, reason
+
 
         # -------------------------------------------------------------
         # 0. BRAND COMPATIBILITY SAFEGUARD

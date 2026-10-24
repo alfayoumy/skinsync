@@ -47,8 +47,11 @@ from pipeline.inci_matcher import (
     clean_product_title
 )
 from pipeline.whitelist_matcher import extract_ingredients_via_whitelist
+from pipeline.identity_gates import validate_identity_gates
+from pipeline.formulation_service import FormulationRepository, FormulationCandidate
 
 logger = logging.getLogger("skincare_pipeline.waterfall_resolver")
+formulation_repo = FormulationRepository(DB_PATH)
 
 # Canonical cosmetic vehicle categories for strict Tier 3 compatibility
 VEHICLES = [
@@ -280,7 +283,7 @@ def load_skinsafe_reference_index(conn=None) -> Dict[str, List[Tuple]]:
 
         try:
             cur = conn.cursor()
-            cur.execute("SELECT id, product_name, brand, ingredients FROM inci_reference WHERE ingredients IS NOT NULL AND TRIM(ingredients) != '';")
+            cur.execute("SELECT id, product_name, brand, ingredients FROM inci_reference WHERE (source = 'skinsafe' OR source IS NULL) AND ingredients IS NOT NULL AND TRIM(ingredients) != '';")
             rows = cur.fetchall()
             index: Dict[str, List[Tuple]] = {}
             for r in rows:
@@ -367,7 +370,12 @@ def resolve_tier3_skinsafe_with_candidate(brand: str, title: str, conn=None) -> 
         if is_bundle_prod != is_bundle_cand:
             continue
 
-        # 3. Cross-variant conflict check
+        # 3. Comprehensive hard identity gates (SPF rating, potency %, day/night, fragrance, lines)
+        is_compat, reason = validate_identity_gates(title, p_name, brand, b_name)
+        if not is_compat:
+            continue
+
+        # 4. Cross-variant conflict check
         has_conflict = False
         for set_a, set_b in variant_pairs:
             has_a_in_prod = any(k in t_norm for k in set_a)
@@ -380,7 +388,7 @@ def resolve_tier3_skinsafe_with_candidate(brand: str, title: str, conn=None) -> 
         if has_conflict:
             continue
 
-        # 4. Token overlap
+        # 5. Token overlap
         words_c = clean_title_tokens(p_norm, b_name)
         overlap = len(words_p & words_c) / max(len(words_p | words_c), 1)
 
@@ -388,8 +396,8 @@ def resolve_tier3_skinsafe_with_candidate(brand: str, title: str, conn=None) -> 
             best_overlap = overlap
             best_cand = (c_id, p_name, b_name, ings, overlap)
 
-    # High confidence threshold for Tier 3
-    if best_cand and best_overlap >= 0.50:
+    # High confidence threshold for Tier 3 auto-approval (0.80 Jaccard + hard identity gates)
+    if best_cand and best_overlap >= 0.80:
         return {
             "ingredients_raw": best_cand[3].strip(),
             "inci_matched_id": best_cand[0],
@@ -399,7 +407,7 @@ def resolve_tier3_skinsafe_with_candidate(brand: str, title: str, conn=None) -> 
         }, None
 
     # Ambiguity zone threshold for Tier 7 (Jev & Gemini fallback)
-    if best_cand and best_overlap >= 0.20:
+    if best_cand and best_overlap >= 0.30:
         return None, {
             "id": best_cand[0],
             "product_name": best_cand[1],
@@ -910,49 +918,74 @@ def execute_inci_waterfall_for_product(
     if not res and (desc_html or curr_raw):
         res = resolve_tier5_whitelist_description(desc_html, conn=conn, fallback_raw=curr_raw)
 
-    # Tier 6: Same-Product Cluster Propagation
-    if not res:
-        res = resolve_tier6_cluster_propagation(p_id, canonical_id, brand, title, conn=conn)
+    # Tier 6 is deprecated & eliminated: Cross-store cluster propagation violates canonical product integrity.
 
-    # Tier 7: Pending Jev & Pending Gemini from Tier 3 if Tiers 4, 5, 6 all fail
+    # Tier 7: Pending Jev & Pending Gemini from Tier 3 if Tiers 4, 5 all fail
     if not res and allow_tier7 and (queue_jev or queue_gemini) and tier3_candidate:
         return resolve_tier7_pending_llm(
             p_id, tier3_candidate, conn=conn, write_to_db=write_to_db, dry_run=dry_run,
             queue_jev=queue_jev, queue_gemini=queue_gemini
         )
 
-    # If successfully resolved, parse actives and commit
+    # If successfully resolved, parse actives and publish formulation
     if res and res.get("ingredients_raw"):
         raw_ings = sanitize_inci_list(res["ingredients_raw"]).strip()
         method = res["method"]
 
-        # Parse normalized tokens and actives if not already pre-parsed
-        if res.get("ingredients_parsed") and res.get("actives"):
-            parsed_ings = res["ingredients_parsed"]
-            actives = res["actives"]
-            if isinstance(parsed_ings, list):
-                parsed_ings = json.dumps(parsed_ings)
-            if isinstance(actives, list):
-                actives = json.dumps(actives)
-        else:
-            p_tokens, act_list = parse_and_normalize_ingredients(raw_ings)
-            parsed_ings = json.dumps(p_tokens)
-            actives = json.dumps(act_list)
+        # Parse normalized tokens and actives using chemical-aware tokenizer
+        from pipeline.inci_tokenizer import tokenize_inci_string
+        tok_res = tokenize_inci_string(raw_ings, product_title=title)
+        p_tokens = tok_res.tokens
+        act_list = tok_res.declared_actives
+        parsed_ings = json.dumps(p_tokens)
+        actives = json.dumps(act_list)
 
         source_url = res.get("source_url")
-        if not dry_run and conn and p_id and write_to_db:
-            cur = conn.cursor()
-            cur.execute("""
-            UPDATE products
-            SET ingredients_raw = ?,
-                ingredients_parsed = ?,
-                actives = ?,
-                ingredient_source = ?,
-                ingredient_source_url = ?,
-                updated_at = CURRENT_TIMESTAMP
-            WHERE id = ?;
-            """, (raw_ings, parsed_ings, actives, method, source_url, p_id))
-            conn.commit()
+        conf_val = float(res.get("confidence", 0.85))
+        is_partial = (method == "whitelist_description" or tok_res.completeness == "partial")
+        completeness = "partial" if is_partial else "full"
+
+        if not dry_run and conn and write_to_db:
+            # 1. Authoritative publication to canonical_products & inci_audit_evidence
+            if canonical_id:
+                cand_obj = FormulationCandidate(
+                    canonical_product_id=canonical_id,
+                    source_name=method,
+                    raw_ingredients=raw_ings,
+                    parsed_tokens=p_tokens,
+                    actives=act_list,
+                    confidence_score=conf_val,
+                    evidence_url=source_url,
+                    source_record_id=str(p_id) if p_id else None,
+                    completeness=completeness,
+                    validation_flags={"method": method, "is_truncated": tok_res.is_truncated},
+                    inci_matched_id=res.get("inci_matched_id"),
+                    inci_matched_name=res.get("inci_matched_name")
+                )
+                formulation_repo.publish_formulation(
+                    candidate=cand_obj,
+                    approval_reason=f"Resolved via {method} in waterfall pipeline.",
+                    force=False,
+                    conn=conn
+                )
+
+            # 2. Update offer-level telemetry in products table
+            if p_id:
+                cur = conn.cursor()
+                cur.execute("""
+                UPDATE products
+                SET ingredients_raw = ?,
+                    ingredients_parsed = ?,
+                    actives = ?,
+                    ingredient_source = ?,
+                    ingredient_source_url = ?,
+                    inci_matched_id = COALESCE(?, inci_matched_id),
+                    inci_matched_name = COALESCE(?, inci_matched_name),
+                    updated_at = CURRENT_TIMESTAMP
+                WHERE id = ?;
+                """, (raw_ings, parsed_ings, actives, method, source_url,
+                      res.get("inci_matched_id"), res.get("inci_matched_name"), p_id))
+                conn.commit()
 
         return {
             "status": "resolved",
@@ -1021,6 +1054,8 @@ def execute_all_tiers_for_product(
             if res and res.get("ingredients_raw"):
                 raw = sanitize_inci_list(res["ingredients_raw"]).strip()
                 tokens, acts = parse_and_normalize_ingredients(raw)
+                def_conf = 0.95 if tier_num == 1 else (0.90 if tier_num == 2 else (0.85 if tier_num == 4 else (0.60 if tier_num == 5 else 0.75)))
+                conf_val = round(float(res.get("confidence", def_conf)), 3)
                 return {
                     "tier": tier_num,
                     "code": code,
@@ -1031,7 +1066,7 @@ def execute_all_tiers_for_product(
                     "parsed_count": len(tokens),
                     "actives": acts,
                     "actives_count": len(acts),
-                    "confidence": round(float(res.get("confidence", 1.0)), 3),
+                    "confidence": conf_val,
                     "method": res.get("method", code),
                     "details": res.get("details") or default_details,
                     "metadata": {**meta, **{k: v for k, v in res.items() if k not in ("ingredients_raw", "ingredients_parsed", "actives", "parsed_tokens")}}
@@ -1547,114 +1582,9 @@ def run_waterfall_pipeline(
         # Close all thread-local connections before Pass 2
         close_all_thread_connections()
 
-        # --- PASS 2: Tier 6 Cluster Propagation ---
-        if not (cancel_event and cancel_event.is_set()):
-            logger.info("--- PASS 2: Executing Tier 6 Same-Product Cluster Propagation ---")
-            if progress_callback:
-                try:
-                    progress_callback(
-                        stage="Pass 2: Tier 6 Same-Product Cluster Propagation",
-                        processed=processed_so_far,
-                        total=total_to_process,
-                        stats=stats,
-                        current_product="Scanning product clusters...",
-                        last_outcome=None
-                    )
-                except Exception:
-                    pass
+        # --- PASS 2: Tier 6 Cluster Propagation (Retired in Canonical Product Architecture) ---
+        logger.info("Pass 2 (Tier 6 Cluster Propagation) retired: Authoritative formulations are mastered on canonical_products.")
 
-            cur.execute("""
-            SELECT id, canonical_product_id, brand, title, ingredients_raw, ingredients_parsed, actives
-            FROM products
-            WHERE is_skincare = 1 AND ingredients_raw IS NOT NULL AND TRIM(ingredients_raw) != ''
-              AND ingredient_source NOT IN ('cluster_propagation', 'unmatched');
-            """)
-            resolved_rows = cur.fetchall()
-            canonical_map = {}
-            brand_title_map = {}
-            for r in resolved_rows:
-                cid = r[1]
-                b = (r[2] or "").strip().lower()
-                t = (r[3] or "").strip()
-                raw_i = r[4]
-                pars_i = r[5]
-                act_i = r[6]
-                if not raw_i:
-                    continue
-                if cid and cid not in canonical_map:
-                    canonical_map[cid] = (raw_i, pars_i, act_i, t)
-                clean_t = re.sub(r'\b\d+\s*(?:ml|g|gm|oz|fl\s*oz)\b|[()\[\]\+]', ' ', t, flags=re.I)
-                clean_t = re.sub(r'[^a-zA-Z0-9\s]', ' ', clean_t).strip().lower()
-                if b and len(clean_t) >= 5 and (b, clean_t) not in brand_title_map:
-                    brand_title_map[(b, clean_t)] = (raw_i, pars_i, act_i)
-
-            cur.execute("""
-            SELECT id, title, brand, canonical_product_id
-            FROM products
-            WHERE is_skincare = 1 AND (ingredients_raw IS NULL OR TRIM(ingredients_raw) = '');
-            """)
-            all_empty = [dict(r) for r in cur.fetchall()]
-            target_pids = set(r['id'] for r in rows)
-            still_empty = [p for p in all_empty if p["id"] in target_pids]
-            logger.info(f"Found {len(still_empty)} target products still missing ingredients for cluster propagation...")
-
-            propagated_updates = []
-            for p in still_empty:
-                if cancel_event and cancel_event.is_set():
-                    break
-                matched = None
-                cid = p.get("canonical_product_id")
-                title = p.get("title") or ""
-                target_v = set(get_vehicles(title))
-
-                if cid and cid in canonical_map:
-                    cand_raw, cand_pars, cand_act, cand_title = canonical_map[cid]
-                    cand_v = set(get_vehicles(cand_title))
-                    if not (target_v and cand_v and target_v.isdisjoint(cand_v)):
-                        matched = (cand_raw, cand_pars, cand_act)
-                else:
-                    b = (p.get("brand") or "").strip().lower()
-                    clean_t = re.sub(r'\b\d+\s*(?:ml|g|gm|oz|fl\s*oz)\b|[()\[\]\+]', ' ', title, flags=re.I)
-                    clean_t = re.sub(r'[^a-zA-Z0-9\s]', ' ', clean_t).strip().lower()
-                    if b and len(clean_t) >= 5 and (b, clean_t) in brand_title_map:
-                        matched = brand_title_map[(b, clean_t)]
-
-                if matched:
-                    raw_ings, pars_ings, acts = matched
-                    raw_ings = sanitize_inci_list(raw_ings)
-                    if not pars_ings or not acts:
-                        p_tokens, act_list = parse_and_normalize_ingredients(raw_ings)
-                        pars_ings = json.dumps(p_tokens)
-                        acts = json.dumps(act_list)
-                    elif isinstance(pars_ings, list):
-                        pars_ings = json.dumps(pars_ings)
-                    elif isinstance(acts, list):
-                        acts = json.dumps(acts)
-
-                    if not dry_run:
-                        propagated_updates.append((
-                            raw_ings,
-                            pars_ings,
-                            acts,
-                            p["id"]
-                        ))
-                    stats["resolved"] += 1
-                    stats["unresolved"] = max(0, stats["unresolved"] - 1)
-                    stats["by_method"]["cluster_propagation"] = stats["by_method"].get("cluster_propagation", 0) + 1
-
-            if propagated_updates and not dry_run:
-                cur.executemany("""
-                UPDATE products
-                SET ingredients_raw = ?,
-                    ingredients_parsed = ?,
-                    actives = ?,
-                    ingredient_source = 'cluster_propagation',
-                    updated_at = CURRENT_TIMESTAMP
-                WHERE id = ?;
-                """, propagated_updates)
-                conn.commit()
-
-            logger.info(f"Pass 2 Complete: Propagated {len(propagated_updates)} ingredients via cluster propagation.")
 
         # --- PASS 3: Tier 7 Pending Jev & Pending Gemini from Tier 3 ---
         if (queue_jev or queue_gemini) and not (cancel_event and cancel_event.is_set()):
