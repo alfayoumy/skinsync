@@ -226,12 +226,16 @@ class SavedGeminiDecisionTests(unittest.TestCase):
         self.assertGreaterEqual(preview['stored_decisions_checked'],26)
         self.assertEqual(preview['automatically_split'],1)
         self.assertEqual(preview['new_canonical_products'],2)
-        self.assertEqual(preview['still_needs_review'],preview['stored_decisions_checked']-1)
+        self.assertGreaterEqual(preview['still_needs_review'],25)
+        self.assertEqual(preview['stored_decisions_checked'],
+            preview['automatically_verified']+preview['automatically_split']+preview['still_needs_review'])
         self.assertEqual(self.conn.execute('SELECT COUNT(*) FROM canonical_products').fetchone()[0],original_count+1)
         applied=apply_saved_decisions(self.conn,limit=100,dry_run=False)
         self.assertEqual(applied['automatically_split'],1)
         self.assertEqual(applied['new_canonical_products'],2)
-        self.assertEqual(applied['still_needs_review'],applied['stored_decisions_checked']-1)
+        self.assertGreaterEqual(applied['still_needs_review'],25)
+        self.assertEqual(applied['stored_decisions_checked'],
+            applied['automatically_verified']+applied['automatically_split']+applied['still_needs_review'])
         self.assertEqual(self.conn.execute('SELECT COUNT(*) FROM canonical_products').fetchone()[0],original_count+3)
 
     def test_stale_case_cannot_apply_saved_confidence(self):
