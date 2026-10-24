@@ -1,0 +1,313 @@
+# SkinSync HTTP API reference
+
+**Verified against:** `api/app.py` and all 12 `api/routers/*.py` modules on `main`, 25 October 2026. All endpoints listed below are code-backed; there are no invented routes. `GET /openapi.json` and `GET /docs` (FastAPI) remain the canonical generated field-level schemas for deployed versions.
+
+## Conventions
+
+- Default local API: `http://127.0.0.1:8000`. Frontend development: `http://127.0.0.1:5173`.
+- Admin endpoints and operational reads require `Authorization: Bearer YOUR_ADMIN_TOKEN`; most writes require an explicit capability. The table lists the required capability as evaluated by `security/admin.py`. A `formula_correction` write also requires `formula`.
+- GET `/admin/access` reports the authenticated administrator's identity/scopes. Unauthorized requests return 401; missing credentials produce 503; insufficient scopes produce 403.
+- Query and body validation is performed by Pydantic/FastAPI (422). Domain checks commonly return 400, 404 or 409. Background starts generally return a task ID, **not** a guarantee the work has succeeded.
+- `dry_run=true` is the default for catalog discovery and updates. Product identity verification and saved-decision application have separate explicit preview/apply endpoints.
+- IDs must be treated as distinct domains: `products.id` (legacy retailer record), `canonical_products.id` (durable identity), `product_offers.id` (variant-level offer), `product_review_queue.id` (review case), and `pipeline_tasks.task_id` (workflow job).
+
+## Core API recipes
+
+### 1. Discover from all selected source IDs (tracked job)
+
+```http
+POST /admin/workflows/products/discover-multiple
+Authorization: Bearer ADMIN_TOKEN
+Content-Type: application/json
+
+{
+  "source_ids": ["sourcebeauty", "feel22", "bloompharmacy"],
+  "start_page": 1,
+  "pages": 0,
+  "dry_run": true,
+  "urls_by_source": {}
+}
+```
+
+`pages=0` means all Shopify pages until an empty page; a positive number caps scanning. The accepted response has `task_id`. Poll `GET /admin/workflows/products/discover-multiple/{task_id}` for per-source results, active page, progress, and outcomes; stop via `POST /admin/workflows/products/discover-multiple/{task_id}/cancel`. Shopify is a page scanner; non-Shopify sources require supplied or previously observed product URLs and are marked `needs_urls` otherwise. The legacy synchronous `POST /admin/workflows/products/discover` requires a **positive finite** page count.
+
+### 2. Update existing retailer offers only
+
+```http
+POST /admin/workflows/offers/refresh
+Authorization: Bearer ADMIN_TOKEN
+Content-Type: application/json
+
+{"source_id":"sourcebeauty","start_page":1,"pages":20,"update_price":true,"update_stock":true,"dry_run":true}
+```
+
+Updates existing linked Shopify variant offers; unknown variants and identity mismatches are skipped. Does **not** create identities, offer variants, or INCI. This endpoint currently uses a finite synchronous page range (no indefinite background mode).
+
+### 3. Review and automate legacy identity decisions
+
+```http
+POST /admin/workflows/products/verify-existing
+Authorization: Bearer IDENTITY_ADMIN_TOKEN
+Content-Type: application/json
+
+{"dry_run":true,"max_verified":500}
+```
+
+A preview checks remaining legacy canonicals. An apply (`dry_run=false`) commits at most the requested batch and creates review cases for unsuitable clusters. To prepare review cases **without** verifying anything: `POST /admin/workflows/products/prepare-reviews`.
+
+List persisted cases: `GET /admin/aggregation/reviews?view=manual&status=pending&limit=50&offset=0`; the `view` selector can be `manual`, `awaiting_gemini` or `all`.
+
+### 4. Queue Gemini **product identity** reviews
+
+```http
+POST /admin/aggregation/reviews/gemini/enqueue
+Authorization: Bearer IDENTITY_ADMIN_TOKEN
+Content-Type: application/json
+
+{"limit":10000}
+```
+
+An optional `review_ids` array targets selected reviews. Check `GET /admin/aggregation/reviews/gemini/queue`. Run queued cases:
+
+```http
+POST /admin/aggregation/reviews/gemini/run
+Authorization: Bearer IDENTITY_ADMIN_TOKEN
+Content-Type: application/json
+
+{"limit":500,"batch_size":10}
+```
+
+Poll `GET /admin/aggregation/reviews/gemini/jobs/{task_id}`, and cancel with `POST /admin/aggregation/reviews/gemini/jobs/{task_id}/cancel`. Batches contain 1–20 cases per provider request (the UI offers 5/10/20). **This is separate from the INCI Gemini queue**.
+
+### 5. Replay **saved** Gemini decisions (zero model calls)
+
+```http
+POST /admin/aggregation/reviews/gemini/saved/preview
+Authorization: Bearer IDENTITY_ADMIN_TOKEN
+Content-Type: application/json
+
+{"limit":5000,"confidence_threshold":0.90}
+```
+
+Preview provides `stored_decisions_checked`, `automatically_verified`, `automatically_split`, `still_needs_review` and `sample_results`. Apply the same fields with `POST /admin/aggregation/reviews/gemini/saved/apply` and poll `GET /admin/aggregation/reviews/gemini/saved/jobs/{task_id}`. Stop via `POST /admin/aggregation/reviews/gemini/saved/jobs/{task_id}/cancel`. Replay reads saved verdicts, **does not call Gemini**, and retains ambiguity/conflicts for review.
+
+### 6. Search and filter Gemini decisions
+
+```http
+GET /admin/aggregation/reviews/gemini/results?verdict=same_product&confidence_min=0.90&confidence_max=1&sort_by=confidence&sort_order=desc&limit=50&offset=0
+Authorization: Bearer READ_TOKEN
+```
+
+Filters: `verdict` = `same_product|different_product|uncertain`; `outcome` = `queued|processing|auto_resolved|needs_manual`; `review_status` = `pending|confirmed`; `confidence_min`/`confidence_max` = floats 0–1; `search` = product/ID text; `sort_by` = `confidence|review_id|updated_at|verdict|outcome`; `sort_order` = `asc|desc`; pagination `limit` 1–200 and `offset` ≥0. Response includes `results`, `total` and per-case canonical/product IDs, model explanation, local application reason, retailer listings, audit decision and evidence-current indicator. Includes completed records.
+
+### 7. INCI waterfall (independent from product identity work)
+
+`GET /admin/waterfall/batch/eligibility?scope=unmatched_only` checks existing verified skincare canonical identities only. `POST /admin/waterfall/batch/start`, `GET /admin/waterfall/batch/status`, and `POST /admin/waterfall/batch/cancel` control the INCI job. Admin `/queues/*` controls *INCI* Jev/Gemini workers; it does not run the product identity Gemini worker. Product identity verification is not equivalent to verified full regional INCI, and external reference matches are stored as evidence unless exact-source publication checks pass.
+
+## Complete endpoint inventory
+
+Source paths and router prefixes below were enumerated from the FastAPI route decorators on `main`. For request/response field validation of every less-common route, use the deployed `/openapi.json`, and consult the linked handler and Pydantic request models. A historical architecture document is not a reliable replacement for these generated schemas.
+
+### admin router
+
+Source: [`api/routers/admin.py`](../api/routers/admin.py). 
+
+| Method | Path | Handler | Permission |
+|---|---|---|---|
+| GET | `/admin/overview` | [`get_admin_overview()`](../api/routers/admin.py#L56) | `read` |
+| GET | `/admin/brands` | [`list_admin_brands()`](../api/routers/admin.py#L158) | `read` |
+| GET | `/admin/products` | [`list_admin_products()`](../api/routers/admin.py#L178) | `read` |
+| GET | `/admin/products/{product_id}/telemetry` | [`get_product_telemetry_forensics()`](../api/routers/admin.py#L320) | `read` |
+| GET | `/admin/products/{product_id}/alternatives` | [`get_product_alternatives_endpoint()`](../api/routers/admin.py#L657) | `read` |
+| PATCH | `/admin/products/{product_id}/classification` | [`update_product_classification()`](../api/routers/admin.py#L695) | `identity` |
+| POST | `/admin/pipeline/trigger-linker` | [`trigger_product_linker()`](../api/routers/admin.py#L745) | `identity` |
+| POST | `/admin/pipeline/trigger-classifier` | [`trigger_catalog_classifier()`](../api/routers/admin.py#L753) | `identity` |
+| GET | `/admin/whitelist` | [`get_whitelist_ingredients()`](../api/routers/admin.py#L765) | `read` |
+| POST | `/admin/whitelist` | [`create_whitelist_ingredient()`](../api/routers/admin.py#L826) | `operations` |
+| PUT | `/admin/whitelist/{ingredient_id}` | [`update_whitelist_ingredient_endpoint()`](../api/routers/admin.py#L864) | `operations` |
+| DELETE | `/admin/whitelist/{ingredient_id}` | [`delete_whitelist_ingredient_endpoint()`](../api/routers/admin.py#L899) | `operations` |
+| POST | `/admin/whitelist/reconcile-pending` | [`reconcile_pending_products_with_whitelist()`](../api/routers/admin.py#L917) | `identity` |
+| GET | `/admin/waterfall/batch/eligibility` | [`get_waterfall_batch_eligibility()`](../api/routers/admin.py#L1234) | `read` |
+| POST | `/admin/waterfall/identity-certification` | [`certify_waterfall_identities()`](../api/routers/admin.py#L1251) | `identity` |
+| POST | `/admin/waterfall/batch/start` | [`start_waterfall_batch_endpoint()`](../api/routers/admin.py#L1270) | `formula` |
+| GET | `/admin/waterfall/batch/status` | [`get_waterfall_batch_status_endpoint()`](../api/routers/admin.py#L1296) | `read` |
+| POST | `/admin/waterfall/batch/cancel` | [`cancel_waterfall_batch_endpoint()`](../api/routers/admin.py#L1304) | `formula` |
+| POST | `/admin/waterfall/resolve` | [`run_waterfall_endpoint()`](../api/routers/admin.py#L1316) | `formula` |
+| POST | `/admin/products/{product_id}/waterfall-resolve` | [`resolve_single_product_waterfall_endpoint()`](../api/routers/admin.py#L1344) | `formula` |
+| GET | `/admin/products/{product_id}/tier-resolutions` | [`get_product_tier_resolutions_endpoint()`](../api/routers/admin.py#L1387) | `read` |
+| POST | `/admin/products/{product_id}/execute-all-tiers` | [`execute_all_tiers_endpoint()`](../api/routers/admin.py#L1423) | `formula` |
+| POST | `/admin/products/{product_id}/apply-tier` | [`apply_tier_resolution_endpoint()`](../api/routers/admin.py#L1456) | `formula_correction + formula` |
+| GET | `/admin/langsearch/quota-status` | [`get_langsearch_quota_endpoint()`](../api/routers/admin.py#L1490) | `read` |
+| POST | `/admin/langsearch/set-quota-exhausted` | [`set_langsearch_quota_exhausted_endpoint()`](../api/routers/admin.py#L1499) | `operations` |
+| POST | `/admin/langsearch/reset-quota` | [`reset_langsearch_quota_endpoint()`](../api/routers/admin.py#L1511) | `operations` |
+| GET | `/admin/apis/status` | [`get_all_apis_status_endpoint()`](../api/routers/admin.py#L1521) | `read` |
+| GET | `/admin/queues/status` | [`get_queue_status()`](../api/routers/admin.py#L1659) | `read` |
+| POST | `/admin/queues/start` | [`start_queue()`](../api/routers/admin.py#L1665) | `formula` |
+| POST | `/admin/queues/pause` | [`pause_queue()`](../api/routers/admin.py#L1680) | `formula` |
+| POST | `/admin/queues/resume` | [`resume_queue()`](../api/routers/admin.py#L1686) | `formula` |
+| POST | `/admin/queues/stop` | [`stop_queue()`](../api/routers/admin.py#L1692) | `formula` |
+| GET | `/admin/identity/audit` | [`get_identity_audit()`](../api/routers/admin.py#L1708) | `read` |
+| POST | `/admin/identity/audit` | [`record_identity_audit()`](../api/routers/admin.py#L1719) | `identity` |
+| GET | `/admin/identity/reviews` | [`list_identity_reviews()`](../api/routers/admin.py#L1732) | `read` |
+| POST | `/admin/identity/reviews/{review_id}` | [`decide_identity_review()`](../api/routers/admin.py#L1755) | `identity` |
+
+### aggregation router
+
+Source: [`api/routers/aggregation.py`](../api/routers/aggregation.py). 
+
+| Method | Path | Handler | Permission |
+|---|---|---|---|
+| GET | `/admin/aggregation/sources` | [`sources()`](../api/routers/aggregation.py#L81) | `read` |
+| PATCH | `/admin/aggregation/sources/{source_id}` | [`enable_collection()`](../api/routers/aggregation.py#L87) | `collection` |
+| POST | `/admin/aggregation/sources/{source_id}/ingest` | [`ingest()`](../api/routers/aggregation.py#L96) | `collection` |
+| POST | `/admin/aggregation/sources/{source_id}/collect` | [`collect()`](../api/routers/aggregation.py#L109) | `collection` |
+| GET | `/admin/aggregation/sources/{source_id}/coverage` | [`coverage()`](../api/routers/aggregation.py#L115) | `read` |
+| POST | `/admin/aggregation/sources/{source_id}/rollout` | [`rollout()`](../api/routers/aggregation.py#L121) | `identity` |
+| GET | `/admin/aggregation/observations` | [`observations()`](../api/routers/aggregation.py#L127) | `read` |
+| GET | `/admin/aggregation/reviews` | [`reviews()`](../api/routers/aggregation.py#L138) | `read` |
+| GET | `/admin/aggregation/reviews/gemini/queue` | [`gemini_identity_queue_status()`](../api/routers/aggregation.py#L183) | `read` |
+| POST | `/admin/aggregation/reviews/gemini/enqueue` | [`gemini_identity_enqueue()`](../api/routers/aggregation.py#L196) | `identity` |
+| POST | `/admin/aggregation/reviews/gemini/run` | [`gemini_identity_run()`](../api/routers/aggregation.py#L206) | `identity` |
+| GET | `/admin/aggregation/reviews/gemini/jobs/{task_id}` | [`gemini_identity_job_status()`](../api/routers/aggregation.py#L236) | `read` |
+| POST | `/admin/aggregation/reviews/gemini/jobs/{task_id}/cancel` | [`gemini_identity_job_stop()`](../api/routers/aggregation.py#L248) | `identity` |
+| POST | `/admin/aggregation/reviews/gemini/saved/preview` | [`preview_saved_gemini()`](../api/routers/aggregation.py#L266) | `identity` |
+| POST | `/admin/aggregation/reviews/gemini/saved/apply` | [`start_saved_gemini_application()`](../api/routers/aggregation.py#L284) | `identity` |
+| GET | `/admin/aggregation/reviews/gemini/saved/jobs/{task_id}` | [`saved_gemini_job_status()`](../api/routers/aggregation.py#L310) | `read` |
+| POST | `/admin/aggregation/reviews/gemini/saved/jobs/{task_id}/cancel` | [`stop_saved_gemini_application()`](../api/routers/aggregation.py#L323) | `identity` |
+| GET | `/admin/aggregation/reviews/gemini/results` | [`gemini_identity_results()`](../api/routers/aggregation.py#L337) | `read` |
+| POST | `/admin/aggregation/reviews/{review_id}` | [`review()`](../api/routers/aggregation.py#L408) | `identity` |
+| POST | `/admin/aggregation/brands/aliases` | [`brand_alias()`](../api/routers/aggregation.py#L414) | `identity` |
+| POST | `/admin/aggregation/identity/constraints` | [`cannot_link()`](../api/routers/aggregation.py#L420) | `identity` |
+| POST | `/admin/aggregation/identity/merge` | [`merge()`](../api/routers/aggregation.py#L434) | `identity` |
+| POST | `/admin/aggregation/identity/{canonical_id}/split` | [`split()`](../api/routers/aggregation.py#L440) | `identity` |
+| POST | `/admin/aggregation/identity/history/{history_id}/reverse` | [`reverse()`](../api/routers/aggregation.py#L446) | `identity` |
+| GET | `/admin/aggregation/identity/history` | [`history()`](../api/routers/aggregation.py#L452) | `read` |
+| POST | `/admin/aggregation/reconcile` | [`reconcile()`](../api/routers/aggregation.py#L457) | `identity` |
+| GET | `/admin/aggregation/formulations/{canonical_id}` | [`preview_formulations()`](../api/routers/aggregation.py#L463) | `read` |
+| POST | `/admin/aggregation/formulations/{canonical_id}/resolve` | [`publish_formulations()`](../api/routers/aggregation.py#L469) | `formula` |
+| POST | `/admin/aggregation/formulations/evidence/{evidence_id}/approve` | [`approve_evidence()`](../api/routers/aggregation.py#L480) | `formula_correction + formula` |
+| POST | `/admin/aggregation/identity/{canonical_id}/publish` | [`publish_identity()`](../api/routers/aggregation.py#L486) | `identity` |
+| GET | `/admin/aggregation/connection-tests` | [`connection_test_status()`](../api/routers/aggregation.py#L497) | `read` |
+| POST | `/admin/aggregation/connection-tests` | [`run_connection_tests()`](../api/routers/aggregation.py#L503) | `collection` |
+| POST | `/admin/aggregation/sources/{source_id}/evaluations` | [`create_source_evaluation()`](../api/routers/aggregation.py#L543) | `identity` |
+| GET | `/admin/aggregation/evaluations/{run_id}` | [`evaluation_details()`](../api/routers/aggregation.py#L549) | `read` |
+| POST | `/admin/aggregation/evaluations/{run_id}/labels` | [`label_evaluation()`](../api/routers/aggregation.py#L559) | `identity` |
+| POST | `/admin/aggregation/evaluations/{run_id}/finalize` | [`finalize_source_evaluation()`](../api/routers/aggregation.py#L566) | `identity` |
+| POST | `/admin/aggregation/reconciliation/previews` | [`reconciliation_preview()`](../api/routers/aggregation.py#L572) | `identity` |
+| POST | `/admin/aggregation/reconciliation/previews/{preview_id}/findings` | [`reconciliation_findings()`](../api/routers/aggregation.py#L578) | `identity` |
+
+### catalog router
+
+Source: [`api/routers/catalog.py`](../api/routers/catalog.py). 
+
+| Method | Path | Handler | Permission |
+|---|---|---|---|
+| POST | `/products/refresh` | [`refresh_products_endpoint()`](../api/routers/catalog.py#L71) | `collection` |
+| POST | `/stores/{store_id}/refresh` | [`refresh_store_endpoint()`](../api/routers/catalog.py#L94) | `collection` |
+| POST | `/products/enrich-titles` | [`enrich_product_titles_endpoint()`](../api/routers/catalog.py#L119) | `identity` |
+
+### dermo router
+
+Source: [`api/routers/dermo.py`](../api/routers/dermo.py). 
+
+| Method | Path | Handler | Permission |
+|---|---|---|---|
+| POST | `/dermo/score` | [`score_dermo_endpoint()`](../api/routers/dermo.py#L44) | `operations` |
+| GET | `/products/{product_id}/dermo-score` | [`score_product_dermo_endpoint()`](../api/routers/dermo.py#L52) | `Public` |
+| GET | `/dermo/ingredients` | [`list_clinical_ingredients_endpoint()`](../api/routers/dermo.py#L87) | `Public` |
+| POST | `/dermo/ingredients` | [`create_clinical_ingredient_endpoint()`](../api/routers/dermo.py#L92) | `operations` |
+
+### inci router
+
+Source: [`api/routers/inci.py`](../api/routers/inci.py). 
+
+| Method | Path | Handler | Permission |
+|---|---|---|---|
+| POST | `/inci/match` | [`match_inci_endpoint()`](../api/routers/inci.py#L195) | `operations` |
+| POST | `/products/{product_id}/match-inci` | [`match_product_inci_endpoint()`](../api/routers/inci.py#L229) | `formula` |
+| POST | `/inci/batch-match` | [`batch_match_inci_endpoint()`](../api/routers/inci.py#L347) | `formula` |
+
+### ingredients router
+
+Source: [`api/routers/ingredients.py`](../api/routers/ingredients.py). 
+
+| Method | Path | Handler | Permission |
+|---|---|---|---|
+| POST | `/products/{product_id}/fill-ingredients` | [`fill_product_ingredients_endpoint()`](../api/routers/ingredients.py#L226) | `formula` |
+| POST | `/products/ingredients/batch-fill` | [`batch_fill_ingredients_endpoint()`](../api/routers/ingredients.py#L247) | `formula` |
+
+### logs router
+
+Source: [`api/routers/logs.py`](../api/routers/logs.py). 
+
+| Method | Path | Handler | Permission |
+|---|---|---|---|
+| GET | `/logs/files` | [`list_log_files_endpoint()`](../api/routers/logs.py#L16) | `read` |
+| GET | `/logs/recent` | [`get_recent_logs_endpoint()`](../api/routers/logs.py#L27) | `read` |
+| POST | `/logs/rotate` | [`rotate_logs_endpoint()`](../api/routers/logs.py#L47) | `operations` |
+
+### prices router
+
+Source: [`api/routers/prices.py`](../api/routers/prices.py). 
+
+| Method | Path | Handler | Permission |
+|---|---|---|---|
+| GET | `/products/{product_id}/price-comparison` | [`compare_product_prices()`](../api/routers/prices.py#L20) | `Public` |
+| GET | `/canonical-products/{canonical_id}/offers` | [`get_canonical_offers()`](../api/routers/prices.py#L35) | `Public` |
+| GET | `/products/price-deals` | [`get_price_deals()`](../api/routers/prices.py#L49) | `Public` |
+| POST | `/products/link-clusters` | [`trigger_product_clustering()`](../api/routers/prices.py#L65) | `identity` |
+
+### recommendations router
+
+Source: [`api/routers/recommendations.py`](../api/routers/recommendations.py). 
+
+| Method | Path | Handler | Permission |
+|---|---|---|---|
+| GET | `/` | [`health_check()`](../api/routers/recommendations.py#L52) | `Public` |
+| GET | `/health` | [`health_check()`](../api/routers/recommendations.py#L53) | `Public` |
+| POST | `/onboarding` | [`save_onboarding()`](../api/routers/recommendations.py#L64) | `operations` |
+| GET | `/user` | [`get_user()`](../api/routers/recommendations.py#L81) | `Public` |
+| POST | `/recommend` | [`recommend()`](../api/routers/recommendations.py#L89) | `operations` |
+| GET | `/search` | [`search_products()`](../api/routers/recommendations.py#L106) | `Public` |
+| GET | `/stats` | [`catalog_stats()`](../api/routers/recommendations.py#L125) | `Public` |
+| POST | `/admin/sync` | [`trigger_sync()`](../api/routers/recommendations.py#L172) | `collection` |
+| POST | `/admin/verify/jev` | [`trigger_jev_verification()`](../api/routers/recommendations.py#L189) | `formula` |
+| POST | `/admin/verify/gemini` | [`trigger_gemini_verification()`](../api/routers/recommendations.py#L206) | `formula` |
+| GET | `/synonyms` | [`list_synonyms()`](../api/routers/recommendations.py#L219) | `Public` |
+| POST | `/synonyms` | [`create_or_update_synonym()`](../api/routers/recommendations.py#L224) | `identity` |
+
+### similarity router
+
+Source: [`api/routers/similarity.py`](../api/routers/similarity.py). 
+
+| Method | Path | Handler | Permission |
+|---|---|---|---|
+| POST | `/similarity/score` | [`score_similarity_endpoint()`](../api/routers/similarity.py#L166) | `operations` |
+
+### tasks router
+
+Source: [`api/routers/tasks.py`](../api/routers/tasks.py). 
+
+| Method | Path | Handler | Permission |
+|---|---|---|---|
+| GET | `/tasks` | [`list_pipeline_tasks_endpoint()`](../api/routers/tasks.py#L30) | `read` |
+| GET | `/tasks/{task_id}` | [`get_pipeline_task_endpoint()`](../api/routers/tasks.py#L56) | `read` |
+| GET | `/tasks/{task_id}/subtasks` | [`get_pipeline_subtasks_endpoint()`](../api/routers/tasks.py#L76) | `read` |
+| GET | `/tasks/{task_id}/logs` | [`get_pipeline_task_logs_endpoint()`](../api/routers/tasks.py#L95) | `read` |
+| POST | `/tasks/{task_id}/cancel` | [`cancel_pipeline_task_endpoint()`](../api/routers/tasks.py#L116) | `operations` |
+| GET | `/scraping/checkpoints` | [`list_scraping_checkpoints_endpoint()`](../api/routers/tasks.py#L139) | `Public` |
+| GET | `/scraping/checkpoints/{store_id}` | [`get_store_scraping_checkpoint_endpoint()`](../api/routers/tasks.py#L149) | `Public` |
+
+### workflows router
+
+Source: [`api/routers/workflows.py`](../api/routers/workflows.py). 
+
+| Method | Path | Handler | Permission |
+|---|---|---|---|
+| POST | `/admin/workflows/products/discover` | [`discover()`](../api/routers/workflows.py#L234) | `collection` |
+| POST | `/admin/workflows/offers/refresh` | [`refresh_existing_offers()`](../api/routers/workflows.py#L239) | `collection` |
+| POST | `/admin/workflows/products/verify-existing` | [`verify_existing_products()`](../api/routers/workflows.py#L248) | `identity` |
+| POST | `/admin/workflows/products/discover-multiple` | [`discover_multiple()`](../api/routers/workflows.py#L354) | `collection` |
+| GET | `/admin/workflows/products/discover-multiple/{task_id}` | [`discovery_progress()`](../api/routers/workflows.py#L383) | `read` |
+| POST | `/admin/workflows/products/prepare-reviews` | [`prepare_legacy_review_cases()`](../api/routers/workflows.py#L397) | `identity` |
+| POST | `/admin/workflows/products/discover-multiple/{task_id}/cancel` | [`cancel_discovery()`](../api/routers/workflows.py#L413) | `collection` |
