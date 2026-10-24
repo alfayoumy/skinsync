@@ -51,39 +51,76 @@ def _case(row):
     return c
 
 
+def _normalized_title(title):
+    import unicodedata
+    return re.sub(r'\s+',' ',re.sub(
+        r'[^a-z0-9%+]+',' ',unicodedata.normalize('NFKD',str(title or '').lower())
+        .encode('ascii','ignore').decode('ascii'))).strip()
+
+
 def _variant_marker(title):
-    """Only known explicit product/variant markers, not generic fuzzy tokens."""
-    t=re.sub(r'[^a-z0-9+]+',' ',__import__('unicodedata').normalize('NFKD',title.lower())
-             .encode('ascii','ignore').decode('ascii')).strip()
+    """Formulation-defining groups only; pack size and bundles do NOT create products."""
+    t=_normalized_title(title)
     labels=[]
-    # Distinct branded lines: ACTI-CLEAR, ACTI-REPAIR, ACTI-WHITE.
     m=re.search(r'\bacti\s+(clear|repair|white)\b',t)
     if m:labels.append('acti_'+m[1])
-    # Explicit NUXE perfume/colorway variants. "Or" denotes the gold edition
-    # only in the context of Huile Prodigieuse, not the English conjunction.
-    if 'prodigieuse' in t:
+    if re.search(r'\bprodigieuse\b',t):
         if re.search(r'\bflorale\b',t):labels.append('prodigieuse_florale')
         elif re.search(r'\b(?:golden|or)\b',t):labels.append('prodigieuse_gold')
         else:labels.append('prodigieuse_original')
     m=re.search(r'\bspf\s*(\d{2,3})\b',t)
     if m:labels.append('spf_'+m[1])
-    if re.search(r'\b(?:tinted|teinte)\b',t):labels.append('tinted')
     if re.search(r'\b(?:untinted|invisible)\b',t):labels.append('untinted')
+    elif re.search(r'\b(?:tinted|teinte)\b',t):labels.append('tinted')
     if re.search(r'\bfragrance free\b|\bunscented\b',t):labels.append('unscented')
     if re.search(r'\blavender\b|\blavande\b',t):labels.append('lavender')
     if re.search(r'\b(?:night|nuit)\b',t):labels.append('night')
     if re.search(r'\b(?:day|jour)\b',t):labels.append('day')
-    m=re.search(r'\b(\d+(?:\.\d+)?)\s*%\b',t)
+    m=re.search(r'\b(\d+(?:\.\d+)?)\s*%',t)
     if m:labels.append('active_'+m[1])
+    # Delivery form wins over words like "lotion" in "lotion spray".
+    # Different package sizes and 1+1 promotions remain retail offers.
+    if re.search(r'\b(?:sunscreen|sunblock|sun screen|sun protection)\b',t):
+        if re.search(r'\b(?:spray|spritz|mist)\b',t):labels.append('delivery_spray')
+        elif re.search(r'\b(?:lotion)\b',t):labels.append('delivery_lotion')
     return tuple(sorted(labels))
 
 
+def _product_family(title,brand):
+    """Exact residual product line after removing *only* recognized variant + pack labels.
+
+    Identity matching is intentionally conservative: unknown marketing variants
+    are NOT deleted. Cross-family product listings cannot be merged just because
+    Gemini returned a high-confidence mixed-cluster verdict.
+    """
+    t=_normalized_title(title)
+    b=_normalized_title(brand)
+    if b:
+        t=re.sub(r'\b'+re.escape(b)+r'\b',' ',t)
+    t=re.sub(r'\b(?:\d+\s*[x×]\s*)?\d+(?:\.\d+)?\s*(?:ml|g|gm|kg|l|oz)\b',' ',t)
+    # Sales packs, not formula changes: 1+1, twin/duo pack, two-for-one.
+    t=re.sub(r'\b\d+\s*\+\s*\d+\b',' ',t)
+    t=re.sub(r'\b(?:twin|duo|value)\s*pack\b',' ',t)
+    t=re.sub(r'\b(?:pack|bundle)\s+of\s+\d+\b',' ',t)
+    if re.search(r'\bprodigieuse\b',t):
+        t=re.sub(r'\b(?:florale|golden|or)\b',' ',t)
+    if re.search(r'\bacti\s+(?:clear|repair|white)\b',t):
+        t=re.sub(r'\bacti\s+(?:clear|repair|white)\b',' ',t)
+    if re.search(r'\b(?:sunscreen|sunblock|sun screen|sun protection)\b',t):
+        t=re.sub(r'\b(?:spray|spritz|mist|lotion)\b',' ',t)
+    t=re.sub(r'\bspf\s*\d{2,3}\b',' ',t)
+    t=re.sub(r'\b(?:untinted|tinted|teinte|invisible|unscented|fragrance free|lavender|lavande)\b',' ',t)
+    t=re.sub(r'\b(?:night|nuit|day|jour)\b',' ',t)
+    t=re.sub(r'\b\d+(?:\.\d+)?\s*%\b',' ',t)
+    return ' '.join(sorted(t.split()))
+
+
 def plan_distinct_split(conn,case,answer):
-    """Propose only deterministic, explicit variant splits; no fuzzy regrouping."""
+    """One canonical per evidenced formula group; NEVER one per retailer listing."""
     if (case['kind']!='identity' or answer['verdict']!='different_product'
         or not case['canonical_product_id']
         or case['details'].get('canonical_ids',[case['canonical_product_id']]) != [case['canonical_product_id']]):
-        return None,'Canonical duplicate cases require separate merger/variant evidence.'
+        return None,'Canonical duplicate cases require separate identity evidence.'
     cid=case['canonical_product_id']
     canonical=conn.execute('SELECT * FROM canonical_products WHERE id=?',(cid,)).fetchone()
     if not canonical or canonical['identity_status'] not in ('legacy','legacy_preserved_unverified','verified'):
@@ -93,54 +130,65 @@ def plan_distinct_split(conn,case,answer):
         return None,'Canonical title changed since the stored Gemini decision.'
     offers=_all_current_offers(conn,cid,case['details'].get('offers') or [])
     if not offers:
-        return None,'The current store listings no longer match the reviewed snapshot.'
+        return None,'Current store listings no longer match the reviewed evidence or lack independent sources.'
     if not all(equivalent_brand(conn,c['brand'],o['brand']) for o in offers):
-        return None,'Unverified brand aliases prevent automatic offer reassignment.'
-    # Never silently split between product and independent variant-offer rows
-    # that cannot be reassigned with a known legacy product relationship.
+        return None,'Unverified brand aliases prevent automatic regrouping.'
+    # Avoid partial reassignment of independently mapped variants.
     if conn.execute('SELECT 1 FROM product_offers WHERE canonical_product_id=? AND legacy_product_id IS NULL LIMIT 1',
                     (cid,)).fetchone():
-        return None,'Independent variant offers require source-level mapping.'
-    markers=_variant_marker(c['canonical_title'])
-    if not markers:
-        return None,'Canonical product does not identify a clear original variant.'
+        return None,'Independent variant offers require verified per-variant mapping.'
+    anchor=_variant_marker(c['canonical_title'])
+    family=_product_family(c['canonical_title'],c['brand'])
+    if not anchor or not family:
+        return None,'Canonical title lacks an explicit variant and identifiable product family.'
     groups={}
     for offer in offers:
         key=_variant_marker(offer['title'])
-        if not key:
-            return None,'Retailer title lacks a reliable explicit variant marker.'
+        current_family=_product_family(offer['title'],offer['brand'])
+        if not key or current_family!=family:
+            return None,'A retailer listing has an unknown variant or different product family; cannot auto-partition.'
         groups.setdefault(key,[]).append(offer)
-    if len(groups)<2 or markers not in groups:
-        return None,'Distinct variants cannot be partitioned with a canonical anchor.'
-    # A canonical with a full INCI cannot be retained if its authoritative
-    # exact formulation conflicts with the retained anchor group's credible INCI.
-    retained=groups[markers]
-    hashes={x for x in (formula_fingerprint(c),) if x}
-    for offer in retained:
-        if offer.get('ingredient_source') in (
-            'store_page_tab','historical_store_scrape','curated_v10','admin_override'
-        ):
-            f=formula_fingerprint(offer)
-            if f:hashes.add(f)
-    if len(hashes)>1:
-        return None,'The retained product has incompatible full INCI declarations.'
-    for key,items in groups.items():
-        if key==markers:continue
-        # Do not infer that unknown marketing terms imply different formulas:
-        # explicit marker differences plus Gemini's different verdict are required.
-        if key==markers:return None,'No distinct variant discriminator.'
-        for item in items:
-            if not item['title'].strip():
-                return None,'Missing product title.'
-    others=conn.execute("""SELECT 1 FROM product_review_queue WHERE status='pending'
+    if len(groups)<2 or anchor not in groups:
+        return None,'Multiple distinct explicit formulation groups or retained canonical anchor could not be established.'
+    # Every group must have mutually compatible titles, not only a shared marker.
+    for key,members in groups.items():
+        for a in members:
+            for b in members:
+                compatible,_=validate_identity_gates(a['title'],b['title'])
+                if not compatible:
+                    return None,'A proposed group has incompatible formulation/variant identity evidence.'
+            if a.get('ingredient_source') in ('store_page_tab','historical_store_scrape','curated_v10','admin_override'):
+                pass
+        fingerprints=set()
+        if key==anchor:
+            fingerprint=formula_fingerprint(c)
+            if fingerprint:fingerprints.add(fingerprint)
+        for item in members:
+            if item.get('ingredient_source') in ('store_page_tab','historical_store_scrape','curated_v10','admin_override'):
+                fp=formula_fingerprint(item)
+                if fp:fingerprints.add(fp)
+        if len(fingerprints)>1:
+            return None,'Credible complete INCI lists conflict within a proposed identity group.'
+    if conn.execute("""SELECT 1 FROM product_review_queue WHERE status='pending'
         AND canonical_product_id=? AND kind='duplicate' AND id!=? LIMIT 1""",
-        (cid,case['id'])).fetchone()
-    if others:return None,'A competing canonical duplicate review is still unresolved.'
-    return {'canonical_id':cid,'original_variant':markers,
-            'keep_ids':[x['id'] for x in retained],
-            'moves':[{'variant':key,'product_ids':[x['id'] for x in group],
-                      'title':group[0]['title']}
-                     for key,group in groups.items() if key!=markers]},'Explicit variant groups are distinct.'
+        (cid,case['id'])).fetchone():
+        return None,'Competing canonical duplicate review remains unresolved.'
+    moves=[]
+    for key,members in sorted(groups.items()):
+        if key==anchor:continue
+        moves.append({'variant':key,'product_ids':[o['id'] for o in members],
+                      'title':members[0]['title'],'retailer_count':len(members)})
+    if not moves:return None,'No separate formulation group to move.'
+    return {
+        'canonical_id':cid,'original_variant':anchor,
+        'keep_ids':[o['id'] for o in groups[anchor]],
+        'moves':moves,
+        'group_count':len(groups),
+        'groups':[{'variant':list(key),'product_ids':[o['id'] for o in members],
+                   'stores':sorted({o['store_id'] for o in members}),
+                   'retained':key==anchor}
+                  for key,members in sorted(groups.items())],
+    },'Confirmed '+str(len(groups))+' formulation groups across '+str(len(offers))+' retailer listings; one canonical per group, not one per listing.'
 
 
 def _close_decision(conn,case,answer,action,reason,extras=None):
