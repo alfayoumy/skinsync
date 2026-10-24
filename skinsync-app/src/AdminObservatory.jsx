@@ -1,3 +1,5 @@
+import ApiConnectionTests from './ConnectionTests';
+import AggregationReviewPanel from './AggregationReviewPanel';
 import React, { useState, useEffect, useRef } from 'react';
 import { 
   Database, Search, Filter, ShieldCheck, ChevronLeft, ChevronRight, 
@@ -70,6 +72,7 @@ const AdminObservatory = ({ onBackToApp }) => {
 
   // Left Slide-Over Menu State
   const [showSideMenu, setShowSideMenu] = useState(false);
+  const [showAggregationReview, setShowAggregationReview] = useState(false);
 
   // Full INCI Waterfall Batch Engine States
   const [showWaterfallBatchModal, setShowWaterfallBatchModal] = useState(false);
@@ -695,7 +698,7 @@ const AdminObservatory = ({ onBackToApp }) => {
         const data = await res.json();
         setActionMessage({
           type: 'success',
-          text: `Product Linker Complete: ${data.multi_store_clusters} multi-store clusters formed, ${data.ingredients_propagated} ingredient lists filled across stores!`
+          text: `Identity resolution complete: ${data.multi_store_clusters} multi-store products; ${data.deferred_offers || 0} offers held for review.`
         });
         fetchOverview();
         fetchProducts(page, searchQuery);
@@ -852,8 +855,14 @@ const AdminObservatory = ({ onBackToApp }) => {
     ingredientSourceFilter, multiStoreFilter, gateFilter, minPrice, maxPrice
   ].filter(Boolean).length;
 
+  const registrySources = overview?.sources?.length ? overview.sources : (overview?.stores || []).map(s => ({
+    ...s, source_type: 'retailer', enabled: s.is_active, legacy_products: s.total_products, observed_products: 0
+  }));
+  const populatedRetailers = overview?.stores || [];
+
   return (
     <div className="min-h-screen bg-gray-50 text-gray-900 font-sans pb-20">
+      {showAggregationReview && <AggregationReviewPanel onClose={() => setShowAggregationReview(false)} />}
       {/* Left Slide-Over Menu Drawer */}
       {showSideMenu && (
         <div className="fixed inset-0 z-50 overflow-hidden">
@@ -887,6 +896,7 @@ const AdminObservatory = ({ onBackToApp }) => {
                 </button>
               </div>
 
+              <button className="mx-5 mt-4 rounded-xl border border-purple-200 bg-purple-50 p-3 text-left text-sm font-bold text-purple-800" onClick={() => { setShowAggregationReview(true); setShowSideMenu(false); }}>Source Registry ({registrySources.length})</button>
               {/* Drawer Body - Actions List */}
               <div className="flex-1 overflow-y-auto p-5 space-y-6">
                 
@@ -1265,40 +1275,6 @@ const AdminObservatory = ({ onBackToApp }) => {
           </div>
         )}
 
-        {/* 2. Retail Store Health Breakdown */}
-        {overview && (
-          <div className="bg-white p-6 rounded-2xl border border-gray-200 shadow-sm">
-            <h2 className="text-sm font-bold text-gray-700 uppercase tracking-wider mb-4 flex items-center gap-2">
-              <Store className="w-4 h-4 text-purple-600" />
-              <span>Scraped Retail Sources Breakdown</span>
-            </h2>
-
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
-              {overview.stores.map((s) => (
-                <div 
-                  key={s.id}
-                  onClick={() => { setSelectedStore(selectedStore === s.id ? '' : s.id); setPage(0); }}
-                  className={`p-3.5 rounded-xl border text-left transition-all cursor-pointer ${
-                    selectedStore === s.id 
-                      ? 'border-purple-600 bg-purple-50/50 shadow-sm' 
-                      : 'border-gray-200 bg-gray-50/50 hover:bg-white hover:border-purple-300'
-                  }`}
-                >
-                  <div className="flex items-center justify-between mb-1">
-                    <span className="font-extrabold text-xs text-gray-900 truncate">{s.name}</span>
-                    <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
-                  </div>
-                  <div className="text-lg font-black text-purple-700">{s.total_products.toLocaleString()}</div>
-                  <div className="text-[10px] text-gray-500 flex items-center justify-between mt-1">
-                    <span>{s.with_ingredients} w/ INCI</span>
-                    <span className="font-semibold">{s.avg_price} EGP</span>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-
         {/* 3. Catalog Explorer with Multi-Filters */}
         <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
           <div className="p-6 border-b border-gray-200 space-y-4">
@@ -1481,13 +1457,8 @@ const AdminObservatory = ({ onBackToApp }) => {
                   onChange={(e) => { setSelectedStore(e.target.value); setPage(0); }}
                   className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-xs focus:outline-none focus:border-purple-500 font-medium"
                 >
-                  <option value="">All Stores (6 Retailers)</option>
-                  <option value="sourcebeauty">Source Beauty</option>
-                  <option value="feel22">Feel22 Egypt</option>
-                  <option value="bloompharmacy">Bloom Pharmacy</option>
-                  <option value="drdawood">Dr Dawood Pharmacy</option>
-                  <option value="bashrety">Bashrety</option>
-                  <option value="rawafrican">Raw African</option>
+                  <option value="">All retailer listings ({populatedRetailers.length} catalogs)</option>
+                  {populatedRetailers.map(store => <option key={store.id} value={store.id}>{store.name}</option>)}
                 </select>
 
                 {/* Stock Availability */}
@@ -3550,6 +3521,7 @@ const AdminObservatory = ({ onBackToApp }) => {
 
             {/* Modal Body */}
             <div className="p-6 overflow-y-auto space-y-6 flex-1 bg-gray-50/50">
+              <ApiConnectionTests />
               {/* Alert Notification if any API has issues */}
               {apiStatusData?.summary?.has_issues && (
                 <div className="p-4 bg-amber-50 border border-amber-300 rounded-2xl flex items-start gap-3 text-xs text-amber-950 shadow-xs">
