@@ -334,3 +334,25 @@ Source: [`api/routers/catalog_reset.py`](../api/routers/catalog_reset.py).
 | GET | `/admin/workflows/catalog/selective-rebuild/jobs/{job_id}` | `selective_rebuild_job()` | `read` |
 
 The selective preview chooses the latest multi-source discovery, checks that it is persisted and all catalogs reached their end, inspects stored-source coverage and returns a fingerprint. POST accepts `{"fingerprint":"...","discovery_task_id":"...","confirmation":"REBUILD FROM SAVED DISCOVERY"}` and schedules a backup-first atomic offline rebuild. Poll the returned job ID for the outcome. Unlike the full reset, source observations and their variants survive and are replayed to rebuild canonical products, offers and legacy-compatible source listings without retaining old INCI or identity approvals.
+
+### Optional INCI source-research queue (DonSeTch MCP + Gemini Flash-Lite)
+
+Unlike the identity matching Gemini queue or the Tier 7 SkinSAFE verification queue, this workflow **researches a missing ingredient declaration**. It runs only after the standard waterfall has failed to publish a verified formula and the operator selected `queue_inci_research=true` on `POST /admin/waterfall/batch/start` or `POST /admin/waterfall/resolve`. The waterfall queues cases only: no research model calls run during matching.
+
+| Method | Endpoint | Capability | Meaning |
+|---|---|---|---|
+| GET | `/admin/inci-research/connection` | `read` | Whether DonSeTch executable and Gemini key are configured; never exposes key |
+| GET | `/admin/inci-research/queue` | `read` | Cases, statuses, confidence components, source evidence and pagination |
+| POST | `/admin/inci-research/queue` | `formula` | Manually stage canonical IDs still missing verified INCI |
+| POST | `/admin/inci-research/queue/{canonical_id}/retry` | `formula` | Explicitly retry failed/rejected/no-result case |
+| POST | `/admin/inci-research/run` | `formula` | Start a bounded, separately triggered source-research job |
+| GET | `/admin/inci-research/runs/{run_id}` | `read` | Poll job progress and outcome |
+| POST | `/admin/inci-research/runs/{run_id}/cancel` | `formula` | Ask to stop between products |
+| POST | `/admin/inci-research/queue/{canonical_id}/review` | `formula_correction` and `formula` | Explicit approve/reject with rationale and publication gates |
+
+Example run request: `{"limit":10,"max_pages":3,"min_confidence":0.85}`. Only registered HTTPS retailer/manufacturer/reference domains are fetched, and the worker makes at most `max_pages` fetches per product. `min_confidence` is a **review-priority threshold**, not an auto-publication threshold. Scores combine model-reported confidence, exact product identity overlap and registered-source assessment. They are not calibrated correctness probabilities.
+
+Results with a complete INCI string literally present in the source page and passing deterministic product-variant and tokenizer gates go to `needs_review` and `inci_audit_evidence` as **unverified evidence**, never to published product ingredients. Reviewers must open the original URL, verify the formulation/market and provide an explanation. An explicit market-compatibility acknowledgement is needed for non-Egypt/MENA sources. Corrections to an existing approved formula require an explicitly opted-in correction and elevated permission.
+
+Statuses: `queued`, `processing`, `needs_review`, `no_result`, `error`, `approved`, `rejected`.
+
