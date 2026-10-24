@@ -5,7 +5,7 @@ This router intentionally contains no INCI publication and no LLM calls.
 from collections import Counter
 from pipeline.legacy_identity_reconcile import reconcile_legacy_exact
 from typing import Literal
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, BackgroundTasks
 from pydantic import BaseModel, Field
 from pipeline.db_manager import get_connection
 from pipeline.source_registry import get_source
@@ -209,3 +209,113 @@ class LegacyIdentityCheck(BaseModel):
 @router.post('/products/verify-existing')
 def verify_existing_products(request:LegacyIdentityCheck):
     return run(reconcile_legacy_exact,request)
+
+
+class MultiSourceDiscovery(BaseModel):
+    source_ids: list[str] = Field(min_length=1,max_length=40)
+    start_page: int = Field(default=1,ge=1,le=5000)
+    pages: int = Field(default=1,ge=1,le=3)
+    dry_run: bool = True
+    urls_by_source: dict[str,list[str]] = Field(default_factory=dict)
+
+
+def _multisource_worker(task_id,source_ids,start_page,pages,dry_run,urls_by_source):
+    """Run each source independently with a durable task and per-source outcome."""
+    from pipeline.task_tracker import update_task_progress,complete_task,fail_task,log_task_event
+    from pipeline.source_collection import collect_source
+    from pipeline.source_registry import get_source
+    reports=[]
+    counters=Counter()
+    try:
+        for index,sid in enumerate(source_ids,1):
+            conn=get_connection()
+            try:
+                source=get_source(conn,sid)
+                if not source['enabled']:
+                    report={'source_id':sid,'name':source['name'],'status':'skipped','reason':'Collection paused'}
+                elif source['adapter_type']=='shopify':
+                    res=discover_shopify(conn,sid,start_page,pages,dry_run)
+                    report={'source_id':sid,'name':source['name'],'status':'completed',**res}
+                    if not dry_run:conn.commit()
+                    else:conn.rollback()
+                else:
+                    urls=urls_by_source.get(sid) or [row[0] for row in conn.execute(
+                        """SELECT source_url FROM source_product_observations WHERE source_id=?
+                        GROUP BY source_url ORDER BY MAX(id) DESC LIMIT 25""",(sid,))]
+                    if not urls:
+                        report={'source_id':sid,'name':source['name'],'status':'needs_urls',
+                                'reason':'No catalog feed or product URLs yet. Add URLs for this source to import it.'}
+                    else:
+                        res=collect_source(conn,sid,urls,max_products=len(urls),dry_run=dry_run)
+                        outputs=[x for product in res['results'] for x in product.get('results',[])]
+                        report={'source_id':sid,'name':source['name'],'status':'completed',
+                            'workflow':'product_discovery','fetched':res['observations'],
+                            'existing_products_matched':sum(x.get('status')=='matched' for x in outputs),
+                            'new_products_staged':sum(x.get('status')=='provisional' for x in outputs),
+                            'needs_review':sum(x.get('status')=='review' for x in outputs),
+                            'urls_checked':len(urls),
+                            'coverage':'Provided or previously seen URLs only; not a whole-site catalog crawl.'}
+                        if not dry_run:conn.commit()
+                        else:conn.rollback()
+                reports.append(report)
+                counters[report['status']]+=1
+            except Exception as exc:
+                conn.rollback()
+                report={'source_id':sid,'status':'failed','reason':str(exc)[:500]}
+                reports.append(report)
+                counters['failed']+=1
+            finally:
+                conn.close()
+            update_task_progress(task_id,processed_items=index,
+                successful_items=counters['completed'],failed_items=counters['failed'],
+                skipped_items=counters['skipped']+counters['needs_urls'],
+                current_stage='finished_'+sid,progress_percent=100*index/len(source_ids),
+                metadata={'workflow':'product_discovery','dry_run':dry_run,'sources':reports})
+        complete_task(task_id,metadata={'workflow':'product_discovery','dry_run':dry_run,
+                      'sources':reports,'summary':dict(counters)},
+                      status='completed_with_errors' if counters['failed'] else 'completed')
+    except Exception as exc:
+        fail_task(task_id,str(exc),metadata={'sources':reports})
+
+
+@router.post('/products/discover-multiple')
+def discover_multiple(request:MultiSourceDiscovery,background_tasks:BackgroundTasks):
+    from pipeline.task_tracker import create_task
+    ids=list(dict.fromkeys(request.source_ids))
+    if len(ids)!=len(request.source_ids):
+        raise HTTPException(status_code=400,detail='Choose each source only once.')
+    conn=get_connection()
+    try:
+        sources={row['id']:dict(row) for row in conn.execute('SELECT id,name,enabled FROM sources WHERE id IN ('+
+            ','.join('?' for _ in ids)+')',ids)}
+        missing=[sid for sid in ids if sid not in sources]
+        if missing:raise HTTPException(status_code=400,detail='Unknown sources: '+', '.join(missing))
+        stopped=[sid for sid in ids if not sources[sid]['enabled']]
+        if stopped:raise HTTPException(status_code=400,detail='These sources have collection disabled: '+', '.join(stopped))
+        for sid,urls in request.urls_by_source.items():
+            if sid not in ids:raise HTTPException(status_code=400,detail='URL source was not selected: '+sid)
+            if len(urls)>25:raise HTTPException(status_code=400,detail='Maximum 25 URLs per source.')
+    finally:
+        conn.close()
+    task_id=create_task('catalog_discovery',target_source='multiple',
+                        params={'source_ids':ids,'pages':request.pages,'dry_run':request.dry_run},
+                        total_items=len(ids),auto_start=True)
+    background_tasks.add_task(_multisource_worker,task_id,ids,request.start_page,
+                              request.pages,request.dry_run,request.urls_by_source)
+    return {'status':'accepted','task_id':task_id,'sources_selected':len(ids),
+            'dry_run':request.dry_run,
+            'message':'Product discovery started. Individual source results are available in the task status.'}
+
+
+@router.get('/products/discover-multiple/{task_id}')
+def discovery_progress(task_id:str):
+    conn=get_connection()
+    try:
+        row=conn.execute('SELECT task_id,status,processed_items,total_items,metadata,error_message FROM pipeline_tasks WHERE task_id=? AND task_type=?',
+                         (task_id,'catalog_discovery')).fetchone()
+        if not row:raise HTTPException(status_code=404,detail='Discovery job not found.')
+        import json
+        out=dict(row)
+        out['metadata']=json.loads(out['metadata'] or '{}')
+        return out
+    finally:conn.close()
