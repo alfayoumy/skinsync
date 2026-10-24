@@ -34,12 +34,12 @@ export default function AggregationReviewPanel({ onClose, initialSourceId = 'sou
   const source = sources.find(s => s.id === sourceId);
   const canLink = selected?.source_id && selected.source_id !== 'canonical';
   return <dialog ref={dialog} aria-label="Source Registry and product reviews" onCancel={e => { e.preventDefault(); onClose(); }} className="m-auto w-[min(1160px,96vw)] rounded-2xl p-0 shadow-2xl backdrop:bg-black/50">
-    <header className="p-5 border-b flex justify-between gap-4"><div><h2 className="text-xl font-bold">Source Registry & product reviews</h2><p className="text-sm text-gray-500">Inspect original evidence and record product decisions.</p></div><button className="border rounded-lg px-3" onClick={onClose}>Close</button></header>
+    <header className="p-5 border-b flex justify-between gap-4"><div><h2 className="text-xl font-bold">Product sources & matching reviews</h2><p className="text-sm text-gray-500">Manage source access and review products that could not be matched automatically.</p></div><button className="border rounded-lg px-3" onClick={onClose}>Close</button></header>
     <main className="p-5 space-y-5 bg-gray-50 overflow-y-auto max-h-[78vh]">
       {error && <p role="alert" className="bg-red-50 text-red-800 p-3 rounded-lg">{error}</p>}{message && <p role="status" className="bg-green-50 text-green-800 p-3 rounded-lg">{message}</p>}
       <section aria-label="Registered sources" className="bg-white border rounded-xl p-4 space-y-3">
         <div className="flex flex-wrap items-center justify-between gap-2">
-          <h3 className="font-semibold">Source Registry ({sources.length})</h3><button className="border rounded px-3 py-1" disabled={diagnostics.running.some(k => k.startsWith('source:'))} onClick={() => diagnostics.test('source')}>Test all sources</button>
+          <h3 className="font-semibold">Product sources ({sources.length})</h3><button className="border rounded px-3 py-1" disabled={diagnostics.running.some(k => k.startsWith('source:'))} onClick={() => diagnostics.test('source')}>Test all sources</button>
           <p className="text-xs text-gray-500">{sources.filter(s => s.enabled).length} collection enabled · {sources.filter(s => !s.enabled).length} staged</p>
         </div>
         <p className="text-xs text-gray-500">Tests check one sample without saving products or enabling publication. Results last until server restart.</p>{diagnostics.error && <p role="alert">{diagnostics.error}</p>}<div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">

@@ -96,7 +96,7 @@ const AdminObservatory = ({ onBackToApp }) => {
   const [certificationResult, setCertificationResult] = useState(null);
   const [certifyingIdentity, setCertifyingIdentity] = useState(false);
 
-  // Gate 4 LLM Queue Manager States (Jev & Gemini)
+  // AI Match Review Queues States (Jev & Gemini)
   const [showQueueModal, setShowQueueModal] = useState(false);
   const [queueStatus, setQueueStatus] = useState(null);
   const [queueActionLoading, setQueueActionLoading] = useState(null);
@@ -3992,7 +3992,7 @@ const AdminObservatory = ({ onBackToApp }) => {
                 {/* Tier Breakdown Matrix Cards */}
                 <div className="pt-2">
                   <div className="text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-2">
-                    Resolution Breakdown by Tier
+                    Ingredient lookup results
                   </div>
                   <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-2 text-center">
                     <div className="p-2.5 rounded-xl bg-emerald-50 border border-emerald-200">
@@ -4010,28 +4010,28 @@ const AdminObservatory = ({ onBackToApp }) => {
                     </div>
 
                     <div className="p-2.5 rounded-xl bg-gray-50 border border-gray-200">
-                      <div className="text-[10px] font-bold text-gray-600">Tier 2: OpenBeauty</div>
+                      <div className="text-[10px] font-bold text-gray-600">Open Beauty Facts</div>
                       <div className="text-base font-bold text-gray-800 mt-0.5">
                         {waterfallBatchStatus?.stats?.by_method?.openbeauty_api || waterfallBatchStatus?.stats?.by_method?.tier2_openbeauty || 0}
                       </div>
                     </div>
 
                     <div className="p-2.5 rounded-xl bg-gray-50 border border-gray-200">
-                      <div className="text-[10px] font-bold text-gray-600">Tier 3: SkinSAFE</div>
+                      <div className="text-[10px] font-bold text-gray-600">SkinSAFE evidence</div>
                       <div className="text-base font-bold text-gray-800 mt-0.5">
                         {waterfallBatchStatus?.stats?.by_method?.skinsafe_high_match || waterfallBatchStatus?.stats?.by_method?.tier3_skinsafe || 0}
                       </div>
                     </div>
 
                     <div className="p-2.5 rounded-xl bg-gray-50 border border-gray-200">
-                      <div className="text-[10px] font-bold text-gray-600">Tier 4: LangSearch</div>
+                      <div className="text-[10px] font-bold text-gray-600">Web search evidence</div>
                       <div className="text-base font-bold text-gray-800 mt-0.5">
                         {waterfallBatchStatus?.stats?.by_method?.langsearch_web_search || waterfallBatchStatus?.stats?.by_method?.tier4_langsearch || 0}
                       </div>
                     </div>
 
                     <div className="p-2.5 rounded-xl bg-gray-50 border border-gray-200">
-                      <div className="text-[10px] font-bold text-gray-600">Tier 5: Whitelist</div>
+                      <div className="text-[10px] font-bold text-gray-600">Partial ingredient hints</div>
                       <div className="text-base font-bold text-gray-800 mt-0.5">
                         {waterfallBatchStatus?.stats?.by_method?.whitelist_description || waterfallBatchStatus?.stats?.by_method?.tier5_whitelist || 0}
                       </div>
@@ -4045,7 +4045,7 @@ const AdminObservatory = ({ onBackToApp }) => {
                     </div>
 
                     <div className="p-2.5 rounded-xl bg-violet-50 border border-violet-200">
-                      <div className="text-[10px] font-bold text-violet-800">Tier 7: LLM Queue</div>
+                      <div className="text-[10px] font-bold text-violet-800">AI review pending</div>
                       <div className="text-base font-black text-violet-700 mt-0.5">
                         {waterfallBatchStatus?.stats?.by_method?.tier7_queued || waterfallBatchStatus?.stats?.by_method?.tier7_pending_llm || 0}
                       </div>
@@ -4379,7 +4379,7 @@ const AdminObservatory = ({ onBackToApp }) => {
         </div>
       )}
 
-      {/* Gate 4 LLM Queue Manager Modal (Jev & Gemini) */}
+      {/* AI Match Review Queues Modal (Jev & Gemini) */}
       {showQueueModal && (
         <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-3 sm:p-5 overflow-y-auto animate-fade-in">
           <div className="bg-white rounded-3xl shadow-2xl border border-gray-200 max-w-5xl w-full max-h-[92vh] flex flex-col overflow-hidden my-auto">
@@ -4392,13 +4392,13 @@ const AdminObservatory = ({ onBackToApp }) => {
                 </div>
                 <div>
                   <div className="flex items-center gap-2">
-                    <h2 className="text-base font-black text-gray-900">Gate 4 LLM Queue Manager</h2>
+                    <h2 className="text-base font-black text-gray-900">AI Match Review Queues</h2>
                     <span className="text-[10px] font-extrabold uppercase px-2 py-0.5 rounded-full bg-indigo-100 text-indigo-800 border border-indigo-200">
-                      Decoupled Workers
+                      Jev & Gemini
                     </span>
                   </div>
                   <p className="text-xs text-gray-500">
-                    Control & observe asynchronous semantic arbitration (Jev 1.13 Free & Gemini 3.5 Flash-Lite)
+                    Run or pause AI checks for uncertain matches. A model decision alone does not approve an INCI formula.
                   </p>
                 </div>
               </div>

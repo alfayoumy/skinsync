@@ -81,6 +81,11 @@ export default function CatalogWorkflowsPanel({onClose, initialTab='products',on
         response=await call('/admin/aggregation/sources/'+encodeURIComponent(sourceId)+'/collect',json({
           urls:list,max_products:list.length,dry_run:preview
         }));
+        const outcomes=(response.results||[]).flatMap(row=>row.results||[]);
+        const count=(status)=>outcomes.filter(row=>row.status===status).length;
+        response={...response,workflow:'product_discovery',fetched:response.observations,
+          existing_products_matched:count('matched'),new_products_staged:count('provisional'),
+          needs_review:count('review'),note:'Exact product matches link automatically; new identities stay provisional until approved.'};
       } else if(tab==='offers') {
         response=await call('/admin/workflows/offers/refresh',json({
           source_id:sourceId,start_page:Number(startPage),pages:Number(pages),
