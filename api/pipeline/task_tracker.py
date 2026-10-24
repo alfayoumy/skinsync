@@ -107,6 +107,13 @@ def start_task(task_id: str, conn = None):
         should_close = True
 
     try:
+        # An old pending task may be started by a delayed worker. Serialize
+        # that promotion against the catalog maintenance lock so ignoring
+        # idle pending records during preview cannot start work mid-rebuild.
+        if not conn.in_transaction:
+            conn.execute('BEGIN IMMEDIATE')
+        from pipeline.catalog_reset import guard_catalog_writes
+        guard_catalog_writes(conn)
         cur = conn.cursor()
         cur.execute("""
         UPDATE pipeline_tasks
@@ -117,6 +124,9 @@ def start_task(task_id: str, conn = None):
         """, (task_id,))
         conn.commit()
         log_task_event(task_id=task_id, message="Task started execution.", level="INFO", conn=conn)
+    except Exception:
+        conn.rollback()
+        raise
     finally:
         if should_close:
             conn.close()

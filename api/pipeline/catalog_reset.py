@@ -71,7 +71,7 @@ def _active_tasks(conn, tables):
     return [dict(row) for row in conn.execute("""SELECT task_id,task_type,status,
             current_stage,updated_at,started_at
         FROM pipeline_tasks
-        WHERE (status='running' AND COALESCE(current_stage,'')!='worker_stopped')
+        WHERE (status='running' AND NOT (task_type='catalog_discovery' AND COALESCE(current_stage,'')='worker_stopped'))
         OR (task_type='catalog_discovery' AND status='cancelled'
             AND COALESCE(current_stage,'')!='worker_stopped'
             AND updated_at >= datetime('now','-1 hour'))
