@@ -31,6 +31,11 @@ export default function AggregationReviewPanel({ onClose, initialSourceId = 'sou
   const [selectedReviewIds,setSelectedReviewIds] = useState([]);
   const [geminiBatchSize,setGeminiBatchSize] = useState(10);
   const [geminiLimit,setGeminiLimit] = useState(500);
+  const [savedDecisionsPreview,setSavedDecisionsPreview] = useState(null);
+  const [savedApplyTask,setSavedApplyTask] = useState(null);
+  const [savedApplyJob,setSavedApplyJob] = useState(null);
+  const [savedDecisionLimit,setSavedDecisionLimit] = useState(5000);
+  const [savedDecisionThreshold,setSavedDecisionThreshold] = useState(0.90);
   const [canonicalId, setCanonicalId] = useState(''), [category, setCategory] = useState('Moisturizer');
   const [busy, setBusy] = useState(false), [message, setMessage] = useState(''), [error, setError] = useState('');
   const [reviewsLoading,setReviewsLoading] = useState(false);
@@ -88,6 +93,57 @@ export default function AggregationReviewPanel({ onClose, initialSourceId = 'sou
     poll();const timer=setInterval(poll,2000);
     return ()=>{active=false;clearInterval(timer)};
   },[geminiTask,refresh]);
+  useEffect(()=>{
+    if(!savedApplyTask)return;
+    let active=true;
+    const poll=async()=>{
+      try {
+        const job=await api('/reviews/gemini/saved/jobs/'+encodeURIComponent(savedApplyTask));
+        if(!active)return;
+        setSavedApplyJob(job);
+        if(!['running','pending'].includes(job.status)){
+          setSavedApplyTask(null);
+          setSavedDecisionsPreview(null);
+          refresh().catch(e=>setError(e.message));
+        }
+      } catch(e){if(active){setSavedApplyTask(null);setError(e.message);}}
+    };
+    poll();
+    const timer=setInterval(poll,1700);
+    return ()=>{active=false;clearInterval(timer)};
+  },[savedApplyTask,refresh]);
+  async function previewSavedDecisions() {
+    await perform(async()=>{
+      const report=await api('/reviews/gemini/saved/preview',{
+        method:'POST',body:JSON.stringify({
+          limit:Number(savedDecisionLimit),confidence_threshold:Number(savedDecisionThreshold)
+        })
+      });
+      setSavedDecisionsPreview(report);
+      setMessage('Preview uses saved Gemini verdicts only — no API calls, no database changes.');
+    });
+  }
+  async function applySavedDecisions() {
+    if(!savedDecisionsPreview)return;
+    if(!window.confirm('Apply stored Gemini decisions without calling Gemini again? Clear matches will be verified; provably separable variants may be split into new provisional products. Other cases remain for review.'))return;
+    await perform(async()=>{
+      const started=await api('/reviews/gemini/saved/apply',{
+        method:'POST',body:JSON.stringify({
+          limit:Number(savedDecisionLimit),confidence_threshold:Number(savedDecisionThreshold)
+        })
+      });
+      setSavedApplyTask(started.task_id);
+      setSavedApplyJob({status:'running',processed_items:0,total_items:started.saved_decisions});
+      setMessage('Applying '+started.saved_decisions+' stored Gemini decisions. Zero new Gemini requests.');
+    });
+  }
+  async function stopSavedDecisions() {
+    if(!savedApplyTask)return;
+    await perform(async()=>{
+      await api('/reviews/gemini/saved/jobs/'+encodeURIComponent(savedApplyTask)+'/cancel',{method:'POST'});
+      setMessage('Stop requested. Already-applied results remain saved.');
+    });
+  }
   async function sendToGemini(reviewIds) {
     await perform(async()=>{
       const payload=reviewIds?{review_ids:reviewIds,limit:reviewIds.length}:{limit:20000};
@@ -217,6 +273,61 @@ export default function AggregationReviewPanel({ onClose, initialSourceId = 'sou
           {geminiJob.error_message&&<span className="text-red-700"> · {geminiJob.error_message}</span>}
         </p>}
         <p className="text-xs text-gray-500">This is separate from Gemini's INCI queue. It never writes ingredient lists, changes prices, or automatically merges two different canonical product IDs.</p>
+      </section>}
+      {mode === 'reviews' && <section className="rounded-xl border border-purple-200 bg-purple-50 p-4 space-y-3">
+        <div>
+          <h3 className="font-bold text-gray-900">Apply Gemini decisions already saved</h3>
+          <p className="text-sm text-gray-700 mt-1">No need to rerun thousands of products or spend more Gemini calls. Recheck the verdicts stored in the database, apply safe same-product matches automatically, and split clearly distinct product variants where the listings prove which items belong together. Unresolved structural conflicts remain for review.</p>
+        </div>
+        <div className="flex flex-wrap gap-3 items-end">
+          <label className="text-xs font-semibold">Minimum Gemini confidence
+            <select className="block border rounded-lg p-2 bg-white mt-1" value={savedDecisionThreshold}
+              onChange={e=>{setSavedDecisionThreshold(Number(e.target.value));setSavedDecisionsPreview(null);}}>
+              {[0.90,0.92,0.95,0.97,0.99].map(v=><option key={v} value={v}>{Math.round(v*100)}%</option>)}
+            </select>
+          </label>
+          <label className="text-xs font-semibold">Maximum saved cases
+            <input className="block border rounded-lg p-2 bg-white mt-1 w-28"
+              type="number" min="1" max="20000" value={savedDecisionLimit}
+              onChange={e=>{setSavedDecisionLimit(e.target.value);setSavedDecisionsPreview(null);}}/>
+          </label>
+          <button type="button" disabled={busy||Boolean(savedApplyTask)||Boolean(geminiTask)}
+            onClick={previewSavedDecisions} className="rounded-lg border border-purple-300 bg-white px-4 py-2 text-sm font-semibold disabled:opacity-50">
+            Preview saved decisions
+          </button>
+          <button type="button" disabled={busy||Boolean(savedApplyTask)||Boolean(geminiTask)||
+              !savedDecisionsPreview||(savedDecisionsPreview.automatically_verified+savedDecisionsPreview.automatically_split===0)}
+            onClick={applySavedDecisions} className="rounded-lg bg-purple-700 px-4 py-2 text-white text-sm font-semibold disabled:opacity-50">
+            Apply confident decisions — no Gemini calls
+          </button>
+          {savedApplyTask&&<button type="button" className="rounded-lg border border-red-300 px-3 py-2 text-sm text-red-700"
+            onClick={stopSavedDecisions}>Stop application</button>}
+        </div>
+        {savedDecisionsPreview&&<div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs" role="status">
+          {[
+            ['Stored cases checked',savedDecisionsPreview.stored_decisions_checked],
+            ['Would verify matches',savedDecisionsPreview.automatically_verified],
+            ['Would split distinct groups',savedDecisionsPreview.automatically_split],
+            ['Still need review',savedDecisionsPreview.still_needs_review]
+          ].map(([label,value])=><div key={label} className="rounded-lg border bg-white p-3"><strong className="block text-lg">{value}</strong>{label}</div>)}
+        </div>}
+        {savedDecisionsPreview?.sample_results?.length>0&&<details className="bg-white border rounded-lg p-3">
+          <summary className="font-semibold text-xs cursor-pointer">Example application decisions and reasons</summary>
+          <div className="max-h-56 overflow-auto space-y-1 mt-2 text-xs">
+            {savedDecisionsPreview.sample_results.map(item=><p key={item.review_id}>
+              Review #{item.review_id}: {item.verdict} ({Math.round((item.confidence||0)*100)}%) —
+              <strong> {item.action}</strong>. {item.reason}
+            </p>)}
+          </div>
+        </details>}
+        {savedApplyJob&&<p role="status" className="rounded-lg bg-white p-3 text-sm">
+          Application {savedApplyJob.status} · {savedApplyJob.processed_items||0}/{savedApplyJob.total_items||0} saved verdicts processed ·
+          {savedApplyJob.metadata?.automatically_verified??savedApplyJob.metadata?.stats?.verified??0} verified ·
+          {savedApplyJob.metadata?.automatically_split??savedApplyJob.metadata?.stats?.split??0} split ·
+          {savedApplyJob.metadata?.still_needs_review??savedApplyJob.metadata?.stats?.manual??0} held for review ·
+          <strong> 0 Gemini calls</strong>
+          {savedApplyJob.error_message&&<span className="text-red-700"> · {savedApplyJob.error_message}</span>}
+        </p>}
       </section>}
       {mode === 'reviews' && <section className="grid md:grid-cols-2 gap-4"><div className="bg-white border rounded-xl p-4"><div className="flex justify-between mb-3"><h3 className="font-semibold">{reviewView==='manual'?'Needs manual review':reviewView==='awaiting_gemini'?'Waiting for Gemini':'All pending reviews'} ({total})</h3>
           <button type="button" className="text-xs font-semibold text-purple-700 underline" disabled={reviewsLoading} onClick={()=>refresh().catch(e=>setError(e.message))}>
