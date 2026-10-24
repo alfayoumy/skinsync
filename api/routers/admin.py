@@ -1614,3 +1614,71 @@ def stop_queue(req: QueueControlRequest):
 
 
 
+
+
+class IdentityReviewDecision(BaseModel):
+    status: str
+    reviewer: str
+    notes: str
+
+
+@router.get('/identity/audit')
+def get_identity_audit():
+    """Inspect possible duplicate canonicals and mixed clusters without mutations."""
+    from pipeline.identity_review import audit_canonical_identity
+    conn = get_connection()
+    try:
+        return audit_canonical_identity(conn)
+    finally:
+        conn.close()
+
+
+@router.post('/identity/audit')
+def record_identity_audit():
+    """Save idempotent review cases; canonical IDs and formulations are preserved."""
+    from pipeline.identity_review import audit_canonical_identity
+    conn = get_connection()
+    try:
+        result = audit_canonical_identity(conn, persist=True)
+        conn.commit()
+        return result
+    finally:
+        conn.close()
+
+
+@router.get('/identity/reviews')
+def list_identity_reviews(status: Optional[str] = None):
+    from pipeline.identity_review import init_identity_review_db
+    conn = get_connection()
+    try:
+        if not conn.execute("SELECT 1 FROM sqlite_master WHERE type='table' AND name='canonical_identity_reviews'").fetchone():
+            return {'reviews': [], 'total': 0}
+        query = 'SELECT * FROM canonical_identity_reviews'
+        if status:
+            rows = conn.execute(query + ' WHERE status=? ORDER BY id', (status,))
+        else:
+            rows = conn.execute(query + ' ORDER BY id')
+        result = []
+        for row in rows:
+            item = dict(row)
+            for field in ('canonical_ids', 'offer_ids', 'details'):
+                item[field] = json.loads(item[field])
+            result.append(item)
+        return {'reviews': result, 'total': len(result)}
+    finally:
+        conn.close()
+
+
+@router.post('/identity/reviews/{review_id}')
+def decide_identity_review(review_id: int, request: IdentityReviewDecision):
+    from pipeline.identity_review import review_identity_case, init_identity_review_db
+    conn = get_connection()
+    try:
+        init_identity_review_db(conn)
+        review_identity_case(conn, review_id, request.status, request.reviewer, request.notes)
+        conn.commit()
+        return {'status': request.status, 'review_id': review_id}
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc))
+    finally:
+        conn.close()

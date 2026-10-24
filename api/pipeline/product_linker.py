@@ -2,7 +2,7 @@
 Cross-Source Product Entity Resolution & Canonical Linking Engine:
 1. Clusters identical products across different stores (Source Beauty, Bloom Pharmacy, Feel22, Dr. Dawood, Bashrety, Raw African).
 2. Manages the `canonical_products` table and links store listings via `products.canonical_product_id`.
-3. Propagates ingredient lists from stores with rich HTML descriptions to stores lacking ingredients.
+3. Preserves authoritative formulations and records ambiguous identity decisions for review.
 4. Aggregates multi-source pricing for real-time price comparison and arbitrage tracking.
 5. Treats packaging volume/size strictly as a variant/pricing tier, never splitting genuine product entities.
 """
@@ -19,6 +19,8 @@ from datetime import datetime
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
 from pipeline.db_manager import get_connection
+from pipeline.identity_review import (init_identity_review_db, assess_canonical_identity,
+    record_identity_review, identity_compatible, audit_canonical_identity)
 from pipeline.safeguards import CosmeticCompatibilityValidator
 from pipeline.task_tracker import create_subtask, complete_subtask, log_task_event
 from pipeline.logging_config import setup_logging, get_logger
@@ -153,6 +155,7 @@ def init_linker_db(conn=None) -> None:
     cur.execute("CREATE INDEX IF NOT EXISTS idx_products_canonical ON products(canonical_product_id);")
     cur.execute("CREATE INDEX IF NOT EXISTS idx_products_is_skincare ON products(is_skincare);")
     cur.execute("CREATE INDEX IF NOT EXISTS idx_canonical_is_skincare ON canonical_products(is_skincare);")
+    init_identity_review_db(conn)
     conn.commit()
 
     if close_on_exit:
@@ -443,7 +446,7 @@ def link_catalog_products(conn=None, task_id: Optional[str] = None) -> Dict[str,
     cur.execute(f"""
     SELECT id, store_id, title, brand, category, price, is_available, image_url,
            ingredients_raw, ingredients_parsed, actives, ingredient_source,
-           inci_matched_id, gate4_gemini_status, {handle_expr}, {skin_expr}
+           inci_matched_id, gate4_gemini_status, canonical_product_id, {handle_expr}, {skin_expr}
     FROM products
     ORDER BY id ASC;
     """)
@@ -452,6 +455,18 @@ def link_catalog_products(conn=None, task_id: Optional[str] = None) -> Dict[str,
     logger.info(f"Loaded {total_products} products for cross-store entity resolution.")
 
     uf = UnionFind(total_products)
+    members = {i: {i} for i in range(total_products)}
+    def safe_union(a, b):
+        ra, rb = uf.find(a), uf.find(b)
+        if ra == rb:
+            return
+        # Prevent a generic intermediary from bridging incompatible variants.
+        if any(not identity_compatible(products[x], products[y])[0]
+               for x in members[ra] for y in members[rb]):
+            return
+        merged = members.pop(ra) | members.pop(rb)
+        uf.union(a, b)
+        members[uf.find(a)] = merged
 
     # Pre-process brand, category, and tokens
     groups: Dict[Tuple[str, str], List[Tuple[int, Dict[str, Any]]]] = defaultdict(list)
@@ -476,7 +491,7 @@ def link_catalog_products(conn=None, task_id: Optional[str] = None) -> Dict[str,
                 # 1. Same verified INCI formulation match
                 if p_i.get("inci_matched_id") and p_i["inci_matched_id"] == p_j.get("inci_matched_id"):
                     if p_i.get("gate4_gemini_status") != "gemini_rejected" and p_j.get("gate4_gemini_status") != "gemini_rejected":
-                        uf.union(idx_i, idx_j)
+                        safe_union(idx_i, idx_j)
                         continue
 
                 set1 = p_i["tokens_set"]
@@ -524,7 +539,7 @@ def link_catalog_products(conn=None, task_id: Optional[str] = None) -> Dict[str,
                 jacc = inter / union if union > 0 else 0.0
 
                 if set1 == set2 or jacc >= 0.60:
-                    uf.union(idx_i, idx_j)
+                    safe_union(idx_i, idx_j)
 
     # Form canonical clusters from UnionFind
     clusters: Dict[int, List[Dict[str, Any]]] = defaultdict(list)
@@ -532,15 +547,38 @@ def link_catalog_products(conn=None, task_id: Optional[str] = None) -> Dict[str,
         root = uf.find(idx)
         clusters[root].append(p)
 
+    canonicals = [dict(r) for r in cur.execute("SELECT * FROM canonical_products")]
+    by_canonical_id = {c["id"]: c for c in canonicals}
+    protected_clusters = {}
+    reviews_created = 0
+    deferred_offers = 0
+    for root, items in clusters.items():
+        assessment = assess_canonical_identity(items, canonicals)
+        if assessment["decision"] in ("mixed_cluster", "duplicate_canonicals"):
+            cids = assessment["canonical_ids"]
+            record_identity_review(conn, assessment["decision"], cids,
+                                   [p["id"] for p in items], assessment)
+            reviews_created += 1
+            # Preserve each durable anchor; an ambiguous new offer stays unlinked.
+            for cid in cids:
+                anchored = [p for p in items if p.get("canonical_product_id") == cid]
+                if anchored:
+                    protected_clusters[(root, cid)] = anchored
+            deferred_offers += sum(p.get("canonical_product_id") not in by_canonical_id for p in items)
+        else:
+            protected_clusters[(root, assessment.get("canonical_id"))] = items
+    clusters = protected_clusters
+
     canonical_created = 0
     multi_store_clusters = 0
     ingredients_propagated = 0
 
-    cur.execute("BEGIN TRANSACTION;")
+    if not conn.in_transaction:
+        cur.execute("BEGIN TRANSACTION;")
 
     used_keys = set()
 
-    for root, items in clusters.items():
+    for (root, anchor_id), items in clusters.items():
         is_multi_store = len(set(p["store_id"] for p in items)) > 1
         if is_multi_store:
             multi_store_clusters += 1
@@ -548,6 +586,9 @@ def link_catalog_products(conn=None, task_id: Optional[str] = None) -> Dict[str,
         best_title = max(items, key=lambda x: len(x.get("title") or ""))["title"]
         best_brand = items[0]["brand"] or "Generic"
         best_category = items[0]["category"] or "Skincare"
+        if anchor_id is not None:
+            anchor = by_canonical_id[anchor_id]
+            best_title, best_brand, best_category = anchor["canonical_title"], anchor["brand"], anchor["category"]
         is_skin_cluster = 1 if any(p.get("is_skincare") == 1 for p in items) else 0
 
         primary_img = next((p["image_url"] for p in items if p["image_url"]), None)
@@ -581,11 +622,37 @@ def link_catalog_products(conn=None, task_id: Optional[str] = None) -> Dict[str,
             key = f"{key}_{root}"
         used_keys.add(key)
 
-        cur.execute("SELECT id, ingredients_raw FROM canonical_products WHERE normalized_key = ?;", (key,))
-        existing_row = cur.fetchone()
+        if anchor_id is not None:
+            existing_row = by_canonical_id[anchor_id]
+        else:
+            cur.execute("SELECT * FROM canonical_products WHERE normalized_key = ?;", (key,))
+            existing_row = cur.fetchone()
+            # Also find a durable entity whose old derived key differs after retitling.
+            if existing_row is None:
+                matching = []
+                for c in canonicals:
+                    if canonicalize_brand(c["brand"]) != items[0]["canon_brand"] or c["category"] != best_category:
+                        continue
+                    tokens, _ = clean_and_tokenize(c["canonical_title"], c["brand"])
+                    if tokens == all_tokens and all(identity_compatible(p, c)[0] for p in items):
+                        matching.append(c)
+                if len(matching) == 1:
+                    existing_row = matching[0]
+                elif len(matching) > 1:
+                    record_identity_review(conn, "ambiguous_link", [c["id"] for c in matching],
+                        [p["id"] for p in items], {"reason": "Multiple existing canonical identities match the offer."})
+                    reviews_created += 1
+                    deferred_offers += len(items)
+                    continue
+            if existing_row is not None and not all(identity_compatible(p, dict(existing_row))[0] for p in items):
+                record_identity_review(conn, "ambiguous_link", [existing_row["id"]], [p["id"] for p in items],
+                    {"reason": "Derived key collision with an incompatible existing identity."})
+                reviews_created += 1
+                deferred_offers += len(items)
+                continue
 
         if existing_row:
-            canonical_id = existing_row[0]
+            canonical_id = existing_row["id"]
             # STRICT SEPARATION: Only update identity, pricing, store counts, and availability metadata.
             # Retailer listings MUST NEVER overwrite or modify canonical authoritative ingredients!
             cur.execute("""
@@ -598,30 +665,18 @@ def link_catalog_products(conn=None, task_id: Optional[str] = None) -> Dict[str,
             WHERE id = ?;
             """, (best_title, best_brand, best_category, min_p, max_p, store_cnt, primary_img, is_skin_cluster, canonical_id))
         else:
-            # For new canonical products, check if there is pre-existing curated/skinsafe verified data
-            init_raw = None
-            init_parsed = None
-            init_acts = None
-            init_src = None
-            init_inci_id = None
-            for p in items:
-                if p.get("ingredient_source") in ('skinsafe_matched', 'curated', 'v10_curated') and p.get("ingredients_raw"):
-                    init_raw = p["ingredients_raw"]
-                    init_parsed = p.get("ingredients_parsed")
-                    init_acts = p.get("actives")
-                    init_src = p.get("ingredient_source")
-                    init_inci_id = p.get("inci_matched_id")
-                    break
-
+            # STRICT SEPARATION: Newly created canonical products start with NULL ingredients.
+            # All authoritative formulations must be published through FormulationRepository
+            # with audit evidence, identity gates, and completeness checks.
             cur.execute("""
             INSERT INTO canonical_products (
                 canonical_title, brand, category, normalized_key,
                 ingredients_raw, ingredients_parsed, actives, ingredient_source,
                 inci_matched_id, min_price, max_price, store_count, primary_image_url, is_skincare
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
-            """, (best_title, best_brand, best_category, key, init_raw, init_parsed, init_acts,
-                  init_src, init_inci_id, min_p, max_p, store_cnt, primary_img, is_skin_cluster))
+            ) VALUES (?, ?, ?, ?, NULL, NULL, NULL, NULL, NULL, ?, ?, ?, ?, ?);
+            """, (best_title, best_brand, best_category, key, min_p, max_p, store_cnt, primary_img, is_skin_cluster))
             canonical_id = cur.lastrowid
+            canonicals.append(dict(cur.execute("SELECT * FROM canonical_products WHERE id=?", (canonical_id,)).fetchone()))
             canonical_created += 1
 
         # Link each retailer offer to the canonical product with size & unit-price attributes
@@ -654,6 +709,19 @@ def link_catalog_products(conn=None, task_id: Optional[str] = None) -> Dict[str,
                 pid
             ))
 
+    # A protected canonical can span several candidate clusters. Aggregate all
+    # its linked offers rather than leaving metadata from the final subset.
+    for canonical_id, in cur.execute("SELECT DISTINCT canonical_product_id FROM products WHERE canonical_product_id IS NOT NULL").fetchall():
+        aggregate = cur.execute("""SELECT
+            COALESCE(MIN(CASE WHEN is_available=1 AND price>0 THEN price END), MIN(CASE WHEN price>0 THEN price END), 0),
+            COALESCE(MAX(CASE WHEN is_available=1 AND price>0 THEN price END), MAX(CASE WHEN price>0 THEN price END), 0),
+            COUNT(DISTINCT store_id)
+            FROM products WHERE canonical_product_id=?""", (canonical_id,)).fetchone()
+        cur.execute("UPDATE canonical_products SET min_price=?,max_price=?,store_count=? WHERE id=?",
+                    (*aggregate, canonical_id))
+
+    # Audit durable duplicates and existing mixed clusters without automatic merge/split.
+    audit = audit_canonical_identity(conn, persist=True)
     # Note: Canonical records and their inci_audit_evidence are durable entities and are never purged.
     conn.commit()
 
@@ -686,7 +754,9 @@ def link_catalog_products(conn=None, task_id: Optional[str] = None) -> Dict[str,
         "canonical_entities": len(clusters),
         "newly_created_canonical": canonical_created,
         "multi_store_clusters": multi_store_clusters,
-        "ingredients_propagated": ingredients_propagated
+        "ingredients_propagated": ingredients_propagated,
+        "identity_reviews": audit["review_count"] + reviews_created,
+        "deferred_offers": deferred_offers
     }
 
     if close_on_exit:
