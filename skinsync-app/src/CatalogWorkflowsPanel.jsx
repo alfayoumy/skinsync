@@ -348,6 +348,11 @@ export default function CatalogWorkflowsPanel({onClose, initialTab='products',on
         </section>}
         {tab==='llm'&&<section className="max-w-3xl mx-auto rounded-xl border bg-white p-5 space-y-4">
           <h3 className="text-lg font-bold">AI review queues</h3>
+          <div className="rounded-lg border border-purple-200 bg-purple-50 p-3 space-y-2">
+            <strong className="text-sm">Gemini for product identity reviews</strong>
+            <p className="text-xs text-gray-700">Compare retailer names against canonical products in batches, auto-approve guarded high-confidence matches and send difficult cases to Product Reviews.</p>
+            <button type="button" className={button} onClick={onOpenReviews}>Open Gemini product matching</button>
+          </div>
           <p className="text-sm text-gray-600">Run Jev or Gemini separately on queued ambiguous matches. This does not crawl retailers, create products or update prices. A model's approval alone does not verify an exact INCI source.</p>
           <div className="grid grid-cols-3 gap-2">
             <Metric label="Jev waiting" value={queues?.jev?.queue_depth?.pending}/>

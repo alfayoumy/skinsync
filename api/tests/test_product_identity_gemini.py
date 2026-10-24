@@ -121,6 +121,42 @@ class GeminiIdentityReviewTests(unittest.TestCase):
         self.assertEqual(self.conn.execute('SELECT status FROM identity_gemini_queue WHERE review_id=?',(self.review_id,)).fetchone()[0],'needs_manual')
         self.assertEqual(self.conn.execute('SELECT identity_status FROM canonical_products WHERE id=?',(self.cid,)).fetchone()[0],'legacy')
 
+    def test_single_source_does_not_qualify_for_automated_publication(self):
+        self.conn.execute("DELETE FROM products WHERE id IN (10147,14335)")
+        details=self.case()['details']
+        details['offers']=details['offers'][:1]
+        self.conn.execute('UPDATE product_review_queue SET details=? WHERE id=?',(json.dumps(details),self.review_id))
+        ok,reason=can_auto_resolve(self.conn,self.case(),self.answer())
+        self.assertFalse(ok)
+        self.assertIn('listings',reason.lower())
+
+    def test_multiple_cases_are_evaluated_in_one_gemini_request(self):
+        for i in (2,3):
+            details=self.case()['details']
+            queue_review(self.conn,'identity','bashrety',str(i),self.cid,details)
+        queued=queue_cases(self.conn,queued_by='test')
+        self.assertEqual(queued['queued'],3)
+        calls=[]
+        def provider(cases):
+            calls.append(len(cases))
+            return {case['id']:self.answer(.70,'uncertain') for case in cases}
+        proxy=NoCloseConnection(self.conn)
+        with patch('pipeline.product_identity_gemini.get_connection',return_value=proxy), \
+             patch('pipeline.product_identity_gemini.update_task_progress'), \
+             patch('pipeline.product_identity_gemini.complete_task'):
+            report=run_identity_gemini_queue('gemini-test',limit=3,batch_size=10,provider=provider)
+        self.assertEqual(report['api_calls'],1)
+        self.assertEqual(report['needs_manual'],3)
+        self.assertEqual(calls,[3])
+
+    def test_abandoned_processing_batch_is_requeued(self):
+        queue_cases(self.conn,queued_by='test')
+        self.conn.execute("""UPDATE identity_gemini_queue SET status='processing',task_id='crashed-task'
+            WHERE review_id=?""",(self.review_id,))
+        report=queue_cases(self.conn,queued_by='test')
+        self.assertEqual(report['queued'],1)
+        self.assertEqual(queue_counts(self.conn)['queued'],1)
+
     def test_remote_failure_keeps_queue_retryable(self):
         queue_cases(self.conn,queued_by='test')
         proxy=NoCloseConnection(self.conn)
