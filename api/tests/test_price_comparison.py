@@ -181,20 +181,20 @@ class TestIsolatedClusteringAndPropagation(unittest.TestCase):
         self.assertEqual(metrics["canonical_entities"], 1)
         self.assertEqual(metrics["newly_created_canonical"], 1)
         self.assertEqual(metrics["multi_store_clusters"], 1)
-        self.assertEqual(metrics["ingredients_propagated"], 1)
+        # Strict Architectural Rule: Offer listings must NEVER receive propagated ingredients
+        self.assertEqual(metrics["ingredients_propagated"], 0)
 
         cur = self.conn.cursor()
         # Verify both products have canonical_product_id set
-        cur.execute("SELECT id, canonical_product_id, ingredients_raw, ingredient_source FROM products ORDER BY id ASC;")
+        cur.execute("SELECT id, canonical_product_id, ingredients_raw, ingredient_source, size_raw, unit_price FROM products ORDER BY id ASC;")
         rows = cur.fetchall()
         self.assertEqual(len(rows), 2)
         self.assertIsNotNone(rows[0]["canonical_product_id"])
         self.assertEqual(rows[0]["canonical_product_id"], rows[1]["canonical_product_id"])
 
-        # Verify Store B received the propagated ingredients
-        self.assertIsNotNone(rows[1]["ingredients_raw"])
-        self.assertIn("Sodium Hyaluronate", rows[1]["ingredients_raw"])
-        self.assertEqual(rows[1]["ingredient_source"], "cross_store_linked")
+        # Strict Separation: Store B listing is an offer and was NOT modified with propagated ingredients
+        self.assertIsNone(rows[1]["ingredients_raw"])
+        self.assertIsNone(rows[1]["ingredient_source"])
 
         # Verify Canonical product aggregates price correctly
         cur.execute("SELECT * FROM canonical_products WHERE id = ?;", (rows[0]["canonical_product_id"],))

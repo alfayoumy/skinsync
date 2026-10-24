@@ -11,9 +11,16 @@ from pipeline.logging_config import get_logger
 logger = get_logger("skincare_engine.price_service")
 
 
+from collections import defaultdict
+
+
 def get_canonical_price_comparison(canonical_id: int, conn=None) -> Optional[Dict[str, Any]]:
     """
     Returns full multi-store price comparison and store offers for a given canonical product ID.
+    Enforces strict architectural separation:
+    - Authoritative formulation comes exclusively from canonical_products.
+    - Offers are grouped by package size for same-size price comparisons.
+    - Computes normalized unit pricing (EGP / 100ml or EGP / 100g) strictly within compatible units.
     """
     close_on_exit = False
     if conn is None:
@@ -36,11 +43,13 @@ def get_canonical_price_comparison(canonical_id: int, conn=None) -> Optional[Dic
 
         canonical = dict(canonical)
 
-        # Fetch all store listings for this canonical product
+        # Fetch all retailer store listings (offers) for this canonical product
+        # Zero ingredient queries from products table
         cur.execute("""
         SELECT p.id as product_id, p.store_id, s.name as store_name, p.title as store_title,
                p.price, p.compare_at_price, p.is_available, p.product_url, p.image_url,
-               p.ingredients_raw, p.ingredient_source
+               p.size_raw, p.size_value, p.size_unit, p.normalized_size_ml, p.normalized_size_g,
+               p.unit_price, p.unit_measure
         FROM products p
         LEFT JOIN stores s ON s.id = p.store_id
         WHERE p.canonical_product_id = ?
@@ -49,8 +58,8 @@ def get_canonical_price_comparison(canonical_id: int, conn=None) -> Optional[Dic
         listings = [dict(r) for r in cur.fetchall()]
 
         # Filter active available offers vs out of stock offers
-        in_stock_offers = [o for o in listings if o["is_available"] and o["price"] > 0]
-        active_offers = in_stock_offers if in_stock_offers else [o for o in listings if o["price"] > 0]
+        in_stock_offers = [o for o in listings if o.get("is_available") and (o.get("price") or 0) > 0]
+        active_offers = in_stock_offers if in_stock_offers else [o for o in listings if (o.get("price") or 0) > 0]
 
         best_deal = active_offers[0] if active_offers else (listings[0] if listings else None)
         prices = [o["price"] for o in active_offers]
@@ -60,8 +69,70 @@ def get_canonical_price_comparison(canonical_id: int, conn=None) -> Optional[Dic
         price_diff = round(max(0.0, max_price - min_price), 2)
         savings_pct = round((price_diff / max_price * 100.0), 1) if max_price > 0 else 0.0
 
+        # 1. Group offers by package size
+        offers_by_size = defaultdict(list)
+        for o in listings:
+            size_key = o.get("size_raw") or "Standard / Unspecified"
+            offers_by_size[size_key].append(o)
+
+        # 2. Compute same-size best deal and savings within each size group
+        size_groups_formatted = []
+        for size_key, group_offers in offers_by_size.items():
+            active_grp = [o for o in group_offers if o.get("is_available") and (o.get("price") or 0) > 0]
+            if not active_grp:
+                active_grp = [o for o in group_offers if (o.get("price") or 0) > 0]
+            grp_best = active_grp[0] if active_grp else (group_offers[0] if group_offers else None)
+            grp_prices = [o["price"] for o in active_grp]
+            grp_min = min(grp_prices) if grp_prices else 0.0
+            grp_max = max(grp_prices) if grp_prices else 0.0
+            grp_diff = round(max(0.0, grp_max - grp_min), 2)
+            grp_savings = round((grp_diff / grp_max * 100.0), 1) if grp_max > 0 else 0.0
+
+            for o in group_offers:
+                o["is_best_size_deal"] = (grp_best is not None and o["product_id"] == grp_best["product_id"])
+
+            size_groups_formatted.append({
+                "size": size_key,
+                "offer_count": len(group_offers),
+                "min_price": grp_min,
+                "max_price": grp_max,
+                "price_difference_egp": grp_diff,
+                "savings_percent": grp_savings,
+                "best_deal": grp_best,
+                "offers": group_offers
+            })
+
+        # 3. Size-aware unit pricing (EGP / 100ml for liquids, EGP / 100g for solids)
+        # Compatible unit comparison only: NEVER mix volume and mass
+        vol_offers = []
+        wt_offers = []
+        for o in active_offers:
+            p = o.get("price") or 0.0
+            ml = o.get("normalized_size_ml")
+            g = o.get("normalized_size_g")
+
+            if ml and ml > 0 and p > 0:
+                if not o.get("unit_price") or o.get("unit_measure") != "EGP / 100ml":
+                    o["unit_price"] = round(p / (ml / 100.0), 2)
+                    o["unit_measure"] = "EGP / 100ml"
+                vol_offers.append(o)
+            elif g and g > 0 and p > 0:
+                if not o.get("unit_price") or o.get("unit_measure") != "EGP / 100g":
+                    o["unit_price"] = round(p / (g / 100.0), 2)
+                    o["unit_measure"] = "EGP / 100g"
+                wt_offers.append(o)
+
+        best_unit_vol = min(vol_offers, key=lambda x: x["unit_price"]) if vol_offers else None
+        best_unit_wt = min(wt_offers, key=lambda x: x["unit_price"]) if wt_offers else None
+
         for o in listings:
             o["is_best_deal"] = (best_deal is not None and o["product_id"] == best_deal["product_id"])
+            is_best_unit = False
+            if best_unit_vol and o["product_id"] == best_unit_vol["product_id"]:
+                is_best_unit = True
+            if best_unit_wt and o["product_id"] == best_unit_wt["product_id"]:
+                is_best_unit = True
+            o["is_best_unit_deal"] = is_best_unit
 
         return {
             "canonical_product_id": canonical["id"],
@@ -78,7 +149,12 @@ def get_canonical_price_comparison(canonical_id: int, conn=None) -> Optional[Dic
             "price_difference_egp": price_diff,
             "savings_percent": savings_pct,
             "best_deal": best_deal,
-            "offers": listings
+            "best_unit_deal_volume": best_unit_vol,
+            "best_unit_deal_weight": best_unit_wt,
+            "offers": listings,
+            "offers_by_size": dict(offers_by_size),
+            "size_groups": size_groups_formatted,
+            "size_options": list(offers_by_size.keys())
         }
     finally:
         if close_on_exit:
@@ -87,7 +163,7 @@ def get_canonical_price_comparison(canonical_id: int, conn=None) -> Optional[Dic
 
 def get_product_price_comparison(product_id: int, conn=None) -> Optional[Dict[str, Any]]:
     """
-    Given a store listing product ID, looks up its canonical entity and returns the price comparison.
+    Given a store listing product ID or canonical product ID, resolves canonical entity and returns price comparison.
     """
     close_on_exit = False
     if conn is None:
@@ -96,17 +172,23 @@ def get_product_price_comparison(product_id: int, conn=None) -> Optional[Dict[st
 
     try:
         cur = conn.cursor()
+        # 1. Check if product_id is an offer listing in products
         cur.execute("SELECT canonical_product_id FROM products WHERE id = ?;", (product_id,))
         row = cur.fetchone()
 
-        if not row or not row["canonical_product_id"]:
-            return None
+        if row and row["canonical_product_id"]:
+            canonical_id = row["canonical_product_id"]
+            comparison = get_canonical_price_comparison(canonical_id, conn=conn)
+            if comparison:
+                comparison["queried_product_id"] = product_id
+            return comparison
 
-        canonical_id = row["canonical_product_id"]
-        comparison = get_canonical_price_comparison(canonical_id, conn=conn)
-        if comparison:
-            comparison["queried_product_id"] = product_id
-        return comparison
+        # 2. Check if product_id is already a canonical_products ID
+        cur.execute("SELECT id FROM canonical_products WHERE id = ?;", (product_id,))
+        if cur.fetchone():
+            return get_canonical_price_comparison(product_id, conn=conn)
+
+        return None
     finally:
         if close_on_exit:
             conn.close()

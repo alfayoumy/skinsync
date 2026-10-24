@@ -45,27 +45,75 @@ class SimilarityScoreRequest(BaseModel):
 def _resolve_product_for_similarity(pid: Optional[int], payload: Optional[ProductItemPayload], conn):
     if pid is not None:
         cur = conn.cursor()
-        cur.execute("SELECT id, title, brand, ingredients_raw, ingredients_parsed, actives FROM products WHERE id = ?;", (pid,))
+        # 1. First check canonical_products (authoritative unique product formulation)
+        cur.execute("""
+        SELECT id, canonical_title as title, brand, ingredients_raw, ingredients_parsed, actives
+        FROM canonical_products
+        WHERE id = ?;
+        """, (pid,))
+        row = cur.fetchone()
+        if row:
+            raw_ings = row["ingredients_raw"] or ""
+            parsed = json.loads(row["ingredients_parsed"]) if row["ingredients_parsed"] else []
+            if not parsed and raw_ings:
+                parsed, _ = parse_and_clean_ingredients(raw_ings)
+            acts = set(json.loads(row["actives"])) if row["actives"] else set()
+            if not acts:
+                acts = extract_actives_from_title(row["title"])
+                if raw_ings:
+                    _, p_acts = parse_and_clean_ingredients(raw_ings)
+                    acts = acts.union(p_acts)
+            return {
+                "id": row["id"],
+                "canonical_product_id": row["id"],
+                "title": row["title"],
+                "brand": row["brand"],
+                "parsed_ingredients": parsed,
+                "actives": acts,
+                "raw_ingredients": raw_ings,
+                "is_authoritative_canonical": True
+            }
+
+        # 2. Check retailer products (store offers); if linked to canonical, use authoritative formulation!
+        cur.execute("""
+        SELECT p.id, p.title, p.brand, p.ingredients_raw, p.ingredients_parsed, p.actives, p.canonical_product_id,
+               c.canonical_title, c.ingredients_raw as canon_raw, c.ingredients_parsed as canon_parsed, c.actives as canon_actives
+        FROM products p
+        LEFT JOIN canonical_products c ON c.id = p.canonical_product_id
+        WHERE p.id = ?;
+        """, (pid,))
         row = cur.fetchone()
         if not row:
             raise HTTPException(status_code=404, detail=f"Product with ID {pid} not found in database.")
-        raw_ings = row["ingredients_raw"] or ""
-        parsed = json.loads(row["ingredients_parsed"]) if row["ingredients_parsed"] else []
+
+        if row["canonical_product_id"] and row["canon_raw"]:
+            title = row["canonical_title"] or row["title"]
+            raw_ings = row["canon_raw"]
+            parsed = json.loads(row["canon_parsed"]) if row["canon_parsed"] else []
+            acts = set(json.loads(row["canon_actives"])) if row["canon_actives"] else set()
+        else:
+            title = row["title"]
+            raw_ings = row["ingredients_raw"] or ""
+            parsed = json.loads(row["ingredients_parsed"]) if row["ingredients_parsed"] else []
+            acts = set(json.loads(row["actives"])) if row["actives"] else set()
+
         if not parsed and raw_ings:
             parsed, _ = parse_and_clean_ingredients(raw_ings)
-        acts = set(json.loads(row["actives"])) if row["actives"] else set()
         if not acts:
-            acts = extract_actives_from_title(row["title"])
+            acts = extract_actives_from_title(title)
             if raw_ings:
                 _, p_acts = parse_and_clean_ingredients(raw_ings)
                 acts = acts.union(p_acts)
+
         return {
             "id": row["id"],
-            "title": row["title"],
+            "canonical_product_id": row["canonical_product_id"],
+            "title": title,
             "brand": row["brand"],
             "parsed_ingredients": parsed,
             "actives": acts,
-            "raw_ingredients": raw_ings
+            "raw_ingredients": raw_ings,
+            "is_authoritative_canonical": bool(row["canonical_product_id"] and row["canon_raw"])
         }
     elif payload is not None:
         title = payload.title or ""

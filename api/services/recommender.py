@@ -297,6 +297,36 @@ def get_recommendations(
     if matches.empty:
         matches = df[df['title'].str.contains(re.escape(target_title), case=False, na=False)]
     if matches.empty:
+        # Fallback 1: Strip packaging volume / size qualifier from query
+        try:
+            from pipeline.product_linker import parse_volume
+            _, clean_query = parse_volume(target_title)
+            clean_query = clean_query.strip()
+            if clean_query:
+                matches = df[df['title'].str.lower() == clean_query.lower()]
+                if matches.empty:
+                    matches = df[df['title'].str.contains(re.escape(clean_query), case=False, na=False)]
+        except Exception:
+            pass
+    if matches.empty:
+        # Fallback 2: Check if target_title matches a retailer listing offer
+        try:
+            from pipeline.db_manager import get_connection
+            conn = get_connection()
+            cur = conn.cursor()
+            cur.execute("""
+            SELECT canonical_product_id FROM products
+            WHERE title = ? OR title LIKE ?
+            ORDER BY CASE WHEN title = ? THEN 1 ELSE 2 END
+            LIMIT 1;
+            """, (target_title, f"%{target_title}%", target_title))
+            row = cur.fetchone()
+            conn.close()
+            if row and row["canonical_product_id"]:
+                matches = df[df['id'] == row["canonical_product_id"]]
+        except Exception:
+            pass
+    if matches.empty:
         return None
 
     target = matches.iloc[0]

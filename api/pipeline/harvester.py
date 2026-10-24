@@ -21,6 +21,7 @@ from pipeline.task_tracker import (
     update_task_progress, log_task_event, update_scrape_checkpoint
 )
 from pipeline.title_enricher import enrich_product_title
+from pipeline.product_linker import extract_size_details
 try:
     from pipeline.config import cfg
 except ImportError:
@@ -214,15 +215,20 @@ def sync_store(store_cfg: dict, max_pages: int = None, conn=None, fields: list =
 
                 parsed_ings, actives = parse_and_normalize_ingredients(raw_ings or "")
 
+                # Extract size attributes and normalized unit pricing for the offer
+                size_data = extract_size_details(title, handle, price)
+
                 # Check if product exists in DB
-                cur.execute("SELECT id, price, ingredients_raw FROM products WHERE product_url = ?;", (product_url,))
+                cur.execute("SELECT id, price, canonical_product_id, ingredients_raw FROM products WHERE product_url = ?;", (product_url,))
                 existing = cur.fetchone()
 
                 if existing:
                     pid = existing["id"]
                     old_price = float(existing["price"])
+                    canon_id = existing["canonical_product_id"]
 
                     # Detect Price Change if price is being updated
+                    price_has_changed = False
                     if clean_fields is None or "price" in clean_fields:
                         if abs(old_price - price) > cfg.PRICE_DIFFERENCE_THRESHOLD and price > 0:
                             cur.execute("""
@@ -230,9 +236,10 @@ def sync_store(store_cfg: dict, max_pages: int = None, conn=None, fields: list =
                             VALUES (?, ?, ?);
                             """, (pid, old_price, price))
                             price_changes += 1
+                            price_has_changed = True
 
                     if clean_fields is None:
-                        # Full update of all fields
+                        # Full update of offer fields (Zero canonical ingredient writes)
                         if not existing["ingredients_raw"] and raw_ings:
                             cur.execute("""
                             UPDATE products
@@ -240,21 +247,33 @@ def sync_store(store_cfg: dict, max_pages: int = None, conn=None, fields: list =
                                 is_available = ?, image_url = ?, ingredients_raw = ?,
                                 ingredients_parsed = ?, actives = ?, ingredient_source = ?,
                                 description_html = COALESCE(?, description_html),
+                                size_raw = ?, size_value = ?, size_unit = ?,
+                                normalized_size_ml = ?, normalized_size_g = ?,
+                                unit_price = ?, unit_measure = ?,
                                 updated_at = CURRENT_TIMESTAMP
                             WHERE id = ?;
                             """, (title, vendor, category, price, compare_price, is_available, image_url,
                                   raw_ings, json.dumps(parsed_ings), json.dumps(actives),
-                                  ing_source, body_html, pid))
+                                  ing_source, body_html,
+                                  size_data["size_raw"], size_data["size_value"], size_data["size_unit"],
+                                  size_data["normalized_size_ml"], size_data["normalized_size_g"],
+                                  size_data["unit_price"], size_data["unit_measure"], pid))
                         else:
                             cur.execute("""
                             UPDATE products
                             SET title = ?, brand = ?, category = ?, price = ?, compare_at_price = ?,
                                 is_available = ?, image_url = ?,
                                 description_html = COALESCE(?, description_html),
+                                size_raw = ?, size_value = ?, size_unit = ?,
+                                normalized_size_ml = ?, normalized_size_g = ?,
+                                unit_price = ?, unit_measure = ?,
                                 updated_at = CURRENT_TIMESTAMP
                             WHERE id = ?;
                             """, (title, vendor, category, price, compare_price, is_available, image_url,
-                                  body_html, pid))
+                                  body_html,
+                                  size_data["size_raw"], size_data["size_value"], size_data["size_unit"],
+                                  size_data["normalized_size_ml"], size_data["normalized_size_g"],
+                                  size_data["unit_price"], size_data["unit_measure"], pid))
                     else:
                         # Granular field updates
                         upd_cols = []
@@ -275,26 +294,52 @@ def sync_store(store_cfg: dict, max_pages: int = None, conn=None, fields: list =
                             upd_cols.extend(["ingredients_raw = ?", "ingredients_parsed = ?", "actives = ?", "ingredient_source = ?"])
                             upd_vals.extend([raw_ings, json.dumps(parsed_ings), json.dumps(actives), ing_source])
 
+                        # Always refresh size & unit pricing attributes on offer
+                        upd_cols.extend([
+                            "size_raw = ?", "size_value = ?", "size_unit = ?",
+                            "normalized_size_ml = ?", "normalized_size_g = ?",
+                            "unit_price = ?", "unit_measure = ?"
+                        ])
+                        upd_vals.extend([
+                            size_data["size_raw"], size_data["size_value"], size_data["size_unit"],
+                            size_data["normalized_size_ml"], size_data["normalized_size_g"],
+                            size_data["unit_price"], size_data["unit_measure"]
+                        ])
+
                         if upd_cols:
                             upd_cols.append("updated_at = CURRENT_TIMESTAMP")
                             upd_vals.append(pid)
                             sql = f"UPDATE products SET {', '.join(upd_cols)} WHERE id = ?;"
                             cur.execute(sql, tuple(upd_vals))
 
+                    # Update canonical product's price range if linked and price changed (NEVER canonical ingredients)
+                    if canon_id and price_has_changed:
+                        cur.execute("""
+                        UPDATE canonical_products
+                        SET min_price = (SELECT MIN(price) FROM products WHERE canonical_product_id = ? AND price > 0),
+                            max_price = (SELECT MAX(price) FROM products WHERE canonical_product_id = ? AND price > 0),
+                            updated_at = CURRENT_TIMESTAMP
+                        WHERE id = ?;
+                        """, (canon_id, canon_id, canon_id))
+
                     total_updated += 1
                     page_updated += 1
                 else:
-                    # Insert new product
+                    # Insert new retailer offer with size & unit-price attributes
                     cur.execute("""
                     INSERT INTO products (
                         store_id, store_product_id, handle, title, brand, category,
                         price, compare_at_price, is_available, image_url, product_url,
-                        description_html, ingredients_raw, ingredients_parsed, actives, ingredient_source
-                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
+                        description_html, ingredients_raw, ingredients_parsed, actives, ingredient_source,
+                        size_raw, size_value, size_unit, normalized_size_ml, normalized_size_g, unit_price, unit_measure
+                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
                     """, (
                         store_id, prod_id, handle, title, vendor, category,
                         price, compare_price, is_available, image_url, product_url,
-                        body_html, raw_ings, json.dumps(parsed_ings), json.dumps(actives), ing_source
+                        body_html, raw_ings, json.dumps(parsed_ings), json.dumps(actives), ing_source,
+                        size_data["size_raw"], size_data["size_value"], size_data["size_unit"],
+                        size_data["normalized_size_ml"], size_data["normalized_size_g"],
+                        size_data["unit_price"], size_data["unit_measure"]
                     ))
                     total_added += 1
                     page_added += 1

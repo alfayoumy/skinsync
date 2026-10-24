@@ -124,13 +124,26 @@ def init_linker_db(conn=None) -> None:
     cur.execute("CREATE INDEX IF NOT EXISTS idx_canonical_normalized ON canonical_products(normalized_key);")
     cur.execute("CREATE INDEX IF NOT EXISTS idx_canonical_brand ON canonical_products(brand);")
 
-    # Add canonical_product_id and is_skincare columns to products table if missing
+    # Add canonical_product_id, is_skincare, and size attributes to products table if missing
     cur.execute("PRAGMA table_info(products);")
     existing_cols = {r[1] for r in cur.fetchall()}
     if "canonical_product_id" not in existing_cols:
         cur.execute("ALTER TABLE products ADD COLUMN canonical_product_id INTEGER REFERENCES canonical_products(id);")
     if "is_skincare" not in existing_cols:
         cur.execute("ALTER TABLE products ADD COLUMN is_skincare INTEGER DEFAULT 0;")
+
+    size_cols = [
+        ('size_raw', 'TEXT'),
+        ('size_value', 'REAL'),
+        ('size_unit', 'TEXT'),
+        ('normalized_size_ml', 'REAL'),
+        ('normalized_size_g', 'REAL'),
+        ('unit_price', 'REAL'),
+        ('unit_measure', 'TEXT')
+    ]
+    for c_name, c_type in size_cols:
+        if c_name not in existing_cols:
+            cur.execute(f"ALTER TABLE products ADD COLUMN {c_name} {c_type};")
 
     cur.execute("PRAGMA table_info(canonical_products);")
     existing_can_cols = {r[1] for r in cur.fetchall()}
@@ -170,13 +183,18 @@ def parse_volume(text: str) -> Tuple[str, str]:
     if not vol_match:
         return "", text
     qty = vol_match.group(1)
-    unit = vol_match.group(2).lower()
-    if unit in ('gm', 'g'):
+    raw_unit = vol_match.group(2).lower().strip()
+    if raw_unit in ('gm', 'g'):
         unit = 'g'
-    elif unit in ('ml', 'l', 'liter', 'litres'):
+    elif raw_unit in ('ml', 'milliliter', 'millilitre'):
         unit = 'ml'
-    elif 'oz' in unit:
+    elif raw_unit in ('l', 'liter', 'litres'):
+        unit = 'l'
+    elif 'oz' in raw_unit:
         unit = 'oz'
+    else:
+        unit = raw_unit
+
     try:
         f_qty = float(qty)
         qty_str = str(int(f_qty)) if f_qty.is_integer() else str(f_qty)
@@ -185,6 +203,96 @@ def parse_volume(text: str) -> Tuple[str, str]:
     vol_str = f"{qty_str}{unit}"
     clean_t = text[:vol_match.start()] + ' ' + text[vol_match.end():]
     return vol_str, clean_t
+
+
+def extract_size_details(title: str, handle: str = "", price: float = 0.0) -> Dict[str, Any]:
+    """
+    Extracts packaging size and computes normalized unit pricing for an offer.
+    Supports liquid volume (ml, l, fl oz) and solid mass (g, kg, oz).
+    Does NOT assume volume == mass (never assumes 50g == 50ml).
+    """
+    vol_str, _ = parse_volume(title or "")
+    if not vol_str and handle:
+        vol_str, _ = parse_volume(handle.replace('-', ' '))
+
+    if not vol_str:
+        return {
+            "size_raw": None,
+            "size_value": None,
+            "size_unit": None,
+            "normalized_size_ml": None,
+            "normalized_size_g": None,
+            "unit_price": None,
+            "unit_measure": None
+        }
+
+    m = re.match(r'^([\d.]+)\s*([a-z ]+)$', vol_str.lower().strip())
+    if not m:
+        return {
+            "size_raw": vol_str,
+            "size_value": None,
+            "size_unit": None,
+            "normalized_size_ml": None,
+            "normalized_size_g": None,
+            "unit_price": None,
+            "unit_measure": None
+        }
+
+    try:
+        val = float(m.group(1))
+    except (ValueError, TypeError):
+        return {
+            "size_raw": vol_str,
+            "size_value": None,
+            "size_unit": None,
+            "normalized_size_ml": None,
+            "normalized_size_g": None,
+            "unit_price": None,
+            "unit_measure": None
+        }
+
+    unit = m.group(2).strip()
+    norm_ml = None
+    norm_g = None
+    unit_price = None
+    unit_measure = None
+
+    if unit in ('ml', 'l', 'liter', 'litres', 'fl oz', 'floz'):
+        if unit in ('l', 'liter', 'litres'):
+            norm_ml = val * 1000.0
+        elif 'oz' in unit:
+            norm_ml = val * 29.5735
+        else:
+            norm_ml = val
+
+        if price and price > 0 and norm_ml > 0:
+            unit_price = round(price / (norm_ml / 100.0), 2)
+            unit_measure = "EGP / 100ml"
+    elif unit in ('g', 'gm', 'kg'):
+        if unit == 'kg':
+            norm_g = val * 1000.0
+        else:
+            norm_g = val
+
+        if price and price > 0 and norm_g > 0:
+            unit_price = round(price / (norm_g / 100.0), 2)
+            unit_measure = "EGP / 100g"
+    elif unit == 'oz':
+        norm_g = val * 28.3495
+        if price and price > 0 and norm_g > 0:
+            unit_price = round(price / (norm_g / 100.0), 2)
+            unit_measure = "EGP / 100g"
+
+    disp_val = int(val) if val.is_integer() else val
+    return {
+        "size_raw": f"{disp_val} {unit}",
+        "size_value": val,
+        "size_unit": unit,
+        "normalized_size_ml": round(norm_ml, 2) if norm_ml else None,
+        "normalized_size_g": round(norm_g, 2) if norm_g else None,
+        "unit_price": unit_price,
+        "unit_measure": unit_measure
+    }
 
 
 def canonicalize_brand(b: str) -> str:
@@ -394,7 +502,23 @@ def link_catalog_products(conn=None, task_id: Optional[str] = None) -> Dict[str,
                 if ('hydrating' in mods1 and 'foaming' in mods2) or ('foaming' in mods1 and 'hydrating' in mods2):
                     continue
 
-                # 4. Token Jaccard similarity & exact set match
+                # 4. Sun Protection Factor (SPF) safeguard: SPF 30 vs SPF 50 are distinct formulations
+                t1_lower = p_i.get("title", "").lower()
+                t2_lower = p_j.get("title", "").lower()
+                spf_m1 = re.search(r'\bspf\s*(\d+)\b', t1_lower)
+                spf_m2 = re.search(r'\bspf\s*(\d+)\b', t2_lower)
+                if spf_m1 and spf_m2 and spf_m1.group(1) != spf_m2.group(1):
+                    continue
+                if bool(spf_m1) != bool(spf_m2) and ('spf' in mods1 or 'spf' in mods2):
+                    continue
+
+                # 5. Fragrance-free / unscented vs scented formulation safeguard
+                unscented_1 = bool(re.search(r'\b(fragrance[- ]free|unscented|sans parfum)\b', t1_lower))
+                unscented_2 = bool(re.search(r'\b(fragrance[- ]free|unscented|sans parfum)\b', t2_lower))
+                if unscented_1 != unscented_2:
+                    continue
+
+                # 6. Token Jaccard similarity & exact set match
                 inter = len(set1.intersection(set2))
                 union = len(set1.union(set2))
                 jacc = inter / union if union > 0 else 0.0
@@ -457,68 +581,78 @@ def link_catalog_products(conn=None, task_id: Optional[str] = None) -> Dict[str,
             key = f"{key}_{root}"
         used_keys.add(key)
 
-        cur.execute("SELECT id FROM canonical_products WHERE normalized_key = ?;", (key,))
+        cur.execute("SELECT id, ingredients_raw FROM canonical_products WHERE normalized_key = ?;", (key,))
         existing_row = cur.fetchone()
 
         if existing_row:
             canonical_id = existing_row[0]
+            # STRICT SEPARATION: Only update identity, pricing, store counts, and availability metadata.
+            # Retailer listings MUST NEVER overwrite or modify canonical authoritative ingredients!
             cur.execute("""
             UPDATE canonical_products
             SET canonical_title = ?, brand = ?, category = ?,
-                ingredients_raw = COALESCE(?, ingredients_raw),
-                ingredients_parsed = COALESCE(?, ingredients_parsed),
-                actives = COALESCE(?, actives),
-                ingredient_source = COALESCE(?, ingredient_source),
-                inci_matched_id = COALESCE(?, inci_matched_id),
                 min_price = ?, max_price = ?, store_count = ?,
-                primary_image_url = COALESCE(?, primary_image_url),
+                primary_image_url = COALESCE(primary_image_url, ?),
                 is_skincare = ?,
                 updated_at = CURRENT_TIMESTAMP
             WHERE id = ?;
-            """, (best_title, best_brand, best_category, best_raw, best_parsed, best_acts,
-                  best_src, best_inci_id, min_p, max_p, store_cnt, primary_img, is_skin_cluster, canonical_id))
+            """, (best_title, best_brand, best_category, min_p, max_p, store_cnt, primary_img, is_skin_cluster, canonical_id))
         else:
+            # For new canonical products, check if there is pre-existing curated/skinsafe verified data
+            init_raw = None
+            init_parsed = None
+            init_acts = None
+            init_src = None
+            init_inci_id = None
+            for p in items:
+                if p.get("ingredient_source") in ('skinsafe_matched', 'curated', 'v10_curated') and p.get("ingredients_raw"):
+                    init_raw = p["ingredients_raw"]
+                    init_parsed = p.get("ingredients_parsed")
+                    init_acts = p.get("actives")
+                    init_src = p.get("ingredient_source")
+                    init_inci_id = p.get("inci_matched_id")
+                    break
+
             cur.execute("""
             INSERT INTO canonical_products (
                 canonical_title, brand, category, normalized_key,
                 ingredients_raw, ingredients_parsed, actives, ingredient_source,
                 inci_matched_id, min_price, max_price, store_count, primary_image_url, is_skincare
             ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
-            """, (best_title, best_brand, best_category, key, best_raw, best_parsed, best_acts,
-                  best_src, best_inci_id, min_p, max_p, store_cnt, primary_img, is_skin_cluster))
+            """, (best_title, best_brand, best_category, key, init_raw, init_parsed, init_acts,
+                  init_src, init_inci_id, min_p, max_p, store_cnt, primary_img, is_skin_cluster))
             canonical_id = cur.lastrowid
             canonical_created += 1
 
+        # Link each retailer offer to the canonical product with size & unit-price attributes
         for p in items:
             pid = p["id"]
-            curr_raw = p.get("ingredients_raw")
-            curr_inci = p.get("inci_matched_id")
+            price_val = p.get("price") or 0.0
+            size_data = extract_size_details(p.get("title") or "", p.get("handle") or "", price_val)
 
-            update_fields = ["canonical_product_id = ?"]
-            update_values = [canonical_id]
-
-            if (not curr_raw or len(curr_raw.strip()) < 15) and best_raw:
-                update_fields.extend([
-                    "ingredients_raw = ?",
-                    "ingredients_parsed = ?",
-                    "actives = ?",
-                    "ingredient_source = 'cross_store_linked'"
-                ])
-                update_values.extend([best_raw, best_parsed, best_acts])
-                ingredients_propagated += 1
-
-            if not curr_inci and best_inci_id:
-                update_fields.append("inci_matched_id = ?")
-                update_values.append(best_inci_id)
-
-            update_fields.append("updated_at = CURRENT_TIMESTAMP")
-            update_values.append(pid)
-
-            cur.execute(f"""
+            cur.execute("""
             UPDATE products
-            SET {', '.join(update_fields)}
+            SET canonical_product_id = ?,
+                size_raw = ?,
+                size_value = ?,
+                size_unit = ?,
+                normalized_size_ml = ?,
+                normalized_size_g = ?,
+                unit_price = ?,
+                unit_measure = ?,
+                updated_at = CURRENT_TIMESTAMP
             WHERE id = ?;
-            """, update_values)
+            """, (
+                canonical_id,
+                size_data["size_raw"],
+                size_data["size_value"],
+                size_data["size_unit"],
+                size_data["normalized_size_ml"],
+                size_data["normalized_size_g"],
+                size_data["unit_price"],
+                size_data["unit_measure"],
+                pid
+            ))
 
     # Purge deprecated canonical clusters not referenced by any products
     cur.execute("""

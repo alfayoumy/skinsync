@@ -27,12 +27,15 @@ def get_connection(db_path=DB_PATH):
     conn.execute("PRAGMA busy_timeout = 60000;")
     return conn
 
-def init_db(db_path=DB_PATH, seed_defaults: bool = True):
+def init_db(db_path=DB_PATH, seed_defaults: bool = True, conn=None):
     """
     Initializes database schema with proper indexes for fast searches and historical tracking.
     Optionally seeds default tables via dedicated seed scripts.
     """
-    conn = get_connection(db_path)
+    should_close = False
+    if conn is None:
+        conn = get_connection(db_path)
+        should_close = True
     cur = conn.cursor()
 
     # 1. Stores Table
@@ -114,9 +117,19 @@ def init_db(db_path=DB_PATH, seed_defaults: bool = True):
         ('gate4_gemini_status', 'TEXT'),
         ('canonical_product_id', 'INTEGER'),
         ('tier_resolutions', 'TEXT'),
-        ('ingredient_source_url', 'TEXT')
+        ('ingredient_source_url', 'TEXT'),
+        ('is_skincare', 'INTEGER DEFAULT 0'),
+        ('size_raw', 'TEXT'),
+        ('size_value', 'REAL'),
+        ('size_unit', 'TEXT'),
+        ('normalized_size_ml', 'REAL'),
+        ('normalized_size_g', 'REAL'),
+        ('unit_price', 'REAL'),
+        ('unit_measure', 'TEXT')
     ]
-    for col_name, col_type in telemetry_cols:
+    for col_info in telemetry_cols:
+        col_name = col_info[0]
+        col_type = col_info[1]
         if col_name not in existing_cols:
             cur.execute(f"ALTER TABLE products ADD COLUMN {col_name} {col_type};")
 
@@ -363,6 +376,41 @@ def init_db(db_path=DB_PATH, seed_defaults: bool = True):
     cur.execute("CREATE INDEX IF NOT EXISTS idx_canonical_brand ON canonical_products(brand);")
     cur.execute("CREATE INDEX IF NOT EXISTS idx_products_canonical ON products(canonical_product_id);")
 
+    # Ensure canonical_products columns
+    cur.execute("PRAGMA table_info(canonical_products);")
+    existing_can_cols = {r[1] for r in cur.fetchall()}
+    can_cols = [
+        ('is_skincare', 'INTEGER DEFAULT 1'),
+        ('ingredient_source_url', 'TEXT'),
+        ('inci_matched_name', 'TEXT'),
+        ('gate4_cross_status', 'TEXT'),
+        ('gate4_jev_status', 'TEXT'),
+        ('gate4_gemini_status', 'TEXT'),
+    ]
+    for col_name, col_type in can_cols:
+        if col_name not in existing_can_cols:
+            cur.execute(f"ALTER TABLE canonical_products ADD COLUMN {col_name} {col_type};")
+
+    # 14. INCI Independent Audit Evidence Table
+    cur.execute("""
+    CREATE TABLE IF NOT EXISTS inci_audit_evidence (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        canonical_product_id INTEGER NOT NULL,
+        source_name TEXT NOT NULL,       -- 'skinsafe', 'openbeauty', 'langsearch_inkeedecoder', 'curated_v10', 'admin_override'
+        evidence_url TEXT,
+        raw_ingredients_found TEXT,
+        parsed_tokens TEXT,
+        confidence_score REAL,
+        decision TEXT NOT NULL,          -- 'approved_authoritative', 'candidate_evidence', 'rejected_discrepancy'
+        discrepancy_notes TEXT,
+        audited_by TEXT DEFAULT 'pipeline',
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (canonical_product_id) REFERENCES canonical_products(id) ON DELETE CASCADE
+    );
+    """)
+    cur.execute("CREATE INDEX IF NOT EXISTS idx_audit_evidence_canonical ON inci_audit_evidence(canonical_product_id);")
+    cur.execute("CREATE INDEX IF NOT EXISTS idx_audit_evidence_source ON inci_audit_evidence(source_name);")
+
     # Indexes for sub-millisecond query performance
     cur.execute("CREATE INDEX IF NOT EXISTS idx_products_category ON products(category);")
     cur.execute("CREATE INDEX IF NOT EXISTS idx_products_brand ON products(brand);")
@@ -385,7 +433,8 @@ def init_db(db_path=DB_PATH, seed_defaults: bool = True):
             except Exception as se:
                 logger.warning(f"Could not automatically seed defaults: {se}")
 
-    conn.close()
+    if should_close:
+        conn.close()
     logger.info("Database initialized successfully at %s", db_path)
 
 def load_stores_from_db(conn=None, db_path=DB_PATH, active_only: bool = True) -> List[Dict[str, Any]]:
@@ -731,6 +780,75 @@ def get_whitelist_stats(conn=None, db_path=DB_PATH) -> Dict[str, Any]:
     except Exception as e:
         logger.warning(f"Failed to get whitelist stats: {e}")
         return {"total_ingredients": 0, "active_ingredients": 0, "categories": {}}
+    finally:
+        if should_close:
+            conn.close()
+
+def add_inci_audit_evidence(
+    canonical_product_id: int,
+    source_name: str,
+    raw_ingredients: str,
+    parsed_tokens: Optional[List[str]] = None,
+    evidence_url: Optional[str] = None,
+    confidence_score: Optional[float] = None,
+    decision: str = "candidate_evidence",
+    discrepancy_notes: Optional[str] = None,
+    audited_by: str = "pipeline",
+    conn=None,
+    db_path=DB_PATH
+) -> Optional[int]:
+    """Records independent verification evidence or discrepancy audit for a canonical product."""
+    should_close = False
+    if conn is None:
+        conn = get_connection(db_path)
+        should_close = True
+    try:
+        cur = conn.cursor()
+        cur.execute("""
+        INSERT INTO inci_audit_evidence (
+            canonical_product_id, source_name, evidence_url, raw_ingredients_found,
+            parsed_tokens, confidence_score, decision, discrepancy_notes, audited_by
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?);
+        """, (
+            canonical_product_id,
+            source_name.strip(),
+            evidence_url.strip() if evidence_url else None,
+            raw_ingredients.strip() if raw_ingredients else None,
+            json.dumps(parsed_tokens) if parsed_tokens else None,
+            confidence_score,
+            decision,
+            discrepancy_notes,
+            audited_by
+        ))
+        conn.commit()
+        return cur.lastrowid
+    except Exception as e:
+        logger.error(f"Failed to record INCI audit evidence for canonical ID {canonical_product_id}: {e}")
+        return None
+    finally:
+        if should_close:
+            conn.close()
+
+def get_inci_audit_evidence(canonical_product_id: int, conn=None, db_path=DB_PATH) -> List[Dict[str, Any]]:
+    """Fetches all independent verification evidence and audit decisions for a canonical product."""
+    should_close = False
+    if conn is None:
+        conn = get_connection(db_path)
+        should_close = True
+    try:
+        cur = conn.cursor()
+        cur.execute("""
+        SELECT id, canonical_product_id, source_name, evidence_url, raw_ingredients_found,
+               parsed_tokens, confidence_score, decision, discrepancy_notes, audited_by, created_at
+        FROM inci_audit_evidence
+        WHERE canonical_product_id = ?
+        ORDER BY created_at DESC;
+        """, (canonical_product_id,))
+        rows = cur.fetchall()
+        return [dict(r) for r in rows]
+    except Exception as e:
+        logger.warning(f"Failed to fetch INCI audit evidence for canonical ID {canonical_product_id}: {e}")
+        return []
     finally:
         if should_close:
             conn.close()

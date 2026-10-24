@@ -170,17 +170,33 @@ def load_catalog_from_db():
         df_cache['std_category'] = df_cache.get('std_category', 'Other')
     else:
         conn = sqlite3.connect(DB_PATH)
+        # Authoritative Canonical Index: Exactly ONE record per unique product formulation.
+        # Retailer listings are store offers and are NOT duplicated in search or recommendation indices.
         df_cache = pd.read_sql_query("""
-        SELECT p.id, p.store_id, p.canonical_product_id, p.title, p.brand, p.category as std_category, p.price as price_low,
-               p.compare_at_price as price_high, p.is_available, p.image_url, p.product_url as url,
-               p.ingredients_raw as ingredients, p.ingredients_parsed, p.actives, p.ingredient_source,
-               p.gate4_jev_status, p.inci_jev_score, p.gate4_gemini_status, p.inci_gemini_score,
-               p.gate4_cross_status, p.inci_cross_score, p.is_skincare,
+        SELECT c.id,
+               c.id as canonical_product_id,
+               c.canonical_title as title,
+               c.brand,
+               c.category as std_category,
+               c.min_price as price_low,
+               c.max_price as price_high,
+               COALESCE(c.primary_image_url, (SELECT p.image_url FROM products p WHERE p.canonical_product_id = c.id AND p.image_url IS NOT NULL LIMIT 1)) as image_url,
+               COALESCE((SELECT p.product_url FROM products p WHERE p.canonical_product_id = c.id AND p.product_url IS NOT NULL LIMIT 1), '') as url,
+               COALESCE((SELECT p.store_id FROM products p WHERE p.canonical_product_id = c.id AND p.store_id IS NOT NULL LIMIT 1), 'canonical') as store_id,
+               COALESCE((SELECT MAX(p.is_available) FROM products p WHERE p.canonical_product_id = c.id), 1) as is_available,
+               c.ingredients_raw as ingredients,
+               c.ingredients_parsed,
+               c.actives,
+               c.ingredient_source,
+               c.gate4_jev_status,
+               c.gate4_gemini_status,
+               c.gate4_cross_status,
                COALESCE(c.store_count, 1) as store_count,
-               c.min_price, c.max_price
-        FROM products p
-        LEFT JOIN canonical_products c ON c.id = p.canonical_product_id
-        WHERE p.is_skincare = 1;
+               c.min_price,
+               c.max_price,
+               c.is_skincare
+        FROM canonical_products c
+        WHERE c.is_skincare = 1;
         """, conn)
         conn.close()
 
