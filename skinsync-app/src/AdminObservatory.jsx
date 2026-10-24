@@ -75,6 +75,7 @@ const AdminObservatory = ({ onBackToApp }) => {
   // Left Slide-Over Menu State
   const [showSideMenu, setShowSideMenu] = useState(false);
   const [showAggregationReview, setShowAggregationReview] = useState(false);
+  const [aggregationPanelMode, setAggregationPanelMode] = useState('sources');
   const [showCatalogWorkflows, setShowCatalogWorkflows] = useState(false);
   const [workflowTab, setWorkflowTab] = useState('products');
 
@@ -901,9 +902,10 @@ const AdminObservatory = ({ onBackToApp }) => {
 
   return (
     <div className="min-h-screen bg-gray-50 text-gray-900 font-sans pb-20">
-      {showAggregationReview && <AggregationReviewPanel onClose={() => setShowAggregationReview(false)} />}
+      {showAggregationReview && <AggregationReviewPanel key={aggregationPanelMode} mode={aggregationPanelMode} onClose={() => setShowAggregationReview(false)} />}
       {showCatalogWorkflows && <CatalogWorkflowsPanel initialTab={workflowTab} onClose={() => setShowCatalogWorkflows(false)}
-        onOpenSources={() => { setShowCatalogWorkflows(false); setShowAggregationReview(true); }}
+        onOpenSources={() => { setShowCatalogWorkflows(false); setAggregationPanelMode('sources'); setShowAggregationReview(true); }}
+        onOpenReviews={() => { setShowCatalogWorkflows(false); setAggregationPanelMode('reviews'); setShowAggregationReview(true); }}
         onOpenIngredients={() => { setShowCatalogWorkflows(false); setShowWaterfallBatchModal(true); }}
         onOpenQueues={() => { setShowCatalogWorkflows(false); fetchQueueStatus(); setShowQueueModal(true); }} />}
       {/* Left Slide-Over Menu Drawer */}
@@ -940,7 +942,8 @@ const AdminObservatory = ({ onBackToApp }) => {
               </div>
 
               <button className="mx-5 mt-4 rounded-xl border border-purple-300 bg-purple-50 p-3 text-left text-sm font-bold text-purple-900" onClick={() => { setWorkflowTab("products"); setShowCatalogWorkflows(true); setShowSideMenu(false); }}>Catalog operations · Products · Prices · Ingredients · AI</button>
-              <button className="mx-5 mt-2 rounded-xl border border-gray-200 bg-white p-3 text-left text-sm font-medium text-gray-800" onClick={() => { setShowAggregationReview(true); setShowSideMenu(false); }}>Product sources & reviews ({registrySources.length})</button>
+              <button className="mx-5 mt-2 rounded-xl border border-gray-200 bg-white p-3 text-left text-sm font-medium text-gray-800" onClick={() => { setAggregationPanelMode('sources'); setShowAggregationReview(true); setShowSideMenu(false); }}>Manage product sources ({registrySources.length})</button>
+              <button className="mx-5 mt-2 rounded-xl border border-gray-200 bg-white p-3 text-left text-sm font-medium text-gray-800" onClick={() => { setAggregationPanelMode('reviews'); setShowAggregationReview(true); setShowSideMenu(false); }}>Product matching reviews</button>
               {/* Drawer Body - Actions List */}
               <div className="flex-1 overflow-y-auto p-5 space-y-6">
                 
