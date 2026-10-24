@@ -4,6 +4,7 @@ cross-store linking audit, INCI matching gate logs, and similar product breakdow
 """
 
 import json
+import re
 import sqlite3
 from datetime import datetime, timezone
 from typing import Dict, List, Any, Optional
@@ -791,6 +792,10 @@ def create_whitelist_ingredient(req: WhitelistIngredientCreate):
         if not clean_name:
             raise HTTPException(status_code=400, detail="Ingredient name cannot be empty.")
 
+        arabic_pattern = re.compile(r'[\u0600-\u06FF\u0750-\u077F\u0870-\u08FF\uFB50-\uFDFF\uFE70-\uFEFC]')
+        if arabic_pattern.search(clean_name) or (req.canonical_name and arabic_pattern.search(req.canonical_name)):
+            raise HTTPException(status_code=400, detail="Arabic text is not permitted in INCI ingredient names.")
+
         new_id = add_whitelist_ingredient(
             name=clean_name,
             canonical_name=req.canonical_name,
@@ -829,6 +834,10 @@ def update_whitelist_ingredient_endpoint(ingredient_id: int, req: WhitelistIngre
         updates = {k: v for k, v in req.dict().items() if v is not None}
         if not updates:
             raise HTTPException(status_code=400, detail="No fields provided for update.")
+
+        arabic_pattern = re.compile(r'[\u0600-\u06FF\u0750-\u077F\u0870-\u08FF\uFB50-\uFDFF\uFE70-\uFEFC]')
+        if any(k in updates and isinstance(updates[k], str) and arabic_pattern.search(updates[k]) for k in ('name', 'canonical_name')):
+            raise HTTPException(status_code=400, detail="Arabic text is not permitted in INCI ingredient names.")
 
         success = update_whitelist_ingredient(ingredient_id, updates, conn=conn)
         if not success:

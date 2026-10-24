@@ -116,6 +116,10 @@ def clean_token(token: str) -> Optional[str]:
     if any(c in t for c in ['ã', 'Â', '™', '®', '*']):
         return None
 
+    # Reject non-Latin or Arabic script characters (marketing text / translations)
+    if re.search(r'[\u0600-\u06FF\u0750-\u077F\u0870-\u08FF\uFB50-\uFDFF\uFE70-\uFEFC]', t):
+        return None
+
     # Reject sentence boundaries or multi-ingredient mergers separated by period
     if re.search(r'\.\s+[A-Za-z]', t):
         return None

@@ -1,6 +1,7 @@
 import sqlite3
 import os
 import json
+import re
 import logging
 from datetime import datetime
 from typing import List, Dict, Any, Optional, Tuple
@@ -720,6 +721,12 @@ def add_whitelist_ingredient(name: str, canonical_name: str = None, category: st
     clean_name = name.strip()
     clean_canon = canonical_name.strip() if canonical_name and isinstance(canonical_name, str) else clean_name
     cat = (category or "general").strip().lower()
+
+    # Strictly reject any ingredients containing Arabic script characters
+    arabic_pattern = re.compile(r'[\u0600-\u06FF\u0750-\u077F\u0870-\u08FF\uFB50-\uFDFF\uFE70-\uFEFC]')
+    if arabic_pattern.search(clean_name) or (clean_canon and arabic_pattern.search(clean_canon)):
+        logger.warning(f"Rejected whitelist ingredient containing Arabic text: '{clean_name}'")
+        return None
 
     should_close = False
     if conn is None:

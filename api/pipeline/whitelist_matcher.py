@@ -97,6 +97,10 @@ def load_and_compile_whitelist(conn=None, force_reload: bool = False) -> List[Di
         low_name = name.lower()
         if ' ' not in name and low_name in EXCLUDED_STANDALONE:
             continue
+        # Exclude any ingredients containing Arabic script characters
+        if re.search(r'[\u0600-\u06FF\u0750-\u077F\u0870-\u08FF\uFB50-\uFDFF\uFE70-\uFEFC]', name):
+            continue
+
         if low_name in {
             'non-irritating', 'non-comedogenic', 'hypoallergenic', 'uv filters',
             'sun protection', 'all skin types', 'natural plant extracts', 'plant extracts',

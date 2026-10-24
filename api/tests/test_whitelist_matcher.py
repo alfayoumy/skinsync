@@ -223,5 +223,52 @@ class TestWhitelistMatcher(unittest.TestCase):
         self.assertIn("extracted", data)
         self.assertIn("still_empty", data)
 
+    def test_11_strictly_no_arabic_text_in_whitelist(self):
+        """
+        Verifies that:
+        1. All Arabic text is strictly purged and 0 rows in ingredient_whitelist have Arabic characters.
+        2. Direct helper add_whitelist_ingredient rejects Arabic text.
+        3. POST /admin/whitelist API rejects Arabic names with 400 Bad Request.
+        4. PUT /admin/whitelist/{id} API rejects updating to Arabic text with 400 Bad Request.
+        """
+        import re
+        arabic_re = re.compile(r'[\u0600-\u06FF\u0750-\u077F\u0870-\u08FF\uFB50-\uFDFF\uFE70-\uFEFC]')
+
+        # 1. Database table contains 0 rows with Arabic characters
+        cur = self.conn.cursor()
+        rows = cur.execute("SELECT id, name, canonical_name, category FROM ingredient_whitelist;").fetchall()
+        arabic_matches = [
+            r for r in rows
+            if arabic_re.search(r["name"] or "") or arabic_re.search(r["canonical_name"] or "") or arabic_re.search(r["category"] or "")
+        ]
+        self.assertEqual(len(arabic_matches), 0, f"Found {len(arabic_matches)} rows with Arabic text in whitelist.")
+
+        # 2. Direct helper rejection
+        res_id = add_whitelist_ingredient("طريقة الاستخدام", canonical_name="Method of use", conn=self.conn)
+        self.assertIsNone(res_id)
+
+        # 3. POST /admin/whitelist API rejection
+        api_post = self.client.post("/admin/whitelist", json={
+            "name": "مركب لعلاج حب الشباب",
+            "canonical_name": "Anti-Acne Compound",
+            "category": "general",
+            "is_active": True
+        })
+        self.assertEqual(api_post.status_code, 400)
+        self.assertIn("Arabic text is not permitted", api_post.json()["detail"])
+
+        # 4. PUT /admin/whitelist/{id} API rejection
+        # Create a valid test ingredient first
+        valid_id = add_whitelist_ingredient("Niacinamide Test Derivative", canonical_name="Niacinamide", conn=self.conn)
+        self.assertIsNotNone(valid_id)
+        try:
+            api_put = self.client.put(f"/admin/whitelist/{valid_id}", json={
+                "name": "مستخلص الصبار"
+            })
+            self.assertEqual(api_put.status_code, 400)
+            self.assertIn("Arabic text is not permitted", api_put.json()["detail"])
+        finally:
+            delete_whitelist_ingredient(valid_id, conn=self.conn)
+
 if __name__ == "__main__":
     unittest.main()

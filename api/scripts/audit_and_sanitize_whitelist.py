@@ -56,6 +56,8 @@ BOGUS_CLAIM_PATTERNS = [
     r'\bcontains\b',
     r'\bmay contain\b',
     r'\bwith a soft\b',
+    # Arabic script characters
+    r'[\u0600-\u06FF\u0750-\u077F\u0870-\u08FF\uFB50-\uFDFF\uFE70-\uFEFC]',
     # Sentence boundaries or multi-ingredient mergers separated by period
     r'\.\s+[A-Za-z]',
     # Batch codes and formulation registers
