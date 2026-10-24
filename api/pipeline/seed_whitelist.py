@@ -12,7 +12,7 @@ import sys
 import re
 import sqlite3
 import logging
-from typing import Dict, Set, Tuple, List, Optional
+from typing import Dict, Set, Tuple, List, Optional, Any
 from collections import Counter
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
@@ -35,6 +35,9 @@ EXCLUDED_STANDALONE = {
     'bright', 'anti', 'complex', 'solution', 'formula', 'treatment', 'repair', 
     'mineral', 'gold', 'clear', 'light', 'dark', 'rose', 'tea', 'milk', 'sugar',
     'honey', 'salt', 'clay', 'mud', 'berry', 'orange', 'lemon', 'apple', 'grape',
+    'iron', 'steel', 'cloth', 'cotton', 'bottle', 'tube', 'paper', 'towel',
+    'redness', 'irritation', 'acne', 'inflammation', 'itchiness', 'dryness',
+    'blemish', 'blemishes', 'spots', 'wrinkle', 'wrinkles', 'eczema', 'psoriasis',
     'and', 'the', 'for', 'with', 'from', 'contains', 'plus', 'item', 'details',
     'directions', 'features', 'benefits', 'routine', 'warning', 'caution',
     'application', 'revitaliz', 'results', 'suitable for', 'contour', 'years',
@@ -147,9 +150,31 @@ def categorize_ingredient(name: str) -> str:
         return "surfactant"
     return "general"
 
-def seed_ingredient_whitelist(conn=None, min_frequency: int = 2) -> Dict[str, Any]:
+def clean_paren_and_slash(p: str) -> List[str]:
+    """Cleans unbalanced parentheses/brackets and extracts separated slash synonyms."""
+    if not p:
+        return []
+    p = p.strip()
+    # Strip unclosed trailing parentheses / brackets from comma splits
+    if '(' in p and ')' not in p:
+        p = re.sub(r'\(.*$', '', p).strip()
+    if '[' in p and ']' not in p:
+        p = re.sub(r'\[.*$', '', p).strip()
+    tokens = []
+    if ' / ' in p:
+        for sub in p.split(' / '):
+            c = clean_token(sub)
+            if c:
+                tokens.append(c)
+    c_full = clean_token(p)
+    if c_full:
+        tokens.append(c_full)
+    return tokens
+
+def seed_ingredient_whitelist(conn=None, min_frequency: int = 1) -> Dict[str, Any]:
     """
-    Seeds the ingredient_whitelist table with thousands of verified ingredients.
+    Seeds the ingredient_whitelist table with all verified ingredients from the entire SkinSAFE dataset,
+    clinical dermatology databases, official INCI references, and active catalogs.
     """
     should_close = False
     if conn is None:
@@ -158,39 +183,70 @@ def seed_ingredient_whitelist(conn=None, min_frequency: int = 2) -> Dict[str, An
 
     try:
         cur = conn.cursor()
-        logger.info("--- Starting Whitelist Seeding Process ---")
+        logger.info("--- Starting Whitelist Seeding from Entire SkinSAFE Dataset ---")
 
-        # 1. Harvest candidates from inci_reference (53,000+ rows)
-        cur.execute("SELECT ingredients FROM inci_reference WHERE ingredients IS NOT NULL;")
         token_counter = Counter()
 
+        # 1. Harvest candidates from inci_reference database (53,017 formulations)
+        cur.execute("SELECT ingredients FROM inci_reference WHERE ingredients IS NOT NULL;")
         for (ings,) in cur.fetchall():
             if not ings:
                 continue
-            parts = re.split(r'[,;]+', ings)
-            for p in parts:
-                cleaned = clean_token(p)
-                if not cleaned:
-                    continue
-                # If there are parens like 'Aqua (Water)', also extract the inner and outer forms
-                m = re.search(r'\(([^)]+)\)', cleaned)
-                if m:
-                    inner = clean_token(m.group(1))
-                    outer = clean_token(re.sub(r'\([^)]+\)', ' ', cleaned))
-                    if inner:
-                        token_counter[inner.title()] += 1
-                    if outer:
-                        token_counter[outer.title()] += 1
-                base_clean = clean_token(re.sub(r'[()\[\]]', '', cleaned))
-                if base_clean:
-                    token_counter[base_clean.title()] += 1
+            for p in re.split(r'[,;\n•]+', ings):
+                for cleaned in clean_paren_and_slash(p):
+                    m = re.search(r'\(([^)]+)\)', cleaned)
+                    if m:
+                        inner = clean_token(m.group(1))
+                        outer = clean_token(re.sub(r'\([^)]+\)', ' ', cleaned))
+                        if inner:
+                            token_counter[inner.title()] += 1
+                        if outer:
+                            token_counter[outer.title()] += 1
+                    base_clean = clean_token(re.sub(r'[()\[\]]', '', cleaned))
+                    if base_clean:
+                        token_counter[base_clean.title()] += 1
 
-        logger.info(f"Extracted {len(token_counter)} distinct candidate tokens from inci_reference.")
+        # 2. Harvest directly from raw SkinSAFE CSV directory if present
+        skinsafe_candidates = [
+            os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), "data", "raw", "SkinSAFE"),
+            os.path.join(os.getcwd(), "data", "raw", "SkinSAFE"),
+            "/mnt/windows/Users/AmrAlfayoumy/Downloads/skincare/data/raw/SkinSAFE"
+        ]
+        skinsafe_dir = next((d for d in skinsafe_candidates if os.path.isdir(d)), None)
+        if skinsafe_dir:
+            import glob, csv
+            csv_files = glob.glob(os.path.join(skinsafe_dir, "*.csv"))
+            logger.info(f"Scanning {len(csv_files)} raw SkinSAFE CSV files from {skinsafe_dir}...")
+            for cf in csv_files:
+                try:
+                    with open(cf, 'r', encoding='utf-8', errors='ignore') as fp:
+                        reader = csv.DictReader(fp)
+                        for row in reader:
+                            ings = row.get('ingredients') or ''
+                            if not ings:
+                                continue
+                            for p in re.split(r'[,;\n•]+', ings):
+                                for cleaned in clean_paren_and_slash(p):
+                                    m = re.search(r'\(([^)]+)\)', cleaned)
+                                    if m:
+                                        inner = clean_token(m.group(1))
+                                        outer = clean_token(re.sub(r'\([^)]+\)', ' ', cleaned))
+                                        if inner:
+                                            token_counter[inner.title()] += 1
+                                        if outer:
+                                            token_counter[outer.title()] += 1
+                                    base_clean = clean_token(re.sub(r'[()\[\]]', '', cleaned))
+                                    if base_clean:
+                                        token_counter[base_clean.title()] += 1
+                except Exception as ex:
+                    logger.warning(f"Could not read SkinSAFE file {cf}: {ex}")
 
-        # 2. Add curated inputs from clinical DB & synonyms
+        logger.info(f"Extracted {len(token_counter)} distinct candidate tokens from entire SkinSAFE dataset.")
+
+        # 3. Add curated inputs from clinical DB & synonyms
         whitelist_items: Dict[str, Dict[str, str]] = {}
 
-        # From inci_reference with frequency >= min_frequency
+        # From SkinSAFE formulations with frequency >= min_frequency
         for tok, count in token_counter.items():
             if count >= min_frequency:
                 cat = categorize_ingredient(tok)
@@ -261,10 +317,13 @@ def seed_ingredient_whitelist(conn=None, min_frequency: int = 2) -> Dict[str, An
 
         logger.info(f"Compiled {len(whitelist_items)} total verified cosmetic ingredients for whitelist.")
 
-        # 3. Bulk insert into SQLite ingredient_whitelist
+        # 4. Bulk insert into SQLite ingredient_whitelist preserving any inactive overrides
+        cur.execute("SELECT name FROM ingredient_whitelist WHERE is_active = 0;")
+        disabled_names = set(r[0].lower() for r in cur.fetchall())
+
         cur.execute("DELETE FROM ingredient_whitelist;")
         rows_to_insert = [
-            (item["name"], item["canonical_name"], item["category"], 1)
+            (item["name"], item["canonical_name"], item["category"], 0 if item["name"].lower() in disabled_names else 1)
             for item in whitelist_items.values()
         ]
 
@@ -279,7 +338,14 @@ def seed_ingredient_whitelist(conn=None, min_frequency: int = 2) -> Dict[str, An
 
         conn.commit()
 
-        # 4. Fetch category summary
+        # 5. Reload in-memory matcher cache
+        try:
+            from pipeline.whitelist_matcher import reload_whitelist_cache
+            reload_whitelist_cache(conn)
+        except Exception as ex:
+            logger.warning(f"Could not reload whitelist cache: {ex}")
+
+        # 6. Fetch category summary
         cur.execute("SELECT COUNT(*) FROM ingredient_whitelist;")
         total_seeded = cur.fetchone()[0]
 

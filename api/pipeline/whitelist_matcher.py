@@ -51,6 +51,8 @@ EXCLUDED_STANDALONE = {
     'mineral', 'gold', 'clear', 'light', 'dark', 'rose', 'tea', 'milk', 'sugar',
     'honey', 'salt', 'clay', 'mud', 'berry', 'orange', 'lemon', 'apple', 'grape',
     'iron', 'steel', 'cloth', 'cotton', 'bottle', 'tube', 'paper', 'towel',
+    'redness', 'irritation', 'acne', 'inflammation', 'itchiness', 'dryness',
+    'blemish', 'blemishes', 'spots', 'wrinkle', 'wrinkles', 'eczema', 'psoriasis',
     'and', 'the', 'for', 'with', 'from', 'contains', 'plus', 'item', 'details',
     'directions', 'features', 'benefits', 'routine', 'warning', 'caution',
     'application', 'revitaliz', 'results', 'suitable for', 'contour', 'years',

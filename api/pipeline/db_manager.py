@@ -677,6 +677,11 @@ def load_whitelist_from_db(conn=None, db_path=DB_PATH, active_only: bool = True)
         query += " ORDER BY LENGTH(name) DESC, name ASC;"
         cur.execute(query)
         rows = cur.fetchall()
+        if not rows:
+            return []
+        if cur.description and not isinstance(rows[0], sqlite3.Row):
+            columns = [col[0] for col in cur.description]
+            return [dict(zip(columns, r)) for r in rows]
         return [dict(r) for r in rows]
     except Exception as e:
         logger.warning(f"Failed to load ingredient whitelist: {e}")
