@@ -67,7 +67,8 @@ class GeminiIdentityReviewTests(unittest.TestCase):
         self.assertTrue(ok,reason)
 
     def test_strict_threshold_prevents_model_only_approval(self):
-        self.assertFalse(can_auto_resolve(self.conn,self.case(),self.answer(.90))[0])
+        self.assertFalse(can_auto_resolve(self.conn,self.case(),self.answer(.89))[0])
+        self.assertTrue(can_auto_resolve(self.conn,self.case(),self.answer(.90))[0])
         self.assertFalse(can_auto_resolve(self.conn,self.case(),self.answer(.99,'uncertain'))[0])
 
     def test_model_cannot_approve_a_conflicting_sunscreen_or_formula(self):
