@@ -208,6 +208,32 @@ class SavedGeminiDecisionTests(unittest.TestCase):
                 sort_order='desc',limit=50,offset=0)
         self.assertEqual(captured.exception.status_code,422)
 
+    def test_new_canonical_counter_includes_splits_after_first_25_cases(self):
+        """Regression: 4 split cases shown while 0 new canonicals displayed."""
+        for i in range(25):
+            name=f'CeraVe Example Moisturizing Cream {i}'
+            self.make_case(name,'CeraVe',[
+                ('sourcebeauty',name),('feel22',name)
+            ],'different_product',.95)
+        original_count=self.conn.execute('SELECT COUNT(*) FROM canonical_products').fetchone()[0]
+        name='NUXE Huile Prodigieuse Dry Oil'
+        self.make_case(name,'NUXE',[
+            ('bashrety',name),
+            ('feel22','NUXE Huile Prodigieuse Florale Dry Oil'),
+            ('bloompharmacy','NUXE Huile Prodigieuse Golden Dry Oil')
+        ],'different_product',.99)
+        preview=apply_saved_decisions(self.conn,limit=100,dry_run=True)
+        self.assertEqual(preview['stored_decisions_checked'],26)
+        self.assertEqual(preview['automatically_split'],1)
+        self.assertEqual(preview['new_canonical_products'],2)
+        self.assertEqual(preview['still_needs_review'],25)
+        self.assertEqual(self.conn.execute('SELECT COUNT(*) FROM canonical_products').fetchone()[0],original_count+1)
+        applied=apply_saved_decisions(self.conn,limit=100,dry_run=False)
+        self.assertEqual(applied['automatically_split'],1)
+        self.assertEqual(applied['new_canonical_products'],2)
+        self.assertEqual(applied['still_needs_review'],25)
+        self.assertEqual(self.conn.execute('SELECT COUNT(*) FROM canonical_products').fetchone()[0],original_count+3)
+
     def test_stale_case_cannot_apply_saved_confidence(self):
         name='CeraVe Moisturizing Cream'
         cid,rid=self.make_case(name,'CeraVe',[('a',name),('b',name)],'same_product',.95)
