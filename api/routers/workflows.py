@@ -250,29 +250,54 @@ def verify_existing_products(request:LegacyIdentityCheck):
 
 class MultiSourceDiscovery(BaseModel):
     source_ids: list[str] = Field(min_length=1,max_length=40)
-    start_page: int = Field(default=1,ge=1,le=5000)
-    pages: int = Field(default=1,ge=1,le=3)
+    start_page: int = Field(default=1,ge=1)
+    pages: int = Field(default=0,ge=0)
     dry_run: bool = True
     urls_by_source: dict[str,list[str]] = Field(default_factory=dict)
 
 
 def _multisource_worker(task_id,source_ids,start_page,pages,dry_run,urls_by_source):
     """Run each source independently with a durable task and per-source outcome."""
-    from pipeline.task_tracker import update_task_progress,complete_task,fail_task,log_task_event
+    from pipeline.task_tracker import update_task_progress,complete_task,fail_task
     from pipeline.source_collection import collect_source
     from pipeline.source_registry import get_source
     reports=[]
     counters=Counter()
+    cancelled=False
+    def cancelled_by_user():
+        state=get_connection()
+        try:
+            row=state.execute("SELECT status FROM pipeline_tasks WHERE task_id=?",(task_id,)).fetchone()
+            return bool(row and row[0]=='cancelled')
+        finally:
+            state.close()
     try:
         for index,sid in enumerate(source_ids,1):
+            if cancelled_by_user():
+                cancelled=True
+                break
             conn=get_connection()
             try:
                 source=get_source(conn,sid)
                 if not source['enabled']:
                     report={'source_id':sid,'name':source['name'],'status':'skipped','reason':'Collection paused'}
                 elif source['adapter_type']=='shopify':
-                    res=discover_shopify(conn,sid,start_page,pages,dry_run)
-                    report={'source_id':sid,'name':source['name'],'status':'completed',**res}
+                    def report_page(progress):
+                        update_task_progress(task_id,processed_items=index-1,
+                            successful_items=counters['completed'],failed_items=counters['failed'],
+                            current_stage=f"{sid}: page {progress['page']}",
+                            progress_percent=(index-1)*100/len(source_ids),
+                            metadata={'workflow':'product_discovery','dry_run':dry_run,
+                                      'sources':reports,'active_source':source['name'],
+                                      'active_source_id':sid,
+                                      'active_page':progress['page'],
+                                      'active_products_found':progress['products_found'],
+                                      'next_page':progress['page']+1})
+                    res=discover_shopify(conn,sid,start_page,pages,dry_run,
+                                         on_page=report_page,should_cancel=cancelled_by_user)
+                    report={'source_id':sid,'name':source['name'],
+                            'status':'completed' if res['stop_reason']!='repeated_page' else 'needs_attention',
+                            **res}
                     if not dry_run:conn.commit()
                     else:conn.rollback()
                 else:
@@ -296,6 +321,12 @@ def _multisource_worker(task_id,source_ids,start_page,pages,dry_run,urls_by_sour
                         else:conn.rollback()
                 reports.append(report)
                 counters[report['status']]+=1
+            except ScanCancelled as exc:
+                conn.rollback()
+                report={'source_id':sid,'status':'cancelled','reason':str(exc)[:500]}
+                reports.append(report)
+                cancelled=True
+                break
             except Exception as exc:
                 conn.rollback()
                 report={'source_id':sid,'status':'failed','reason':str(exc)[:500]}
@@ -307,7 +338,10 @@ def _multisource_worker(task_id,source_ids,start_page,pages,dry_run,urls_by_sour
                 successful_items=counters['completed'],failed_items=counters['failed'],
                 skipped_items=counters['skipped']+counters['needs_urls'],
                 current_stage='finished_'+sid,progress_percent=100*index/len(source_ids),
-                metadata={'workflow':'product_discovery','dry_run':dry_run,'sources':reports})
+                metadata={'workflow':'product_discovery','dry_run':dry_run,'sources':reports,'active_source':None})
+        if cancelled:
+            # The task cancellation endpoint owns the terminal cancelled state.
+            return
         complete_task(task_id,metadata={'workflow':'product_discovery','dry_run':dry_run,
                       'sources':reports,'summary':dict(counters)},
                       status='completed_with_errors' if counters['failed'] else 'completed')
@@ -372,3 +406,20 @@ def prepare_legacy_review_cases():
         raise
     finally:
         conn.close()
+
+
+@router.post('/products/discover-multiple/{task_id}/cancel')
+def cancel_discovery(task_id:str):
+    """Request cancellation; the scanner checks before each next Shopify page."""
+    from pipeline.task_tracker import cancel_task
+    conn=get_connection()
+    try:
+        row=conn.execute("SELECT task_id,status FROM pipeline_tasks WHERE task_id=? AND task_type='catalog_discovery'",(task_id,)).fetchone()
+        if not row:
+            raise HTTPException(status_code=404,detail='Discovery job not found.')
+        if row['status'] not in ('running','pending'):
+            return {'task_id':task_id,'status':row['status'],'cancelled':False}
+    finally:
+        conn.close()
+    changed=cancel_task(task_id,reason='User stopped catalog discovery')
+    return {'task_id':task_id,'status':'cancelled' if changed else 'completed','cancelled':changed}
