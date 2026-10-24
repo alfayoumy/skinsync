@@ -25,7 +25,7 @@ from pipeline.catalog_reset import guard_catalog_writes
 DEFAULT_MODEL = 'gemini-2.5-flash-lite'
 POLICY = 'inci_mcp_research_v1'
 RUN_LOCK = threading.Lock()
-URL_PATTERN = re.compile(r'https://[^\s<>\)\]"'`]+', re.I)
+URL_PATTERN = re.compile(r'https://[^\s<>]+', re.I)
 
 
 def ensure_schema(conn):
@@ -157,7 +157,7 @@ def _safe_url(url, domains):
             return None
         if len(url)>1400 or any(c in url for c in '\r\n'):
             return None
-        return p.geturl().rstrip("\\\"'")
+        return p.geturl().rstrip(".,;)]\\\"'")
     except ValueError:
         return None
 
