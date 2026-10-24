@@ -1041,6 +1041,7 @@ class WaterfallResolveRequest(BaseModel):
     langsearch_enabled: bool = True
     queue_jev: bool = True
     queue_gemini: bool = True
+    queue_inci_research: bool = False
     dry_run: bool = False
 
 
@@ -1050,6 +1051,7 @@ class WaterfallBatchConfigRequest(BaseModel):
     langsearch_enabled: bool = True
     queue_jev: bool = True
     queue_gemini: bool = True
+    queue_inci_research: bool = False
     max_workers: int = 6
     dry_run: bool = False
 
@@ -1187,6 +1189,7 @@ class WaterfallBatchRunner:
                 langsearch_enabled=config.get("langsearch_enabled", True),
                 queue_jev=config.get("queue_jev", True),
                 queue_gemini=config.get("queue_gemini", True),
+                queue_inci_research=config.get("queue_inci_research", False),
                 max_workers=config.get("max_workers", 6),
                 dry_run=config.get("dry_run", False),
                 progress_callback=progress_cb,
@@ -1328,6 +1331,7 @@ def run_waterfall_endpoint(req: WaterfallResolveRequest):
             langsearch_enabled=req.langsearch_enabled,
             queue_jev=req.queue_jev,
             queue_gemini=req.queue_gemini,
+            queue_inci_research=req.queue_inci_research,
             dry_run=req.dry_run
         )
         if stats.get("resolved", 0) > 0 and not req.dry_run:

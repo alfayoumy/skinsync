@@ -1376,6 +1376,7 @@ def run_waterfall_pipeline(
     queue_gemini: bool = True,
     dry_run: bool = False,
     max_workers: int = 6,
+    queue_inci_research: bool = False,
     progress_callback: Optional[Any] = None,
     cancel_event: Optional[threading.Event] = None
 ) -> Dict[str, Any]:
@@ -1530,7 +1531,10 @@ def run_waterfall_pipeline(
                     )
                 stats["unresolved"] += 1
                 if cand:stats["evidence_only"] = stats.get("evidence_only",0)+1
+            if queue_inci_research and item_res.get('status')!='resolved':
+                research_needed.add(can_id)
 
+        research_needed = set()
         processed_so_far = 0
 
         if max_workers <= 1:
@@ -1612,6 +1616,12 @@ def run_waterfall_pipeline(
                     if processed_so_far % 100 == 0 or processed_so_far == total_to_process:
                         logger.info(f"Pass 1 Progress: [{processed_so_far}/{total_to_process}] Resolved: {stats['resolved']} | {stats['by_method']}")
 
+        if queue_inci_research and not dry_run and research_needed and not (cancel_event and cancel_event.is_set()):
+            from pipeline.inci_research import enqueue_unresolved
+            result=enqueue_unresolved(conn,sorted(research_needed),limit=min(20000,len(research_needed)))
+            stats['inci_research_queued']=result['queued']
+        elif queue_inci_research:
+            stats['inci_research_queued']=0
         if not dry_run:
             conn.commit()
 
