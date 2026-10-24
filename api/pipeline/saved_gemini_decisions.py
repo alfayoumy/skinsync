@@ -258,6 +258,9 @@ def apply_saved_decisions(conn,limit=5000,threshold=MIN_CONFIDENCE,dry_run=True,
         if cancelled and cancelled():break
         conn.execute('SAVEPOINT saved_gemini_case')
         try:
+            proposed_plan=None
+            if row['verdict']=='different_product' and len(examples)<25:
+                proposed_plan,_=plan_distinct_split(conn,_case(row),_answer(row))
             result,reason=resolve_saved_case(conn,row,threshold)
             if result=='manual' and not dry_run:
                 # Preserve Gemini's original verdict/explanation and record the
@@ -272,9 +275,15 @@ def apply_saved_decisions(conn,limit=5000,threshold=MIN_CONFIDENCE,dry_run=True,
                 conn.execute('ROLLBACK TO SAVEPOINT saved_gemini_case')
             conn.execute('RELEASE SAVEPOINT saved_gemini_case')
             stats[result]+=1
+            if result=='split' and proposed_plan:
+                stats['new_canonical_products']+=len(proposed_plan['moves'])
             if len(examples)<25:
-                examples.append({'review_id':row['id'],'verdict':row['verdict'],
-                                 'confidence':row['confidence'],'action':result,'reason':reason})
+                example={'review_id':row['id'],'verdict':row['verdict'],
+                         'confidence':row['confidence'],'action':result,'reason':reason}
+                if proposed_plan:
+                    example['proposed_groups']=proposed_plan['groups']
+                    example['new_canonical_products']=len(proposed_plan['moves'])
+                examples.append(example)
         except (ValueError,KeyError,TypeError) as exc:
             conn.execute('ROLLBACK TO SAVEPOINT saved_gemini_case')
             conn.execute('RELEASE SAVEPOINT saved_gemini_case')
@@ -288,6 +297,7 @@ def apply_saved_decisions(conn,limit=5000,threshold=MIN_CONFIDENCE,dry_run=True,
             'stored_decisions_checked':sum(stats.values()),
             'automatically_verified':stats['verified'],
             'automatically_split':stats['split'],
+            'new_canonical_products':stats['new_canonical_products'],
             'still_needs_review':stats['manual'],
             'sample_results':examples,
             'message':'Saved decisions were replayed without any additional Gemini requests.'}

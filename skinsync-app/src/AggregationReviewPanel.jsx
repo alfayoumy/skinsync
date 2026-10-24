@@ -125,8 +125,7 @@ export default function AggregationReviewPanel({ onClose, initialSourceId = 'sou
     });
   }
   async function applySavedDecisions() {
-    if(!savedDecisionsPreview)return;
-    if(!window.confirm('Apply stored Gemini decisions without calling Gemini again? Clear matches will be verified; provably separable variants may be split into new provisional products. Other cases remain for review.'))return;
+    if(!window.confirm('Apply existing Gemini decisions without any model calls? Safe matches will be verified; safe distinct formulation groups will be split, preserving all retailer listings. Unresolved cases stay for review. A preview is recommended but not required.'))return;
     await perform(async()=>{
       const started=await api('/reviews/gemini/saved/apply',{
         method:'POST',body:JSON.stringify({
@@ -296,8 +295,7 @@ export default function AggregationReviewPanel({ onClose, initialSourceId = 'sou
             onClick={previewSavedDecisions} className="rounded-lg border border-purple-300 bg-white px-4 py-2 text-sm font-semibold disabled:opacity-50">
             Preview saved decisions
           </button>
-          <button type="button" disabled={busy||Boolean(savedApplyTask)||Boolean(geminiTask)||
-              !savedDecisionsPreview||(savedDecisionsPreview.automatically_verified+savedDecisionsPreview.automatically_split===0)}
+          <button type="button" disabled={busy||Boolean(savedApplyTask)||Boolean(geminiTask)}
             onClick={applySavedDecisions} className="rounded-lg bg-purple-700 px-4 py-2 text-white text-sm font-semibold disabled:opacity-50">
             Apply confident decisions — no Gemini calls
           </button>
@@ -308,7 +306,8 @@ export default function AggregationReviewPanel({ onClose, initialSourceId = 'sou
           {[
             ['Stored cases checked',savedDecisionsPreview.stored_decisions_checked],
             ['Would verify matches',savedDecisionsPreview.automatically_verified],
-            ['Would split distinct groups',savedDecisionsPreview.automatically_split],
+            ['Would split mixed cases',savedDecisionsPreview.automatically_split],
+            ['New canonical products',savedDecisionsPreview.new_canonical_products??0],
             ['Still need review',savedDecisionsPreview.still_needs_review]
           ].map(([label,value])=><div key={label} className="rounded-lg border bg-white p-3"><strong className="block text-lg">{value}</strong>{label}</div>)}
         </div>}
@@ -318,13 +317,21 @@ export default function AggregationReviewPanel({ onClose, initialSourceId = 'sou
             {savedDecisionsPreview.sample_results.map(item=><p key={item.review_id}>
               Review #{item.review_id}: {item.verdict} ({Math.round((item.confidence||0)*100)}%) —
               <strong> {item.action}</strong>. {item.reason}
+              {item.proposed_groups?.length>0&&<span className="block ml-3 mt-1 text-purple-900">
+                {item.proposed_groups.length} distinct product groups — {item.new_canonical_products} new canonical(s):
+                {item.proposed_groups.map((g,i)=><span key={i} className="block ml-3">
+                  {g.retained?'Keep current canonical':'New canonical'} · {g.variant.join(', ')} ·
+                  {g.product_ids.length} store listings (IDs: {g.product_ids.join(', ')})
+                </span>)}
+              </span>}
             </p>)}
           </div>
         </details>}
         {savedApplyJob&&<p role="status" className="rounded-lg bg-white p-3 text-sm">
           Application {savedApplyJob.status} · {savedApplyJob.processed_items||0}/{savedApplyJob.total_items||0} saved verdicts processed ·
           {savedApplyJob.metadata?.automatically_verified??savedApplyJob.metadata?.stats?.verified??0} verified ·
-          {savedApplyJob.metadata?.automatically_split??savedApplyJob.metadata?.stats?.split??0} split ·
+          {savedApplyJob.metadata?.automatically_split??savedApplyJob.metadata?.stats?.split??0} split cases ·
+          {savedApplyJob.metadata?.new_canonical_products??savedApplyJob.metadata?.stats?.new_canonical_products??0} new canonicals ·
           {savedApplyJob.metadata?.still_needs_review??savedApplyJob.metadata?.stats?.manual??0} held for review ·
           <strong> 0 Gemini calls</strong>
           {savedApplyJob.error_message&&<span className="text-red-700"> · {savedApplyJob.error_message}</span>}

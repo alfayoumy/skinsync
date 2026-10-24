@@ -397,6 +397,12 @@ def gemini_identity_results(
             parts=explanation.split(' | ',1)
             data['model_reason']=parts[0]
             data['application_reason']=parts[1] if len(parts)>1 else None
+            if data['verdict']=='different_product' and data['application_reason']==(
+                'Model verdict is uncertain, negative, or below automatic threshold.'):
+                data['application_reason']=(
+                    'Historical policy only attempted same-product verification. '
+                    'This different-product result has not been regrouped; preview saved '
+                    'decisions to see whether a safe product-level split is possible.')
             data['evidence_current']=data.pop('queued_evidence_hash')==data.pop('current_evidence_hash')
             records.append(data)
         return {'results':records,'total':total,'limit':limit,'offset':offset,
