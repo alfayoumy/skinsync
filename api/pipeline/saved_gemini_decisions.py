@@ -259,9 +259,22 @@ def apply_saved_decisions(conn,limit=5000,threshold=MIN_CONFIDENCE,dry_run=True,
         conn.execute('SAVEPOINT saved_gemini_case')
         try:
             proposed_plan=None
-            if row['verdict']=='different_product' and len(examples)<25:
-                proposed_plan,_=plan_distinct_split(conn,_case(row),_answer(row))
+            canonical_count_before=None
+            if row['verdict']=='different_product':
+                # Count actual inserts for *every* applied split, not only the
+                # first 25 sample cases shown in the preview.
+                canonical_count_before=conn.execute(
+                    'SELECT COUNT(*) FROM canonical_products').fetchone()[0]
+                if len(examples)<25:
+                    proposed_plan,_=plan_distinct_split(conn,_case(row),_answer(row))
             result,reason=resolve_saved_case(conn,row,threshold)
+            created_canonicals=0
+            if result=='split':
+                created_canonicals=(conn.execute(
+                    'SELECT COUNT(*) FROM canonical_products').fetchone()[0]
+                    - canonical_count_before)
+                if created_canonicals<1:
+                    raise ValueError('Split did not create a new canonical identity.')
             if result=='manual' and not dry_run:
                 # Preserve Gemini's original verdict/explanation and record the
                 # current deterministic reason; a historical 0.97 rejection is
@@ -275,14 +288,14 @@ def apply_saved_decisions(conn,limit=5000,threshold=MIN_CONFIDENCE,dry_run=True,
                 conn.execute('ROLLBACK TO SAVEPOINT saved_gemini_case')
             conn.execute('RELEASE SAVEPOINT saved_gemini_case')
             stats[result]+=1
-            if result=='split' and proposed_plan:
-                stats['new_canonical_products']+=len(proposed_plan['moves'])
+            if result=='split':
+                stats['new_canonical_products']+=created_canonicals
             if len(examples)<25:
                 example={'review_id':row['id'],'verdict':row['verdict'],
                          'confidence':row['confidence'],'action':result,'reason':reason}
                 if proposed_plan:
                     example['proposed_groups']=proposed_plan['groups']
-                    example['new_canonical_products']=len(proposed_plan['moves'])
+                    example['new_canonical_products']=created_canonicals
                 examples.append(example)
         except (ValueError,KeyError,TypeError) as exc:
             conn.execute('ROLLBACK TO SAVEPOINT saved_gemini_case')
