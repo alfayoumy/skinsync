@@ -312,6 +312,7 @@ def _validate_candidate(product,pages,answer,domains,threshold):
                                'model_explanation':str(answer.get('explanation',''))[:1000],
                                'page_count':len(pages)},
             'analysis':{'identity_gate':'passed','token_count':len(validation.tokens),
+                        'high_confidence':confidence>=threshold,'review_threshold':threshold,
                         'confidence_is_calibrated':False}}
 
 

@@ -22,6 +22,8 @@ export default function InciResearchQueue({onClose}) {
   const [page,setPage]=useState(0);
   const [run,setRun]=useState(null);
   const [runLimit,setRunLimit]=useState(10);
+  const [maxPages,setMaxPages]=useState(3);
+  const [reviewThreshold,setReviewThreshold]=useState(0.85);
   const [connection,setConnection]=useState(null);
   const [selected,setSelected]=useState(null);
   const [reason,setReason]=useState('');
@@ -99,9 +101,21 @@ export default function InciResearchQueue({onClose}) {
                 <input type="number" min={1} max={100} value={runLimit} onChange={e=>setRunLimit(Number(e.target.value))}
                   className="block w-20 rounded-lg border p-2 text-sm"/>
               </label>
+              <label className="text-xs">Pages / product
+                <select className="block w-24 rounded-lg border p-2 text-sm" value={maxPages}
+                  onChange={e=>setMaxPages(Number(e.target.value))}>
+                  {[1,2,3,4,5].map(x=><option value={x} key={x}>{x}</option>)}
+                </select>
+              </label>
+              <label className="text-xs">High confidence
+                <select className="block w-24 rounded-lg border p-2 text-sm" value={reviewThreshold}
+                  onChange={e=>setReviewThreshold(Number(e.target.value))}>
+                  {[.7,.8,.85,.9,.95].map(x=><option value={x} key={x}>{pct(x)}</option>)}
+                </select>
+              </label>
               <button type="button" disabled={busy||run?.status==='running'||!connection?.donsetch_installed||!connection?.gemini_configured}
                 onClick={()=>operate(async()=>{
-                  const started=await request('/run',{limit:runLimit});
+                  const started=await request('/run',{limit:runLimit,max_pages:maxPages,min_confidence:reviewThreshold});
                   setRun({id:started.run_id,status:'running',processed:0,queued_count:started.count});return started;
                 })} className="rounded-lg bg-purple-700 px-4 py-2 text-sm font-bold text-white disabled:opacity-50">Run research</button>
               {run?.status==='running'&&<button type="button" disabled={busy} className={button}

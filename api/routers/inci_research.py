@@ -32,6 +32,8 @@ class QueueRequest(BaseModel):
 
 class RunRequest(BaseModel):
     limit: int=Field(default=10,ge=1,le=100)
+    min_confidence: float=Field(default=0.85,ge=0,le=1)
+    max_pages: int=Field(default=3,ge=1,le=5)
 
 
 class ReviewRequest(BaseModel):
@@ -61,7 +63,8 @@ def retry(canonical_id:int):
 @router.post('/run')
 def start(request:RunRequest,background_tasks:BackgroundTasks):
     run=operation(lambda conn:start_run(conn,request.limit))
-    background_tasks.add_task(run_queue,run['run_id'])
+    background_tasks.add_task(run_queue,run['run_id'],threshold=request.min_confidence,
+                              max_pages=request.max_pages)
     return {'status':'started',**run}
 
 
