@@ -32,7 +32,8 @@ export default function CatalogWorkflowsPanel({onClose, initialTab='products',on
   const [jobStatus,setJobStatus]=useState(null);
   const [method,setMethod]=useState('shopify');
   const [startPage,setStartPage]=useState(1);
-  const [pages,setPages]=useState(1);
+  const [pages,setPages]=useState(10);
+  const [allPages,setAllPages]=useState(true);
   const [urls,setUrls]=useState('');
   const [preview,setPreview]=useState(true);
   const [price,setPrice]=useState(true);
@@ -96,6 +97,13 @@ export default function CatalogWorkflowsPanel({onClose, initialTab='products',on
       onOpenReviews();
     } catch(e){setError(e.message)} finally {setIdentityBusy(false);}
   }
+  async function cancelScan() {
+    if(!discoveryJob)return;
+    try {
+      await call('/admin/workflows/products/discover-multiple/'+encodeURIComponent(discoveryJob)+'/cancel',
+        {method:'POST'});
+    } catch(e){setError(e.message);}
+  }
   async function checkExisting(dryRun) {
     if(!dryRun&&!window.confirm('Automatically verify only legacy products with matching brand, product identity and variants, with no conflicts or duplicate canonical identity? No prices or ingredients will change.'))return;
     setIdentityBusy(true);setError('');
@@ -121,14 +129,16 @@ export default function CatalogWorkflowsPanel({onClose, initialTab='products',on
           (urlsBySource[id]??=[]).push(url);
         }
         response=await call('/admin/workflows/products/discover-multiple',json({
-          source_ids:selectedSources,start_page:Number(startPage),pages:Number(pages),
+          source_ids:selectedSources,start_page:Number(startPage),pages:allPages?0:Number(pages),
           dry_run:preview,urls_by_source:urlsBySource
         }));
         setJobStatus(null);setDiscoveryJob(response.task_id);return;
       } else if(tab==='products' && method==='shopify') {
-        response=await call('/admin/workflows/products/discover',json({
-          source_id:sourceId,start_page:Number(startPage),pages:Number(pages),dry_run:preview
+        response=await call('/admin/workflows/products/discover-multiple',json({
+          source_ids:[sourceId],start_page:Number(startPage),
+          pages:allPages?0:Number(pages),dry_run:preview
         }));
+        setJobStatus(null);setDiscoveryJob(response.task_id);return;
       } else if(tab==='products') {
         const list=urls.split('\n').map(s=>s.trim()).filter(Boolean);
         if(!list.length || list.length>25)throw new Error('Enter 1–25 URLs, one per line.');
@@ -212,8 +222,17 @@ export default function CatalogWorkflowsPanel({onClose, initialTab='products',on
               <label><input type="radio" checked={method==='urls'} onChange={()=>setMethod('urls')}/> Specific product URLs</label>
             </div>}
             {(tab==='offers'||multiSource||method==='shopify')?<div className="grid grid-cols-2 gap-3">
-              <label className="text-xs font-semibold">Starting page<input className={input} type="number" min="1" max="5000" value={startPage} onChange={e=>setStartPage(e.target.value)}/></label>
-              <label className="text-xs font-semibold">Pages per Shopify source (1–3)<input className={input} type="number" min="1" max="3" value={pages} onChange={e=>setPages(e.target.value)}/></label>
+              <label className="text-xs font-semibold">Starting page<input className={input} type="number" min="1" value={startPage} onChange={e=>setStartPage(e.target.value)}/></label>
+              <div className="text-xs font-semibold space-y-2">
+                {tab==='products'&&<label className="flex items-center gap-2 text-sm font-semibold">
+                  <input type="checkbox" checked={allPages} onChange={e=>setAllPages(e.target.checked)} />
+                  All pages — stop when Shopify runs out of products
+                </label>}
+                {(!allPages||tab==='offers')&&<label className="block">Number of pages to scan
+                  <input className={input} type="number" min="1" value={pages} onChange={e=>setPages(e.target.value)} />
+                </label>}
+                {tab==='products'&&allPages&&<p className="font-normal text-gray-500">Tracked scan · per-page progress · pause with Stop scan · respects the source rate limit</p>}
+              </div>
             </div>:<label className="block text-sm font-semibold">Product URLs, one per line (max 25)
               <textarea className={input} rows={5} value={urls} onChange={e=>setUrls(e.target.value)}/>
             </label>}
@@ -236,8 +255,15 @@ export default function CatalogWorkflowsPanel({onClose, initialTab='products',on
             </p>}
           </section>
           {jobStatus&&<section className="rounded-xl border bg-white p-4 space-y-2" role="status">
-            <h4 className="font-bold">Multi-source discovery: {jobStatus.status}</h4>
+            <h4 className="font-bold">Product discovery: {jobStatus.status}</h4>
             <p className="text-xs text-gray-600">{jobStatus.processed_items||0} / {jobStatus.total_items||selectedSources.length} sources finished</p>
+            {jobStatus.metadata?.active_source&&<p className="text-xs text-purple-800">
+              Scanning {jobStatus.metadata.active_source}, page {jobStatus.metadata.active_page};
+              {jobStatus.metadata.active_products_found} products found in this source so far
+            </p>}
+            {discoveryJob&&<button type="button" className="rounded-lg border border-red-300 px-3 py-2 text-xs font-semibold text-red-700" onClick={cancelScan}>
+              Stop scan after the current page
+            </button>}
             {(jobStatus.metadata?.sources||[]).map(entry=><p key={entry.source_id} className="text-xs">
               {entry.name||entry.source_id}: {entry.status} {entry.reason||''}
             </p>)}
@@ -248,6 +274,11 @@ export default function CatalogWorkflowsPanel({onClose, initialTab='products',on
               {result.sources.map(entry=><div key={entry.source_id} className="rounded-lg border bg-gray-50 p-2 text-xs">
                 <strong>{entry.name||entry.source_id}</strong> — {entry.status}
                 <span className="ml-2">{entry.fetched??0} found · {entry.existing_products_matched??0} linked · {entry.new_products_staged??0} staged</span>
+                {entry.pages_scanned!==undefined&&<p className="text-gray-600 mt-1">
+                  {entry.pages_scanned} pages · last page {entry.last_completed_page??'—'} ·
+                  {entry.catalog_exhausted?'Reached catalog end':entry.stop_reason==='page_limit'?'Stopped at your page limit':'Scan stopped: '+entry.stop_reason}
+                  {entry.last_completed_page&&<span> · resume at page {entry.next_page}</span>}
+                </p>}
                 {entry.reason&&<p className="text-amber-800 mt-1">{entry.reason}</p>}
                 {entry.coverage&&<p className="text-gray-600 mt-1">{entry.coverage}</p>}
               </div>)}
