@@ -20,14 +20,67 @@ export default function AggregationReviewPanel({ onClose, initialSourceId = 'sou
   const [sourceId, setSourceId] = useState(initialSourceId), [coverage, setCoverage] = useState(null);
   const [reviewer, setReviewer] = useState(''), [reason, setReason] = useState(''), [action, setAction] = useState('request_evidence');
   const [mergeSurvivor, setMergeSurvivor] = useState('');
+  const [reviewView,setReviewView] = useState('manual');
+  const [queueStatus,setQueueStatus] = useState(null);
+  const [geminiTask,setGeminiTask] = useState(null);
+  const [geminiJob,setGeminiJob] = useState(null);
+  const [selectedReviewIds,setSelectedReviewIds] = useState([]);
+  const [geminiBatchSize,setGeminiBatchSize] = useState(10);
+  const [geminiLimit,setGeminiLimit] = useState(500);
   const [canonicalId, setCanonicalId] = useState(''), [category, setCategory] = useState('Moisturizer');
   const [busy, setBusy] = useState(false), [message, setMessage] = useState(''), [error, setError] = useState('');
   const refresh = useCallback(async () => {
-    const [registry, queue] = await Promise.all([api('/sources'), api(`/reviews?status=pending&offset=${offset}&limit=50${kind ? `&kind=${kind}` : ''}`)]);
+    const [registry, queue,gemini] = await Promise.all([
+      api('/sources'),
+      api(`/reviews?status=pending&view=${reviewView}&offset=${offset}&limit=50${kind ? `&kind=${kind}` : ''}`),
+      api('/reviews/gemini/queue')
+    ]);
     setSources(registry.sources); setReviews(queue.reviews); setTotal(queue.total);
-  }, [offset, kind]);
+    setQueueStatus(gemini);setSelectedReviewIds([]);
+  }, [offset, kind, reviewView]);
   useEffect(() => { dialog.current.showModal(); }, []);
   useEffect(() => { refresh().catch(e => setError(e.message)); }, [refresh]);
+  useEffect(()=>{
+    if(!geminiTask)return;
+    let active=true;
+    async function poll() {
+      try {
+        const job=await api('/reviews/gemini/jobs/'+encodeURIComponent(geminiTask));
+        if(!active)return;
+        setGeminiJob(job);
+        if(!['running','pending'].includes(job.status)){
+          setGeminiTask(null);
+          refresh().catch(e=>setError(e.message));
+        }
+      }catch(e){if(active){setError(e.message);setGeminiTask(null);}}
+    }
+    poll();const timer=setInterval(poll,2000);
+    return ()=>{active=false;clearInterval(timer)};
+  },[geminiTask,refresh]);
+  async function sendToGemini(reviewIds) {
+    await perform(async()=>{
+      const payload=reviewIds?{review_ids:reviewIds,limit:reviewIds.length}:{limit:20000};
+      const res=await api('/reviews/gemini/enqueue',{method:'POST',body:JSON.stringify(payload)});
+      setMessage(res.queued+' product identity cases added to the Gemini review queue.');
+      setReviewView('awaiting_gemini');setOffset(0);
+    });
+  }
+  async function startGemini() {
+    await perform(async()=>{
+      const res=await api('/reviews/gemini/run',{method:'POST',body:JSON.stringify({
+        limit:Number(geminiLimit),batch_size:Number(geminiBatchSize)
+      })});
+      setGeminiTask(res.task_id);setGeminiJob({status:'running',processed_items:0,total_items:res.queued});
+      setMessage('Gemini identity review started. Several cases share one request.');
+    });
+  }
+  async function stopGemini() {
+    if(!geminiTask)return;
+    await perform(async()=>{
+      await api('/reviews/gemini/jobs/'+encodeURIComponent(geminiTask)+'/cancel',{method:'POST'});
+      setMessage('Gemini stop requested; unresolved cases remain in the queue.');
+    });
+  }
   async function perform(callback) {
     setBusy(true); setError(''); setMessage('');
     try { await callback(); await refresh(); } catch (e) { setError(e.message); } finally { setBusy(false); }
@@ -78,11 +131,75 @@ export default function AggregationReviewPanel({ onClose, initialSourceId = 'sou
           {busy?'Checking products...':'Find legacy products needing review'}
         </button>
       </div>}
-      {mode === 'reviews' && <section className="grid md:grid-cols-2 gap-4"><div className="bg-white border rounded-xl p-4"><div className="flex justify-between mb-3"><h3 className="font-semibold">Pending reviews ({total})</h3><select aria-label="Review type" value={kind} onChange={e => { setKind(e.target.value); setOffset(0); setSelected(null); }} className="border rounded p-1"><option value="">All types</option>{['identity', 'duplicate', 'category', 'formulation'].map(k => <option key={k}>{k}</option>)}</select></div>
-        <ul className="space-y-2 max-h-96 overflow-auto">{reviews.map(r => <li key={r.id}><button className={`w-full text-left border rounded-lg p-3 ${selected?.id === r.id ? 'bg-purple-50 border-purple-500' : ''}`} onClick={() => { setSelected(r); setAction('request_evidence'); setCanonicalId(r.canonical_product_id || ''); setMergeSurvivor(r.details?.canonical_ids?.[0] || ''); }}><span className="block text-xs text-purple-700 uppercase">{r.kind} · {r.source_id || 'Canonical evidence'}</span><span className="block text-sm font-medium">{r.details.title || r.details.original_title || r.details.details?.titles?.join(' / ') || `Canonical ${r.canonical_product_id || 'unresolved'}`}</span></button></li>)}</ul>
+      {mode === 'reviews' && <section className="rounded-xl border bg-white p-4 space-y-3">
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <div><h3 className="font-semibold">Gemini product matching</h3>
+            <p className="text-xs text-gray-600">Gemini checks multiple retailer product identities in a single call. Clear matches are approved only when independent variant, brand and INCI checks also pass. All other cases stay available for a person.</p></div>
+          <span className="text-xs font-semibold text-purple-800">{queueStatus?.pending_identity_cases??'—'} unresolved identity/duplicate cases</span>
+        </div>
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs">
+          {[['Waiting for Gemini',queueStatus?.counts?.queued||0],
+            ['Processing',queueStatus?.counts?.processing||0],
+            ['Resolved automatically',queueStatus?.counts?.auto_resolved||0],
+            ['Need a person',queueStatus?.counts?.needs_manual||0]].map(([label,value])=>
+            <div key={label} className="rounded-lg bg-gray-50 p-2"><strong className="text-lg block">{value}</strong>{label}</div>)}
+        </div>
+        <div className="flex gap-2 flex-wrap items-center">
+          <button type="button" disabled={busy||Boolean(geminiTask)} onClick={()=>sendToGemini(null)}
+            className="rounded-lg bg-purple-700 text-white px-3 py-2 text-sm font-semibold disabled:opacity-50">
+            Send all unresolved identity cases to Gemini
+          </button>
+          <button type="button" disabled={busy||!selectedReviewIds.length||Boolean(geminiTask)}
+            onClick={()=>sendToGemini(selectedReviewIds)}
+            className="rounded-lg border px-3 py-2 text-sm font-semibold disabled:opacity-50">
+            Send selected ({selectedReviewIds.length})
+          </button>
+          <label className="text-xs font-semibold">Cases per Gemini call
+            <select value={geminiBatchSize} onChange={e=>setGeminiBatchSize(Number(e.target.value))} className="border rounded p-2 ml-2">
+              {[5,10,20].map(n=><option key={n} value={n}>{n}</option>)}
+            </select>
+          </label>
+          <label className="text-xs font-semibold">Cases per run
+            <input type="number" min="1" max="20000" value={geminiLimit} onChange={e=>setGeminiLimit(e.target.value)}
+              className="border rounded p-2 ml-2 w-24"/>
+          </label>
+          <button type="button" disabled={busy||Boolean(geminiTask)||!(queueStatus?.counts?.queued>0)}
+            onClick={startGemini} className="rounded-lg border border-purple-600 bg-purple-50 text-purple-800 px-3 py-2 font-semibold text-sm disabled:opacity-50">
+            Run Gemini matching
+          </button>
+          {geminiTask&&<button type="button" onClick={stopGemini} className="rounded-lg border border-red-300 text-red-700 px-3 py-2 text-sm font-semibold">Stop after current batch</button>}
+        </div>
+        {geminiJob&&<p role="status" className="text-xs text-gray-700">
+          Job: {geminiJob.status} · {geminiJob.processed_items||0} evaluated ·
+          {geminiJob.metadata?.stats?.auto_resolved||0} automatically approved ·
+          {geminiJob.metadata?.stats?.needs_manual||0} awaiting human decision ·
+          {geminiJob.metadata?.api_calls||0} API calls
+          {geminiJob.error_message&&<span className="text-red-700"> · {geminiJob.error_message}</span>}
+        </p>}
+        <p className="text-xs text-gray-500">This is separate from Gemini's INCI queue. It never writes ingredient lists, changes prices, or automatically merges two different canonical product IDs.</p>
+      </section>}
+      {mode === 'reviews' && <section className="grid md:grid-cols-2 gap-4"><div className="bg-white border rounded-xl p-4"><div className="flex justify-between mb-3"><h3 className="font-semibold">{reviewView==='manual'?'Needs manual review':reviewView==='awaiting_gemini'?'Waiting for Gemini':'All pending reviews'} ({total})</h3><select aria-label="Review type" value={kind} onChange={e => { setKind(e.target.value); setOffset(0); setSelected(null); }} className="border rounded p-1"><option value="">All types</option>{['identity', 'duplicate', 'category', 'formulation'].map(k => <option key={k}>{k}</option>)}</select></div>
+        <div className="flex flex-wrap gap-2 mb-3 text-xs">
+          {[['manual','Needs manual review'],['awaiting_gemini','Waiting for Gemini'],['all','All unresolved cases']].map(([value,label])=>
+            <button type="button" key={value} aria-pressed={reviewView===value} onClick={()=>{setReviewView(value);setOffset(0);setSelected(null)}}
+              className={reviewView===value?'rounded-lg bg-purple-100 text-purple-900 px-2 py-1 font-semibold':'rounded-lg border px-2 py-1'}>{label}</button>)}
+        </div>
+        <label className="flex gap-2 items-center text-xs mb-2">
+          <input type="checkbox" checked={reviews.length>0 && reviews.filter(x=>['identity','duplicate'].includes(x.kind)).every(x=>selectedReviewIds.includes(x.id))}
+            onChange={e=>setSelectedReviewIds(e.target.checked?reviews.filter(x=>['identity','duplicate'].includes(x.kind)).map(x=>x.id):[])}/>
+          Select identity cases visible on this page
+        </label>
+        <ul className="space-y-2 max-h-96 overflow-auto">{reviews.map(r => <li key={r.id} className="flex gap-2 items-start">
+          <input type="checkbox" className="mt-4" disabled={!['identity','duplicate'].includes(r.kind)||['queued','processing'].includes(r.gemini_status)}
+            checked={selectedReviewIds.includes(r.id)}
+            onChange={e=>setSelectedReviewIds(prev=>e.target.checked?[...prev,r.id]:prev.filter(n=>n!==r.id))}/>
+          <button className={`w-full text-left border rounded-lg p-3 ${selected?.id === r.id ? 'bg-purple-50 border-purple-500' : ''}`} onClick={() => { setSelected(r); setAction('request_evidence'); setCanonicalId(r.canonical_product_id || ''); setMergeSurvivor(r.details?.canonical_ids?.[0] || ''); }}><span className="block text-xs text-purple-700 uppercase">{r.kind} · {r.source_id || 'Canonical evidence'}</span><span className="block text-sm font-medium">{r.details.title || r.details.original_title || r.details.details?.titles?.join(' / ') || `Canonical ${r.canonical_product_id || 'unresolved'}`}</span>{r.gemini_status&&<span className="block text-xs text-gray-500 mt-1">Gemini: {r.gemini_status}{r.gemini_verdict?' · '+r.gemini_verdict:''}</span>}</button></li>)}</ul>
         {!reviews.length && <p className="py-8 text-sm text-gray-500">No pending reviews in this view.</p>}<div className="flex justify-between text-sm mt-3"><button disabled={!offset || busy} onClick={() => setOffset(Math.max(0, offset - 50))}>Previous</button><span>{Math.min(offset + reviews.length, total)} of {total}</span><button disabled={offset + 50 >= total || busy} onClick={() => setOffset(offset + 50)}>Next</button></div>
       </div><div className="bg-white border rounded-xl p-4">{selected ? <form className="space-y-3" onSubmit={e => { e.preventDefault(); perform(async () => { await api(`/reviews/${selected.id}`, { method: 'POST', body: JSON.stringify({ action, reviewer, reason, canonical_id: canonicalId ? Number(canonicalId) : null, category }) }); setMessage('Review saved. Re-ingest the observation to apply an accepted mapping.'); setSelected(null); setReason(''); }); }}>
         <h3 className="font-semibold">Review #{selected.id}</h3>
+        {selected.gemini_explanation&&<p className="rounded-lg bg-purple-50 p-2 text-xs">
+          Gemini: {selected.gemini_verdict} · confidence {selected.gemini_confidence} · {selected.gemini_explanation}
+        </p>}
         {selected.details.reason_code&&<p className="rounded-lg bg-amber-50 p-2 text-sm font-medium text-amber-900">Issue: {selected.details.reason_code.replaceAll('_',' ')}</p>}
         {selected.details.offers?.length>0&&<div className="text-xs text-gray-700 rounded-lg border p-2 space-y-1">
           <strong>Related store listings</strong>
