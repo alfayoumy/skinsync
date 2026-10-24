@@ -3,6 +3,7 @@
 This router intentionally contains no INCI publication and no LLM calls.
 """
 from collections import Counter
+from pipeline.legacy_identity_reconcile import reconcile_legacy_exact
 from typing import Literal
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, Field
@@ -199,3 +200,12 @@ def discover(request:ShopifyScan):
 @router.post('/offers/refresh')
 def refresh_existing_offers(request:OfferRefresh):
     return run(update_existing_shopify_offers,request)
+
+class LegacyIdentityCheck(BaseModel):
+    dry_run: bool=True
+    max_verified: int=Field(default=500,ge=1,le=5000)
+
+
+@router.post('/products/verify-existing')
+def verify_existing_products(request:LegacyIdentityCheck):
+    return run(reconcile_legacy_exact,request)
