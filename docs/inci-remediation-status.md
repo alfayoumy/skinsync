@@ -1,4 +1,18 @@
-# INCI remediation implementation — 2026-10-24
+# INCI remediation — current follow-up and archived October 24 baseline
+
+**Current implementation review: 25 October 2026.** This document preserves the previous October 24 remediation assessment below, but many additional identity and operational changes have landed since it was written.
+
+Current source-of-truth references: [architecture](system_architecture_and_api_documentation.md), [INCI operations and product workflows](workflows-and-operations.md), [API routes](api-reference.md), [database](database-reference.md), [aggregation runbooks](aggregation/README.md).
+
+**Important separation:** canonical identity verification, approval of a region-specific full ingredient list, and product/price ingestion are independent. Gemini identity matching now uses its own persistent review queue; saved ≥0.90 confidence verdicts may be replayed **without new model calls**, but only after exact identity/variant checks. A confident different-product verdict may produce an audited provisional split only if the store listings permit a deterministic partition.
+
+The historical "complete" wording below describes the **code changes under that review**, not proof that the real production catalog has undergone an end-to-end INCI publication run, that external source terms are permitted, or that all formulas are current. Validate completeness, regional variation and audit evidence on the deployed database before a broad write.
+
+**Original October 24 status snapshot follows.**
+
+---
+
+## Historical: INCI remediation implementation — 2026-10-24
 
 The corrective implementation for the review of `463ebee` is complete. Full-catalog publication and external audit export remain separate operational steps; neither was performed.
 

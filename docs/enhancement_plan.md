@@ -1,4 +1,27 @@
-# SkinSync Production Architecture & Catalog Pipeline Plan
+# Enhancement plan — current implementation status and historical roadmap
+
+**Current update: 25 October 2026.** The design and milestones in the **original plan below** were written before the multi-source canonical identity/Gemini-review overhaul. Treat projected catalog sizes, listed roadmap items, API examples and "production" wording in that historical plan as **proposals**, not present deployment evidence. Use the current code-derived documents for actual operations:
+
+- [System architecture](system_architecture_and_api_documentation.md)
+- [Complete HTTP endpoints](api-reference.md)
+- [Complete SQLite schema](database-reference.md)
+- [Current workflows and security](workflows-and-operations.md)
+- [Aggregation and product uniqueness](aggregation/README.md)
+
+| Theme in original plan | Verified current implementation | Remaining boundary |
+|---|---|---|
+| Multi-store crawling | Registry of staged sources, Shopify All pages tracked source scans, URL collection for HTML/reference | HTML sites without catalog feeds still need URLs; enabled does not imply authoritative publication |
+| Unique products and categorization | Brand alias registry, rich taxonomy, canonical identity/offer separation, legacy reconciler, review cases and Gemini identity batches | High-confidence model decisions must still pass deterministic checks; no automatic two-canonical merging |
+| Independent price and stock refresh | Offer-only `/admin/workflows/offers/refresh` | Finite synchronous scanner; old daily sync remains mixed for compatibility |
+| Accurate INCI | Canonical publisher and source/evidence/version history, guarded waterfall and distinct INCI queues | Live regional formulation accuracy/coverage require validation; no live full-catalog approval is inferred |
+| Saved decisions and review efficiency | Gemini results table with confidence/sort filters; replay saved ≥0.90 verdicts without further calls; audited safe splits | Unpartitionable/conflicting cases stay manual |
+| Admin security and rollout | Scoped tokens, immutable evaluation artifacts, audit trails and tasks | Dockerfile Python 3.9 differs from CI's Python 3.12 and needs release validation |
+
+**Historical roadmap text follows unchanged except file-link portability fixes.**
+
+---
+
+## Historical: SkinSync Production Architecture & Catalog Pipeline Plan
 
 This document defines the complete production data architecture for **SkinSync**, transitioning the platform from legacy static CSV files into an automated, multi-source, real-time relational data engine with daily price and catalog synchronization, native vector search, deterministic cosmetic safeguards, and AI bioequivalence verification.
 
@@ -108,7 +131,7 @@ The flat CSV architecture has been replaced with a high-concurrency SQLite datab
 
 ## 4. The 4-Tier Guarded INCI Formulation Matching Engine
 
-To eliminate the critical errors found in legacy matching, the platform utilizes a 4-tier guarded hybrid pipeline in [`pipeline/inci_matcher.py`](file:///mnt/windows/Users/AmrAlfayoumy/Downloads/skincare/repo/api/pipeline/inci_matcher.py):
+To eliminate the critical errors found in legacy matching, the platform utilizes a 4-tier guarded hybrid pipeline in [`pipeline/inci_matcher.py`](../api/pipeline/inci_matcher.py):
 
 ```
 Store Product Title
@@ -138,7 +161,7 @@ Rather than introducing heavy C++ binaries or external vector database servers (
 * Memory footprint for all 50,000 vectors is only **76.8 MB**, enabling zero-overhead execution on CPU.
 * Missing embeddings are embedded on-the-fly and cached permanently in SQLite.
 
-### The Rule-Based Safeguard Dimensions ([`pipeline/safeguards.py`](file:///mnt/windows/Users/AmrAlfayoumy/Downloads/skincare/repo/api/pipeline/safeguards.py))
+### The Rule-Based Safeguard Dimensions ([`pipeline/safeguards.py`](../api/pipeline/safeguards.py))
 The deterministic safeguard enforces 8 physical and cosmetic boundaries:
 1. **Anatomical Target:** Hair vs. Face (*hair mask vs face mask*), Lip vs. Eye/Face, Eye Contour vs. Full Face, Body vs. Face.
 2. **Vehicle Phase:** Rinse-off Cleansers/Soaps/Scrubs vs. Leave-on Creams/Serums/Balms; Leave-on Toners vs. Rinse-off Washes.
@@ -186,7 +209,7 @@ The deterministic safeguard enforces 8 physical and cosmetic boundaries:
 
 ---
 
-## 6. Centralized Configuration & Configurable Thresholds ([`pipeline/config.py`](file:///mnt/windows/Users/AmrAlfayoumy/Downloads/skincare/repo/api/pipeline/config.py))
+## 6. Centralized Configuration & Configurable Thresholds ([`pipeline/config.py`](../api/pipeline/config.py))
 
 To prevent brittle hardcoded magic numbers, all thresholds, weights, and timeouts are centralized in `config.py` as typed parameters that can be overridden dynamically via `.env` or system environment variables:
 
@@ -214,15 +237,15 @@ To prevent brittle hardcoded magic numbers, all thresholds, weights, and timeout
 
 ## 7. Implementation Milestones
 
-- [x] **Relational Schema & WAL Mode Migration:** [`repo/api/pipeline/db_manager.py`](file:///mnt/windows/Users/AmrAlfayoumy/Downloads/skincare/repo/api/pipeline/db_manager.py) initialized [`skincare.db`](file:///mnt/windows/Users/AmrAlfayoumy/Downloads/skincare/repo/api/skincare.db).
+- [x] **Relational Schema & WAL Mode Migration:** [`repo/api/pipeline/db_manager.py`](../api/pipeline/db_manager.py) initialized [`skincare.db`](../api/skincare.db).
 - [x] **Knowledge Base Seeding:** 50,969 SkinSAFE formulations seeded into `inci_reference`.
 - [x] **Store Harvesters:** 6 Shopify-compatible stores integrated with automated pagination and rate-limiting.
 - [x] **Legacy Database Sanitization:** Purged 69 tainted records resulting from old fuzzy matching mismatches.
-- [x] **Deterministic Rule Safeguard:** Built [`pipeline/safeguards.py`](file:///mnt/windows/Users/AmrAlfayoumy/Downloads/skincare/repo/api/pipeline/safeguards.py) covering 8 formulation conflict dimensions.
+- [x] **Deterministic Rule Safeguard:** Built [`pipeline/safeguards.py`](../api/pipeline/safeguards.py) covering 8 formulation conflict dimensions.
 - [x] **Native Vector Hybrid Retrieval:** Integrated `fastembed` ONNX (384-dim BGE-small) with SQLite binary BLOB vectors and candidate bypassing.
 - [x] **Decoupled 4-Gate Architecture:** Crawler (0 LLMs) separated from INCI backfill worker and Gate 4 Jev worker.
 - [x] **Per-Gate Telemetry Audit:** Added `gate1_quality_status`, `gate2_safeguard_status`, `gate3_active_status`, `gate4_jev_status`, and distinct score columns.
 - [x] **Strategy A & Strategy B:** Self-enrichment into `inci_reference` plus Open Beauty Facts live API fallback.
-- [x] **Centralized Configuration:** Configurable minimum ingredient entities set to **3**; eliminated all hardcoded pipeline numbers into [`config.py`](file:///mnt/windows/Users/AmrAlfayoumy/Downloads/skincare/repo/api/pipeline/config.py) and [`.env`](file:///mnt/windows/Users/AmrAlfayoumy/Downloads/skincare/repo/api/.env).
+- [x] **Centralized Configuration:** Configurable minimum ingredient entities set to **3**; eliminated all hardcoded pipeline numbers into [`config.py`](../api/pipeline/config.py) and [`.env`](../api/.env).
 - [ ] **Full Multi-Store Catalog Crawl:** Execute `daily_sync.py` across all 6 stores to ingest ~16,000 live products and real-time prices.
 

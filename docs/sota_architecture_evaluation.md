@@ -1,4 +1,22 @@
-# SOTA Evaluation & Architecture Blueprint
+# SOTA architecture evaluation — historical analysis with current implementation notes
+
+**Current review date: 25 October 2026.** The benchmark numbers, latency comparisons, model availability and project status in the **original SOTA evaluation below** are historical research results and should not be treated as current verified performance or Gemini quota/provider benchmarks. Some referenced equations, 4-gate labels and pipelines predate the canonical identity/INCI separation.
+
+Current operational baseline:
+
+- Product identity: approved/curated brand aliases, canonical ID/variant separation, source observations, deterministic hard gates, Gemini **product identity** batch worker and evidence-aware application.
+- Review economy: model verdict stored distinctly from auto-apply state; saved ≥0.90 confidence same-product and safe explicit different-product decisions may be replayed without a second provider call.
+- INCI: full exact-product formulation provenance and ordered ingredient evidence in canonical formulation versions; separate Jev/Gemini ingredient queue.
+- Catalog: tracked multi-source Shopify All pages discovery, finite offer-only price refresh, source governance, SQLite evaluation/audit tables.
+- Admin APIs, schema and runbooks: [current architecture](system_architecture_and_api_documentation.md), [all APIs](api-reference.md), [database](database-reference.md), [operations](workflows-and-operations.md).
+
+Any past performance metrics require a new evaluation with pinned dataset, model/build, data region, date and comparison protocol before being cited as current.
+
+**Original SOTA evaluation retained below for historical context.**
+
+---
+
+## Historical: SOTA Evaluation & Architecture Blueprint
 ## Comprehensive Assessment of INCI Matching, Product Similarity, and Real-Time AI Verification
 
 **Target Objective:** Maintain the cheapest, fastest, and most accurate architecture for INCI entity resolution and cosmetic bioequivalence scoring in the Egyptian skincare market.
@@ -71,7 +89,7 @@ The architecture employs a **4-Gate Decoupled Hybrid Architecture**:
 - **Resolution:** Expanded `KEY_ACTIVES` to 28+ chemical families including Tranexamic Acid, Kojic Acid, Bakuchiol, Urea, Benzoyl Peroxide, Sulfur, Ectoin, PHA, Ferulic Acid, Licorice (Glabridin), Snail Mucin, and Ferments.
 
 ### Flaw 8: Disconnected Clinical Knowledge Base (`dermo_data.py`)
-- **Root Cause:** [`dermo_data.py`](file:///mnt/windows/Users/AmrAlfayoumy/Downloads/skincare/repo/api/dermo_data.py) sat unused in `app.py`. When initial integration was attempted, `parse_and_clean_ingredients()` converted synonyms (`"cocos nucifera oil"` $\to$ `"coconut oil"`, `"parfum"` $\to$ `"fragrance"`, `"sodium lauryl sulfate"` $\to$ `"sls"`), but `_get_ingredient_fuzzy()` only searched against raw capitalized INCI keys, returning `None` for all critical risk triggers.
+- **Root Cause:** [`dermo_data.py`](../api/dermo_data.py) sat unused in `app.py`. When initial integration was attempted, `parse_and_clean_ingredients()` converted synonyms (`"cocos nucifera oil"` $\to$ `"coconut oil"`, `"parfum"` $\to$ `"fragrance"`, `"sodium lauryl sulfate"` $\to$ `"sls"`), but `_get_ingredient_fuzzy()` only searched against raw capitalized INCI keys, returning `None` for all critical risk triggers.
 - **Resolution:** Built a pre-computed normalized alias dictionary in `dermo_data.py` mapping common names and synonyms (`coconut oil`, `cocoa butter`, `fragrance`, `sls`, `alcohol denat`, `retinol`, `niacinamide`) to their clinical `Ingredient` records with 100% precision. Evaluator computes position-weighted comedogenic load and irritancy risk.
 
 ### Flaw 9: Synchronous Blocking Latency in Real-Time `/recommend` Path
