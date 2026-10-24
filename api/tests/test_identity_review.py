@@ -197,6 +197,9 @@ class TestIdentityReviewApi(unittest.TestCase):
                     self.assertEqual(conn.execute('SELECT ingredients_raw FROM canonical_products WHERE id=100').fetchone()[0],expected)
                     self.assertEqual(conn.execute('SELECT ingredients_raw FROM products WHERE id=1').fetchone()[0],original)
                     last=conn.execute('SELECT completeness FROM inci_audit_evidence ORDER BY id DESC LIMIT 1').fetchone()[0]
-                    self.assertEqual(last,'unverified' if expected is None else 'full')
+                    self.assertEqual(last,'full' if status=='jev_approved' else 'unverified')
+                    if status=='jev_approved':
+                        decision=conn.execute('SELECT decision FROM inci_audit_evidence ORDER BY id DESC LIMIT 1').fetchone()[0]
+                        self.assertEqual(decision,'identity_blocked')
                 finally:
                     conn.close()

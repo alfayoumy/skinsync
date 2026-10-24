@@ -53,6 +53,17 @@ class WaterfallReadinessTests(unittest.TestCase):
                 (i,store,str(i),title,'CeraVe','https://'+store+'.test/p',self.cid))
         self.assertEqual(certify_cross_store(self.conn,'admin',apply=False)['certifiable'],0)
 
+    def test_conflicting_complete_declarations_prevent_certification(self):
+        raw1='Water, Glycerin, Panthenol, Phenoxyethanol'
+        raw2='Water, Glycerin, Niacinamide, Phenoxyethanol'
+        for i,store in enumerate(('first','second'),1):
+            self.conn.execute("INSERT INTO stores(id,name,domain) VALUES (?,?,?)",(store,store,store+'.test'))
+            self.conn.execute("""INSERT INTO products(id,store_id,store_product_id,title,brand,category,product_url,
+                canonical_product_id,ingredients_raw,ingredient_source)
+                VALUES (?,?,?,?,?,'Moisturizer',?,?,?,'store_page_tab')""",
+                (i,store,str(i),self.title,'CeraVe','https://'+store+'.test/p',self.cid,raw1 if i==1 else raw2))
+        self.assertEqual(certify_cross_store(self.conn,'admin')['certifiable'],0)
+
     def test_external_lookups_require_verified_observation(self):
         self.conn.execute("UPDATE canonical_products SET identity_status='verified' WHERE id=?",(self.cid,))
         raw='Water, Glycerin, Panthenol, Phenoxyethanol'

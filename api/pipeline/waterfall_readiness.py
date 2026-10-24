@@ -63,11 +63,13 @@ def certifiable_cross_store(conn, limit=None):
     pending=pending_identity_ids(conn)
     groups=defaultdict(list)
     for row in conn.execute("""SELECT id,canonical_product_id,store_id,store_product_id,
-        COALESCE(original_title,title) title,COALESCE(original_brand,brand) brand
+        COALESCE(original_title,title) title,COALESCE(original_brand,brand) brand,
+        ingredients_raw,ingredient_source
         FROM products WHERE canonical_product_id IS NOT NULL ORDER BY canonical_product_id,id"""):
         groups[row['canonical_product_id']].append(dict(row))
     candidates=[]
-    for canonical in conn.execute("""SELECT id,canonical_title,brand,brand_id,identity_status,is_skincare
+    for canonical in conn.execute("""SELECT id,canonical_title,brand,brand_id,identity_status,is_skincare,
+        ingredients_raw
         FROM canonical_products WHERE is_skincare=1 AND identity_status IN
         ('legacy','legacy_preserved_unverified') ORDER BY id"""):
         cid=canonical['id']
@@ -88,6 +90,20 @@ def certifiable_cross_store(conn, limit=None):
             if not compatible or compare_attributes(extract_identity(offer['title'],offer['brand']),identity)['conflicts']:
                 good=False;break
         if good:
+            # Exact titles do not rule out reformulations. Existing credible
+            # full declarations must not disagree within a certified cluster.
+            from pipeline.identity_review import formula_fingerprint
+            hashes=set()
+            canonical_hash=formula_fingerprint(dict(canonical))
+            if canonical_hash:hashes.add(canonical_hash)
+            for offer in offers:
+                if offer.get('ingredient_source') in (
+                    'store_page_tab','historical_store_scrape','admin_override','curated_v10'
+                ):
+                    existing_hash=formula_fingerprint(offer)
+                    if existing_hash:hashes.add(existing_hash)
+            if len(hashes)>1:
+                continue
             candidates.append((cid,offers))
             if limit is not None and len(candidates)>=int(limit):break
     return candidates
