@@ -89,6 +89,9 @@ const AdminObservatory = ({ onBackToApp }) => {
   const [waterfallBatchStatus, setWaterfallBatchStatus] = useState(null);
   const [batchStarting, setBatchStarting] = useState(false);
   const [batchCancelling, setBatchCancelling] = useState(false);
+  const [waterfallEligibility, setWaterfallEligibility] = useState(null);
+  const [certificationResult, setCertificationResult] = useState(null);
+  const [certifyingIdentity, setCertifyingIdentity] = useState(false);
 
   // Gate 4 LLM Queue Manager States (Jev & Gemini)
   const [showQueueModal, setShowQueueModal] = useState(false);
@@ -199,6 +202,35 @@ const AdminObservatory = ({ onBackToApp }) => {
     }
   }, [waterfallBatchStatus?.recent_logs, showWaterfallBatchModal]);
 
+  useEffect(() => {
+    if (!showWaterfallBatchModal) return;
+    let active=true;
+    const params=new URLSearchParams({scope: waterfallBatchConfig.scope});
+    if (waterfallBatchConfig.limit) params.set('limit',String(waterfallBatchConfig.limit));
+    apiFetch('http://127.0.0.1:8000/admin/waterfall/batch/eligibility?' + params.toString())
+      .then(res=>res.ok?res.json():null).then(data=>{if(active)setWaterfallEligibility(data);})
+      .catch(()=>{if(active)setWaterfallEligibility(null);});
+    return ()=>{active=false;};
+  }, [showWaterfallBatchModal, waterfallBatchConfig.scope, waterfallBatchConfig.limit, waterfallBatchStatus?.status]);
+
+  const certifyWaterfallIdentities = async (apply) => {
+    if (apply && !window.confirm('Certify only exact, independently corroborated cross-store identities? This changes identity trust for eligible records, not their INCI.')) return;
+    setCertifyingIdentity(true);
+    try {
+      const res=await apiFetch('http://127.0.0.1:8000/admin/waterfall/identity-certification',{
+        method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({apply,limit:200})
+      });
+      const data=await res.json();
+      if(!res.ok)throw new Error(typeof data.detail==='string'?data.detail:'Identity certification failed.');
+      setCertificationResult(data);
+      if(apply)await fetchWaterfallBatchStatus();
+      const params=new URLSearchParams({scope:waterfallBatchConfig.scope});
+      const counts=await apiFetch('http://127.0.0.1:8000/admin/waterfall/batch/eligibility?'+params);
+      if(counts.ok)setWaterfallEligibility(await counts.json());
+    }catch(err){alert(err.message);}
+    finally{setCertifyingIdentity(false);}
+  };
+
   const handleStartWaterfallBatch = async () => {
     try {
       setBatchStarting(true);
@@ -211,7 +243,10 @@ const AdminObservatory = ({ onBackToApp }) => {
         await fetchWaterfallBatchStatus();
       } else {
         const err = await res.json();
-        alert(err.detail || 'Failed to start waterfall batch');
+        if(err.detail?.reason === 'no_verified_eligible_products') {
+          setWaterfallEligibility(err.detail.eligibility);
+          alert(err.detail.message);
+        } else alert(typeof err.detail==='string'?err.detail:'Failed to start waterfall batch');
       }
     } catch (err) {
       console.error('Failed to start batch:', err);
@@ -4228,11 +4263,35 @@ const AdminObservatory = ({ onBackToApp }) => {
                   </div>
                 </div>
 
+                {/* Identity trust preflight: never pretend a zero-target batch succeeded */}
+                <div className="rounded-xl border border-amber-200 bg-amber-50 p-3 space-y-2 text-xs text-amber-950">
+                  <div className="font-bold">Canonical identity eligibility</div>
+                  {waterfallEligibility ? (
+                    <>
+                      <div>{waterfallEligibility.eligible} eligible of {waterfallEligibility.in_scope} scoped skincare canonicals</div>
+                      <div>{waterfallEligibility.blocked_unverified} not identity-verified · {waterfallEligibility.blocked_pending_review} blocked by identity review</div>
+                      {!waterfallEligibility.eligible && <p>Nothing will run until at least one canonical identity is verified. Existing formula evidence is preserved.</p>}
+                    </>
+                  ) : <div>Checking verified catalog eligibility...</div>}
+                  {certificationResult && <div>{certificationResult.dry_run?'Certification preview':'Identity certification applied'}: {certificationResult.certifiable} exact cross-store matches ({certificationResult.processed} verified).</div>}
+                  <div className="flex gap-2 flex-wrap">
+                    <button type="button" disabled={certifyingIdentity||waterfallBatchStatus?.is_running}
+                      onClick={()=>certifyWaterfallIdentities(false)}
+                      className="rounded-lg border border-amber-400 px-3 py-1.5 font-semibold hover:bg-amber-100 disabled:opacity-50">
+                      Preview safe identity matches
+                    </button>
+                    <button type="button" disabled={certifyingIdentity||waterfallBatchStatus?.is_running}
+                      onClick={()=>certifyWaterfallIdentities(true)}
+                      className="rounded-lg bg-amber-900 px-3 py-1.5 font-semibold text-white hover:bg-amber-800 disabled:opacity-50">
+                      Certify exact matches (max 200)
+                    </button>
+                  </div>
+                </div>
                 {/* Launch Action Button */}
                 <div className="pt-2">
                   <button
                     onClick={handleStartWaterfallBatch}
-                    disabled={waterfallBatchStatus?.is_running || batchStarting}
+                    disabled={waterfallBatchStatus?.is_running || batchStarting || (waterfallEligibility?.eligible === 0)}
                     className="w-full py-3.5 px-4 bg-gradient-to-r from-violet-600 via-purple-600 to-indigo-600 hover:from-violet-700 hover:to-indigo-700 text-white text-xs sm:text-sm font-black rounded-2xl shadow-md hover:shadow-lg transition flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
                   >
                     {batchStarting ? (
@@ -4307,7 +4366,7 @@ const AdminObservatory = ({ onBackToApp }) => {
             <div className="p-4 bg-white border-t border-gray-200 flex items-center justify-between shrink-0 text-xs text-gray-500">
               <div className="flex items-center gap-2">
                 <span className="w-2 h-2 rounded-full bg-violet-600" />
-                <span>Multi-Pass Architecture: Individual Waterfall → Cluster Propagation → LLM Queue Arbitration</span>
+                <span>Canonical-only INCI resolution · legacy external matches require exact-source verification · no cluster propagation</span>
               </div>
               <button
                 onClick={() => setShowWaterfallBatchModal(false)}

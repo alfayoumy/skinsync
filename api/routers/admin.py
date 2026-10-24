@@ -1076,6 +1076,7 @@ class WaterfallBatchRunner:
         }
         self.recent_logs = deque(maxlen=100)
         self.config = {}
+        self.eligibility = None
         self.cancel_event = threading.Event()
         self._thread = None
 
@@ -1099,6 +1100,7 @@ class WaterfallBatchRunner:
             self.stats = {"total_processed": 0, "resolved": 0, "unresolved": 0, "by_method": {}}
             self.recent_logs.clear()
             self.config = config
+            self.eligibility = None
             self.cancel_event.clear()
 
             self._add_log(f"Started waterfall batch (Scope: {config.get('scope')}, Limit: {config.get('limit') or 'All'}, LangSearch: {config.get('langsearch_enabled')}, Jev: {config.get('queue_jev')}, Gemini: {config.get('queue_gemini')}, Workers: {config.get('max_workers', 6)})")
@@ -1138,6 +1140,7 @@ class WaterfallBatchRunner:
                 "current_stage": self.current_stage,
                 "current_product": self.current_product,
                 "stats": self.stats,
+                "eligibility": self.eligibility,
                 "recent_logs": list(self.recent_logs),
                 "config": self.config
             }
@@ -1186,11 +1189,22 @@ class WaterfallBatchRunner:
 
             with self._lock:
                 self.stats = res_stats
-                self.status = "cancelled" if self.cancel_event.is_set() else "completed"
+                self.eligibility = res_stats.get('eligibility')
+                if not self.total_items:
+                    self.total_items = res_stats.get('total_processed', 0)
+                self.status = "cancelled" if self.cancel_event.is_set() else (
+                    "blocked" if self.total_items == 0 else "completed")
                 self.completed_at = datetime.now(timezone.utc).isoformat()
                 self.is_running = False
                 self.progress_percent = 100.0 if not self.cancel_event.is_set() else self.progress_percent
-                self._add_log(f"Batch execution finished: {self.status}. Total resolved: {res_stats.get('resolved', 0)}/{self.total_items}")
+                if self.total_items == 0:
+                    counts=self.eligibility or {}
+                    self._add_log("BLOCKED: No verified eligible canonical products. "
+                                  f"In scope: {counts.get('in_scope',0)}; unverified: {counts.get('blocked_unverified',0)}; "
+                                  f"pending identity review: {counts.get('blocked_pending_review',0)}. "
+                                  "Run controlled identity certification or resolve identity reviews first.")
+                else:
+                    self._add_log(f"Batch execution finished: {self.status}. Total resolved: {res_stats.get('resolved', 0)}/{self.total_items}")
 
             if not config.get("dry_run", False) and res_stats.get("resolved", 0) > 0:
                 try:
@@ -1211,12 +1225,60 @@ class WaterfallBatchRunner:
 _waterfall_batch_runner = WaterfallBatchRunner()
 
 
+@router.get("/waterfall/batch/eligibility")
+def get_waterfall_batch_eligibility(scope: str = "unmatched_only", limit: Optional[int] = None):
+    from pipeline.waterfall_readiness import eligible_waterfall
+    if scope not in ('unmatched_only','all_skincare'):
+        raise HTTPException(status_code=400,detail='Invalid waterfall scope.')
+    conn=get_connection()
+    try:
+        counts=eligible_waterfall(conn,revalidate_all=scope=='all_skincare',limit=limit)
+        return {k:v for k,v in counts.items() if k!='eligible_ids'}
+    finally:conn.close()
+
+
+class IdentityCertificationRequest(BaseModel):
+    apply: bool = False
+    limit: int = 200
+
+
+@router.post("/waterfall/identity-certification")
+def certify_waterfall_identities(req: IdentityCertificationRequest):
+    from pipeline.waterfall_readiness import certify_cross_store
+    from security.admin import reviewer_name
+    conn=get_connection()
+    try:
+        result=certify_cross_store(conn,reviewer_name('admin'),apply=req.apply,limit=req.limit)
+        if req.apply:conn.commit()
+        else:conn.rollback()
+        return result
+    except ValueError as exc:
+        conn.rollback()
+        raise HTTPException(status_code=400,detail=str(exc))
+    except Exception:
+        conn.rollback()
+        raise
+    finally:conn.close()
+
+
 @router.post("/waterfall/batch/start")
 def start_waterfall_batch_endpoint(req: WaterfallBatchConfigRequest):
     """
     Initiates asynchronous multi-pass waterfall INCI resolution across skincare products
     with progress tracking, cancellation support, and custom queue toggles.
     """
+    from pipeline.waterfall_readiness import eligible_waterfall
+    conn=get_connection()
+    try:
+        readiness=eligible_waterfall(conn,revalidate_all=req.scope=="all_skincare",limit=req.limit)
+    finally:
+        conn.close()
+    if not readiness['eligible']:
+        raise HTTPException(status_code=409,detail={
+            'reason':'no_verified_eligible_products',
+            'message':'No verified canonical products are eligible. Review or certify matching legacy identities first.',
+            'eligibility':{k:v for k,v in readiness.items() if k!='eligible_ids'}
+        })
     task_id = _waterfall_batch_runner.start(req.dict())
     return {
         "status": "started",

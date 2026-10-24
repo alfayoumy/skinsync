@@ -34,6 +34,14 @@ def verified_link(conn, source_id, source_product_id, canonical_id):
 
 
 def publication_block(conn, candidate):
+    # Legacy web/search matches have no independently resolved source identity.
+    # Store the result as candidate evidence, never publish it as full INCI.
+    unverified_lookup = {'openbeauty_api','skinsafe_high_match',
+        'langsearch_web_search','skinsafe_matched','jev_verified_skinsafe',
+        'gemini_verified_skinsafe','pending_tier7_match'}
+    if candidate.source_name in unverified_lookup:
+        return 'Unverified external reference identity: record evidence and review exact product before publication.'
+
     columns = {r[1] for r in conn.execute('PRAGMA table_info(canonical_products)')}
     if 'identity_status' not in columns:
         return 'Identity trust schema is required before publication.'

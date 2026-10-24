@@ -1438,6 +1438,9 @@ def resolve_waterfall_for_canonical_product(
         conf_val = float(res.get("confidence", 0.85))
         is_partial = (method == "whitelist_description" or tok_res.completeness == "partial")
         completeness = "partial" if is_partial else tok_res.completeness
+        # Search/database hits are hypotheses until an exact source identity is verified.
+        if method in ('openbeauty_api','skinsafe_high_match','langsearch_web_search'):
+            completeness = 'unverified'
 
         candidate = FormulationCandidate(
             canonical_product_id=c_id,
@@ -1449,7 +1452,8 @@ def resolve_waterfall_for_canonical_product(
             evidence_url=res.get("source_url"),
             source_record_id=str(source_offer_id) if source_offer_id else None,
             completeness=completeness,
-            validation_flags={"method": method, "is_truncated": tok_res.is_truncated},
+            validation_flags={"method": method, "is_truncated": tok_res.is_truncated,
+                              "origin_product_id": source_offer_id},
             inci_matched_id=res.get("inci_matched_id"),
             inci_matched_name=res.get("inci_matched_name")
         )
@@ -1508,14 +1512,10 @@ def run_waterfall_pipeline(
 
         cur.execute(query)
         rows = [dict(r) for r in cur.fetchall()]
-        identity_columns = {r[1] for r in conn.execute('PRAGMA table_info(canonical_products)')}
-        if 'identity_status' in identity_columns:
-            verified = {r[0] for r in conn.execute("SELECT id FROM canonical_products WHERE identity_status='verified'")}
-            rows = [r for r in rows if r['id'] in verified and not pending_identity_review(conn, r['id'])]
-        else:
-            rows = []
-        if limit:
-            rows = rows[:int(limit)]
+        from pipeline.waterfall_readiness import eligible_waterfall
+        readiness = eligible_waterfall(conn,revalidate_all=revalidate_all,limit=limit)
+        allowed=set(readiness['eligible_ids'])
+        rows=[r for r in rows if r['id'] in allowed]
 
         total_to_process = len(rows)
         logger.info(f"--- Starting Canonical INCI Waterfall Pipeline ({total_to_process} canonical products, {max_workers} workers, LangSearch: {langsearch_enabled}, Jev: {queue_jev}, Gemini: {queue_gemini}) ---")
@@ -1524,7 +1524,8 @@ def run_waterfall_pipeline(
             "total_processed": total_to_process,
             "resolved": 0,
             "unresolved": 0,
-            "by_method": {}
+            "by_method": {},
+            "eligibility": {k:v for k,v in readiness.items() if k!='eligible_ids'}
         }
 
         if progress_callback:

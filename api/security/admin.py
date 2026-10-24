@@ -24,6 +24,8 @@ def credentials():
 
 
 def permission_for(path, method):
+    if path.startswith('/admin/waterfall/identity-certification') and method not in ('GET','HEAD'):
+        return 'identity'
     if method in ('GET', 'HEAD'):
         return 'read'
     if ('/formulations/evidence/' in path and path.endswith('/approve')) or path.endswith('/apply-tier'):
