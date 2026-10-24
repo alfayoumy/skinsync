@@ -1,6 +1,7 @@
 import { apiFetch } from './apiFetch';
 import ApiConnectionTests from './ConnectionTests';
 import AggregationReviewPanel from './AggregationReviewPanel';
+import CatalogWorkflowsPanel from './CatalogWorkflowsPanel';
 import React, { useState, useEffect, useRef } from 'react';
 import { 
   Database, Search, Filter, ShieldCheck, ChevronLeft, ChevronRight, 
@@ -74,17 +75,19 @@ const AdminObservatory = ({ onBackToApp }) => {
   // Left Slide-Over Menu State
   const [showSideMenu, setShowSideMenu] = useState(false);
   const [showAggregationReview, setShowAggregationReview] = useState(false);
+  const [showCatalogWorkflows, setShowCatalogWorkflows] = useState(false);
+  const [workflowTab, setWorkflowTab] = useState('products');
 
-  // Full INCI Waterfall Batch Engine States
+  // Find Ingredients — Existing Products States
   const [showWaterfallBatchModal, setShowWaterfallBatchModal] = useState(false);
   const [waterfallBatchConfig, setWaterfallBatchConfig] = useState({
-    scope: 'unmatched_only', // 'unmatched_only' or 'all_skincare'
+    scope: 'unmatched_only', // existing skincare needing ingredients
     limit: null, // null for all, or 50, 200, 1000
     langsearch_enabled: true,
-    queue_jev: true,
-    queue_gemini: true,
+    queue_jev: false,
+    queue_gemini: false,
     max_workers: 6,
-    dry_run: false
+    dry_run: true
   });
   const [waterfallBatchStatus, setWaterfallBatchStatus] = useState(null);
   const [batchStarting, setBatchStarting] = useState(false);
@@ -899,6 +902,10 @@ const AdminObservatory = ({ onBackToApp }) => {
   return (
     <div className="min-h-screen bg-gray-50 text-gray-900 font-sans pb-20">
       {showAggregationReview && <AggregationReviewPanel onClose={() => setShowAggregationReview(false)} />}
+      {showCatalogWorkflows && <CatalogWorkflowsPanel initialTab={workflowTab} onClose={() => setShowCatalogWorkflows(false)}
+        onOpenSources={() => { setShowCatalogWorkflows(false); setShowAggregationReview(true); }}
+        onOpenIngredients={() => { setShowCatalogWorkflows(false); setShowWaterfallBatchModal(true); }}
+        onOpenQueues={() => { setShowCatalogWorkflows(false); fetchQueueStatus(); setShowQueueModal(true); }} />}
       {/* Left Slide-Over Menu Drawer */}
       {showSideMenu && (
         <div className="fixed inset-0 z-50 overflow-hidden">
@@ -932,7 +939,8 @@ const AdminObservatory = ({ onBackToApp }) => {
                 </button>
               </div>
 
-              <button className="mx-5 mt-4 rounded-xl border border-purple-200 bg-purple-50 p-3 text-left text-sm font-bold text-purple-800" onClick={() => { setShowAggregationReview(true); setShowSideMenu(false); }}>Source Registry ({registrySources.length})</button>
+              <button className="mx-5 mt-4 rounded-xl border border-purple-300 bg-purple-50 p-3 text-left text-sm font-bold text-purple-900" onClick={() => { setWorkflowTab("products"); setShowCatalogWorkflows(true); setShowSideMenu(false); }}>Catalog operations · Products · Prices · Ingredients · AI</button>
+              <button className="mx-5 mt-2 rounded-xl border border-gray-200 bg-white p-3 text-left text-sm font-medium text-gray-800" onClick={() => { setShowAggregationReview(true); setShowSideMenu(false); }}>Product sources & reviews ({registrySources.length})</button>
               {/* Drawer Body - Actions List */}
               <div className="flex-1 overflow-y-auto p-5 space-y-6">
                 
@@ -1005,7 +1013,8 @@ const AdminObservatory = ({ onBackToApp }) => {
                     {/* Run Full INCI Waterfall */}
                     <button
                       onClick={() => {
-                        setShowWaterfallBatchModal(true);
+                        setWorkflowTab('inci');
+                        setShowCatalogWorkflows(true);
                         setShowSideMenu(false);
                       }}
                       className="w-full p-3 rounded-2xl border border-violet-200 bg-violet-50/70 hover:bg-violet-100 text-violet-950 text-left transition-all flex items-center justify-between group cursor-pointer shadow-xs relative overflow-hidden"
@@ -1022,12 +1031,12 @@ const AdminObservatory = ({ onBackToApp }) => {
                         </div>
                         <div>
                           <div className="text-xs font-bold flex items-center gap-1.5">
-                            <span>Run Full INCI Waterfall</span>
+                            <span>Find product ingredients</span>
                             {waterfallBatchStatus?.is_running && (
                               <span className="px-1.5 py-0.2 rounded-full text-[9px] bg-emerald-100 text-emerald-800 font-black animate-pulse">RUNNING</span>
                             )}
                           </div>
-                          <div className="text-[11px] text-violet-700/80 mt-0.5">7-Tier Batch INCI Resolver & Queues</div>
+                          <div className="text-[11px] text-violet-700/80 mt-0.5">Existing products only · no product import</div>
                         </div>
                       </div>
                       <ChevronRight className="w-4 h-4 text-violet-600 group-hover:translate-x-0.5 transition shrink-0" />
@@ -1036,8 +1045,8 @@ const AdminObservatory = ({ onBackToApp }) => {
                     {/* Gate 4 LLM Queues Manager */}
                     <button
                       onClick={() => {
-                        fetchQueueStatus();
-                        setShowQueueModal(true);
+                        setWorkflowTab('llm');
+                        setShowCatalogWorkflows(true);
                         setShowSideMenu(false);
                       }}
                       className="w-full p-3 rounded-2xl border border-indigo-200 bg-indigo-50/70 hover:bg-indigo-100 text-indigo-950 text-left transition-all flex items-center justify-between group cursor-pointer shadow-xs relative overflow-hidden"
@@ -1054,12 +1063,12 @@ const AdminObservatory = ({ onBackToApp }) => {
                         </div>
                         <div>
                           <div className="text-xs font-bold flex items-center gap-1.5">
-                            <span>Gate 4 LLM Queues</span>
+                            <span>AI review queues</span>
                             {queueStatus?.is_any_running && (
                               <span className="px-1.5 py-0.2 rounded-full text-[9px] bg-indigo-100 text-indigo-800 font-black animate-pulse">RUNNING</span>
                             )}
                           </div>
-                          <div className="text-[11px] text-indigo-700/80 mt-0.5">Start, pause, stop & track Gemini & Jev</div>
+                          <div className="text-[11px] text-indigo-700/80 mt-0.5">Run Jev and Gemini separately</div>
                         </div>
                       </div>
                       <ChevronRight className="w-4 h-4 text-indigo-600 group-hover:translate-x-0.5 transition shrink-0" />
@@ -3883,11 +3892,11 @@ const AdminObservatory = ({ onBackToApp }) => {
                   <div className="flex items-center gap-2">
                     <h2 className="text-base sm:text-lg font-black text-gray-900">Full INCI Waterfall Batch Engine</h2>
                     <span className="bg-violet-100 text-violet-800 text-[10px] font-bold px-2 py-0.5 rounded-full border border-violet-200">
-                      7 Tiers + Queue Dispatch
+                      Ingredient lookup
                     </span>
                   </div>
                   <p className="text-xs text-gray-500 mt-0.5">
-                    Resolve skincare ingredients through store data, OpenBeauty, SkinSAFE, LangSearch, and cascade to Jev & Gemini queues.
+                    Search existing skincare products for ingredient evidence. No new products or price updates. AI calls run separately.
                   </p>
                 </div>
               </div>
@@ -3987,7 +3996,7 @@ const AdminObservatory = ({ onBackToApp }) => {
                   </div>
                   <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-2 text-center">
                     <div className="p-2.5 rounded-xl bg-emerald-50 border border-emerald-200">
-                      <div className="text-[10px] font-bold text-emerald-800">Total Resolved</div>
+                      <div className="text-[10px] font-bold text-emerald-800">Formulas approved</div>
                       <div className="text-lg font-black text-emerald-700 mt-0.5">
                         {waterfallBatchStatus?.stats?.resolved || 0}
                       </div>
@@ -4029,7 +4038,7 @@ const AdminObservatory = ({ onBackToApp }) => {
                     </div>
 
                     <div className="p-2.5 rounded-xl bg-gray-50 border border-gray-200">
-                      <div className="text-[10px] font-bold text-gray-600">Tier 6: Cluster</div>
+                      <div className="text-[10px] font-bold text-gray-600">Tier 6: Retired</div>
                       <div className="text-base font-bold text-gray-800 mt-0.5">
                         {waterfallBatchStatus?.stats?.by_method?.cluster_propagation || waterfallBatchStatus?.stats?.by_method?.tier6_cluster || 0}
                       </div>
@@ -4051,7 +4060,7 @@ const AdminObservatory = ({ onBackToApp }) => {
                   <div className="flex items-center gap-2">
                     <SlidersHorizontal className="w-4 h-4 text-violet-600" />
                     <h3 className="text-xs font-bold text-gray-900 uppercase tracking-wider">
-                      Batch Configuration & LLM Queue Routing
+                      Ingredient lookup settings
                     </h3>
                   </div>
                   {waterfallBatchStatus?.is_running && (
@@ -4064,7 +4073,7 @@ const AdminObservatory = ({ onBackToApp }) => {
                 {/* Scope Selection */}
                 <div>
                   <label className="text-xs font-bold text-gray-700 block mb-2">
-                    Execution Scope:
+                    Products to search:
                   </label>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <button
@@ -4078,13 +4087,13 @@ const AdminObservatory = ({ onBackToApp }) => {
                       }`}
                     >
                       <div className="flex items-center justify-between mb-1">
-                        <span className="text-xs font-bold text-gray-900">Unmatched & Unverified Only</span>
+                        <span className="text-xs font-bold text-gray-900">Products needing ingredient lists</span>
                         {waterfallBatchConfig.scope === 'unmatched_only' && (
                           <Check className="w-4 h-4 text-violet-600" />
                         )}
                       </div>
                       <p className="text-[11px] text-gray-500">
-                        Targets missing or unverified legacy ingredient listings. Skips verified high-confidence items.
+                        Only existing products without approved ingredient lists. Their product identity must also be verified.
                       </p>
                     </button>
 
@@ -4099,13 +4108,13 @@ const AdminObservatory = ({ onBackToApp }) => {
                       }`}
                     >
                       <div className="flex items-center justify-between mb-1">
-                        <span className="text-xs font-bold text-gray-900">All Active Skincare Catalog</span>
+                        <span className="text-xs font-bold text-gray-900">Recheck approved skincare identities</span>
                         {waterfallBatchConfig.scope === 'all_skincare' && (
                           <Check className="w-4 h-4 text-violet-600" />
                         )}
                       </div>
                       <p className="text-[11px] text-gray-500">
-                        Forces full re-evaluation across the entire skincare catalog through all 7 waterfall tiers.
+                        Rechecks existing skincare products with verified identity. Does not import new products.
                       </p>
                     </button>
                   </div>
@@ -4117,10 +4126,10 @@ const AdminObservatory = ({ onBackToApp }) => {
                     <div>
                       <div className="text-xs font-bold text-violet-950 flex items-center gap-1.5">
                         <Zap className="w-3.5 h-3.5 text-violet-600" />
-                        <span>Tier 7: SkinSAFE Ambiguous Candidate Queue Dispatch</span>
+                        <span>Optional: stage uncertain matches for AI review</span>
                       </div>
                       <p className="text-[11px] text-violet-700/80 mt-0.5">
-                        When Tiers 1-6 fail, ambiguous matches (token overlap ≥ 0.60) are staged for LLM verification. Configure separate queue targets:
+                        These switches only queue tasks. Jev and Gemini run separately under Catalog operations → AI review queues.
                       </p>
                     </div>
                   </div>
@@ -4141,7 +4150,7 @@ const AdminObservatory = ({ onBackToApp }) => {
                       />
                       <div className="space-y-0.5">
                         <div className="flex items-center gap-1.5">
-                          <span className="text-xs font-bold text-gray-900">Queue to Jev INCI Agent</span>
+                          <span className="text-xs font-bold text-gray-900">Stage uncertain matches for Jev</span>
                           <span className="text-[9px] font-mono bg-purple-100 text-purple-800 px-1.5 py-0.2 rounded font-bold">pending_jev</span>
                         </div>
                         <p className="text-[11px] text-gray-500">
@@ -4165,7 +4174,7 @@ const AdminObservatory = ({ onBackToApp }) => {
                       />
                       <div className="space-y-0.5">
                         <div className="flex items-center gap-1.5">
-                          <span className="text-xs font-bold text-gray-900">Queue to Gemini Flash INCI Agent</span>
+                          <span className="text-xs font-bold text-gray-900">Stage uncertain matches for Gemini</span>
                           <span className="text-[9px] font-mono bg-indigo-100 text-indigo-800 px-1.5 py-0.2 rounded font-bold">pending_gemini</span>
                         </div>
                         <p className="text-[11px] text-gray-500">
@@ -4197,7 +4206,7 @@ const AdminObservatory = ({ onBackToApp }) => {
                         <span className="text-[9px] font-bold text-emerald-700 bg-emerald-100 px-1.5 py-0.2 rounded">5 RPS Cap</span>
                       </div>
                       <p className="text-[11px] text-gray-500 mt-0.5">
-                        Queries Google with inkeedecoder.com priority & incibeauty.com blacklisted.
+                        Searches external references; unverified results stay as evidence until exact-source verification.
                       </p>
                     </div>
                   </label>
@@ -4263,29 +4272,19 @@ const AdminObservatory = ({ onBackToApp }) => {
                   </div>
                 </div>
 
-                {/* Identity trust preflight: never pretend a zero-target batch succeeded */}
-                <div className="rounded-xl border border-amber-200 bg-amber-50 p-3 space-y-2 text-xs text-amber-950">
-                  <div className="font-bold">Canonical identity eligibility</div>
-                  {waterfallEligibility ? (
-                    <>
-                      <div>{waterfallEligibility.eligible} eligible of {waterfallEligibility.in_scope} scoped skincare canonicals</div>
-                      <div>{waterfallEligibility.blocked_unverified} not identity-verified · {waterfallEligibility.blocked_pending_review} blocked by identity review</div>
-                      {!waterfallEligibility.eligible && <p>Nothing will run until at least one canonical identity is verified. Existing formula evidence is preserved.</p>}
-                    </>
-                  ) : <div>Checking verified catalog eligibility...</div>}
-                  {certificationResult && <div>{certificationResult.dry_run?'Certification preview':'Identity certification applied'}: {certificationResult.certifiable} exact cross-store matches ({certificationResult.processed} verified).</div>}
-                  <div className="flex gap-2 flex-wrap">
-                    <button type="button" disabled={certifyingIdentity||waterfallBatchStatus?.is_running}
-                      onClick={()=>certifyWaterfallIdentities(false)}
-                      className="rounded-lg border border-amber-400 px-3 py-1.5 font-semibold hover:bg-amber-100 disabled:opacity-50">
-                      Preview safe identity matches
-                    </button>
-                    <button type="button" disabled={certifyingIdentity||waterfallBatchStatus?.is_running}
-                      onClick={()=>certifyWaterfallIdentities(true)}
-                      className="rounded-lg bg-amber-900 px-3 py-1.5 font-semibold text-white hover:bg-amber-800 disabled:opacity-50">
-                      Certify exact matches (max 200)
-                    </button>
-                  </div>
+                <div className="rounded-xl border border-gray-200 bg-white p-4 space-y-3 text-sm text-gray-700">
+                  <h4 className="font-bold text-gray-900">Existing products ready for ingredient lookup</h4>
+                  {waterfallEligibility ? <>
+                    <div className="grid grid-cols-2 gap-3">
+                      <div className="rounded-lg bg-purple-50 p-3"><strong className="block text-xl text-purple-900">{waterfallEligibility.eligible_before_limit}</strong><span className="text-xs">Ready for lookup</span></div>
+                      <div className="rounded-lg bg-gray-50 p-3"><strong className="block text-xl">{waterfallEligibility.blocked_unverified}</strong><span className="text-xs">Need identity checks first</span></div>
+                    </div>
+                    <p className="text-xs text-gray-500">From {waterfallEligibility.in_scope} existing skincare products in this scope. {waterfallEligibility.blocked_pending_review} verified products have pending identity conflicts. Product matching is a separate workflow.</p>
+                  </> : <p className="text-xs text-gray-500">Checking eligibility...</p>}
+                  <button type="button" className="text-xs font-semibold text-purple-700 underline"
+                    onClick={() => { setShowWaterfallBatchModal(false); setWorkflowTab('products'); setShowCatalogWorkflows(true); }}>
+                    Go to add & match products
+                  </button>
                 </div>
                 {/* Launch Action Button */}
                 <div className="pt-2">
@@ -4308,7 +4307,7 @@ const AdminObservatory = ({ onBackToApp }) => {
                       <>
                         <Play className="w-4 h-4 fill-white" />
                         <span>
-                          Start Full INCI Waterfall Batch
+                          Start ingredient lookup
                           {waterfallBatchConfig.dry_run ? ' (Dry Run)' : ''}
                         </span>
                       </>
@@ -4325,7 +4324,7 @@ const AdminObservatory = ({ onBackToApp }) => {
                     <span className="w-2.5 h-2.5 rounded-full bg-yellow-500/80 inline-block" />
                     <span className="w-2.5 h-2.5 rounded-full bg-green-500/80 inline-block" />
                     <span className="ml-1 text-[11px] font-semibold text-gray-300">
-                      Live Telemetry Stream
+                      Ingredient lookup activity
                     </span>
                   </div>
                   <span className="text-[10px] font-mono text-gray-500">
@@ -4366,7 +4365,7 @@ const AdminObservatory = ({ onBackToApp }) => {
             <div className="p-4 bg-white border-t border-gray-200 flex items-center justify-between shrink-0 text-xs text-gray-500">
               <div className="flex items-center gap-2">
                 <span className="w-2 h-2 rounded-full bg-violet-600" />
-                <span>Canonical-only INCI resolution · legacy external matches require exact-source verification · no cluster propagation</span>
+                <span>Ingredient lookup only · unverified external matches remain evidence, not approved formulas</span>
               </div>
               <button
                 onClick={() => setShowWaterfallBatchModal(false)}
