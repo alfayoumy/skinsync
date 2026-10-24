@@ -9,7 +9,7 @@ import sys
 import time
 import logging
 import argparse
-from typing import List, Dict, Any, Optional
+from typing import List, Dict, Any, Optional, Callable
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
 from pipeline.db_manager import get_connection
@@ -26,15 +26,41 @@ def chunk_list(lst: List[Any], chunk_size: int) -> List[List[Any]]:
     """Splits a list into chunks of at most chunk_size items."""
     return [lst[i:i + chunk_size] for i in range(0, len(lst), chunk_size)]
 
-def run_gemini_verification_queue(limit: Optional[int] = None, batch_size: Optional[int] = None, all_pending: bool = False) -> Dict[str, Any]:
+def run_gemini_verification_queue(
+    limit: Optional[int] = None,
+    batch_size: Optional[int] = None,
+    all_pending: bool = False,
+    stop_event: Optional[Any] = None,
+    pause_event: Optional[Any] = None,
+    progress_callback: Optional[Callable[[Dict[str, Any]], None]] = None,
+    log_callback: Optional[Callable[[str], None]] = None
+) -> Dict[str, Any]:
     """
     Pulls products queued for Gemini semantic evaluation and processes them in batches.
+    Supports lifecycle events (pause, stop) and real-time telemetry streaming.
     
     Args:
         limit: Total maximum products to process in this worker run (default: cfg.GEMINI_QUEUE_BATCH_SIZE).
         batch_size: Number of product pairs bundled into a single Gemini prompt (default: cfg.GEMINI_BATCH_SIZE).
         all_pending: If True, evaluates any product with missing Gemini status, not just pending_gemini / jev_rate_limited.
+        stop_event: Optional threading.Event to gracefully stop processing.
+        pause_event: Optional threading.Event to pause processing.
+        progress_callback: Optional callback for status and progress updates.
+        log_callback: Optional callback for live log lines.
     """
+    def emit_log(msg: str, level: str = "info"):
+        if level == "warning":
+            logger.warning(msg)
+        elif level == "error":
+            logger.error(msg)
+        else:
+            logger.info(msg)
+        if log_callback:
+            try:
+                log_callback(msg)
+            except Exception:
+                pass
+
     if limit is None:
         limit = getattr(cfg, "GEMINI_QUEUE_BATCH_SIZE", 50)
     if batch_size is None or batch_size <= 0:
@@ -72,11 +98,11 @@ def run_gemini_verification_queue(limit: Optional[int] = None, batch_size: Optio
         cur.execute(query, (limit,))
         queue = [dict(r) for r in cur.fetchall()]
 
-        logger.info(f"=== Starting Gate 4 Gemini Batch Verification Worker ===")
-        logger.info(f"Found {len(queue)} products queued for Gemini evaluation (Batch Size: {batch_size}).")
+        emit_log(f"=== Starting Gate 4 Gemini Batch Verification Worker ===")
+        emit_log(f"Found {len(queue)} products queued for Gemini evaluation (Batch Size: {batch_size}, Limit: {limit}).")
 
         if not queue:
-            return {"processed": 0, "approved": 0, "rejected": 0, "rate_limited": 0, "api_calls": 0}
+            return {"processed": 0, "approved": 0, "rejected": 0, "rate_limited": 0, "api_calls": 0, "total_queued": 0}
 
         batches = chunk_list(queue, batch_size)
         approved = 0
@@ -88,7 +114,47 @@ def run_gemini_verification_queue(limit: Optional[int] = None, batch_size: Optio
         gemini_threshold = getattr(cfg, "GEMINI_CONFIDENCE_THRESHOLD", 0.70)
 
         for b_idx, batch in enumerate(batches, 1):
-            logger.info(f"--- Processing Batch {b_idx}/{len(batches)} ({len(batch)} items) ---")
+            if stop_event and stop_event.is_set():
+                emit_log(f"Gemini worker execution stopped by user request before batch {b_idx}/{len(batches)}.")
+                break
+
+            while pause_event and pause_event.is_set():
+                if stop_event and stop_event.is_set():
+                    break
+                if progress_callback:
+                    progress_callback({
+                        "status": "paused",
+                        "current_product": f"[PAUSED] Batch {b_idx}/{len(batches)}",
+                        "processed": approved + rejected + rate_limited,
+                        "approved": approved,
+                        "rejected": rejected,
+                        "rate_limited": rate_limited,
+                        "api_calls": api_calls,
+                        "total_items": len(queue),
+                        "total_batches": len(batches),
+                        "current_batch": b_idx
+                    })
+                time.sleep(0.5)
+
+            if stop_event and stop_event.is_set():
+                break
+
+            first_title = batch[0]["title"][:30] if batch else ""
+            if progress_callback:
+                progress_callback({
+                    "status": "running",
+                    "current_product": f"Batch {b_idx}/{len(batches)} ({len(batch)} items: '{first_title}...')",
+                    "processed": approved + rejected + rate_limited,
+                    "approved": approved,
+                    "rejected": rejected,
+                    "rate_limited": rate_limited,
+                    "api_calls": api_calls,
+                    "total_items": len(queue),
+                    "total_batches": len(batches),
+                    "current_batch": b_idx
+                })
+
+            emit_log(f"--- Processing Batch {b_idx}/{len(batches)} ({len(batch)} items) ---")
 
             # 1. Compute local ONNX Cross-Encoder scores for the batch
             batch_items = []
@@ -112,7 +178,7 @@ def run_gemini_verification_queue(limit: Optional[int] = None, batch_size: Optio
             if evaluations is None:
                 # API rate limit reached or network failure
                 rate_limited += len(batch)
-                logger.warning(f"[Batch {b_idx}] Gemini API returned None (Rate limited or daily quota exhausted). Leaving {len(batch)} items in queue.")
+                emit_log(f"[Batch {b_idx}] Gemini API returned None (Rate limited or daily quota exhausted). Leaving {len(batch)} items in queue.", level="warning")
                 # Record cross-encoder scores so progress isn't lost
                 for p in batch:
                     pid = p["id"]
@@ -176,7 +242,7 @@ def run_gemini_verification_queue(limit: Optional[int] = None, batch_size: Optio
                             """, (conf, c_status, c_score, pid))
                         approved += 1
                         batch_approved += 1
-                        logger.info(f"  [GEMINI BATCH APPROVED] ID {pid}: '{title[:32]}' == '{cand_name[:32]}' (Conf: {conf:.2f} | Reason: {reason[:40]})")
+                        emit_log(f"  [GEMINI BATCH APPROVED] ID {pid}: '{title[:32]}' == '{cand_name[:32]}' (Conf: {conf:.2f} | Reason: {reason[:40]})")
                     else:
                         cur.execute("""
                         UPDATE products
@@ -191,7 +257,7 @@ def run_gemini_verification_queue(limit: Optional[int] = None, batch_size: Optio
                         """, (conf, c_status, c_score, pid))
                         rejected += 1
                         batch_rejected += 1
-                        logger.info(f"  [GEMINI BATCH REJECTED] ID {pid}: '{title[:32]}' != '{cand_name[:32]}' (Conf: {conf:.2f} | Reason: {reason[:40]})")
+                        emit_log(f"  [GEMINI BATCH REJECTED] ID {pid}: '{title[:32]}' != '{cand_name[:32]}' (Conf: {conf:.2f} | Reason: {reason[:40]})")
                 else:
                     # Omitted in LLM response: leave for retry
                     rate_limited += 1
@@ -202,20 +268,35 @@ def run_gemini_verification_queue(limit: Optional[int] = None, batch_size: Optio
                         updated_at = CURRENT_TIMESTAMP
                     WHERE id = ?;
                     """, (c_status, c_score, pid))
-                    logger.warning(f"  [GEMINI BATCH OMITTED] ID {pid}: Item missing from LLM response. Kept in pending_gemini.")
+                    emit_log(f"  [GEMINI BATCH OMITTED] ID {pid}: Item missing from LLM response. Kept in pending_gemini.", level="warning")
 
             conn.commit()
-            logger.info(f"Batch {b_idx} committed: {batch_approved} approved, {batch_rejected} rejected.")
+            emit_log(f"Batch {b_idx} committed: {batch_approved} approved, {batch_rejected} rejected.")
 
-        logger.info("=== Gate 4 Gemini Batch Worker Run Complete ===")
-        logger.info(f"Processed: {approved + rejected + rate_limited} | Approved: {approved} | Rejected: {rejected} | Rate Limited: {rate_limited} | API Calls: {api_calls}")
+            if progress_callback:
+                progress_callback({
+                    "status": "running",
+                    "current_product": f"Batch {b_idx}/{len(batches)} finished",
+                    "processed": approved + rejected + rate_limited,
+                    "approved": approved,
+                    "rejected": rejected,
+                    "rate_limited": rate_limited,
+                    "api_calls": api_calls,
+                    "total_items": len(queue),
+                    "total_batches": len(batches),
+                    "current_batch": b_idx
+                })
+
+        emit_log("=== Gate 4 Gemini Batch Worker Run Complete ===")
+        emit_log(f"Processed: {approved + rejected + rate_limited} | Approved: {approved} | Rejected: {rejected} | Rate Limited: {rate_limited} | API Calls: {api_calls}")
 
         return {
             "processed": approved + rejected + rate_limited,
             "approved": approved,
             "rejected": rejected,
             "rate_limited": rate_limited,
-            "api_calls": api_calls
+            "api_calls": api_calls,
+            "total_queued": len(queue)
         }
     finally:
         conn.close()

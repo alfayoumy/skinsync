@@ -1514,4 +1514,62 @@ def get_all_apis_status_endpoint():
         conn.close()
 
 
+# ==============================================================================
+# GATE 4 LLM QUEUE LIFECYCLE & TELEMETRY ENDPOINTS (JEV & GEMINI)
+# ==============================================================================
+
+from pipeline.queue_runner import master_queue_manager
+
+
+class QueueStartRequest(BaseModel):
+    worker: str = "jev"  # "jev", "gemini", or "both"
+    limit: Optional[int] = None
+    batch_size: Optional[int] = None  # for Gemini (default: 10)
+    all_pending: bool = False  # for Gemini
+
+
+class QueueControlRequest(BaseModel):
+    worker: str = "all"  # "jev", "gemini", or "all"
+
+
+@router.get("/queues/status")
+def get_queue_status():
+    """Returns real-time execution status, progress, stats, and queue depths for Jev and Gemini."""
+    return master_queue_manager.get_status()
+
+
+@router.post("/queues/start")
+def start_queue(req: QueueStartRequest):
+    """Starts asynchronous Jev, Gemini, or Sequential verification queue."""
+    try:
+        config = {
+            "limit": req.limit,
+            "batch_size": req.batch_size,
+            "all_pending": req.all_pending
+        }
+        res = master_queue_manager.start(req.worker, config)
+        return res
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+
+@router.post("/queues/pause")
+def pause_queue(req: QueueControlRequest):
+    """Pauses Jev, Gemini, or all active queue workers."""
+    return {"status": "paused", "results": master_queue_manager.pause(req.worker)}
+
+
+@router.post("/queues/resume")
+def resume_queue(req: QueueControlRequest):
+    """Resumes paused Jev, Gemini, or all queue workers."""
+    return {"status": "resumed", "results": master_queue_manager.resume(req.worker)}
+
+
+@router.post("/queues/stop")
+def stop_queue(req: QueueControlRequest):
+    """Gracefully terminates Jev, Gemini, or all active queue workers."""
+    return {"status": "stopping", "results": master_queue_manager.stop(req.worker)}
+
+
+
 

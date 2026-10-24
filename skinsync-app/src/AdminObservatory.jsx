@@ -5,7 +5,7 @@ import {
   Check, AlertTriangle, Activity, Sparkles, CheckCircle2, ArrowRight,
   RefreshCw, SlidersHorizontal, RotateCcw, ArrowUpDown, Tag, DollarSign,
   Layers, Settings2, Plus, Trash2, ListChecks, Zap, Copy, Clock,
-  Cpu, Globe, Server, AlertOctagon, CheckCircle, Menu, Play, Square
+  Cpu, Globe, Server, AlertOctagon, CheckCircle, Menu, Play, Square, Pause
 } from 'lucide-react';
 
 const SKINCARE_CATEGORIES = [
@@ -85,6 +85,17 @@ const AdminObservatory = ({ onBackToApp }) => {
   const [waterfallBatchStatus, setWaterfallBatchStatus] = useState(null);
   const [batchStarting, setBatchStarting] = useState(false);
   const [batchCancelling, setBatchCancelling] = useState(false);
+
+  // Gate 4 LLM Queue Manager States (Jev & Gemini)
+  const [showQueueModal, setShowQueueModal] = useState(false);
+  const [queueStatus, setQueueStatus] = useState(null);
+  const [queueActionLoading, setQueueActionLoading] = useState(null);
+  const [jevLimit, setJevLimit] = useState(50);
+  const [geminiLimit, setGeminiLimit] = useState(50);
+  const [geminiBatchSize, setGeminiBatchSize] = useState(10);
+  const [geminiAllPending, setGeminiAllPending] = useState(false);
+  const [activeQueueTab, setActiveQueueTab] = useState('both'); // 'both', 'jev', 'gemini'
+  const queueTerminalRef = useRef(null);
 
   // Similar Alternatives Filter States
   const [altCategoryMode, setAltCategoryMode] = useState('same_category'); // 'same_category', 'cross_category', 'specific'
@@ -177,10 +188,10 @@ const AdminObservatory = ({ onBackToApp }) => {
     };
   }, [showWaterfallBatchModal, waterfallBatchStatus?.is_running]);
 
-  const waterfallLogsEndRef = useRef(null);
+  const waterfallTerminalRef = useRef(null);
   useEffect(() => {
-    if (showWaterfallBatchModal && waterfallLogsEndRef.current) {
-      waterfallLogsEndRef.current.scrollIntoView({ behavior: 'smooth' });
+    if (showWaterfallBatchModal && waterfallTerminalRef.current) {
+      waterfallTerminalRef.current.scrollTop = waterfallTerminalRef.current.scrollHeight;
     }
   }, [waterfallBatchStatus?.recent_logs, showWaterfallBatchModal]);
 
@@ -220,6 +231,116 @@ const AdminObservatory = ({ onBackToApp }) => {
       console.error('Failed to cancel batch:', err);
     } finally {
       setBatchCancelling(false);
+    }
+  };
+
+  const fetchQueueStatus = async () => {
+    try {
+      const res = await fetch('http://127.0.0.1:8000/admin/queues/status');
+      if (res.ok) {
+        const data = await res.json();
+        setQueueStatus(data);
+      }
+    } catch (err) {
+      console.error('Failed to fetch queue status:', err);
+    }
+  };
+
+  useEffect(() => {
+    fetchQueueStatus();
+  }, []);
+
+  useEffect(() => {
+    let interval = null;
+    if (showQueueModal || queueStatus?.is_any_running) {
+      fetchQueueStatus();
+      interval = setInterval(fetchQueueStatus, 2000);
+    }
+    return () => {
+      if (interval) clearInterval(interval);
+    };
+  }, [showQueueModal, queueStatus?.is_any_running]);
+
+  useEffect(() => {
+    if (showQueueModal && queueTerminalRef.current) {
+      queueTerminalRef.current.scrollTop = queueTerminalRef.current.scrollHeight;
+    }
+  }, [queueStatus?.jev?.recent_logs, queueStatus?.gemini?.recent_logs, showQueueModal]);
+
+  const handleStartQueue = async (worker) => {
+    try {
+      setQueueActionLoading(`${worker}_start`);
+      const body = {
+        worker,
+        limit: worker === 'jev' ? (jevLimit ? parseInt(jevLimit) : null) : (worker === 'gemini' ? (geminiLimit ? parseInt(geminiLimit) : null) : (jevLimit ? parseInt(jevLimit) : null)),
+        batch_size: parseInt(geminiBatchSize) || 10,
+        all_pending: geminiAllPending
+      };
+      const res = await fetch('http://127.0.0.1:8000/admin/queues/start', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body)
+      });
+      if (res.ok) {
+        await fetchQueueStatus();
+      } else {
+        const err = await res.json();
+        alert(err.detail || 'Failed to start queue worker');
+      }
+    } catch (err) {
+      console.error('Error starting queue:', err);
+      alert('Network error starting queue.');
+    } finally {
+      setQueueActionLoading(null);
+    }
+  };
+
+  const handlePauseQueue = async (worker = 'all') => {
+    try {
+      setQueueActionLoading(`pause_${worker}`);
+      await fetch('http://127.0.0.1:8000/admin/queues/pause', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ worker })
+      });
+      await fetchQueueStatus();
+    } catch (err) {
+      console.error('Error pausing queue:', err);
+    } finally {
+      setQueueActionLoading(null);
+    }
+  };
+
+  const handleResumeQueue = async (worker = 'all') => {
+    try {
+      setQueueActionLoading(`resume_${worker}`);
+      await fetch('http://127.0.0.1:8000/admin/queues/resume', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ worker })
+      });
+      await fetchQueueStatus();
+    } catch (err) {
+      console.error('Error resuming queue:', err);
+    } finally {
+      setQueueActionLoading(null);
+    }
+  };
+
+  const handleStopQueue = async (worker = 'all') => {
+    if (!window.confirm(`Are you sure you want to stop the ${worker.toUpperCase()} queue worker?`)) return;
+    try {
+      setQueueActionLoading(`stop_${worker}`);
+      await fetch('http://127.0.0.1:8000/admin/queues/stop', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ worker })
+      });
+      await fetchQueueStatus();
+    } catch (err) {
+      console.error('Error stopping queue:', err);
+    } finally {
+      setQueueActionLoading(null);
     }
   };
 
@@ -864,6 +985,38 @@ const AdminObservatory = ({ onBackToApp }) => {
                         </div>
                       </div>
                       <ChevronRight className="w-4 h-4 text-violet-600 group-hover:translate-x-0.5 transition shrink-0" />
+                    </button>
+
+                    {/* Gate 4 LLM Queues Manager */}
+                    <button
+                      onClick={() => {
+                        fetchQueueStatus();
+                        setShowQueueModal(true);
+                        setShowSideMenu(false);
+                      }}
+                      className="w-full p-3 rounded-2xl border border-indigo-200 bg-indigo-50/70 hover:bg-indigo-100 text-indigo-950 text-left transition-all flex items-center justify-between group cursor-pointer shadow-xs relative overflow-hidden"
+                    >
+                      {queueStatus?.is_any_running && (
+                        <span className="absolute top-2 right-2 flex h-2 w-2">
+                          <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-indigo-400 opacity-75"></span>
+                          <span className="relative inline-flex rounded-full h-2 w-2 bg-indigo-500"></span>
+                        </span>
+                      )}
+                      <div className="flex items-center gap-3">
+                        <div className="w-9 h-9 rounded-xl bg-indigo-100 text-indigo-700 flex items-center justify-center shrink-0 shadow-xs">
+                          <Sparkles className={`w-4 h-4 ${queueStatus?.is_any_running ? 'animate-pulse text-indigo-600' : ''}`} />
+                        </div>
+                        <div>
+                          <div className="text-xs font-bold flex items-center gap-1.5">
+                            <span>Gate 4 LLM Queues</span>
+                            {queueStatus?.is_any_running && (
+                              <span className="px-1.5 py-0.2 rounded-full text-[9px] bg-indigo-100 text-indigo-800 font-black animate-pulse">RUNNING</span>
+                            )}
+                          </div>
+                          <div className="text-[11px] text-indigo-700/80 mt-0.5">Start, pause, stop & track Gemini & Jev</div>
+                        </div>
+                      </div>
+                      <ChevronRight className="w-4 h-4 text-indigo-600 group-hover:translate-x-0.5 transition shrink-0" />
                     </button>
 
                     {/* Whitelist Manager */}
@@ -3683,12 +3836,25 @@ const AdminObservatory = ({ onBackToApp }) => {
                 <span className="w-2 h-2 rounded-full bg-emerald-500" />
                 <span>Centralized Circuit Breakers active · Auto-resets at 00:00 UTC</span>
               </div>
-              <button
-                onClick={() => setShowApiStatusModal(false)}
-                className="px-4 py-2 bg-gray-900 hover:bg-gray-800 text-white font-bold rounded-xl transition cursor-pointer"
-              >
-                Close
-              </button>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => {
+                    setShowApiStatusModal(false);
+                    fetchQueueStatus();
+                    setShowQueueModal(true);
+                  }}
+                  className="px-3.5 py-2 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white font-bold rounded-xl transition flex items-center gap-1.5 cursor-pointer shadow-xs text-xs"
+                >
+                  <Sparkles className="w-3.5 h-3.5" />
+                  <span>Manage LLM Queues</span>
+                </button>
+                <button
+                  onClick={() => setShowApiStatusModal(false)}
+                  className="px-4 py-2 bg-gray-900 hover:bg-gray-800 text-white font-bold rounded-xl transition cursor-pointer"
+                >
+                  Close
+                </button>
+              </div>
             </div>
           </div>
         </div>
@@ -4135,7 +4301,7 @@ const AdminObservatory = ({ onBackToApp }) => {
                   </span>
                 </div>
 
-                <div className="h-48 overflow-y-auto font-mono text-[11px] space-y-1 text-gray-300 scrollbar-thin">
+                <div ref={waterfallTerminalRef} className="h-48 overflow-y-auto font-mono text-[11px] space-y-1 text-gray-300 scrollbar-thin">
                   {(!waterfallBatchStatus?.recent_logs || waterfallBatchStatus.recent_logs.length === 0) ? (
                     <div className="text-gray-600 italic py-6 text-center">
                       Ready to execute. Start the batch above to stream live waterfall resolution logs.
@@ -4159,7 +4325,6 @@ const AdminObservatory = ({ onBackToApp }) => {
                       );
                     })
                   )}
-                  <div ref={waterfallLogsEndRef} />
                 </div>
               </div>
 
@@ -4176,6 +4341,552 @@ const AdminObservatory = ({ onBackToApp }) => {
                 className="px-4 py-2 bg-gray-900 hover:bg-gray-800 text-white font-bold rounded-xl transition cursor-pointer"
               >
                 Close Modal
+              </button>
+            </div>
+
+          </div>
+        </div>
+      )}
+
+      {/* Gate 4 LLM Queue Manager Modal (Jev & Gemini) */}
+      {showQueueModal && (
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-3 sm:p-5 overflow-y-auto animate-fade-in">
+          <div className="bg-white rounded-3xl shadow-2xl border border-gray-200 max-w-5xl w-full max-h-[92vh] flex flex-col overflow-hidden my-auto">
+            
+            {/* Modal Header */}
+            <div className="p-5 border-b border-gray-200 bg-gradient-to-r from-gray-50 via-indigo-50/30 to-purple-50/30 flex items-center justify-between shrink-0">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-indigo-600 to-purple-600 flex items-center justify-center text-white shadow-md">
+                  <Cpu className="w-5 h-5" />
+                </div>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <h2 className="text-base font-black text-gray-900">Gate 4 LLM Queue Manager</h2>
+                    <span className="text-[10px] font-extrabold uppercase px-2 py-0.5 rounded-full bg-indigo-100 text-indigo-800 border border-indigo-200">
+                      Decoupled Workers
+                    </span>
+                  </div>
+                  <p className="text-xs text-gray-500">
+                    Control & observe asynchronous semantic arbitration (Jev 1.13 Free & Gemini 3.5 Flash-Lite)
+                  </p>
+                </div>
+              </div>
+
+              {/* Master Global Controls & Close */}
+              <div className="flex items-center gap-2">
+                {!queueStatus?.is_any_running ? (
+                  <button
+                    onClick={() => handleStartQueue('both')}
+                    disabled={queueActionLoading !== null}
+                    className="px-3.5 py-1.5 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white text-xs font-bold rounded-xl transition flex items-center gap-1.5 cursor-pointer shadow-xs disabled:opacity-50"
+                    title="Run Jev queue first, followed automatically by Gemini queue"
+                  >
+                    <Play className="w-3.5 h-3.5 fill-white" />
+                    <span>Run Both Queues</span>
+                  </button>
+                ) : (
+                  <>
+                    {queueStatus?.is_any_paused ? (
+                      <button
+                        onClick={() => handleResumeQueue('all')}
+                        disabled={queueActionLoading !== null}
+                        className="px-3.5 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold rounded-xl transition flex items-center gap-1.5 cursor-pointer shadow-xs"
+                      >
+                        <Play className="w-3.5 h-3.5 fill-white" />
+                        <span>Resume All</span>
+                      </button>
+                    ) : (
+                      <button
+                        onClick={() => handlePauseQueue('all')}
+                        disabled={queueActionLoading !== null}
+                        className="px-3.5 py-1.5 bg-amber-500 hover:bg-amber-600 text-white text-xs font-bold rounded-xl transition flex items-center gap-1.5 cursor-pointer shadow-xs"
+                      >
+                        <Pause className="w-3.5 h-3.5" />
+                        <span>Pause All</span>
+                      </button>
+                    )}
+                    <button
+                      onClick={() => handleStopQueue('all')}
+                      disabled={queueActionLoading !== null}
+                      className="px-3.5 py-1.5 bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold rounded-xl transition flex items-center gap-1.5 cursor-pointer shadow-xs"
+                    >
+                      <Square className="w-3.5 h-3.5 fill-white" />
+                      <span>Stop All</span>
+                    </button>
+                  </>
+                )}
+
+                <button
+                  onClick={() => setShowQueueModal(false)}
+                  className="p-2 text-gray-400 hover:text-gray-700 hover:bg-gray-100 rounded-xl transition cursor-pointer"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+            </div>
+
+            {/* Modal Body */}
+            <div className="flex-1 overflow-y-auto p-5 space-y-6">
+
+              {/* 2 Queue Control Cards Side-by-Side */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+
+                {/* 1. Jev Queue Card */}
+                <div className={`bg-white rounded-2xl border p-5 flex flex-col justify-between transition-all shadow-xs ${
+                  queueStatus?.jev?.is_running 
+                    ? 'border-indigo-400 ring-2 ring-indigo-200/50 bg-indigo-50/20' 
+                    : queueStatus?.jev?.is_paused 
+                      ? 'border-amber-400 ring-2 ring-amber-200/50 bg-amber-50/20'
+                      : 'border-gray-200 hover:border-indigo-300'
+                }`}>
+                  <div className="space-y-4">
+                    
+                    {/* Card Title & Live Status Badge */}
+                    <div className="flex items-start justify-between">
+                      <div className="flex items-center gap-2.5">
+                        <div className="w-8 h-8 rounded-xl bg-indigo-100 text-indigo-700 flex items-center justify-center font-bold text-xs shadow-2xs">
+                          ⚡
+                        </div>
+                        <div>
+                          <h3 className="font-black text-sm text-gray-900">Jev 1.13 Semantic Worker</h3>
+                          <div className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">Gate 4 Primary Matcher</div>
+                        </div>
+                      </div>
+                      
+                      {/* Live Badge */}
+                      <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider flex items-center gap-1.5 border ${
+                        queueStatus?.jev?.is_running
+                          ? 'bg-blue-50 text-blue-700 border-blue-300 shadow-xs'
+                          : queueStatus?.jev?.is_paused
+                            ? 'bg-amber-50 text-amber-800 border-amber-300 shadow-xs'
+                            : queueStatus?.jev?.status === 'completed'
+                              ? 'bg-emerald-50 text-emerald-700 border-emerald-300'
+                              : queueStatus?.jev?.status === 'stopped'
+                                ? 'bg-rose-50 text-rose-700 border-rose-300'
+                                : 'bg-gray-100 text-gray-600 border-gray-200'
+                      }`}>
+                        {queueStatus?.jev?.is_running && <span className="w-1.5 h-1.5 rounded-full bg-blue-600 animate-pulse" />}
+                        {queueStatus?.jev?.is_paused && <span className="w-1.5 h-1.5 rounded-full bg-amber-600" />}
+                        <span>{queueStatus?.jev?.status || 'IDLE'}</span>
+                      </span>
+                    </div>
+
+                    {/* Queue Depth KPI Banner */}
+                    <div className="p-3.5 bg-gradient-to-r from-indigo-50/80 to-blue-50/60 rounded-2xl border border-indigo-100 flex items-center justify-between">
+                      <div>
+                        <div className="text-[11px] font-bold text-indigo-950 uppercase tracking-wider">Queued in Database</div>
+                        <div className="text-2xl font-black text-indigo-900 mt-0.5">
+                          {queueStatus?.jev?.queue_depth?.pending ?? 0}
+                          <span className="text-xs font-semibold text-indigo-600 ml-1.5">pending products</span>
+                        </div>
+                      </div>
+                      <div className="text-right text-[11px] space-y-0.5 text-gray-600">
+                        <div>Approved: <strong className="text-emerald-700">{queueStatus?.jev?.queue_depth?.approved ?? 0}</strong></div>
+                        <div>Rejected: <strong className="text-rose-700">{queueStatus?.jev?.queue_depth?.rejected ?? 0}</strong></div>
+                        <div>To Gemini: <strong className="text-amber-700">{queueStatus?.jev?.queue_depth?.rate_limited ?? 0}</strong></div>
+                      </div>
+                    </div>
+
+                    {/* Batch Limit Setting */}
+                    <div className="space-y-1.5">
+                      <label className="text-[11px] font-bold text-gray-600 flex items-center justify-between">
+                        <span>Items to Process (Limit):</span>
+                        <span className="text-gray-400 font-normal">Pacing: 2.0s / req</span>
+                      </label>
+                      <div className="grid grid-cols-4 gap-1.5">
+                        {[10, 25, 50, 100].map((val) => (
+                          <button
+                            key={val}
+                            type="button"
+                            disabled={queueStatus?.jev?.is_running}
+                            onClick={() => setJevLimit(val)}
+                            className={`py-1.5 rounded-xl text-xs font-bold border transition cursor-pointer disabled:opacity-50 ${
+                              jevLimit === val
+                                ? 'bg-indigo-600 text-white border-indigo-600 shadow-2xs'
+                                : 'bg-gray-50 text-gray-700 border-gray-200 hover:bg-gray-100'
+                            }`}
+                          >
+                            {val}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Active Progress Telemetry */}
+                    {(queueStatus?.jev?.is_running || queueStatus?.jev?.is_paused || queueStatus?.jev?.processed_items > 0) && (
+                      <div className="p-3 bg-gray-50 rounded-2xl border border-gray-200/80 space-y-2">
+                        <div className="flex justify-between items-center text-xs">
+                          <span className="font-bold text-gray-800">
+                            {queueStatus?.jev?.processed_items} / {queueStatus?.jev?.total_items || queueStatus?.jev?.processed_items} items
+                          </span>
+                          <span className="font-mono text-[11px] text-indigo-700 font-bold">
+                            {queueStatus?.jev?.progress_percent || 0}% · {queueStatus?.jev?.duration_seconds}s
+                          </span>
+                        </div>
+                        <div className="w-full bg-gray-200 h-2 rounded-full overflow-hidden">
+                          <div
+                            className={`h-full transition-all duration-300 rounded-full ${
+                              queueStatus?.jev?.is_paused ? 'bg-amber-500' : 'bg-indigo-600'
+                            }`}
+                            style={{ width: `${Math.min(100, Math.max(3, queueStatus?.jev?.progress_percent || 0))}%` }}
+                          />
+                        </div>
+                        <div className="text-[11px] text-gray-600 truncate font-mono">
+                          {queueStatus?.jev?.current_product || 'Ready'}
+                        </div>
+                        <div className="grid grid-cols-3 gap-1 pt-1 text-[11px] text-center border-t border-gray-200">
+                          <div>
+                            <span className="text-gray-400">Approved: </span>
+                            <strong className="text-emerald-700">{queueStatus?.jev?.stats?.approved || 0}</strong>
+                          </div>
+                          <div>
+                            <span className="text-gray-400">Rejected: </span>
+                            <strong className="text-rose-700">{queueStatus?.jev?.stats?.rejected || 0}</strong>
+                          </div>
+                          <div>
+                            <span className="text-gray-400">Rate Limited: </span>
+                            <strong className="text-amber-700">{queueStatus?.jev?.stats?.rate_limited || 0}</strong>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
+                  </div>
+
+                  {/* Card Controls */}
+                  <div className="pt-4 border-t border-gray-100 flex items-center gap-2">
+                    {!queueStatus?.jev?.is_running ? (
+                      <button
+                        onClick={() => handleStartQueue('jev')}
+                        disabled={queueActionLoading !== null || !queueStatus?.jev?.queue_depth?.pending}
+                        className="flex-1 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 cursor-pointer shadow-xs disabled:opacity-50"
+                      >
+                        <Play className="w-3.5 h-3.5 fill-white" />
+                        <span>Start Jev Queue</span>
+                      </button>
+                    ) : (
+                      <>
+                        {queueStatus?.jev?.is_paused ? (
+                          <button
+                            onClick={() => handleResumeQueue('jev')}
+                            disabled={queueActionLoading !== null}
+                            className="flex-1 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 cursor-pointer shadow-xs"
+                          >
+                            <Play className="w-3.5 h-3.5 fill-white" />
+                            <span>Resume</span>
+                          </button>
+                        ) : (
+                          <button
+                            onClick={() => handlePauseQueue('jev')}
+                            disabled={queueActionLoading !== null}
+                            className="flex-1 py-2 bg-amber-500 hover:bg-amber-600 text-white rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 cursor-pointer shadow-xs"
+                          >
+                            <Pause className="w-3.5 h-3.5" />
+                            <span>Pause</span>
+                          </button>
+                        )}
+                        <button
+                          onClick={() => handleStopQueue('jev')}
+                          disabled={queueActionLoading !== null}
+                          className="flex-1 py-2 bg-rose-600 hover:bg-rose-700 text-white rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 cursor-pointer shadow-xs"
+                        >
+                          <Square className="w-3.5 h-3.5 fill-white" />
+                          <span>Stop</span>
+                        </button>
+                      </>
+                    )}
+                  </div>
+                </div>
+
+                {/* 2. Gemini Queue Card */}
+                <div className={`bg-white rounded-2xl border p-5 flex flex-col justify-between transition-all shadow-xs ${
+                  queueStatus?.gemini?.is_running 
+                    ? 'border-purple-400 ring-2 ring-purple-200/50 bg-purple-50/20' 
+                    : queueStatus?.gemini?.is_paused 
+                      ? 'border-amber-400 ring-2 ring-amber-200/50 bg-amber-50/20'
+                      : 'border-gray-200 hover:border-purple-300'
+                }`}>
+                  <div className="space-y-4">
+                    
+                    {/* Card Title & Live Status Badge */}
+                    <div className="flex items-start justify-between">
+                      <div className="flex items-center gap-2.5">
+                        <div className="w-8 h-8 rounded-xl bg-purple-100 text-purple-700 flex items-center justify-center font-bold text-xs shadow-2xs">
+                          ✨
+                        </div>
+                        <div>
+                          <h3 className="font-black text-sm text-gray-900">Gemini 3.5 Flash-Lite Batch</h3>
+                          <div className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">Gate 4 Batch Arbitration</div>
+                        </div>
+                      </div>
+                      
+                      {/* Live Badge */}
+                      <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider flex items-center gap-1.5 border ${
+                        queueStatus?.gemini?.is_running
+                          ? 'bg-purple-50 text-purple-700 border-purple-300 shadow-xs'
+                          : queueStatus?.gemini?.is_paused
+                            ? 'bg-amber-50 text-amber-800 border-amber-300 shadow-xs'
+                            : queueStatus?.gemini?.status === 'completed'
+                              ? 'bg-emerald-50 text-emerald-700 border-emerald-300'
+                              : queueStatus?.gemini?.status === 'stopped'
+                                ? 'bg-rose-50 text-rose-700 border-rose-300'
+                                : 'bg-gray-100 text-gray-600 border-gray-200'
+                      }`}>
+                        {queueStatus?.gemini?.is_running && <span className="w-1.5 h-1.5 rounded-full bg-purple-600 animate-pulse" />}
+                        {queueStatus?.gemini?.is_paused && <span className="w-1.5 h-1.5 rounded-full bg-amber-600" />}
+                        <span>{queueStatus?.gemini?.status || 'IDLE'}</span>
+                      </span>
+                    </div>
+
+                    {/* Queue Depth KPI Banner */}
+                    <div className="p-3.5 bg-gradient-to-r from-purple-50/80 to-violet-50/60 rounded-2xl border border-purple-100 flex items-center justify-between">
+                      <div>
+                        <div className="text-[11px] font-bold text-purple-950 uppercase tracking-wider">Queued in Database</div>
+                        <div className="text-2xl font-black text-purple-900 mt-0.5">
+                          {queueStatus?.gemini?.queue_depth?.pending ?? 0}
+                          <span className="text-xs font-semibold text-purple-600 ml-1.5">pending products</span>
+                        </div>
+                      </div>
+                      <div className="text-right text-[11px] space-y-0.5 text-gray-600">
+                        <div>Approved: <strong className="text-emerald-700">{queueStatus?.gemini?.queue_depth?.approved ?? 0}</strong></div>
+                        <div>Rejected: <strong className="text-rose-700">{queueStatus?.gemini?.queue_depth?.rejected ?? 0}</strong></div>
+                        <div>Cap: <strong>15 RPM / 1.5k RPD</strong></div>
+                      </div>
+                    </div>
+
+                    {/* Batch Size & Limit Settings */}
+                    <div className="grid grid-cols-2 gap-3">
+                      <div className="space-y-1.5">
+                        <label className="text-[11px] font-bold text-gray-600">Total Products Limit:</label>
+                        <select
+                          disabled={queueStatus?.gemini?.is_running}
+                          value={geminiLimit}
+                          onChange={(e) => setGeminiLimit(parseInt(e.target.value))}
+                          className="w-full text-xs font-bold border border-gray-200 rounded-xl px-2.5 py-1.5 bg-gray-50 text-gray-800 disabled:opacity-50"
+                        >
+                          <option value="25">25 products</option>
+                          <option value="50">50 products</option>
+                          <option value="100">100 products</option>
+                          <option value="250">250 products</option>
+                        </select>
+                      </div>
+
+                      <div className="space-y-1.5">
+                        <label className="text-[11px] font-bold text-gray-600">Batch Size / Call:</label>
+                        <select
+                          disabled={queueStatus?.gemini?.is_running}
+                          value={geminiBatchSize}
+                          onChange={(e) => setGeminiBatchSize(parseInt(e.target.value))}
+                          className="w-full text-xs font-bold border border-gray-200 rounded-xl px-2.5 py-1.5 bg-gray-50 text-gray-800 disabled:opacity-50"
+                        >
+                          <option value="5">5 products / call</option>
+                          <option value="10">10 products / call</option>
+                          <option value="15">15 products / call</option>
+                        </select>
+                      </div>
+                    </div>
+
+                    {/* All Pending Toggle */}
+                    <label className="flex items-center gap-2 cursor-pointer text-xs text-gray-700">
+                      <input
+                        type="checkbox"
+                        disabled={queueStatus?.gemini?.is_running}
+                        checked={geminiAllPending}
+                        onChange={(e) => setGeminiAllPending(e.target.checked)}
+                        className="rounded text-purple-600 focus:ring-purple-500 disabled:opacity-50"
+                      />
+                      <span className="text-[11px] text-gray-600">
+                        Evaluate all unverified products (ignore Jev requirement)
+                      </span>
+                    </label>
+
+                    {/* Active Progress Telemetry */}
+                    {(queueStatus?.gemini?.is_running || queueStatus?.gemini?.is_paused || queueStatus?.gemini?.processed_items > 0) && (
+                      <div className="p-3 bg-gray-50 rounded-2xl border border-gray-200/80 space-y-2">
+                        <div className="flex justify-between items-center text-xs">
+                          <span className="font-bold text-gray-800">
+                            {queueStatus?.gemini?.processed_items} / {queueStatus?.gemini?.total_items || queueStatus?.gemini?.processed_items} items
+                          </span>
+                          <span className="font-mono text-[11px] text-purple-700 font-bold">
+                            {queueStatus?.gemini?.progress_percent || 0}% · {queueStatus?.gemini?.duration_seconds}s
+                          </span>
+                        </div>
+                        <div className="w-full bg-gray-200 h-2 rounded-full overflow-hidden">
+                          <div
+                            className={`h-full transition-all duration-300 rounded-full ${
+                              queueStatus?.gemini?.is_paused ? 'bg-amber-500' : 'bg-purple-600'
+                            }`}
+                            style={{ width: `${Math.min(100, Math.max(3, queueStatus?.gemini?.progress_percent || 0))}%` }}
+                          />
+                        </div>
+                        <div className="text-[11px] text-gray-600 truncate font-mono">
+                          {queueStatus?.gemini?.current_product || 'Ready'}
+                        </div>
+                        <div className="grid grid-cols-4 gap-1 pt-1 text-[11px] text-center border-t border-gray-200">
+                          <div>
+                            <span className="text-gray-400">Approved: </span>
+                            <strong className="text-emerald-700">{queueStatus?.gemini?.stats?.approved || 0}</strong>
+                          </div>
+                          <div>
+                            <span className="text-gray-400">Rejected: </span>
+                            <strong className="text-rose-700">{queueStatus?.gemini?.stats?.rejected || 0}</strong>
+                          </div>
+                          <div>
+                            <span className="text-gray-400">Rate Lim: </span>
+                            <strong className="text-amber-700">{queueStatus?.gemini?.stats?.rate_limited || 0}</strong>
+                          </div>
+                          <div>
+                            <span className="text-gray-400">API Calls: </span>
+                            <strong className="text-purple-700">{queueStatus?.gemini?.stats?.api_calls || 0}</strong>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
+                  </div>
+
+                  {/* Card Controls */}
+                  <div className="pt-4 border-t border-gray-100 flex items-center gap-2">
+                    {!queueStatus?.gemini?.is_running ? (
+                      <button
+                        onClick={() => handleStartQueue('gemini')}
+                        disabled={queueActionLoading !== null || !queueStatus?.gemini?.queue_depth?.pending}
+                        className="flex-1 py-2.5 bg-purple-600 hover:bg-purple-700 text-white rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 cursor-pointer shadow-xs disabled:opacity-50"
+                      >
+                        <Play className="w-3.5 h-3.5 fill-white" />
+                        <span>Start Gemini Queue</span>
+                      </button>
+                    ) : (
+                      <>
+                        {queueStatus?.gemini?.is_paused ? (
+                          <button
+                            onClick={() => handleResumeQueue('gemini')}
+                            disabled={queueActionLoading !== null}
+                            className="flex-1 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 cursor-pointer shadow-xs"
+                          >
+                            <Play className="w-3.5 h-3.5 fill-white" />
+                            <span>Resume</span>
+                          </button>
+                        ) : (
+                          <button
+                            onClick={() => handlePauseQueue('gemini')}
+                            disabled={queueActionLoading !== null}
+                            className="flex-1 py-2 bg-amber-500 hover:bg-amber-600 text-white rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 cursor-pointer shadow-xs"
+                          >
+                            <Pause className="w-3.5 h-3.5" />
+                            <span>Pause</span>
+                          </button>
+                        )}
+                        <button
+                          onClick={() => handleStopQueue('gemini')}
+                          disabled={queueActionLoading !== null}
+                          className="flex-1 py-2 bg-rose-600 hover:bg-rose-700 text-white rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 cursor-pointer shadow-xs"
+                        >
+                          <Square className="w-3.5 h-3.5 fill-white" />
+                          <span>Stop</span>
+                        </button>
+                      </>
+                    )}
+                  </div>
+                </div>
+
+              </div>
+
+              {/* Real-Time Live Telemetry Logs */}
+              <div className="bg-gray-950 rounded-2xl p-4 border border-gray-800 shadow-inner">
+                <div className="flex items-center justify-between pb-3 mb-2 border-b border-gray-800">
+                  <div className="flex items-center gap-2">
+                    <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+                    <span className="text-xs font-bold text-gray-200 tracking-wide">
+                      Live Queue Telemetry & Verification Feed
+                    </span>
+                  </div>
+
+                  {/* Tabs */}
+                  <div className="flex items-center gap-1 bg-gray-900 p-0.5 rounded-lg border border-gray-800">
+                    <button
+                      onClick={() => setActiveQueueTab('both')}
+                      className={`px-2.5 py-0.5 rounded-md text-[10px] font-bold transition cursor-pointer ${
+                        activeQueueTab === 'both' ? 'bg-indigo-600 text-white' : 'text-gray-400 hover:text-gray-200'
+                      }`}
+                    >
+                      Combined
+                    </button>
+                    <button
+                      onClick={() => setActiveQueueTab('jev')}
+                      className={`px-2.5 py-0.5 rounded-md text-[10px] font-bold transition cursor-pointer ${
+                        activeQueueTab === 'jev' ? 'bg-indigo-600 text-white' : 'text-gray-400 hover:text-gray-200'
+                      }`}
+                    >
+                      Jev Logs ({queueStatus?.jev?.recent_logs?.length || 0})
+                    </button>
+                    <button
+                      onClick={() => setActiveQueueTab('gemini')}
+                      className={`px-2.5 py-0.5 rounded-md text-[10px] font-bold transition cursor-pointer ${
+                        activeQueueTab === 'gemini' ? 'bg-purple-600 text-white' : 'text-gray-400 hover:text-gray-200'
+                      }`}
+                    >
+                      Gemini Logs ({queueStatus?.gemini?.recent_logs?.length || 0})
+                    </button>
+                  </div>
+                </div>
+
+                {/* Inner-scroll container: NEVER affects modal scroll */}
+                <div ref={queueTerminalRef} className="h-44 overflow-y-auto font-mono text-[11px] space-y-1 text-gray-300 scrollbar-thin">
+                  {(() => {
+                    let displayedLogs = [];
+                    if (activeQueueTab === 'jev') {
+                      displayedLogs = queueStatus?.jev?.recent_logs || [];
+                    } else if (activeQueueTab === 'gemini') {
+                      displayedLogs = queueStatus?.gemini?.recent_logs || [];
+                    } else {
+                      // Combined feed sorted/interleaved
+                      const jLogs = (queueStatus?.jev?.recent_logs || []).map(l => `[JEV] ${l}`);
+                      const gLogs = (queueStatus?.gemini?.recent_logs || []).map(l => `[GEMINI] ${l}`);
+                      displayedLogs = [...jLogs, ...gLogs];
+                    }
+
+                    if (displayedLogs.length === 0) {
+                      return (
+                        <div className="text-gray-600 italic py-6 text-center">
+                          Worker queues are idle. Click "Start Jev Queue", "Start Gemini Queue", or "Run Both Queues" above to stream live verifications.
+                        </div>
+                      );
+                    }
+
+                    return displayedLogs.map((log, idx) => {
+                      let colorClass = 'text-gray-300';
+                      if (log.includes('APPROVED')) colorClass = 'text-emerald-300 font-semibold';
+                      else if (log.includes('REJECTED')) colorClass = 'text-rose-400';
+                      else if (log.includes('RATE LIMITED') || log.includes('SKIPPED')) colorClass = 'text-amber-300 font-semibold';
+                      else if (log.includes('PAUSED') || log.includes('paused')) colorClass = 'text-yellow-300';
+                      else if (log.includes('STOPPED') || log.includes('stopped')) colorClass = 'text-orange-400';
+                      else if (log.includes('Starting') || log.includes('Processing')) colorClass = 'text-blue-300 font-medium';
+                      else if (log.includes('Error') || log.includes('failed')) colorClass = 'text-red-400 font-bold';
+
+                      return (
+                        <div key={idx} className={`leading-relaxed break-all ${colorClass}`}>
+                          {log}
+                        </div>
+                      );
+                    });
+                  })()}
+                </div>
+              </div>
+
+            </div>
+
+            {/* Modal Footer */}
+            <div className="p-4 bg-white border-t border-gray-200 flex items-center justify-between shrink-0 text-xs text-gray-500">
+              <div className="flex items-center gap-2">
+                <span className="w-2 h-2 rounded-full bg-indigo-600" />
+                <span>Dual-Worker Architecture: Fast Semantic Jev Pre-Filter → Multi-Item Gemini Batching (15 RPM / 1,500 RPD)</span>
+              </div>
+              <button
+                onClick={() => setShowQueueModal(false)}
+                className="px-4 py-2 bg-gray-900 hover:bg-gray-800 text-white font-bold rounded-xl transition cursor-pointer"
+              >
+                Close Queue Manager
               </button>
             </div>
 
