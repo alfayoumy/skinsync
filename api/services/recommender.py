@@ -536,6 +536,10 @@ def get_recommendations(
     for c in scored:
         clean_results.append({
             "id": c["id"],
+            "canonical_product_id": c.get("canonical_product_id"),
+            "store_count": c.get("store_count", 1),
+            "min_price": c.get("min_price"),
+            "max_price": c.get("max_price"),
             "title": c["title"],
             "brand": c["brand"],
             "category": c["category"],
