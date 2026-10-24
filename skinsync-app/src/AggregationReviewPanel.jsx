@@ -11,7 +11,7 @@ async function api(path, options = {}) {
   if (!response.ok) throw new Error(typeof data.detail === 'string' ? data.detail : 'Request failed.');
   return data;
 }
-export default function AggregationReviewPanel({ onClose, initialSourceId = 'sourcebeauty' }) {
+export default function AggregationReviewPanel({ onClose, initialSourceId = 'sourcebeauty', mode = 'sources' }) {
   const dialog = useRef(null);
   const diagnostics = useConnectionTests();
   const [sampleUrl, setSampleUrl] = useState('');
@@ -33,10 +33,12 @@ export default function AggregationReviewPanel({ onClose, initialSourceId = 'sou
   }
   const source = sources.find(s => s.id === sourceId);
   const canLink = selected?.source_id && selected.source_id !== 'canonical';
-  return <dialog ref={dialog} aria-label="Source Registry and product reviews" onCancel={e => { e.preventDefault(); onClose(); }} className="m-auto w-[min(1160px,96vw)] rounded-2xl p-0 shadow-2xl backdrop:bg-black/50">
-    <header className="p-5 border-b flex justify-between gap-4"><div><h2 className="text-xl font-bold">Product sources & matching reviews</h2><p className="text-sm text-gray-500">Manage source access and review products that could not be matched automatically.</p></div><button className="border rounded-lg px-3" onClick={onClose}>Close</button></header>
+  return <dialog ref={dialog} aria-label={mode === 'sources' ? 'Product sources' : 'Product reviews'} onCancel={e => { e.preventDefault(); onClose(); }} className="m-auto w-[min(1160px,96vw)] rounded-2xl p-0 shadow-2xl backdrop:bg-black/50">
+    <header className="p-5 border-b flex justify-between gap-4"><div><h2 className="text-xl font-bold">{mode === 'sources' ? 'Product sources' : 'Product matching reviews'}</h2>
+      <p className="text-sm text-gray-500">{mode === 'sources' ? 'Manage which websites SkinSync can collect from, test connections, and inspect source coverage.' : 'Examine uncertain or conflicting products and save an explicit decision. Source settings are managed separately.'}</p></div><button className="border rounded-lg px-3" onClick={onClose}>Close</button></header>
     <main className="p-5 space-y-5 bg-gray-50 overflow-y-auto max-h-[78vh]">
       {error && <p role="alert" className="bg-red-50 text-red-800 p-3 rounded-lg">{error}</p>}{message && <p role="status" className="bg-green-50 text-green-800 p-3 rounded-lg">{message}</p>}
+      {mode === 'sources' && <>
       <section aria-label="Registered sources" className="bg-white border rounded-xl p-4 space-y-3">
         <div className="flex flex-wrap items-center justify-between gap-2">
           <h3 className="font-semibold">Product sources ({sources.length})</h3><button className="border rounded px-3 py-1" disabled={diagnostics.running.some(k => k.startsWith('source:'))} onClick={() => diagnostics.test('source')}>Test all sources</button>
@@ -60,7 +62,8 @@ export default function AggregationReviewPanel({ onClose, initialSourceId = 'sou
         <button disabled={busy} className="border rounded-lg px-3 py-2" onClick={() => perform(async () => setCoverage(await api(`/sources/${sourceId}/coverage`)))}>View coverage</button>
         <button disabled={busy || !source} className="border rounded-lg px-3 py-2" onClick={() => perform(async () => { await api(`/sources/${sourceId}`, { method: 'PATCH', body: JSON.stringify({ enabled: !source.enabled }) }); })}>{source?.enabled ? 'Pause collection' : 'Enable staged collection'}</button>
       </div><div className="flex gap-2"><input aria-label="Diagnostic product URL" placeholder="Product URL for selected source" type="url" className={field} value={sampleUrl} onChange={e => setSampleUrl(e.target.value)} /><button disabled={!sampleUrl || diagnostics.running.includes(`source:${sourceId}`)} className="border rounded px-3 shrink-0" onClick={() => diagnostics.test('source', [sourceId], sampleUrl)}>Test product URL</button></div>{coverage && <dl className="grid grid-cols-2 md:grid-cols-4 gap-3">{[['Products', coverage.discovered_products], ['Canonical matches', coverage.uniquely_matched_canonicals], ['Offers', coverage.additional_offers], ['Full INCI candidates', coverage.validated_full_inci_products]].map(([label, value]) => <div key={label} className="bg-gray-50 p-3 rounded-lg"><dt className="text-sm text-gray-500">{label}</dt><dd className="text-xl font-bold">{value}</dd></div>)}</dl>}</section>
-      <section className="grid md:grid-cols-2 gap-4"><div className="bg-white border rounded-xl p-4"><div className="flex justify-between mb-3"><h3 className="font-semibold">Pending reviews ({total})</h3><select aria-label="Review type" value={kind} onChange={e => { setKind(e.target.value); setOffset(0); setSelected(null); }} className="border rounded p-1"><option value="">All types</option>{['identity', 'duplicate', 'category', 'formulation'].map(k => <option key={k}>{k}</option>)}</select></div>
+      </>}
+      {mode === 'reviews' && <section className="grid md:grid-cols-2 gap-4"><div className="bg-white border rounded-xl p-4"><div className="flex justify-between mb-3"><h3 className="font-semibold">Pending reviews ({total})</h3><select aria-label="Review type" value={kind} onChange={e => { setKind(e.target.value); setOffset(0); setSelected(null); }} className="border rounded p-1"><option value="">All types</option>{['identity', 'duplicate', 'category', 'formulation'].map(k => <option key={k}>{k}</option>)}</select></div>
         <ul className="space-y-2 max-h-96 overflow-auto">{reviews.map(r => <li key={r.id}><button className={`w-full text-left border rounded-lg p-3 ${selected?.id === r.id ? 'bg-purple-50 border-purple-500' : ''}`} onClick={() => { setSelected(r); setAction('request_evidence'); setCanonicalId(r.canonical_product_id || ''); }}><span className="block text-xs text-purple-700 uppercase">{r.kind} · {r.source_id || 'Canonical evidence'}</span><span className="block text-sm font-medium">{r.details.title || r.details.original_title || r.details.details?.titles?.join(' / ') || `Canonical ${r.canonical_product_id || 'unresolved'}`}</span></button></li>)}</ul>
         {!reviews.length && <p className="py-8 text-sm text-gray-500">No pending reviews in this view.</p>}<div className="flex justify-between text-sm mt-3"><button disabled={!offset || busy} onClick={() => setOffset(Math.max(0, offset - 50))}>Previous</button><span>{Math.min(offset + reviews.length, total)} of {total}</span><button disabled={offset + 50 >= total || busy} onClick={() => setOffset(offset + 50)}>Next</button></div>
       </div><div className="bg-white border rounded-xl p-4">{selected ? <form className="space-y-3" onSubmit={e => { e.preventDefault(); perform(async () => { await api(`/reviews/${selected.id}`, { method: 'POST', body: JSON.stringify({ action, reviewer, reason, canonical_id: canonicalId ? Number(canonicalId) : null, category }) }); setMessage('Review saved. Re-ingest the observation to apply an accepted mapping.'); setSelected(null); setReason(''); }); }}>
@@ -70,7 +73,7 @@ export default function AggregationReviewPanel({ onClose, initialSourceId = 'sou
         {['link', 'cannot_link'].includes(action) && <label className="block text-sm">Canonical ID<input required min="1" type="number" className={field} value={canonicalId} onChange={e => setCanonicalId(e.target.value)} /></label>}
         {action === 'category' && <label className="block text-sm">Category<select className={field} value={category} onChange={e => setCategory(e.target.value)}>{categories.map(c => <option key={c}>{c}</option>)}</select></label>}
         <label className="block text-sm">Reviewer<input required className={field} value={reviewer} onChange={e => setReviewer(e.target.value)} /></label><label className="block text-sm">Evidence and reason<textarea required rows="3" className={field} value={reason} onChange={e => setReason(e.target.value)} /></label><button disabled={busy} className="rounded-lg bg-purple-700 text-white px-4 py-2 disabled:opacity-50">Save review decision</button>
-      </form> : <p className="text-gray-500 text-sm py-10">Select a finding to inspect source evidence and proposed actions.</p>}</div></section>
+      </form> : <p className="text-gray-500 text-sm py-10">Select a finding to inspect source evidence and proposed actions.</p>}</div></section>}
     </main>
   </dialog>;
 }
