@@ -205,7 +205,7 @@ def clean_and_tokenize(title: str, brand: str = "") -> Tuple[Set[str], List[str]
     normalizing French/US/UK synonyms, stripping marketing fluff, and extracting core cosmetic tokens.
     """
     t = unicodedata.normalize('NFKD', title or '').encode('ASCII', 'ignore').decode('utf-8').lower()
-    t = re.sub(r'[\u2013\u2014\-_/\\.,:;()!+]', ' ', t)
+    t = re.sub(r'[\u2013\u2014\-_/\\.,:;()!+%*#&\[\]]', ' ', t)
     t = VOLUME_PATTERN.sub(' ', t)
     t = re.sub(r'\bmoisturising\b', 'moisturizing', t)
     t = re.sub(r'\bcreme\b', 'cream', t)
@@ -224,7 +224,7 @@ def clean_and_tokenize(title: str, brand: str = "") -> Tuple[Set[str], List[str]
         for bw in b_clean.split():
             if len(bw) >= 3:
                 t = re.sub(r'\b' + re.escape(bw) + r'\b', ' ', t)
-    words = [w for w in t.split() if w and len(w) > 1 and w not in STOP_MARKETING_WORDS and w not in ('routine', 'skin', 'care', 'effect', 'new')]
+    words = [w for w in t.split() if w and (len(w) > 1 or w.isdigit()) and w not in STOP_MARKETING_WORDS and w not in ('routine', 'skin', 'care', 'effect', 'new')]
     return set(words), sorted(words)
 
 

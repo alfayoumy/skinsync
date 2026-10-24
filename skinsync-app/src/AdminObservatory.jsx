@@ -2134,7 +2134,14 @@ const AdminObservatory = ({ onBackToApp }) => {
                                   <h4 className="font-bold text-sm text-gray-900 leading-snug group-hover:text-purple-700 transition mt-0.5">
                                     {alt.title}
                                   </h4>
-                                  <div className="text-[11px] text-gray-500 mt-0.5">{alt.price ? `${alt.price} EGP` : 'Price N/A'}</div>
+                                  <div className="text-[11px] text-gray-500 mt-0.5 flex items-center gap-2">
+                                    <span>{alt.price ? `${alt.price} EGP` : 'Price N/A'}</span>
+                                    {alt.store_count > 1 && (
+                                      <span className="text-[10px] font-bold text-pink-700 bg-pink-50 border border-pink-200 px-2 py-0.5 rounded-full inline-flex items-center gap-1" title="Available across multiple retailers. Click Inspect to compare prices.">
+                                        🏪 {alt.store_count} Stores
+                                      </span>
+                                    )}
+                                  </div>
                                 </div>
                               </div>
 

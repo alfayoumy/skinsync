@@ -171,13 +171,16 @@ def load_catalog_from_db():
     else:
         conn = sqlite3.connect(DB_PATH)
         df_cache = pd.read_sql_query("""
-        SELECT id, store_id, canonical_product_id, title, brand, category as std_category, price as price_low,
-               compare_at_price as price_high, is_available, image_url, product_url as url,
-               ingredients_raw as ingredients, ingredients_parsed, actives, ingredient_source,
-               gate4_jev_status, inci_jev_score, gate4_gemini_status, inci_gemini_score,
-               gate4_cross_status, inci_cross_score, is_skincare
-        FROM products
-        WHERE is_skincare = 1;
+        SELECT p.id, p.store_id, p.canonical_product_id, p.title, p.brand, p.category as std_category, p.price as price_low,
+               p.compare_at_price as price_high, p.is_available, p.image_url, p.product_url as url,
+               p.ingredients_raw as ingredients, p.ingredients_parsed, p.actives, p.ingredient_source,
+               p.gate4_jev_status, p.inci_jev_score, p.gate4_gemini_status, p.inci_gemini_score,
+               p.gate4_cross_status, p.inci_cross_score, p.is_skincare,
+               COALESCE(c.store_count, 1) as store_count,
+               c.min_price, c.max_price
+        FROM products p
+        LEFT JOIN canonical_products c ON c.id = p.canonical_product_id
+        WHERE p.is_skincare = 1;
         """, conn)
         conn.close()
 

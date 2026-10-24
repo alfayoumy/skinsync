@@ -126,6 +126,33 @@ class TestRecommenderOverhaul(unittest.TestCase):
         for r in results:
             self.assertIn("hyaluronic_acid", r["shared_actives"])
 
+    def test_alternatives_deduplicates_same_canonical_product(self):
+        """The same product must not appear more than once in alternatives across stores."""
+        res_peach = get_recommendations("Anua Peach 70% Niacin Serum 30Ml", skin_type="normal")
+        self.assertIsNotNone(res_peach)
+        results = res_peach.get("results", [])
+        self.assertGreater(len(results), 0)
+
+        # 1. No duplicate canonical IDs or normalized titles
+        seen_canonicals = set()
+        for r in results:
+            cid = r.get("canonical_product_id")
+            if cid:
+                self.assertNotIn(cid, seen_canonicals, f"Duplicate canonical product ID {cid} found in alternatives")
+                seen_canonicals.add(cid)
+
+        # 2. Target itself or its siblings must never be recommended to itself
+        res_txa = get_recommendations("Anua Niacinamide 10%+Txa 4% Serum", skin_type="normal")
+        self.assertIsNotNone(res_txa)
+        txa_results = res_txa.get("results", [])
+        self.assertGreater(len(txa_results), 0)
+
+        target_canon = res_txa["source"].get("canonical_product_id")
+        for r in txa_results:
+            if target_canon and r.get("canonical_product_id"):
+                self.assertNotEqual(r["canonical_product_id"], target_canon, "Target product appeared in its own alternatives")
+            self.assertNotIn("txa 4%", r["title"].lower(), "Same TXA product variant appeared in its own alternatives")
+
 
 if __name__ == '__main__':
     unittest.main()

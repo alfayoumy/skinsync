@@ -491,14 +491,17 @@ def get_product_telemetry_forensics(
                 target_category=target_category
             )
             if rec_res and "results" in rec_res:
-                for r in rec_res["results"]:
                     similar_alternatives.append({
                         "id": r.get("id"),
+                        "canonical_product_id": r.get("canonical_product_id"),
                         "title": r.get("title"),
                         "brand": r.get("brand"),
                         "category": r.get("category"),
                         "vehicle": r.get("vehicle"),
                         "price": r.get("price"),
+                        "store_count": r.get("store_count", 1),
+                        "min_price": r.get("min_price"),
+                        "max_price": r.get("max_price"),
                         "url": r.get("url"),
                         "image_url": r.get("image_url"),
                         "match_score": r.get("match_score"),

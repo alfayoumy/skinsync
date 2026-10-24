@@ -324,6 +324,8 @@ def get_recommendations(
     target_canonical_id = target.get('canonical_product_id')
     if pd.isna(target_canonical_id):
         target_canonical_id = None
+    target_brand = str(target.get('brand', '')).lower().strip()
+    target_clean_title = clean_product_title(str(target['title'])).lower().strip()
 
     for row in candidate_records:
         if row['id'] == target_id:
@@ -333,10 +335,25 @@ def get_recommendations(
         if target_canonical_id and row_canon and row_canon == target_canonical_id:
             continue
 
+        cand_brand = str(row.get('brand', '')).lower().strip()
+        cand_clean_title = clean_product_title(str(row['title'])).lower().strip()
+
+        # Exclude if it's the exact same product as target by brand + clean title
+        if target_brand and cand_brand == target_brand and cand_clean_title == target_clean_title:
+            continue
+
         cand_ings = row['parsed_ingredients']
         cand_actives = row['all_actives']
         cand_vehicle = extract_vehicle(row['title'])
         cand_cat = row['std_category']
+
+        # Exclude same-product variants from the same brand (same brand, vehicle, and key active ingredients)
+        if target_brand and cand_brand == target_brand and cand_vehicle == target_vehicle:
+            shared_acts = target_actives.intersection(cand_actives) if target_actives else set()
+            if target_actives and len(target_actives) >= 2 and shared_acts == target_actives == cand_actives:
+                t_sim = compute_functional_title_sim(target['title'], row['title'], brand1=target['brand'], brand2=row['brand'])
+                if t_sim >= 0.50:
+                    continue
 
         # 1. Active Ingredients Matching (Extremely Important)
         shared_acts = target_actives.intersection(cand_actives) if target_actives else set()
@@ -395,11 +412,15 @@ def get_recommendations(
 
         scored.append({
             'id': int(row['id']),
+            'canonical_product_id': int(row_canon) if (row_canon and pd.notna(row_canon)) else None,
             'title': str(row['title']),
             'brand': str(row['brand']),
             'category': cand_cat,
             'vehicle': cand_vehicle,
             'price': float(row['price_low']),
+            'store_count': int(row.get('store_count', 1)) if pd.notna(row.get('store_count')) else 1,
+            'min_price': float(row['min_price']) if (pd.notna(row.get('min_price')) and row.get('min_price')) else float(row['price_low']),
+            'max_price': float(row['max_price']) if (pd.notna(row.get('max_price')) and row.get('max_price')) else float(row['price_low']),
             'match_score': float(final_match),
             'formula_sim': float(formula_sim),
             'image_url': str(row['image_url']) if pd.notna(row['image_url']) else None,
@@ -422,8 +443,39 @@ def get_recommendations(
             'ai_provider': None
         })
 
-    # Take top 10 candidates for FastEmbed Cross-Encoder reranking
-    scored = sorted(scored, key=lambda x: x['match_score'], reverse=True)[:10]
+    # Deduplicate candidates across stores so each distinct product entity appears AT MOST ONCE.
+    # The different store listings per product are shown in the Multi-Store Pricing tab.
+    deduped_scored = []
+    seen_canonical_ids = set()
+    seen_brand_titles = set()
+
+    # Sort descending by match_score and formulation quality so the best representative listing represents the product
+    scored = sorted(scored, key=lambda x: (x['match_score'], len(x.get('parsed_ingredients') or []), x['price'] > 0), reverse=True)
+
+    for cand in scored:
+        canon_id = cand.get('canonical_product_id')
+        b_clean = re.sub(r'[^a-z0-9]', '', str(cand.get('brand', '')).lower())
+        t_clean = re.sub(r'[^a-z0-9]', '', clean_product_title(str(cand.get('title', ''))).lower())
+        brand_title_key = f"{b_clean}_{t_clean}" if (b_clean and t_clean) else None
+
+        # Sibling listing of an already included canonical product entity
+        if canon_id is not None and canon_id in seen_canonical_ids:
+            continue
+
+        # Sibling listing by matching brand and clean title
+        if brand_title_key is not None and brand_title_key in seen_brand_titles:
+            continue
+
+        if canon_id is not None:
+            seen_canonical_ids.add(canon_id)
+        if brand_title_key is not None:
+            seen_brand_titles.add(brand_title_key)
+        deduped_scored.append(cand)
+
+    scored = deduped_scored
+
+    # Take top 10 unique candidate products for FastEmbed Cross-Encoder reranking
+    scored = scored[:10]
 
     if cfg.ENABLE_CROSS_ENCODER and scored:
         target_pair_text = f"Category: {target_cat}. Texture: {target_vehicle}. Actives: {', '.join(sorted(target_actives)) if target_actives else 'None'}. Formulation: {', '.join(target_non_water[:10])}"
@@ -439,7 +491,7 @@ def get_recommendations(
                 cand['cross_score'] = None
         scored = sorted(scored, key=lambda x: x['match_score'], reverse=True)
 
-    # Take top 6 candidates
+    # Take top 6 unique alternative products
     scored = scored[:6]
 
     # Pre-computed Gate 4 AI Telemetry & Local Cross-Encoder Verification
