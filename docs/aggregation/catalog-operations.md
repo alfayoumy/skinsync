@@ -35,6 +35,8 @@ Use **Find legacy products needing review** if necessary, then enqueue all/selec
 
 Use **Preview saved decisions** → **Apply confident decisions — no Gemini calls** to re-evaluate *existing* Gemini verdicts ≥0.90 and apply safe identity verifications or explicit audited variant splits. It skips stale or ambiguous cases, does not spend tokens and never auto-merges distinct canonical IDs.
 
+**Apply saved decisions** is available even if no preview projected a success. The API rejects a run with no qualifying saved verdicts rather than disabling the UI; independent hard gates still prevent unsafe mutations. Proposed splits list the retailer IDs in each group and the number of new canonical products—not one product per listing.
+
 **Gemini Decisions table:** paged, server-side verdict/outcome/review status and confidence-range filters; sort on confidence, verdict, review ID, outcome or time; search titles and IDs; expand a row to see original store listings, Gemini reasoning, SkinSync application reason, and saved audited action (even for completed cases).
 
 ## Before every release

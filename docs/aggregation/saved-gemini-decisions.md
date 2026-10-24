@@ -22,13 +22,13 @@ Example request:
 {"limit":5000,"confidence_threshold":0.90}
 ```
 
-Threshold input is 0.90–1.00; case limit is 1–20,000. The preview returns `no_gemini_calls=true` and `stored_decisions_checked`, `automatically_verified`, `automatically_split`, `still_needs_review` and sample explanations.
+Threshold input is 0.90–1.00; case limit is 1–20,000. The preview returns `no_gemini_calls=true`, `stored_decisions_checked`, `automatically_verified`, `automatically_split` (number of mixed review cases), `new_canonical_products` (new canonical records), `still_needs_review` and sample explanations **with product-group membership**. Apply can also be started directly without preview, but previewing grouping before large split operations is strongly recommended.
 
 ## Exact application semantics
 
 **Same product:** a stored `same_product` ≥threshold is eligible for automatic verification *only if* the canonical, brands, all listed retailer evidence, variant gates, full INCI consistency and duplicate-canonical checks still pass. The backend writes accepted source links, verified identity status, closes the case and records canonical audit history.
 
-**Different products:** a stored `different_product` ≥threshold is eligible for automatic split *only when explicit formulation-defining marker groups make a fully anchored partition safe*. It calls the audited canonical split service, assigns linked legacy listings to new **provisional** canonicals, records cannot-link constraints and audit history, and does **not** copy old INCI. Without a safe partition the case remains manual, even at 100% model confidence.
+**Different products:** a stored `different_product` ≥threshold is eligible for an automatic split *only when explicit formulation-defining markers and a shared product-family signature permit a fully anchored partition*. The engine groups equivalent retailer listings **before** splitting; 6 offers grouped into sunscreen lotion (4 offers) and lotion spray (2 offers) produce **2 canonical products total** (the current one plus one provisional), not 6. Sizes and 1+1 retailer bundles remain packaging/offer variations. The preview exposes the exact IDs assigned to each proposed group and the new canonical count. The audited split service reassigns linked offers, records cannot-link constraints and history, and does **not** copy old INCI. Without a safe partition the case remains manual even at 100% model confidence.
 
 **Stale/conflicting/uncertain:** unrecognized, missing, changed-hash or conflicting records are left unresolved with specific deterministic reasons. Neither the model nor the replay code is allowed to guess missing retail identity mappings.
 

@@ -34,7 +34,7 @@ The default current-code threshold for `same_product` is **0.90**, **subject to 
 - No incompatible trustworthy full ordered-INCI declarations.
 - Sufficient independent retailer evidence for automated source identity publication (currently two independent stores).
 
-When all these pass, the worker verifies links and canonical identity, closes the review and writes `canonical_identity_history`. If a deterministic guard blocks a high-scoring model suggestion, it remains a review case **with the reason recorded separately**.
+When all these pass, the worker verifies links and canonical identity, closes the review and writes `canonical_identity_history`. If a deterministic guard blocks a high-scoring model suggestion, it remains a review case **with the reason recorded separately**. Older `different_product` cases may still contain a historical same-product-only rejection message; the read API labels this as an outdated policy result rather than claiming the model was uncertain.
 
 A high-confidence `different_product` verdict does not authorize a same-product link. It can be **replayed as a safe audited split** only when every retailer listing can be assigned to an explicit variant group anchored to the original canonical record. Examples: NUXE Huile Prodigieuse original/Florale/Golden or different named Acti-series products. Unsafe partitioning, changing evidence or conflicting formula versions remain manual.
 

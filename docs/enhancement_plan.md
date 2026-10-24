@@ -190,7 +190,7 @@ The deterministic safeguard enforces 8 physical and cosmetic boundaries:
    ```
    *To run automatically every night at 2:00 AM on Linux, add to `crontab -e`:*
    ```cron
-   0 2 * * * cd /mnt/windows/Users/AmrAlfayoumy/Downloads/skincare/repo/api && python3 pipeline/daily_sync.py >> /var/log/skincare_sync.log 2>&1
+   0 2 * * * cd /path/to/skinsync/api && python3 pipeline/daily_sync.py >> /var/log/skincare_sync.log 2>&1
    ```
 
 2. **Via Admin API Endpoint (Non-Blocking):**
@@ -246,6 +246,6 @@ To prevent brittle hardcoded magic numbers, all thresholds, weights, and timeout
 - [x] **Decoupled 4-Gate Architecture:** Crawler (0 LLMs) separated from INCI backfill worker and Gate 4 Jev worker.
 - [x] **Per-Gate Telemetry Audit:** Added `gate1_quality_status`, `gate2_safeguard_status`, `gate3_active_status`, `gate4_jev_status`, and distinct score columns.
 - [x] **Strategy A & Strategy B:** Self-enrichment into `inci_reference` plus Open Beauty Facts live API fallback.
-- [x] **Centralized Configuration:** Configurable minimum ingredient entities set to **3**; eliminated all hardcoded pipeline numbers into [`config.py`](../api/pipeline/config.py) and [`.env`](../api/.env).
+- [x] **Centralized Configuration:** Configurable minimum ingredient entities set to **3**; eliminated all hardcoded pipeline numbers into [`config.py`](../api/pipeline/config.py) and [`.env.example`](../api/.env.example).
 - [ ] **Full Multi-Store Catalog Crawl:** Execute `daily_sync.py` across all 6 stores to ingest ~16,000 live products and real-time prices.
 
