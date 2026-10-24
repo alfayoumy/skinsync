@@ -37,6 +37,10 @@ except Exception:
     pass
 
 from pipeline.db_manager import get_connection, DB_PATH
+try:
+    from pipeline.config import cfg
+except ImportError:
+    from config import cfg
 from pipeline.inci_matcher import (
     parse_and_normalize_ingredients, is_valid_inci_list,
     query_open_beauty_facts, CosmeticCompatibilityValidator,
@@ -420,14 +424,68 @@ def resolve_tier3_skinsafe_high(brand: str, title: str, conn=None) -> Optional[D
 # TIER 4: LANGSEARCH WEB SEARCH API
 # ==============================================================================
 
+PREFERRED_SEARCH_DOMAINS = {
+    "inkeedecoder.com", "www.inkeedecoder.com",
+    "incidecoder.com", "www.incidecoder.com"
+}
+
+BLACKLISTED_SEARCH_DOMAINS = {
+    "incibeauty.com", "www.incibeauty.com", "m.incibeauty.com",
+    "fr.incibeauty.com", "es.incibeauty.com", "de.incibeauty.com", "it.incibeauty.com"
+}
+
+def is_blacklisted_search_url(url: str) -> bool:
+    """Checks whether URL belongs to blacklisted or sabotaged cosmetic directories (e.g. incibeauty)."""
+    if not url:
+        return False
+    u = url.lower()
+    for d in BLACKLISTED_SEARCH_DOMAINS:
+        if d in u:
+            return True
+    try:
+        netloc = urllib.parse.urlparse(url).netloc.lower()
+        if any(netloc == d or netloc.endswith("." + d) for d in BLACKLISTED_SEARCH_DOMAINS):
+            return True
+    except Exception:
+        pass
+    return False
+
+def is_preferred_search_url(url: str) -> bool:
+    """Checks whether URL belongs to preferred cosmetic decoder databases (e.g. inkeedecoder / incidecoder)."""
+    if not url:
+        return False
+    u = url.lower()
+    for d in PREFERRED_SEARCH_DOMAINS:
+        if d in u:
+            return True
+    try:
+        netloc = urllib.parse.urlparse(url).netloc.lower()
+        if any(netloc == d or netloc.endswith("." + d) for d in PREFERRED_SEARCH_DOMAINS):
+            return True
+    except Exception:
+        pass
+    return False
+
 def extract_inci_from_web_text(text: str) -> Optional[str]:
     """Extracts and validates a chemical INCI formulation block from webpage text."""
     if not text or len(text) < 40:
         return None
 
+    # Immediate rejection if text contains incibeauty sabotage disclaimer or asterisk masking
+    low_text = text.lower()
+    if '***' in text:
+        return None
+    if any(phrase in low_text for phrase in [
+        'deliberately hidden',
+        'displayed in alphabetical order',
+        'exact composition',
+        'please use our application'
+    ]):
+        return None
+
     patterns = [
-        # Explicit INCI header pattern
-        r'(?:Ingredients|Full Ingredients|INCI List|INCI|Active Ingredients)\s*[:\-\n]\s*([A-Za-z0-9\s,;.\(\)\[\]\/\-\+%•]{40,2500})',
+        # Explicit INKEEDecoder & INCI header pattern
+        r'(?:ingredients\s+explained|full\s+ingredients?|inci\s+list|inci|active\s+ingredients?)\s*[:\-\n]\s*([A-Za-z0-9\s,;.\(\)\[\]\/\-\+%•]{30,2500})',
         # Formulations starting with Aqua / Water and common solvents
         r'(?:Water\/Aqua\/Eau|Aqua\/Water\/Eau|Aqua|Water)[,\s]+(?:Glycerin|Butylene Glycol|Cetearyl Alcohol|Propanediol|Dipropylene Glycol)[A-Za-z0-9\s,;.\(\)\[\]\/\-\+%•]{30,2000}',
         # Plant extract starting formulations
@@ -473,6 +531,7 @@ def resolve_tier4_langsearch(brand: str, title: str, api_key: Optional[str] = No
     """
     Tier 4: Queries LangSearch Web Search API for '{brand} {title} inci ingredients'
     and extracts authentic INCI formulation from top beauty/retailer results.
+    Prioritizes INKEEDecoder (inkeedecoder.com) and strictly blacklists incibeauty.com.
     Strictly rate limited to 5 RPS, 1,000,000 TPM, and 10,000,000 daily tokens.
     """
     from pipeline.rate_limiter import langsearch_limiter
@@ -504,7 +563,7 @@ def resolve_tier4_langsearch(brand: str, title: str, api_key: Optional[str] = No
     if not acquired:
         return None
 
-    query = f"{brand} {clean_t} inci ingredients"
+    query = f"{brand} {clean_t} inkeedecoder inci ingredients"
 
     headers = {
         "Authorization": f"Bearer {api_key}",
@@ -512,7 +571,7 @@ def resolve_tier4_langsearch(brand: str, title: str, api_key: Optional[str] = No
     }
     payload = {
         "query": query,
-        "count": 5,
+        "count": 7,
         "contents": {"text": True},
         "freshness": "noLimit"
     }
@@ -542,7 +601,33 @@ def resolve_tier4_langsearch(brand: str, title: str, api_key: Optional[str] = No
 
             langsearch_limiter.record_usage(input_tokens=in_tok, output_tokens=out_tok)
 
+            # Filter out blacklisted domains (e.g. incibeauty.com) and sabotage content
+            candidate_pages = []
             for p in pages:
+                p_url = p.get("url") or ""
+                p_text = p.get("text") or ""
+                p_snippet = p.get("snippet") or ""
+
+                if is_blacklisted_search_url(p_url):
+                    logger.debug(f"LangSearch skipped blacklisted URL: {p_url}")
+                    continue
+
+                combined_lower = f"{p_text} {p_snippet}".lower()
+                if '***' in p_text or '***' in p_snippet or any(phrase in combined_lower for phrase in [
+                    'deliberately hidden',
+                    'displayed in alphabetical order',
+                    'exact composition',
+                    'please use our application'
+                ]):
+                    logger.debug(f"LangSearch skipped sabotaged/masked formulation at {p_url}")
+                    continue
+
+                candidate_pages.append(p)
+
+            # Prioritize INKEEDecoder / INCIDecoder pages at Rank 0
+            candidate_pages.sort(key=lambda p: 0 if is_preferred_search_url(p.get("url") or "") else 1)
+
+            for p in candidate_pages:
                 p_name = (p.get("name") or "").lower()
                 p_url = (p.get("url") or "").lower()
                 p_snippet = (p.get("snippet") or "").lower()
@@ -575,9 +660,11 @@ def resolve_tier4_langsearch(brand: str, title: str, api_key: Optional[str] = No
                     if any(z in low_san for z in ['ziaja', 'line jeju', 'jeju']) and 'ziaja' not in brand.lower() and 'jeju' not in title.lower():
                         continue
 
+                    is_inkee = is_preferred_search_url(p.get("url") or "")
                     res = {
                         "ingredients_raw": sanitized.strip(),
                         "source_url": p.get("url"),
+                        "is_inkeedecoder": is_inkee,
                         "method": "langsearch_web_search"
                     }
                     with _LANGSEARCH_LOCK:
@@ -837,6 +924,7 @@ def execute_inci_waterfall_for_product(
             parsed_ings = json.dumps(p_tokens)
             actives = json.dumps(act_list)
 
+        source_url = res.get("source_url")
         if not dry_run and conn and p_id and write_to_db:
             cur = conn.cursor()
             cur.execute("""
@@ -845,9 +933,10 @@ def execute_inci_waterfall_for_product(
                 ingredients_parsed = ?,
                 actives = ?,
                 ingredient_source = ?,
+                ingredient_source_url = ?,
                 updated_at = CURRENT_TIMESTAMP
             WHERE id = ?;
-            """, (raw_ings, parsed_ings, actives, method, p_id))
+            """, (raw_ings, parsed_ings, actives, method, source_url, p_id))
             conn.commit()
 
         return {
@@ -857,6 +946,7 @@ def execute_inci_waterfall_for_product(
             "ingredients_raw": raw_ings,
             "ingredients_parsed": parsed_ings,
             "actives": actives,
+            "ingredient_source_url": source_url,
             "title": title,
             "brand": brand
         }
@@ -1013,11 +1103,18 @@ def execute_all_tiers_for_product(
             )
         else:
             res_t4 = resolve_tier4_langsearch(brand, title)
+            t4_source_url = res_t4.get("source_url") if res_t4 else None
+            t4_is_inkee = res_t4.get("is_inkeedecoder", False) if res_t4 else False
+            if res_t4:
+                prefix = f"🌿 INKEEDecoder ({t4_source_url})" if t4_is_inkee else (t4_source_url or "web search")
+                t4_details = f"Extracted authentic INCI list from {prefix}."
+            else:
+                t4_details = "No valid INCI list found in top search results."
             t4 = _format_tier(
                 4, "tier4", "LangSearch Web Search INCI",
                 res_t4,
-                default_details=f"Extracted authentic INCI list from {res_t4.get('source_url', 'web search')}." if res_t4 else "No valid INCI list found in top search results.",
-                extra_meta={"source_url": res_t4.get("source_url") if res_t4 else None, "quota_status": quota_status}
+                default_details=t4_details,
+                extra_meta={"source_url": t4_source_url, "is_inkeedecoder": t4_is_inkee, "quota_status": quota_status}
             )
 
         # 5. Tier 5: Store Description Whitelist Extraction
@@ -1163,6 +1260,7 @@ def apply_tier_resolution_for_product(
                 gate4_gemini_status = 'pending_gemini',
                 gate4_cross_status = 'pending',
                 ingredient_source = 'pending_tier7_match',
+                ingredient_source_url = NULL,
                 ingredients_raw = NULL,
                 ingredients_parsed = NULL,
                 actives = NULL,
@@ -1175,6 +1273,7 @@ def apply_tier_resolution_for_product(
             method = target_tier.get("method") or "manual_override"
             inci_id = target_tier.get("metadata", {}).get("inci_matched_id") or target_tier.get("candidate_id")
             inci_name = target_tier.get("metadata", {}).get("inci_matched_name") or target_tier.get("candidate_name")
+            source_url = target_tier.get("metadata", {}).get("source_url") or target_tier.get("source_url")
 
             cur.execute("""
             UPDATE products
@@ -1182,12 +1281,13 @@ def apply_tier_resolution_for_product(
                 ingredients_parsed = ?,
                 actives = ?,
                 ingredient_source = ?,
+                ingredient_source_url = ?,
                 inci_matched_id = COALESCE(?, inci_matched_id),
                 inci_matched_name = COALESCE(?, inci_matched_name),
                 gate4_cross_status = CASE WHEN ? = 'skinsafe_high_match' THEN 'cross_approved' ELSE gate4_cross_status END,
                 updated_at = CURRENT_TIMESTAMP
             WHERE id = ?;
-            """, (raw, json.dumps(tokens), json.dumps(acts), method, inci_id, inci_name, method, product_id))
+            """, (raw, json.dumps(tokens), json.dumps(acts), method, source_url, inci_id, inci_name, method, product_id))
         elif target_tier.get("status") == "not_found":
             # Clears ingredients
             cur.execute("""
@@ -1196,6 +1296,7 @@ def apply_tier_resolution_for_product(
                 ingredients_parsed = NULL,
                 actives = NULL,
                 ingredient_source = NULL,
+                ingredient_source_url = NULL,
                 updated_at = CURRENT_TIMESTAMP
             WHERE id = ?;
             """, (product_id,))

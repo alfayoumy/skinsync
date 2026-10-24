@@ -1622,6 +1622,34 @@ const AdminObservatory = ({ onBackToApp }) => {
                         </div>
                       </div>
 
+                      {/* Ingestion Source URL Link */}
+                      {(telemetry.ingredients_forensics.ingredient_source_url || telemetry.product?.ingredient_source_url) && (
+                        <div className="p-3 bg-purple-50/70 rounded-xl border border-purple-200 flex items-center justify-between gap-3 text-xs">
+                          <div className="flex items-center gap-2 min-w-0">
+                            <span className="text-base shrink-0">
+                              {(telemetry.ingredients_forensics.ingredient_source_url || telemetry.product?.ingredient_source_url).includes('inkeedecoder.com') || (telemetry.ingredients_forensics.ingredient_source_url || telemetry.product?.ingredient_source_url).includes('incidecoder.com') ? '🌿' : '🔗'}
+                            </span>
+                            <div className="truncate">
+                              <span className="font-bold text-gray-500 uppercase text-[10px] block">Verified Ingestion Source Link</span>
+                              <span className="font-semibold text-purple-900 truncate block">
+                                {(telemetry.ingredients_forensics.ingredient_source_url || telemetry.product?.ingredient_source_url).includes('inkeedecoder.com') || (telemetry.ingredients_forensics.ingredient_source_url || telemetry.product?.ingredient_source_url).includes('incidecoder.com')
+                                  ? 'INKEEDecoder Verified Cosmetic Database'
+                                  : (telemetry.ingredients_forensics.ingredient_source_url || telemetry.product?.ingredient_source_url)}
+                              </span>
+                            </div>
+                          </div>
+                          <a
+                            href={telemetry.ingredients_forensics.ingredient_source_url || telemetry.product?.ingredient_source_url}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="px-3 py-1.5 bg-white hover:bg-purple-600 hover:text-white text-purple-700 rounded-lg border border-purple-300 font-bold text-xs flex items-center gap-1.5 shrink-0 transition-all shadow-xs"
+                          >
+                            <span>Open Link</span>
+                            <ExternalLink className="w-3.5 h-3.5" />
+                          </a>
+                        </div>
+                      )}
+
                       {/* Detected Actives */}
                       <div>
                         <div className="font-bold text-gray-700 mb-2 uppercase text-[10px] tracking-wider">
@@ -2122,6 +2150,13 @@ const AdminObservatory = ({ onBackToApp }) => {
                                       </span>
                                     )}
 
+                                    {/* INKEEDecoder Priority Badge */}
+                                    {key === 'tier4' && (tierData.metadata?.is_inkeedecoder || tierData.metadata?.source_url?.includes('inkeedecoder.com') || tierData.metadata?.source_url?.includes('incidecoder.com')) && (
+                                      <span className="px-2 py-0.5 bg-emerald-50 text-emerald-800 border border-emerald-200 rounded-full font-bold text-[10px] flex items-center gap-1">
+                                        🌿 INKEEDecoder Priority
+                                      </span>
+                                    )}
+
                                     {/* Confidence Pill */}
                                     {tierData.confidence > 0 && (
                                       <span className="px-2 py-0.5 bg-indigo-50 text-indigo-700 border border-indigo-200 rounded-full font-semibold text-[10px]">
@@ -2181,9 +2216,16 @@ const AdminObservatory = ({ onBackToApp }) => {
                                         href={tierData.metadata.source_url}
                                         target="_blank"
                                         rel="noreferrer"
-                                        className="px-2 py-0.5 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded border border-gray-200 flex items-center gap-1"
+                                        className={`px-2 py-0.5 rounded border flex items-center gap-1 font-semibold ${
+                                          tierData.metadata.is_inkeedecoder || tierData.metadata.source_url.includes('inkeedecoder.com') || tierData.metadata.source_url.includes('incidecoder.com')
+                                            ? 'bg-emerald-50 text-emerald-800 border-emerald-200 hover:bg-emerald-100'
+                                            : 'bg-gray-100 hover:bg-gray-200 text-gray-700 border-gray-200'
+                                        }`}
                                       >
-                                        Source URL <ExternalLink className="w-2.5 h-2.5" />
+                                        {tierData.metadata.is_inkeedecoder || tierData.metadata.source_url.includes('inkeedecoder.com') || tierData.metadata.source_url.includes('incidecoder.com')
+                                          ? '🌿 INKEEDecoder Source Link'
+                                          : 'Verified Result Link'}
+                                        <ExternalLink className="w-2.5 h-2.5" />
                                       </a>
                                     )}
                                   </div>

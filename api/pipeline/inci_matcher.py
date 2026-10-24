@@ -163,6 +163,17 @@ def is_valid_inci_list(text: str) -> bool:
     
     lower = clean.lower()
     
+    # 0. Prohibit masked/hidden ingredients (e.g. '*******') and alphabetical order sabotage disclaimers (e.g. incibeauty)
+    if '***' in clean:
+        return False
+    if any(phrase in lower for phrase in [
+        'deliberately hidden',
+        'displayed in alphabetical order',
+        'exact composition',
+        'please use our application'
+    ]):
+        return False
+    
     # 1. Prohibit narrative marketing claims
     for trigger in MARKETING_NON_INCI_TRIGGERS:
         if trigger in lower:

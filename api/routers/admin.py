@@ -269,7 +269,7 @@ def list_admin_products(
         query_sql = f"""
         SELECT p.id, p.store_id, s.name as store_name, p.title, p.clean_title, p.brand, p.category,
                p.price, p.compare_at_price, p.is_available, p.image_url, p.product_url,
-               p.ingredient_source,
+               p.ingredient_source, p.ingredient_source_url,
                CASE WHEN p.ingredients_raw IS NOT NULL AND LENGTH(p.ingredients_raw) >= 15 THEN 1 ELSE 0 END as has_ingredients,
                p.canonical_product_id, c.canonical_title, COALESCE(c.store_count, 1) as store_count,
                c.min_price, c.max_price,
@@ -549,12 +549,15 @@ def get_product_telemetry_forensics(
                 "product_url": product.get("product_url"),
                 "image_url": product.get("image_url"),
                 "description_html": product.get("description_html"),
+                "ingredient_source": product.get("ingredient_source"),
+                "ingredient_source_url": product.get("ingredient_source_url"),
                 "created_at": product.get("created_at"),
                 "updated_at": product.get("updated_at")
             },
             "ingredients_forensics": {
                 "has_ingredients": bool(raw_ings and len(raw_ings) >= 15),
                 "ingredient_source": product.get("ingredient_source") or "none",
+                "ingredient_source_url": product.get("ingredient_source_url"),
                 "ingredients_raw": raw_ings,
                 "parsed_tokens_count": len(parsed_ings),
                 "ingredients_parsed": parsed_ings,

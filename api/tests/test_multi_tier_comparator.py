@@ -35,6 +35,7 @@ class TestMultiTierComparator(unittest.TestCase):
             ingredients_parsed TEXT,
             actives TEXT,
             ingredient_source TEXT,
+            ingredient_source_url TEXT,
             canonical_product_id INTEGER,
             cluster_id INTEGER,
             inci_matched_id INTEGER,
