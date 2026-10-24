@@ -138,6 +138,8 @@ def preview_selective_rebuild(conn, discovery_task_id=None, db_path=None):
             errors.append('No saved product evidence for source ' + sid + '.')
         elif count < fetched * 0.9:
             errors.append('Saved observation coverage for ' + sid + ' is below 90% of scanned products.')
+        elif count > fetched * 1.05:
+            errors.append('Saved observations exceed this run\'s scanned product count for ' + sid + '; old source rows may be present.')
     active_jobs = _active_tasks(conn, existing)
     active_workers = _active_workers(conn, existing)
     if active_jobs:
@@ -235,6 +237,50 @@ def _parse_saved(conn, row, source_cache):
     return observation
 
 
+
+def _project_fresh_legacy_listing(conn, observation, source_row, results):
+    """Replace old retailer products with untrusted-INCI-free source projections.
+
+    New identity/offer data lives in canonical_products and product_offers.
+    Legacy /products consumers still receive source-confirmed titles/prices.
+    A product-level canonical link is assigned only for one unambiguous ID.
+    """
+    from pipeline.taxonomy_service import classify_product_attributes
+    variant_prices = [v.price for v in observation.variants if v.price > 0]
+    compare_prices = [v.compare_at_price for v in observation.variants if v.compare_at_price > 0]
+    identity_ids = {int(r['canonical_product_id']) for r in results
+                    if r.get('canonical_product_id') is not None}
+    cid = next(iter(identity_ids)) if len(identity_ids) == 1 else None
+    classification = classify_product_attributes(
+        observation.raw_title, observation.raw_brand,
+        observation.raw_category or '', observation.description or '')
+    conn.execute("""INSERT OR IGNORE INTO stores(id,name,domain,platform,is_active)
+        VALUES (?,?,?,'shopify',1)""",
+        (observation.source_id, source_row['name'], source_row['domain']))
+    inserted = conn.execute("""INSERT INTO products(
+        store_id,store_product_id,handle,title,brand,category,price,compare_at_price,
+        is_available,image_url,product_url,description_html,canonical_product_id,
+        original_title,original_brand,original_category,classification,is_skincare)
+        VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)""",
+        (observation.source_id, observation.source_product_id,
+         str(observation.raw_payload.get('handle') or ''),
+         observation.raw_title, observation.raw_brand or '',
+         observation.raw_category or classification.primary_category,
+         min(variant_prices) if variant_prices else 0,
+         min(compare_prices) if compare_prices else 0,
+         int(any(v.available for v in observation.variants)),
+         observation.images[0] if observation.images else None,
+         observation.source_url, observation.description, cid,
+         observation.raw_title, observation.raw_brand or '',
+         observation.raw_category or '',
+         json.dumps(classification.to_dict()), int(classification.is_skincare)))
+    # Never copy an ingredient list or an old Gemini/INCI approval into products.
+    pid = inserted.lastrowid
+    conn.execute("""UPDATE product_offers SET legacy_product_id=?
+        WHERE source_id=? AND source_product_id=?""",
+        (pid, observation.source_id, observation.source_product_id))
+    return pid
+
 def _drop_immutable_triggers(conn):
     triggers = [tuple(r) for r in conn.execute("""SELECT name,sql FROM sqlite_master
         WHERE type='trigger' AND name LIKE 'immutable_%' AND tbl_name IN
@@ -283,6 +329,7 @@ def _run_transaction(conn, plan, actor, job_id, backup):
     for row in rows:
         item = _parse_saved(conn, row, sources)
         replay = process_source_observation(conn, item, existing_observation_id=row['id'])
+        _project_fresh_legacy_listing(conn, item, sources[row['source_id']], replay['results'])
         stats['replayed'] += 1
         for result in replay['results']:
             state = result['status']
@@ -299,12 +346,14 @@ def _run_transaction(conn, plan, actor, job_id, backup):
     offers = conn.execute('SELECT COUNT(*) FROM product_offers').fetchone()[0]
     if not canonicals or not offers:
         raise ValueError('Offline replay did not reconstruct canonical products and offers.')
+    conn.execute('UPDATE stores SET total_products=(SELECT COUNT(*) FROM products WHERE store_id=stores.id)')
     for _, sql in triggers:
         conn.execute(sql)
     fk = list(conn.execute('PRAGMA foreign_key_check'))
     if fk:
         raise ValueError('Selective rebuild violated foreign keys; rolling back.')
     stats.update({'canonicals': canonicals, 'offers': offers,
+                  'fresh_legacy_listings': conn.execute('SELECT COUNT(*) FROM products').fetchone()[0],
                   'retained_observations': actual,
                   'old_product_rows_removed': deleted.get('products', 0),
                   'old_canonical_rows_removed': deleted.get('canonical_products', 0)})
