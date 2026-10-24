@@ -46,6 +46,10 @@ export default function CatalogWorkflowsPanel({onClose, initialTab='products',on
   const [identityResult,setIdentityResult]=useState(null);
   const [identityBusy,setIdentityBusy]=useState(false);
   const [scope,setScope]=useState('unmatched_only');
+  const [resetPreview,setResetPreview]=useState(null);
+  const [resetConfirmation,setResetConfirmation]=useState('');
+  const [resetBusy,setResetBusy]=useState(false);
+  const [resetOutcome,setResetOutcome]=useState(null);
   const source=sources.find(s=>s.id===sourceId);
   useEffect(()=>{
     let active=true;
@@ -113,6 +117,24 @@ export default function CatalogWorkflowsPanel({onClose, initialTab='products',on
       }));
       setIdentityResult(report);
     } catch(e){setError(e.message)} finally {setIdentityBusy(false)}
+  }
+  async function previewReset() {
+    setResetBusy(true);setError('');setResetOutcome(null);setResetConfirmation('');
+    try { setResetPreview(await call('/admin/workflows/catalog/reset/preview')); }
+    catch(e) {setError(e.message);setResetPreview(null);}
+    finally {setResetBusy(false);}
+  }
+  async function executeReset() {
+    if(!resetPreview?.can_reset||resetConfirmation!=='RESET ALL PRODUCT DATA')return;
+    setResetBusy(true);setError('');
+    try {
+      const response=await call('/admin/workflows/catalog/reset',json({
+        fingerprint:resetPreview.fingerprint,confirmation:resetConfirmation
+      }));
+      setResetOutcome(response);setResetPreview(null);setResetConfirmation('');
+      setEligibility(null);
+    } catch(e){setError(e.message);setResetPreview(null)}
+    finally {setResetBusy(false)}
   }
   async function run() {
     setBusy(true);setError('');setResult(null);
@@ -327,6 +349,39 @@ export default function CatalogWorkflowsPanel({onClose, initialTab='products',on
                 Manage product sources
               </button>
             </div>
+          </section>}
+          {tab==='products'&&<section className="rounded-xl border border-red-200 bg-white p-5 space-y-3">
+            <h3 className="font-bold text-red-900">Reset catalog data</h3>
+            <p className="text-sm text-gray-600">Archive the entire SQLite database, then remove product listings, canonical identities, offers, ingredient evidence and reviews. Preserve reference ingredients, taxonomies, source settings and API quota history. Saved Gemini decisions are retained in the backup only.</p>
+            <button type="button" className="rounded-lg border px-3 py-2 text-sm font-bold disabled:opacity-50" disabled={resetBusy||Boolean(discoveryJob)} onClick={previewReset}>
+              {resetBusy?'Checking...':'Preview catalog reset'}
+            </button>
+            {resetPreview&&<div role="status" className="border rounded-lg p-3 space-y-2 text-sm">
+              <p className="font-semibold">{resetPreview.records_to_delete} records across {Object.keys(resetPreview.tables||{}).length} catalog tables would be deleted.</p>
+              {resetPreview.active_jobs?.length>0&&<p className="text-red-700">{resetPreview.active_jobs.length} active or not-yet-stopped jobs block reset.</p>}
+              {resetPreview.active_workers?.length>0&&<p className="text-red-700">Active workers: {resetPreview.active_workers.join(', ')}</p>}
+              <details><summary className="cursor-pointer font-semibold">View affected and preserved tables</summary>
+                <div className="mt-2 grid sm:grid-cols-2 gap-2 text-xs">
+                  <div><strong>Delete</strong>{Object.entries(resetPreview.tables||{}).map(([k,v])=><div key={k}>{k}: {v.rows}</div>)}</div>
+                  <div><strong>Preserve</strong>{Object.entries(resetPreview.preserved_tables||{}).map(([k,v])=><div key={k}>{k}: {v}</div>)}</div>
+                </div>
+              </details>
+              {resetPreview.can_reset&&<div className="space-y-2">
+                <label className="block font-semibold">Type RESET ALL PRODUCT DATA to authorize this irreversible live reset.
+                  <input className={input} autoComplete="off" value={resetConfirmation}
+                    onChange={e=>setResetConfirmation(e.target.value)} />
+                </label>
+                <button type="button" className="rounded-lg bg-red-700 px-4 py-2 text-white font-bold disabled:opacity-50"
+                  disabled={resetBusy||resetConfirmation!=='RESET ALL PRODUCT DATA'} onClick={executeReset}>
+                  Back up database and reset catalog
+                </button>
+              </div>}
+              {!resetPreview.can_reset&&<p className="text-red-700">Finish or cancel active jobs and allow their workers to exit before retrying.</p>}
+            </div>}
+            {resetOutcome&&<div role="status" className="border rounded-lg p-3 text-sm">
+              <strong>Catalog reset completed.</strong> {resetOutcome.records_deleted} records cleared.
+              <p className="break-all text-xs">Verified backup: {resetOutcome.backup_path}</p>
+            </div>}
           </section>}
         </div>}
         {tab==='inci'&&<section className="max-w-3xl mx-auto rounded-xl border bg-white p-5 space-y-4">

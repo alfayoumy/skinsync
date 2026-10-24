@@ -69,7 +69,9 @@ def discover_shopify(conn,source_id,start_page=1,pages=0,dry_run=True,on_page=No
     page=start_page
     previous_page_ids=None
     delay=max(0.0,float(source.get('rate_limit_seconds') or 0))
+    from pipeline.catalog_reset import guard_catalog_writes
     while pages==0 or summary['pages_scanned'] < pages:
+        guard_catalog_writes(conn)
         if should_cancel and should_cancel():
             raise ScanCancelled(f"Scan stopped before Shopify page {page}; previous pages are preserved.")
         products=fetch_shopify_page(source['domain'],page,strict=True)
@@ -349,6 +351,15 @@ def _multisource_worker(task_id,source_ids,start_page,pages,dry_run,urls_by_sour
                       status='completed_with_errors' if counters['failed'] else 'completed')
     except Exception as exc:
         fail_task(task_id,str(exc),metadata={'sources':reports})
+    finally:
+        # A cancel request may precede the end of the in-flight Shopify page.
+        # The reset guard only clears after the worker truly exits.
+        state=get_connection()
+        try:
+            state.execute("UPDATE pipeline_tasks SET current_stage='worker_stopped', updated_at=CURRENT_TIMESTAMP WHERE task_id=?",(task_id,))
+            state.commit()
+        finally:
+            state.close()
 
 
 @router.post('/products/discover-multiple')

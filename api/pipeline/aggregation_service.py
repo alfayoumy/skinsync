@@ -43,6 +43,8 @@ def save_observation(conn,observation,identity,classification):
 
 
 def process_source_observation(conn,observation,dry_run=False,legacy_product_id=None,offer_fields=None):
+    from pipeline.catalog_reset import guard_catalog_writes
+    guard_catalog_writes(conn)
     source=get_source(conn,observation.source_id)
     if source['source_type']!=observation.source_type or not url_matches_source(source,observation.source_url):
         raise ValueError('Observation source type or URL does not match the registered source.')

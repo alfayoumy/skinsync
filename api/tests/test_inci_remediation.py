@@ -341,7 +341,7 @@ class TestBulkWaterfallCanonicalArchitecture(unittest.TestCase):
         VALUES (200, 'Hydrating B5 Serum', 'BrandAlpha', 'Serum', 'brandalpha_b5_serum', 1, NULL);
         """)
 
-        # Create two linked retailer offers with NULL ingredients
+        # Create two linked offers, one with a verified full current-store INCI declaration
         cur.execute("""
         INSERT INTO products (id, store_id, title, brand, category, price, product_url, description_html, canonical_product_id, is_skincare, ingredients_raw)
         VALUES (201, 'store1', 'BrandAlpha Hydrating B5 Serum 30ml', 'BrandAlpha', 'Serum', 350.0, 'https://s1.com/b5',
@@ -352,6 +352,9 @@ class TestBulkWaterfallCanonicalArchitecture(unittest.TestCase):
         VALUES (202, 'store2', 'BrandAlpha Hydrating B5 Serum 50ml', 'BrandAlpha', 'Serum', 550.0, 'https://s2.com/b5',
                 '<div>Great serum for hydration!</div>', 200, 1, NULL);
         """)
+        # A verified current-page INCI declaration is required for Tier 1; old HTML alone is not enough.
+        self.store_raw = 'Water, Glycerin, Panthenol, Sodium Hyaluronate, Phenoxyethanol'
+        cur.execute("UPDATE products SET ingredients_raw=?, ingredient_source='store_page_tab' WHERE id=201", (self.store_raw,))
         # This fixture exercises approved identities; unverified/pending cases have separate rejection tests.
         self.conn.execute("UPDATE canonical_products SET identity_status='verified' WHERE id=200")
         from pipeline.canonical_identity_resolver import CanonicalIdentityResolver
@@ -392,17 +395,17 @@ class TestBulkWaterfallCanonicalArchitecture(unittest.TestCase):
         ev_rows = cur.fetchall()
         self.assertTrue(any(r["decision"] == "approved_authoritative" for r in ev_rows))
 
-        # 3. CRITICAL INVARIANT: Linked retailer offers (#201, #202) must NEVER have their ingredients mutated!
+        # 3. CRITICAL INVARIANT: Canonical publication must never mutate retailer offers.
         cur.execute("SELECT id, ingredients_raw FROM products WHERE canonical_product_id = 200;")
-        offer_rows = cur.fetchall()
-        for off in offer_rows:
-            self.assertIsNone(off["ingredients_raw"], f"Offer product #{off['id']} ingredients_raw was mutated by bulk waterfall!")
+        offer_rows = {off['id']: off['ingredients_raw'] for off in cur.fetchall()}
+        self.assertEqual(offer_rows[201], self.store_raw)
+        self.assertIsNone(offer_rows[202])
 
     def test_single_product_rejection_is_reported_as_candidate_only(self):
         product = dict(self.conn.execute("SELECT * FROM products WHERE id=201").fetchone())
         with patch("pipeline.waterfall_inci_resolver.resolve_tier1_store_tab", return_value={
                 "ingredients_raw": "Water, Glycerin, Panthenol, Niacinamide, Phenoxyethanol, ...", "method": "store_page_tab"}):
-            result = execute_inci_waterfall_for_product(product, conn=self.conn, historical_index={},
+            result = execute_inci_waterfall_for_product(product, conn=self.conn,
                 langsearch_enabled=False, allow_tier7=False, write_to_db=True)
         self.assertEqual(result["status"], "candidate_only")
         self.assertFalse(result["published"])
@@ -413,6 +416,9 @@ class TestBulkWaterfallCanonicalArchitecture(unittest.TestCase):
         from pipeline.config import cfg
         raw = "Water, Glycerin, Panthenol, Sodium Hyaluronate, Phenoxyethanol"
         self.conn.execute("INSERT INTO inci_reference (id, brand, product_name, ingredients) VALUES (10, 'BrandAlpha', 'Hydrating B5 Serum', ?)", (raw,))
+        # This isolated Jev test starts with NO existing verified store INCI;
+        # Jev should not run when a trusted declaration is already present.
+        self.conn.execute("UPDATE products SET ingredients_raw=NULL,ingredient_source=NULL WHERE id=201")
         self.conn.execute("UPDATE products SET inci_matched_id=10, inci_matched_name='Hydrating B5 Serum', gate4_jev_status='pending_jev' WHERE id=201")
         self.conn.commit()
         connection = MagicMock(wraps=self.conn)

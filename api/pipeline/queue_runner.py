@@ -276,6 +276,12 @@ class MasterQueueManager:
         }
 
     def start(self, worker: str, config: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
+        from pipeline.catalog_reset import guard_catalog_writes
+        conn=get_connection()
+        try:
+            guard_catalog_writes(conn)
+        finally:
+            conn.close()
         config = config or {}
         worker = worker.lower().strip()
         if worker == "jev":
