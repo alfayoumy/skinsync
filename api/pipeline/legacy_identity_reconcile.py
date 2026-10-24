@@ -125,6 +125,8 @@ def reconcile_legacy_exact(conn,dry_run=True,max_verified=500,queue_failures=Tru
                 offender=next((o for o in group if o['id']==extra.get('conflicting_offer_id')),None)
                 offender=offender or (group[0] if group else None)
                 is_duplicate=reason=='duplicate_canonical_identity'
+                if is_duplicate and can['id']!=min(extra['canonical_ids']):
+                    continue
                 kind='duplicate' if is_duplicate else 'identity'
                 sid='canonical' if is_duplicate or not offender else offender['store_id']
                 source_key=str(can['id']) if sid=='canonical' else str(offender['store_product_id'] or offender['id'])

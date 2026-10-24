@@ -24,7 +24,7 @@ def credentials():
 
 
 def permission_for(path, method):
-    if path.startswith('/admin/workflows/products/verify-existing') and method not in ('GET','HEAD'):
+    if path.startswith(('/admin/workflows/products/verify-existing','/admin/workflows/products/prepare-reviews')) and method not in ('GET','HEAD'):
         return 'identity'
     if path.startswith('/admin/workflows/') and method not in ('GET','HEAD'):
         return 'collection'

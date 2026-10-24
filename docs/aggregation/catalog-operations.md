@@ -1,43 +1,25 @@
-# Catalog operations: four separate jobs
+# Catalog operations — distinct admin workflows
 
-Open **Admin → Catalog operations**. Each tab has an independent scope:
+## Product sources versus Product Reviews
 
-1. **Add & match products** — scans registered product sources, records original
-   product evidence, classifies, and automatically links unambiguous matches.
-   New canonical identities are provisional and do not appear as approved products
-   until separately published. Ambiguous product identities are queued for review.
-   An initial offer may be attached during first ingestion, but no bulk price refresh,
-   INCI waterfall, or AI model worker is triggered.
-   - Shopify sources: bounded catalog-page import, up to 3 pages per request,
-     with explicit starting page. Default is dry-run.
-   - Other sources: paste up to 25 product URLs, each on a separate line.
-   - **Check existing products automatically** tests older canonical matches
-     using exact brand/product identity, hard variant gates, duplicate checks,
-     and conflicting INCI evidence. Clear results can be applied in a bounded
-     batch without individual human review. Inconsistent identities stay for review.
+**Manage product sources:** collection enable/disable, connection diagnostics, source coverage. This is a separate screen from product identity decisions.
 
-2. **Update prices & stock** — Shopify only. Updates existing linked variant offers;
-   unknown variants and mismatched identities are **skipped**, never imported.
-   This never writes canonical INCI or categories. Default is dry-run.
-   Use Add & match products for new products or variants.
+**Product matching reviews:** persisted ambiguous identities, potential duplicate canonicals, conflicting formula evidence, and classification questions. Review only shows saved cases, not read-only preview diagnostics.
 
-3. **Find ingredients** — queries *existing* identity-verified skincare canonical
-   products, not retailer catalogs. Unverified database/web matches are stored
-   as evidence, not authoritative formulas. Select products needing INCI or
-   recheck approved skincare identities. A dry-run reports projected publishability,
-   not actual database changes.
+From Product Reviews, select **Find legacy products needing review**. This creates up to 250 review cases without certifying any product. Repeating it advances through remaining eligible conflicts without duplicating already pending cases. The Add & match products workflow also has **Prepare review cases & open Product Reviews**.
 
-4. **AI review queues** — explicitly start, pause, or stop Jev and Gemini workers.
-   The INCI screen can optionally **stage** uncertain candidates for those queues.
-   Staging a queue item does not execute the worker. An LLM match approval does not
-   replace the exact-source identity verification required before INCI publication.
+## Import from many sources
 
-The old "Canonical identity eligibility" and "Certify exact matches (max 200)"
-controls have been removed from the INCI modal. The previous zero-result preview
-was limited to a very restrictive two-retailer matching heuristic; it was not a
-catalog-wide measure of true product uniqueness. Bulk identity verification now
-belongs to the product workflow.
+Use **Catalog operations → Add & match products**, enable multi-source mode and select all enabled collection sources or any subset.
 
-After installing new code, restart the API and reload the frontend. Start with
-a dry-run scan and an identity verification preview; do not assume changes to
-GitHub update the running local API or its SQLite database automatically.
+Shopify sources scan the requested catalog pages. Other sources collect supplied product URLs (entered as source_id | URL) or URLs already observed. Sources without known URLs or a supported catalog feed are explicitly marked needs_urls; they are NOT reported as successfully crawled. One source's error does not stop the rest. The tracked job reports findings per source.
+
+## Automatic verification
+
+**Find safe exact matches** scans ALL remaining legacy skincare identities and reports total safe candidates. **Apply next 500 safe matches** changes only a bounded number of identity records, reports the actual number saved and the number remaining, and creates pending review cases for conflicts. Repeating it progresses to the next records rather than repeating the first 500. It does not modify ingredient formulas or retail prices.
+
+A product with incompatible variants, conflicting credible INCI, unresolved brands or a duplicate canonical identity is not auto-verified.
+
+## Deployment checklist
+
+Pull latest main, restart the API and rebuild/reload the frontend. Preview legacy identity matches, apply one safe batch and verify the saved count and smaller remaining count. Open Product Reviews to see the persisted cases. Run a multi-source dry run and inspect the outcome for each selected source. GitHub commits and CI do not mutate the running local product database.
