@@ -27,7 +27,14 @@ def policy_hash(conn,source_id):
     root=Path(__file__).parent
     source=dict(conn.execute('SELECT * FROM sources WHERE id=?',(source_id,)).fetchone())
     for key in ('enabled','publish_enabled','last_successful_sync'):source.pop(key,None)
-    files=['source_adapters/__init__.py','source_adapters/extraction.py','canonical_identity_resolver.py','taxonomy_service.py','source_evaluation.py','aggregation_benchmark.py']
+    files=[
+        'source_adapters/__init__.py','source_adapters/extraction.py',
+        'canonical_identity_resolver.py','taxonomy_service.py','brand_registry.py',
+        'identity_gates.py','identity_trust.py','waterfall_readiness.py',
+        'formulation_service.py','source_formulations.py','waterfall_inci_resolver.py',
+        'source_registry.py','offer_service.py','source_http.py',
+        'source_evaluation.py','aggregation_benchmark.py'
+    ]
     payload={'source':source,'code':{p:hashlib.sha256((root/p).read_bytes()).hexdigest() for p in files}}
     return hashlib.sha256(encode(payload).encode()).hexdigest()
 
@@ -60,8 +67,10 @@ def create_evaluation(conn,source_id,reviewer):
 
 def label_example(conn,run_id,observation_id,expected_canonical_id,expected_new,category,is_skincare,reviewer,reason):
     require_review(reviewer,reason)
-    row=conn.execute('SELECT samples FROM source_evaluations WHERE id=?',(run_id,)).fetchone()
+    row=conn.execute('SELECT samples,created_by FROM source_evaluations WHERE id=?',(run_id,)).fetchone()
     if not row or observation_id not in {s['observation']['id'] for s in json.loads(row[0])}:raise ValueError('Observation not in this evaluation.')
+    if reviewer==row['created_by']:
+        raise ValueError('Evaluation labels require an independent reviewer, not the evaluation creator.')
     if expected_new == bool(expected_canonical_id):raise ValueError('Label either a new identity or an existing canonical ID.')
     if expected_canonical_id and not conn.execute('SELECT 1 FROM canonical_products WHERE id=?',(expected_canonical_id,)).fetchone():raise ValueError('Canonical not found.')
     if not conn.execute('SELECT 1 FROM product_taxonomy WHERE label=? AND is_skincare=?',(category,int(is_skincare))).fetchone():raise ValueError('Invalid taxonomy label or skincare classification.')
@@ -77,6 +86,8 @@ def finalize_evaluation(conn,run_id,reviewer):
     if not row:raise ValueError('Evaluation not found.')
     samples=json.loads(row['samples'])
     labels={r['observation_id']:dict(r) for r in conn.execute('SELECT * FROM source_evaluation_labels WHERE run_id=?',(run_id,))}
+    if reviewer==row['created_by'] or reviewer in {v['reviewed_by'] for v in labels.values()}:
+        raise ValueError('Evaluation finalization must be independent of collection and labeling.')
     if len(samples)<MIN_SAMPLES or len(labels)!=len(samples):raise ValueError('At least 100 distinct products and all reviewed labels are required.')
     if len({r['expected_canonical_id'] for r in labels.values() if r['expected_canonical_id']}) + sum(r['expected_new'] for r in labels.values()) < 50:
         raise ValueError('At least 50 distinct reviewed marketed identities are required.')

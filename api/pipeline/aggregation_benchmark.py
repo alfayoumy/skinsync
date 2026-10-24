@@ -53,6 +53,11 @@ def enable_source_rollout(conn,source_id,report,reviewer,notes):
     if not artifact or artifact['source_id']!=source_id:
         raise ValueError('Finalized source-specific evaluation not found.')
     report=json.loads(artifact['report'])
+    creators=conn.execute("""SELECT e.created_by,r.finalized_by FROM source_evaluations e
+        JOIN source_evaluation_results r ON r.run_id=e.id WHERE e.id=?""",(report['evaluation_id'],)).fetchone()
+    labelers={r[0] for r in conn.execute("SELECT DISTINCT reviewed_by FROM source_evaluation_labels WHERE run_id=?",(report['evaluation_id'],))}
+    if reviewer in labelers or reviewer in (creators['created_by'],creators['finalized_by']):
+        raise ValueError('A separate administrator must approve source rollout after independent evaluation.')
     from pipeline.source_evaluation import MIN_SAMPLES,catalog_baseline
     if report.get('reviewed_examples',0)<MIN_SAMPLES or report.get('auto_link_count',0)<50:
         raise ValueError('Insufficient reviewed products or automatic identity links.')

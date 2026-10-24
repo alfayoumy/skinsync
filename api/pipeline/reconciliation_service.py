@@ -27,8 +27,16 @@ def reconcile_catalog(conn):
 
 def live_fingerprint(conn):
     import hashlib,json
-    payload={table:[dict(r) for r in conn.execute('SELECT * FROM '+table+' ORDER BY id')]
-             for table in ('products','canonical_products')}
+    # The preview depends on links, constraints, reviewer decisions and evidence,
+    # not just the two public catalog tables. Any mutation invalidates approval.
+    relevant=('products','canonical_products','product_identity_links',
+              'canonical_product_aliases','canonical_identity_constraints',
+              'canonical_identity_reviews','product_review_queue',
+              'product_offers','inci_audit_evidence','brands','brand_aliases',
+              'product_taxonomy','sources')
+    known={r[0] for r in conn.execute("SELECT name FROM sqlite_master WHERE type='table'")}
+    payload={table:[dict(r) for r in conn.execute('SELECT * FROM '+table+' ORDER BY rowid')]
+             for table in relevant if table in known}
     return hashlib.sha256(json.dumps(payload,sort_keys=True).encode()).hexdigest()
 
 

@@ -162,19 +162,35 @@ class IdentityPublicationSafety(unittest.TestCase):
                 eid=FormulationRepository().record_candidate_evidence(candidate,conn=self.conn)
                 self.conn.execute("UPDATE inci_audit_evidence SET observation_id=?,order_verified=1 WHERE id=?",(oid,eid))
                 labels.append((oid,cid,category))
-        run=create_evaluation(self.conn,'sourcebeauty','admin')['evaluation_id']
+        run=create_evaluation(self.conn,'sourcebeauty','collector')['evaluation_id']
         for oid,cid,category in labels:label_example(self.conn,run,oid,cid,False,category,True,'independent-reviewer','Verified product identity and taxonomy')
         return run
 
     def test_rollout_uses_server_generated_metrics_and_rejects_stale_catalog(self):
         run=self.evaluated_run()
-        result=finalize_evaluation(self.conn,run,'admin')
+        result=finalize_evaluation(self.conn,run,'finalizer')
         self.assertEqual(result['report']['auto_link_count'],100)
         self.assertEqual(result['report']['ordered_inci_sample_count'],100)
-        approved=enable_source_rollout(self.conn,'sourcebeauty',run,'admin','Reviewed fixed evaluation')
+        with self.assertRaisesRegex(ValueError,'separate administrator'):
+            enable_source_rollout(self.conn,'sourcebeauty',run,'independent-reviewer','Self approval is forbidden')
+        approved=enable_source_rollout(self.conn,'sourcebeauty',run,'release-manager','Reviewed fixed evaluation')
         self.assertTrue(approved['publish_enabled'])
         self.conn.execute("UPDATE canonical_products SET canonical_title='Changed' WHERE id=?",(self.cid,))
-        with self.assertRaises(ValueError):enable_source_rollout(self.conn,'sourcebeauty',run,'admin','Stale run')
+        with self.assertRaises(ValueError):enable_source_rollout(self.conn,'sourcebeauty',run,'release-manager','Stale run')
+
+    def test_evaluation_creator_cannot_label_or_finalize_own_evidence(self):
+        run=self.evaluated_run()
+        with self.assertRaisesRegex(ValueError,'independent'):
+            finalize_evaluation(self.conn,run,'collector')
+
+    def test_reconciliation_fingerprint_includes_identity_links(self):
+        self.conn.commit()
+        preview=save_reconciliation_preview(self.conn,'admin')
+        self.conn.commit()
+        self.conn.execute("""INSERT INTO product_identity_links(source_id,source_product_id,canonical_product_id,
+            status,method,evidence,identity_status) VALUES ('sourcebeauty','changed-link',?,'pending','review','{}','legacy_preserved_unverified')""",(self.cid,))
+        with self.assertRaisesRegex(ValueError,'Catalog changed'):
+            persist_reconciliation_findings(self.conn,preview['preview_id'],'admin','Approved original snapshot')
 
     def test_reconciliation_findings_require_same_snapshot_and_preserve_formulas(self):
         self.conn.execute("UPDATE canonical_products SET ingredients_raw=? WHERE id=?",(RAW,self.cid));self.conn.commit()
