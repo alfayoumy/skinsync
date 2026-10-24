@@ -1,6 +1,7 @@
 import { apiFetch } from './apiFetch';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { TestResult } from './ConnectionTests';
+import GeminiDecisionsTable from './GeminiDecisionsTable';
 import useConnectionTests from './useConnectionTests';
 const API = 'http://127.0.0.1:8000/admin/aggregation';
 const categories = ['Cleanser', 'Moisturizer', 'Serum', 'Sunscreen', 'Toner', 'Exfoliator', 'Eye Skincare', 'Lip Care', 'Mask', 'Treatment', 'Body Care', 'Tanning', 'Set', 'Makeup', 'Hair Care', 'Fragrance'];
@@ -329,6 +330,7 @@ export default function AggregationReviewPanel({ onClose, initialSourceId = 'sou
           {savedApplyJob.error_message&&<span className="text-red-700"> · {savedApplyJob.error_message}</span>}
         </p>}
       </section>}
+      {mode === 'reviews' && <GeminiDecisionsTable refreshKey={String(savedApplyTask||'')+'-'+String(savedApplyJob?.status||'')+'-'+String(geminiJob?.status||'')} />}
       {mode === 'reviews' && <section className="grid md:grid-cols-2 gap-4"><div className="bg-white border rounded-xl p-4"><div className="flex justify-between mb-3"><h3 className="font-semibold">{reviewView==='manual'?'Needs manual review':reviewView==='awaiting_gemini'?'Waiting for Gemini':'All pending reviews'} ({total})</h3>
           <button type="button" className="text-xs font-semibold text-purple-700 underline" disabled={reviewsLoading} onClick={()=>refresh().catch(e=>setError(e.message))}>
             {reviewsLoading?'Loading...':'Refresh cases'}

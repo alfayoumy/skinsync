@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { Fragment, useCallback, useEffect, useState } from 'react';
 import { apiFetch } from './apiFetch';
 
 const BASE='http://127.0.0.1:8000/admin/aggregation';
@@ -121,7 +121,7 @@ export default function GeminiDecisionsTable({refreshKey}) {
           <th className="p-3">Applied action</th><th className="p-3">Details</th>
         </tr></thead>
         <tbody className="divide-y divide-gray-200">
-          {rows.map(row=><tbody key={row.review_id}>
+          {rows.map(row=><Fragment key={row.review_id}>
             <tr className="hover:bg-gray-50 align-top">
               <td className="p-3 font-semibold">#{row.review_id}</td>
               <td className="p-3 max-w-64"><div className="font-medium text-gray-900">{row.title}</div>
@@ -158,7 +158,7 @@ export default function GeminiDecisionsTable({refreshKey}) {
                 </div>
               </div>
             </td></tr>}
-          </tbody>)}
+          </Fragment>)}
           {!loading&&!rows.length&&<tr><td colSpan={7} className="p-8 text-center text-gray-500">No saved Gemini verdicts match the filters.</td></tr>}
         </tbody>
       </table>
