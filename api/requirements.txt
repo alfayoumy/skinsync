@@ -6,3 +6,5 @@ python-multipart
 python-dotenv
 # rapidfuzz needed for fuzzy matching
 rapidfuzz
+# MCP stdio client for bounded DonSeTch web research
+mcp>=1.0,<3

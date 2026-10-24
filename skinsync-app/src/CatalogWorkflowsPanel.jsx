@@ -22,7 +22,7 @@ const Metric=({label,value})=><div className="rounded-xl border bg-white p-3">
   <div className="text-xs text-gray-600">{label}</div>
 </div>;
 
-export default function CatalogWorkflowsPanel({onClose, initialTab='products',onOpenSources,onOpenReviews,onOpenIngredients,onOpenQueues}) {
+export default function CatalogWorkflowsPanel({onClose, initialTab='products',onOpenSources,onOpenReviews,onOpenIngredients,onOpenQueues,onOpenInciResearch}) {
   const [tab,setTab]=useState(initialTab);
   const [sources,setSources]=useState([]);
   const [sourceId,setSourceId]=useState('sourcebeauty');
@@ -473,7 +473,10 @@ export default function CatalogWorkflowsPanel({onClose, initialTab='products',on
             <Metric label="Need product identity checks" value={eligibility.blocked_unverified}/>
           </div>}
           <p className="text-xs text-gray-500">Needing identity checks does not mean a manual review is always required. Product matching is handled by the first workflow.</p>
-          <button type="button" className={button} onClick={onOpenIngredients}>Open ingredient lookup</button>
+          <div className="flex flex-wrap gap-2">
+            <button type="button" className={button} onClick={onOpenIngredients}>Open ingredient lookup</button>
+            <button type="button" className="rounded-xl border px-4 py-2 text-sm font-bold" onClick={onOpenInciResearch}>INCI research queue · MCP + Gemini</button>
+          </div>
         </section>}
         {tab==='llm'&&<section className="max-w-3xl mx-auto rounded-xl border bg-white p-5 space-y-4">
           <h3 className="text-lg font-bold">AI review queues</h3>

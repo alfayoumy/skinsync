@@ -2,6 +2,7 @@ import { apiFetch } from './apiFetch';
 import ApiConnectionTests from './ConnectionTests';
 import AggregationReviewPanel from './AggregationReviewPanel';
 import CatalogWorkflowsPanel from './CatalogWorkflowsPanel';
+import InciResearchQueue from './InciResearchQueue';
 import React, { useState, useEffect, useRef } from 'react';
 import { 
   Database, Search, Filter, ShieldCheck, ChevronLeft, ChevronRight, 
@@ -81,12 +82,14 @@ const AdminObservatory = ({ onBackToApp }) => {
 
   // Find Ingredients — Existing Products States
   const [showWaterfallBatchModal, setShowWaterfallBatchModal] = useState(false);
+  const [showInciResearch, setShowInciResearch] = useState(false);
   const [waterfallBatchConfig, setWaterfallBatchConfig] = useState({
     scope: 'unmatched_only', // existing skincare needing ingredients
     limit: null, // null for all, or 50, 200, 1000
     langsearch_enabled: true,
     queue_jev: false,
     queue_gemini: false,
+    queue_inci_research: false,
     max_workers: 6,
     dry_run: true
   });
@@ -902,11 +905,13 @@ const AdminObservatory = ({ onBackToApp }) => {
 
   return (
     <div className="min-h-screen bg-gray-50 text-gray-900 font-sans pb-20">
+      {showInciResearch && <InciResearchQueue onClose={() => setShowInciResearch(false)} />}
       {showAggregationReview && <AggregationReviewPanel key={aggregationPanelMode} mode={aggregationPanelMode} onClose={() => setShowAggregationReview(false)} />}
       {showCatalogWorkflows && <CatalogWorkflowsPanel initialTab={workflowTab} onClose={() => setShowCatalogWorkflows(false)}
         onOpenSources={() => { setShowCatalogWorkflows(false); setAggregationPanelMode('sources'); setShowAggregationReview(true); }}
         onOpenReviews={() => { setShowCatalogWorkflows(false); setAggregationPanelMode('reviews'); setShowAggregationReview(true); }}
         onOpenIngredients={() => { setShowCatalogWorkflows(false); setShowWaterfallBatchModal(true); }}
+        onOpenInciResearch={() => { setShowCatalogWorkflows(false); setShowInciResearch(true); }}
         onOpenQueues={() => { setShowCatalogWorkflows(false); fetchQueueStatus(); setShowQueueModal(true); }} />}
       {/* Left Slide-Over Menu Drawer */}
       {showSideMenu && (
@@ -4186,6 +4191,22 @@ const AdminObservatory = ({ onBackToApp }) => {
                       </div>
                     </label>
                   </div>
+                </div>
+
+                <div className="p-4 rounded-2xl border border-indigo-200 bg-indigo-50/40 space-y-3">
+                  <label className="flex items-start gap-3 cursor-pointer">
+                    <input type="checkbox" className="mt-0.5 h-4 w-4" checked={waterfallBatchConfig.queue_inci_research}
+                      disabled={waterfallBatchStatus?.is_running}
+                      onChange={e=>setWaterfallBatchConfig(prev=>({...prev,queue_inci_research:e.target.checked}))}/>
+                    <div>
+                      <strong className="block text-xs text-gray-900">Fallback research: DonSeTch MCP + Gemini Flash-Lite</strong>
+                      <p className="text-[11px] text-gray-600 mt-1">Only queue verified skincare products still missing accepted INCI after normal waterfall tiers. This does not call Gemini during matching. Research runs separately, is budget-limited and saves candidate evidence only; formula approval always requires manual review.</p>
+                    </div>
+                  </label>
+                  <button type="button" className="px-3 py-2 rounded-lg bg-white border text-xs font-semibold"
+                    onClick={()=>{setShowWaterfallBatchModal(false);setShowInciResearch(true)}}>
+                    Open INCI research queue, confidence scores & reviews
+                  </button>
                 </div>
 
                 {/* Additional Toggles: LangSearch & Dry Run */}
