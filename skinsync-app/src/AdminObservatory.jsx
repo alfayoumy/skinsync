@@ -5,7 +5,7 @@ import {
   Check, AlertTriangle, Activity, Sparkles, CheckCircle2, ArrowRight,
   RefreshCw, SlidersHorizontal, RotateCcw, ArrowUpDown, Tag, DollarSign,
   Layers, Settings2, Plus, Trash2, ListChecks, Zap, Copy, Clock,
-  Cpu, Globe, Server, AlertOctagon, CheckCircle, Menu
+  Cpu, Globe, Server, AlertOctagon, CheckCircle, Menu, Play, Square
 } from 'lucide-react';
 
 const SKINCARE_CATEGORIES = [
@@ -71,6 +71,21 @@ const AdminObservatory = ({ onBackToApp }) => {
   // Left Slide-Over Menu State
   const [showSideMenu, setShowSideMenu] = useState(false);
 
+  // Full INCI Waterfall Batch Engine States
+  const [showWaterfallBatchModal, setShowWaterfallBatchModal] = useState(false);
+  const [waterfallBatchConfig, setWaterfallBatchConfig] = useState({
+    scope: 'unmatched_only', // 'unmatched_only' or 'all_skincare'
+    limit: null, // null for all, or 50, 200, 1000
+    langsearch_enabled: true,
+    queue_jev: true,
+    queue_gemini: true,
+    max_workers: 6,
+    dry_run: false
+  });
+  const [waterfallBatchStatus, setWaterfallBatchStatus] = useState(null);
+  const [batchStarting, setBatchStarting] = useState(false);
+  const [batchCancelling, setBatchCancelling] = useState(false);
+
   // Similar Alternatives Filter States
   const [altCategoryMode, setAltCategoryMode] = useState('same_category'); // 'same_category', 'cross_category', 'specific'
   const [altSelectedCategory, setAltSelectedCategory] = useState('');
@@ -134,6 +149,79 @@ const AdminObservatory = ({ onBackToApp }) => {
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [showSideMenu]);
+
+  const fetchWaterfallBatchStatus = async () => {
+    try {
+      const res = await fetch('http://127.0.0.1:8000/admin/waterfall/batch/status');
+      if (res.ok) {
+        const data = await res.json();
+        setWaterfallBatchStatus(data);
+      }
+    } catch (err) {
+      console.error('Failed to fetch waterfall batch status:', err);
+    }
+  };
+
+  useEffect(() => {
+    fetchWaterfallBatchStatus();
+  }, []);
+
+  useEffect(() => {
+    let interval = null;
+    if (showWaterfallBatchModal || waterfallBatchStatus?.is_running) {
+      fetchWaterfallBatchStatus();
+      interval = setInterval(fetchWaterfallBatchStatus, 2000);
+    }
+    return () => {
+      if (interval) clearInterval(interval);
+    };
+  }, [showWaterfallBatchModal, waterfallBatchStatus?.is_running]);
+
+  const waterfallLogsEndRef = useRef(null);
+  useEffect(() => {
+    if (showWaterfallBatchModal && waterfallLogsEndRef.current) {
+      waterfallLogsEndRef.current.scrollIntoView({ behavior: 'smooth' });
+    }
+  }, [waterfallBatchStatus?.recent_logs, showWaterfallBatchModal]);
+
+  const handleStartWaterfallBatch = async () => {
+    try {
+      setBatchStarting(true);
+      const res = await fetch('http://127.0.0.1:8000/admin/waterfall/batch/start', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(waterfallBatchConfig)
+      });
+      if (res.ok) {
+        await fetchWaterfallBatchStatus();
+      } else {
+        const err = await res.json();
+        alert(err.detail || 'Failed to start waterfall batch');
+      }
+    } catch (err) {
+      console.error('Failed to start batch:', err);
+      alert('Network error starting waterfall batch.');
+    } finally {
+      setBatchStarting(false);
+    }
+  };
+
+  const handleCancelWaterfallBatch = async () => {
+    if (!window.confirm('Are you sure you want to cancel the active waterfall batch run?')) return;
+    try {
+      setBatchCancelling(true);
+      const res = await fetch('http://127.0.0.1:8000/admin/waterfall/batch/cancel', {
+        method: 'POST'
+      });
+      if (res.ok) {
+        await fetchWaterfallBatchStatus();
+      }
+    } catch (err) {
+      console.error('Failed to cancel batch:', err);
+    } finally {
+      setBatchCancelling(false);
+    }
+  };
 
   const handleAddIngredient = async (e) => {
     e.preventDefault();
@@ -747,6 +835,37 @@ const AdminObservatory = ({ onBackToApp }) => {
                     Catalog Pipeline & Whitelist
                   </div>
                   <div className="space-y-2">
+                    {/* Run Full INCI Waterfall */}
+                    <button
+                      onClick={() => {
+                        setShowWaterfallBatchModal(true);
+                        setShowSideMenu(false);
+                      }}
+                      className="w-full p-3 rounded-2xl border border-violet-200 bg-violet-50/70 hover:bg-violet-100 text-violet-950 text-left transition-all flex items-center justify-between group cursor-pointer shadow-xs relative overflow-hidden"
+                    >
+                      {waterfallBatchStatus?.is_running && (
+                        <span className="absolute top-2 right-2 flex h-2 w-2">
+                          <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                          <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+                        </span>
+                      )}
+                      <div className="flex items-center gap-3">
+                        <div className="w-9 h-9 rounded-xl bg-violet-100 text-violet-700 flex items-center justify-center shrink-0 shadow-xs">
+                          <Zap className={`w-4 h-4 ${waterfallBatchStatus?.is_running ? 'animate-bounce text-violet-600' : ''}`} />
+                        </div>
+                        <div>
+                          <div className="text-xs font-bold flex items-center gap-1.5">
+                            <span>Run Full INCI Waterfall</span>
+                            {waterfallBatchStatus?.is_running && (
+                              <span className="px-1.5 py-0.2 rounded-full text-[9px] bg-emerald-100 text-emerald-800 font-black animate-pulse">RUNNING</span>
+                            )}
+                          </div>
+                          <div className="text-[11px] text-violet-700/80 mt-0.5">7-Tier Batch INCI Resolver & Queues</div>
+                        </div>
+                      </div>
+                      <ChevronRight className="w-4 h-4 text-violet-600 group-hover:translate-x-0.5 transition shrink-0" />
+                    </button>
+
                     {/* Whitelist Manager */}
                     <button
                       onClick={() => {
@@ -871,6 +990,23 @@ const AdminObservatory = ({ onBackToApp }) => {
           </div>
 
           <div className="flex items-center gap-2.5">
+            {waterfallBatchStatus?.is_running && (
+              <button
+                onClick={() => setShowWaterfallBatchModal(true)}
+                className="flex items-center gap-2 px-3 py-2 rounded-xl bg-violet-50 hover:bg-violet-100 border border-violet-200 text-violet-900 text-xs font-bold transition shadow-xs cursor-pointer animate-pulse"
+                title="View active Waterfall Batch run"
+              >
+                <span className="w-2 h-2 rounded-full bg-emerald-500 animate-ping" />
+                <span className="hidden sm:inline">Waterfall:</span>
+                <span className="font-black text-violet-700">
+                  {Math.round(waterfallBatchStatus.progress_percent ?? waterfallBatchStatus.pct_complete ?? 0)}%
+                </span>
+                <span className="text-[10px] text-violet-600 hidden md:inline">
+                  ({waterfallBatchStatus.processed_items}/{waterfallBatchStatus.total_items})
+                </span>
+              </button>
+            )}
+
             <button
               onClick={onBackToApp}
               className="bg-gray-900 hover:bg-purple-600 text-white font-bold text-xs px-4 py-2.5 rounded-xl transition-all flex items-center gap-1.5 cursor-pointer shadow-sm"
@@ -3554,6 +3690,495 @@ const AdminObservatory = ({ onBackToApp }) => {
                 Close
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Full INCI Waterfall Batch Modal */}
+      {showWaterfallBatchModal && (
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-3 sm:p-5 overflow-y-auto animate-fade-in">
+          <div className="bg-white rounded-3xl shadow-2xl border border-gray-200 max-w-4xl w-full max-h-[92vh] flex flex-col overflow-hidden my-auto">
+            
+            {/* Header */}
+            <div className="p-5 border-b border-gray-200 flex items-center justify-between bg-gradient-to-r from-violet-50/60 via-purple-50/30 to-white shrink-0">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-violet-600 to-indigo-600 text-white flex items-center justify-center shadow-md shrink-0">
+                  <Zap className="w-5 h-5" />
+                </div>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <h2 className="text-base sm:text-lg font-black text-gray-900">Full INCI Waterfall Batch Engine</h2>
+                    <span className="bg-violet-100 text-violet-800 text-[10px] font-bold px-2 py-0.5 rounded-full border border-violet-200">
+                      7 Tiers + Queue Dispatch
+                    </span>
+                  </div>
+                  <p className="text-xs text-gray-500 mt-0.5">
+                    Resolve skincare ingredients through store data, OpenBeauty, SkinSAFE, LangSearch, and cascade to Jev & Gemini queues.
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={() => setShowWaterfallBatchModal(false)}
+                className="w-8 h-8 rounded-full bg-gray-100 hover:bg-gray-200 text-gray-500 flex items-center justify-center transition cursor-pointer shrink-0"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            {/* Modal Body - Scrollable */}
+            <div className="p-5 sm:p-6 overflow-y-auto space-y-6 flex-1 bg-gray-50/40">
+
+              {/* Progress & Live Telemetry Panel */}
+              <div className="p-5 bg-white rounded-2xl border border-gray-200 shadow-xs space-y-4">
+                <div className="flex flex-wrap items-center justify-between gap-3 pb-3 border-b border-gray-100">
+                  <div className="flex items-center gap-2.5">
+                    {waterfallBatchStatus?.is_running ? (
+                      <span className="px-2.5 py-1 rounded-full text-xs font-black bg-emerald-100 text-emerald-800 border border-emerald-300 flex items-center gap-1.5">
+                        <span className="w-2 h-2 rounded-full bg-emerald-500 animate-ping" />
+                        RUNNING
+                      </span>
+                    ) : waterfallBatchStatus?.status === 'completed' ? (
+                      <span className="px-2.5 py-1 rounded-full text-xs font-black bg-emerald-100 text-emerald-800 border border-emerald-300 flex items-center gap-1.5">
+                        <CheckCircle2 className="w-3.5 h-3.5" />
+                        COMPLETED
+                      </span>
+                    ) : waterfallBatchStatus?.status === 'cancelled' ? (
+                      <span className="px-2.5 py-1 rounded-full text-xs font-black bg-amber-100 text-amber-800 border border-amber-300 flex items-center gap-1.5">
+                        <AlertOctagon className="w-3.5 h-3.5" />
+                        CANCELLED
+                      </span>
+                    ) : (
+                      <span className="px-2.5 py-1 rounded-full text-xs font-black bg-gray-100 text-gray-700 border border-gray-300 flex items-center gap-1.5">
+                        <Clock className="w-3.5 h-3.5" />
+                        IDLE / READY
+                      </span>
+                    )}
+
+                    <div className="text-xs font-bold text-gray-800">
+                      Stage: <span className="text-violet-700">{waterfallBatchStatus?.current_stage || 'Ready to Run'}</span>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-3">
+                    <div className="text-xs text-gray-500 flex items-center gap-1">
+                      <Clock className="w-3.5 h-3.5 text-gray-400" />
+                      <span>Duration:</span>
+                      <span className="font-mono font-bold text-gray-700">
+                        {waterfallBatchStatus?.duration_seconds ? `${waterfallBatchStatus.duration_seconds}s` : '0.0s'}
+                      </span>
+                    </div>
+
+                    {waterfallBatchStatus?.is_running && (
+                      <button
+                        onClick={handleCancelWaterfallBatch}
+                        disabled={batchCancelling}
+                        className="py-1 px-3 bg-red-50 hover:bg-red-100 text-red-700 border border-red-200 rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
+                        title="Cancel active waterfall batch execution"
+                      >
+                        <Square className="w-3 h-3 text-red-600 fill-red-600" />
+                        <span>{batchCancelling ? 'Stopping...' : 'Stop Run'}</span>
+                      </button>
+                    )}
+                  </div>
+                </div>
+
+                {/* Progress Bar & Current Product */}
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between text-xs font-medium text-gray-600">
+                    <span className="truncate max-w-[70%] text-gray-500">
+                      Product: <span className="font-semibold text-gray-800">{waterfallBatchStatus?.current_product || 'Waiting for execution'}</span>
+                    </span>
+                    <span className="font-mono font-bold text-violet-700 shrink-0">
+                      {Math.round(waterfallBatchStatus?.progress_percent ?? waterfallBatchStatus?.pct_complete ?? 0)}%
+                      <span className="text-gray-400 font-normal ml-1">
+                        ({waterfallBatchStatus?.processed_items || 0} / {waterfallBatchStatus?.total_items || 0})
+                      </span>
+                    </span>
+                  </div>
+
+                  <div className="w-full h-3 bg-gray-100 rounded-full overflow-hidden p-0.5 border border-gray-200 shadow-inner">
+                    <div
+                      className="h-full rounded-full transition-all duration-300 bg-gradient-to-r from-violet-600 via-purple-600 to-indigo-600"
+                      style={{
+                        width: `${Math.min(100, Math.max(0, waterfallBatchStatus?.progress_percent ?? waterfallBatchStatus?.pct_complete ?? 0))}%`
+                      }}
+                    />
+                  </div>
+                </div>
+
+                {/* Tier Breakdown Matrix Cards */}
+                <div className="pt-2">
+                  <div className="text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-2">
+                    Resolution Breakdown by Tier
+                  </div>
+                  <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-2 text-center">
+                    <div className="p-2.5 rounded-xl bg-emerald-50 border border-emerald-200">
+                      <div className="text-[10px] font-bold text-emerald-800">Total Resolved</div>
+                      <div className="text-lg font-black text-emerald-700 mt-0.5">
+                        {waterfallBatchStatus?.stats?.resolved || 0}
+                      </div>
+                    </div>
+
+                    <div className="p-2.5 rounded-xl bg-gray-50 border border-gray-200">
+                      <div className="text-[10px] font-bold text-gray-600">Tier 1: Store</div>
+                      <div className="text-base font-bold text-gray-800 mt-0.5">
+                        {(waterfallBatchStatus?.stats?.by_method?.store_page_tab || 0) + (waterfallBatchStatus?.stats?.by_method?.historical_store_scrape || 0) + (waterfallBatchStatus?.stats?.by_method?.tier1_store_match || 0)}
+                      </div>
+                    </div>
+
+                    <div className="p-2.5 rounded-xl bg-gray-50 border border-gray-200">
+                      <div className="text-[10px] font-bold text-gray-600">Tier 2: OpenBeauty</div>
+                      <div className="text-base font-bold text-gray-800 mt-0.5">
+                        {waterfallBatchStatus?.stats?.by_method?.openbeauty_api || waterfallBatchStatus?.stats?.by_method?.tier2_openbeauty || 0}
+                      </div>
+                    </div>
+
+                    <div className="p-2.5 rounded-xl bg-gray-50 border border-gray-200">
+                      <div className="text-[10px] font-bold text-gray-600">Tier 3: SkinSAFE</div>
+                      <div className="text-base font-bold text-gray-800 mt-0.5">
+                        {waterfallBatchStatus?.stats?.by_method?.skinsafe_high_match || waterfallBatchStatus?.stats?.by_method?.tier3_skinsafe || 0}
+                      </div>
+                    </div>
+
+                    <div className="p-2.5 rounded-xl bg-gray-50 border border-gray-200">
+                      <div className="text-[10px] font-bold text-gray-600">Tier 4: LangSearch</div>
+                      <div className="text-base font-bold text-gray-800 mt-0.5">
+                        {waterfallBatchStatus?.stats?.by_method?.langsearch_web_search || waterfallBatchStatus?.stats?.by_method?.tier4_langsearch || 0}
+                      </div>
+                    </div>
+
+                    <div className="p-2.5 rounded-xl bg-gray-50 border border-gray-200">
+                      <div className="text-[10px] font-bold text-gray-600">Tier 5: Whitelist</div>
+                      <div className="text-base font-bold text-gray-800 mt-0.5">
+                        {waterfallBatchStatus?.stats?.by_method?.whitelist_description || waterfallBatchStatus?.stats?.by_method?.tier5_whitelist || 0}
+                      </div>
+                    </div>
+
+                    <div className="p-2.5 rounded-xl bg-gray-50 border border-gray-200">
+                      <div className="text-[10px] font-bold text-gray-600">Tier 6: Cluster</div>
+                      <div className="text-base font-bold text-gray-800 mt-0.5">
+                        {waterfallBatchStatus?.stats?.by_method?.cluster_propagation || waterfallBatchStatus?.stats?.by_method?.tier6_cluster || 0}
+                      </div>
+                    </div>
+
+                    <div className="p-2.5 rounded-xl bg-violet-50 border border-violet-200">
+                      <div className="text-[10px] font-bold text-violet-800">Tier 7: LLM Queue</div>
+                      <div className="text-base font-black text-violet-700 mt-0.5">
+                        {waterfallBatchStatus?.stats?.by_method?.tier7_queued || waterfallBatchStatus?.stats?.by_method?.tier7_pending_llm || 0}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Configurations & Queue Dispatch Controls */}
+              <div className="p-5 bg-white rounded-2xl border border-gray-200 shadow-xs space-y-5">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <SlidersHorizontal className="w-4 h-4 text-violet-600" />
+                    <h3 className="text-xs font-bold text-gray-900 uppercase tracking-wider">
+                      Batch Configuration & LLM Queue Routing
+                    </h3>
+                  </div>
+                  {waterfallBatchStatus?.is_running && (
+                    <span className="text-[11px] text-amber-600 font-medium">
+                      (Run in progress - settings locked)
+                    </span>
+                  )}
+                </div>
+
+                {/* Scope Selection */}
+                <div>
+                  <label className="text-xs font-bold text-gray-700 block mb-2">
+                    Execution Scope:
+                  </label>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <button
+                      type="button"
+                      disabled={waterfallBatchStatus?.is_running}
+                      onClick={() => setWaterfallBatchConfig(prev => ({ ...prev, scope: 'unmatched_only' }))}
+                      className={`p-3 rounded-xl border text-left transition cursor-pointer disabled:opacity-60 ${
+                        waterfallBatchConfig.scope === 'unmatched_only'
+                          ? 'border-violet-600 bg-violet-50/70 shadow-xs'
+                          : 'border-gray-200 bg-white hover:bg-gray-50'
+                      }`}
+                    >
+                      <div className="flex items-center justify-between mb-1">
+                        <span className="text-xs font-bold text-gray-900">Unmatched & Unverified Only</span>
+                        {waterfallBatchConfig.scope === 'unmatched_only' && (
+                          <Check className="w-4 h-4 text-violet-600" />
+                        )}
+                      </div>
+                      <p className="text-[11px] text-gray-500">
+                        Targets missing or unverified legacy ingredient listings. Skips verified high-confidence items.
+                      </p>
+                    </button>
+
+                    <button
+                      type="button"
+                      disabled={waterfallBatchStatus?.is_running}
+                      onClick={() => setWaterfallBatchConfig(prev => ({ ...prev, scope: 'all_skincare' }))}
+                      className={`p-3 rounded-xl border text-left transition cursor-pointer disabled:opacity-60 ${
+                        waterfallBatchConfig.scope === 'all_skincare'
+                          ? 'border-violet-600 bg-violet-50/70 shadow-xs'
+                          : 'border-gray-200 bg-white hover:bg-gray-50'
+                      }`}
+                    >
+                      <div className="flex items-center justify-between mb-1">
+                        <span className="text-xs font-bold text-gray-900">All Active Skincare Catalog</span>
+                        {waterfallBatchConfig.scope === 'all_skincare' && (
+                          <Check className="w-4 h-4 text-violet-600" />
+                        )}
+                      </div>
+                      <p className="text-[11px] text-gray-500">
+                        Forces full re-evaluation across the entire skincare catalog through all 7 waterfall tiers.
+                      </p>
+                    </button>
+                  </div>
+                </div>
+
+                {/* Tier 7 Separate Queues: Jev & Gemini */}
+                <div className="p-4 rounded-2xl border border-violet-200 bg-gradient-to-br from-violet-50/40 via-purple-50/20 to-white space-y-3">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <div className="text-xs font-bold text-violet-950 flex items-center gap-1.5">
+                        <Zap className="w-3.5 h-3.5 text-violet-600" />
+                        <span>Tier 7: SkinSAFE Ambiguous Candidate Queue Dispatch</span>
+                      </div>
+                      <p className="text-[11px] text-violet-700/80 mt-0.5">
+                        When Tiers 1-6 fail, ambiguous matches (token overlap ≥ 0.60) are staged for LLM verification. Configure separate queue targets:
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+                    {/* Queue to Jev Toggle */}
+                    <label className={`p-3 rounded-xl border transition flex items-start gap-3 cursor-pointer ${
+                      waterfallBatchConfig.queue_jev 
+                        ? 'border-purple-300 bg-purple-50/60 shadow-xs' 
+                        : 'border-gray-200 bg-gray-50/50 opacity-70'
+                    }`}>
+                      <input
+                        type="checkbox"
+                        checked={waterfallBatchConfig.queue_jev}
+                        disabled={waterfallBatchStatus?.is_running}
+                        onChange={(e) => setWaterfallBatchConfig(prev => ({ ...prev, queue_jev: e.target.checked }))}
+                        className="mt-0.5 rounded text-purple-600 focus:ring-purple-500 h-4 w-4"
+                      />
+                      <div className="space-y-0.5">
+                        <div className="flex items-center gap-1.5">
+                          <span className="text-xs font-bold text-gray-900">Queue to Jev INCI Agent</span>
+                          <span className="text-[9px] font-mono bg-purple-100 text-purple-800 px-1.5 py-0.2 rounded font-bold">pending_jev</span>
+                        </div>
+                        <p className="text-[11px] text-gray-500">
+                          Sets <code className="text-purple-700 bg-purple-100/60 px-1 py-0.2 rounded font-mono text-[10px]">gate4_jev_status = 'pending_jev'</code> for autonomous verification by Jev.
+                        </p>
+                      </div>
+                    </label>
+
+                    {/* Queue to Gemini Flash Toggle */}
+                    <label className={`p-3 rounded-xl border transition flex items-start gap-3 cursor-pointer ${
+                      waterfallBatchConfig.queue_gemini 
+                        ? 'border-indigo-300 bg-indigo-50/60 shadow-xs' 
+                        : 'border-gray-200 bg-gray-50/50 opacity-70'
+                    }`}>
+                      <input
+                        type="checkbox"
+                        checked={waterfallBatchConfig.queue_gemini}
+                        disabled={waterfallBatchStatus?.is_running}
+                        onChange={(e) => setWaterfallBatchConfig(prev => ({ ...prev, queue_gemini: e.target.checked }))}
+                        className="mt-0.5 rounded text-indigo-600 focus:ring-indigo-500 h-4 w-4"
+                      />
+                      <div className="space-y-0.5">
+                        <div className="flex items-center gap-1.5">
+                          <span className="text-xs font-bold text-gray-900">Queue to Gemini Flash INCI Agent</span>
+                          <span className="text-[9px] font-mono bg-indigo-100 text-indigo-800 px-1.5 py-0.2 rounded font-bold">pending_gemini</span>
+                        </div>
+                        <p className="text-[11px] text-gray-500">
+                          Sets <code className="text-indigo-700 bg-indigo-100/60 px-1 py-0.2 rounded font-mono text-[10px]">gate4_gemini_status = 'pending_gemini'</code> for rapid verification by Gemini.
+                        </p>
+                      </div>
+                    </label>
+                  </div>
+                </div>
+
+                {/* Additional Toggles: LangSearch & Dry Run */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  {/* LangSearch Engine */}
+                  <label className={`p-3 rounded-xl border transition flex items-start gap-3 cursor-pointer ${
+                    waterfallBatchConfig.langsearch_enabled 
+                      ? 'border-emerald-300 bg-emerald-50/50' 
+                      : 'border-gray-200 bg-gray-50/50 opacity-70'
+                  }`}>
+                    <input
+                      type="checkbox"
+                      checked={waterfallBatchConfig.langsearch_enabled}
+                      disabled={waterfallBatchStatus?.is_running}
+                      onChange={(e) => setWaterfallBatchConfig(prev => ({ ...prev, langsearch_enabled: e.target.checked }))}
+                      className="mt-0.5 rounded text-emerald-600 focus:ring-emerald-500 h-4 w-4"
+                    />
+                    <div>
+                      <div className="text-xs font-bold text-gray-900 flex items-center gap-1">
+                        <span>Tier 4: LangSearch Web Engine</span>
+                        <span className="text-[9px] font-bold text-emerald-700 bg-emerald-100 px-1.5 py-0.2 rounded">5 RPS Cap</span>
+                      </div>
+                      <p className="text-[11px] text-gray-500 mt-0.5">
+                        Queries Google with inkeedecoder.com priority & incibeauty.com blacklisted.
+                      </p>
+                    </div>
+                  </label>
+
+                  {/* Dry Run Simulation */}
+                  <label className={`p-3 rounded-xl border transition flex items-start gap-3 cursor-pointer ${
+                    waterfallBatchConfig.dry_run 
+                      ? 'border-amber-300 bg-amber-50/50' 
+                      : 'border-gray-200 bg-gray-50/50'
+                  }`}>
+                    <input
+                      type="checkbox"
+                      checked={waterfallBatchConfig.dry_run}
+                      disabled={waterfallBatchStatus?.is_running}
+                      onChange={(e) => setWaterfallBatchConfig(prev => ({ ...prev, dry_run: e.target.checked }))}
+                      className="mt-0.5 rounded text-amber-600 focus:ring-amber-500 h-4 w-4"
+                    />
+                    <div>
+                      <div className="text-xs font-bold text-gray-900 flex items-center gap-1">
+                        <span>Dry Run Simulation</span>
+                        {waterfallBatchConfig.dry_run && (
+                          <span className="text-[9px] font-bold text-amber-800 bg-amber-100 px-1.5 py-0.2 rounded">Safe Mode</span>
+                        )}
+                      </div>
+                      <p className="text-[11px] text-gray-500 mt-0.5">
+                        Executes all logic & generates logs without writing updates to SQLite database.
+                      </p>
+                    </div>
+                  </label>
+                </div>
+
+                {/* Limit Presets */}
+                <div>
+                  <div className="flex items-center justify-between mb-2">
+                    <label className="text-xs font-bold text-gray-700">
+                      Batch Sample Limit:
+                    </label>
+                    <span className="text-[11px] text-gray-500 font-mono">
+                      Current: {waterfallBatchConfig.limit ? `${waterfallBatchConfig.limit} products` : 'All Products (Uncapped)'}
+                    </span>
+                  </div>
+                  <div className="grid grid-cols-4 gap-2">
+                    {[
+                      { label: '50 Fast', val: 50 },
+                      { label: '200 Batch', val: 200 },
+                      { label: '1,000 Deep', val: 1000 },
+                      { label: 'All Catalog', val: null }
+                    ].map(preset => (
+                      <button
+                        key={preset.label}
+                        type="button"
+                        disabled={waterfallBatchStatus?.is_running}
+                        onClick={() => setWaterfallBatchConfig(prev => ({ ...prev, limit: preset.val }))}
+                        className={`py-2 px-2 rounded-xl text-xs font-bold transition border cursor-pointer disabled:opacity-50 ${
+                          waterfallBatchConfig.limit === preset.val
+                            ? 'bg-violet-600 text-white border-violet-600 shadow-xs'
+                            : 'bg-gray-50 hover:bg-gray-100 text-gray-700 border-gray-200'
+                        }`}
+                      >
+                        {preset.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Launch Action Button */}
+                <div className="pt-2">
+                  <button
+                    onClick={handleStartWaterfallBatch}
+                    disabled={waterfallBatchStatus?.is_running || batchStarting}
+                    className="w-full py-3.5 px-4 bg-gradient-to-r from-violet-600 via-purple-600 to-indigo-600 hover:from-violet-700 hover:to-indigo-700 text-white text-xs sm:text-sm font-black rounded-2xl shadow-md hover:shadow-lg transition flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
+                  >
+                    {batchStarting ? (
+                      <>
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                        <span>Initializing Waterfall Batch...</span>
+                      </>
+                    ) : waterfallBatchStatus?.is_running ? (
+                      <>
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                        <span>Batch Execution Active ({Math.round(waterfallBatchStatus?.progress_percent || 0)}%)...</span>
+                      </>
+                    ) : (
+                      <>
+                        <Play className="w-4 h-4 fill-white" />
+                        <span>
+                          Start Full INCI Waterfall Batch
+                          {waterfallBatchConfig.dry_run ? ' (Dry Run)' : ''}
+                        </span>
+                      </>
+                    )}
+                  </button>
+                </div>
+              </div>
+
+              {/* Real-time Rolling Log Console */}
+              <div className="p-4 bg-gray-950 rounded-2xl border border-gray-800 shadow-inner space-y-2">
+                <div className="flex items-center justify-between text-gray-400 pb-2 border-b border-gray-800 text-xs">
+                  <div className="flex items-center gap-2 font-mono">
+                    <span className="w-2.5 h-2.5 rounded-full bg-red-500/80 inline-block" />
+                    <span className="w-2.5 h-2.5 rounded-full bg-yellow-500/80 inline-block" />
+                    <span className="w-2.5 h-2.5 rounded-full bg-green-500/80 inline-block" />
+                    <span className="ml-1 text-[11px] font-semibold text-gray-300">
+                      Live Telemetry Stream
+                    </span>
+                  </div>
+                  <span className="text-[10px] font-mono text-gray-500">
+                    {waterfallBatchStatus?.recent_logs?.length || 0} events logged
+                  </span>
+                </div>
+
+                <div className="h-48 overflow-y-auto font-mono text-[11px] space-y-1 text-gray-300 scrollbar-thin">
+                  {(!waterfallBatchStatus?.recent_logs || waterfallBatchStatus.recent_logs.length === 0) ? (
+                    <div className="text-gray-600 italic py-6 text-center">
+                      Ready to execute. Start the batch above to stream live waterfall resolution logs.
+                    </div>
+                  ) : (
+                    waterfallBatchStatus.recent_logs.map((log, idx) => {
+                      let colorClass = 'text-gray-300';
+                      if (log.includes('[TIER1_') || log.includes('[STORE]')) colorClass = 'text-blue-300';
+                      else if (log.includes('[OPENBEAUTY]')) colorClass = 'text-cyan-300';
+                      else if (log.includes('[SKINSAFE]')) colorClass = 'text-emerald-300 font-semibold';
+                      else if (log.includes('[LANGSEARCH]')) colorClass = 'text-amber-300 font-semibold';
+                      else if (log.includes('[WHITELIST')) colorClass = 'text-teal-300';
+                      else if (log.includes('[CLUSTER')) colorClass = 'text-purple-300';
+                      else if (log.includes('[TIER7_LLM_QUEUED]')) colorClass = 'text-violet-300 font-bold';
+                      else if (log.includes('ERROR') || log.includes('failed')) colorClass = 'text-red-400 font-bold';
+
+                      return (
+                        <div key={idx} className={`leading-relaxed break-all ${colorClass}`}>
+                          {log}
+                        </div>
+                      );
+                    })
+                  )}
+                  <div ref={waterfallLogsEndRef} />
+                </div>
+              </div>
+
+            </div>
+
+            {/* Modal Footer */}
+            <div className="p-4 bg-white border-t border-gray-200 flex items-center justify-between shrink-0 text-xs text-gray-500">
+              <div className="flex items-center gap-2">
+                <span className="w-2 h-2 rounded-full bg-violet-600" />
+                <span>Multi-Pass Architecture: Individual Waterfall → Cluster Propagation → LLM Queue Arbitration</span>
+              </div>
+              <button
+                onClick={() => setShowWaterfallBatchModal(false)}
+                className="px-4 py-2 bg-gray-900 hover:bg-gray-800 text-white font-bold rounded-xl transition cursor-pointer"
+              >
+                Close Modal
+              </button>
+            </div>
+
           </div>
         </div>
       )}

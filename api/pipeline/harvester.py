@@ -8,7 +8,7 @@ import logging
 from datetime import datetime
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
-from pipeline.db_manager import get_connection
+from pipeline.db_manager import get_connection, load_stores_from_db
 from pipeline.inci_matcher import (
     extract_ingredients_from_html,
     parse_and_normalize_ingredients,
@@ -29,44 +29,35 @@ except ImportError:
 from pipeline.logging_config import setup_logging, get_logger
 logger = get_logger("skincare_pipeline.harvester")
 
-STORES = [
-    {
-        "id": "sourcebeauty",
-        "name": "Source Beauty",
-        "domain": "sourcebeauty.com",
-        "rate_limit_delay": 0.3
-    },
-    {
-        "id": "feel22",
-        "name": "Feel22 Egypt",
-        "domain": "eg.feel22.com",
-        "rate_limit_delay": 0.3
-    },
-    {
-        "id": "bloompharmacy",
-        "name": "Bloom Pharmacy",
-        "domain": "www.bloompharmacy.com",
-        "rate_limit_delay": 0.3
-    },
-    {
-        "id": "drdawood",
-        "name": "Dr Dawood Pharmacy",
-        "domain": "drdawoodstore.com",
-        "rate_limit_delay": 0.4
-    },
-    {
-        "id": "bashrety",
-        "name": "Bashrety",
-        "domain": "bashrety.tv",
-        "rate_limit_delay": 0.4
-    },
-    {
-        "id": "rawafrican",
-        "name": "Raw African",
-        "domain": "rawafrican.net",
-        "rate_limit_delay": 0.4
-    }
-]
+# Default per-store polite crawling rate limit delays
+_STORE_DELAYS = {
+    "sourcebeauty": 0.3,
+    "feel22": 0.3,
+    "bloompharmacy": 0.3,
+    "drdawood": 0.4,
+    "bashrety": 0.4,
+    "rawafrican": 0.4
+}
+
+def get_configured_stores(conn=None) -> list:
+    """
+    Loads active stores dynamically from the stores database table.
+    """
+    try:
+        db_stores = load_stores_from_db(conn=conn, active_only=True)
+        if db_stores:
+            result = []
+            for s in db_stores:
+                s_dict = dict(s)
+                s_dict["rate_limit_delay"] = _STORE_DELAYS.get(s_dict["id"], 0.4)
+                result.append(s_dict)
+            return result
+    except Exception as e:
+        logger.warning(f"Could not load stores from database table: {e}")
+    return []
+
+# Dynamically loaded store list referenced by pipeline
+STORES = get_configured_stores()
 
 def fetch_shopify_page(domain: str, page: int, retries: int = None) -> list:
     """
@@ -416,7 +407,8 @@ def sync_all_stores(max_pages_per_store: int = None, fields: list = None, task_i
         max_pages_per_store = cfg.DEFAULT_MAX_PAGES_PER_STORE
     conn = get_connection()
     results = []
-    for store_cfg in STORES:
+    stores_to_sync = get_configured_stores(conn=conn) or STORES
+    for store_cfg in stores_to_sync:
         res = sync_store(store_cfg, max_pages=max_pages_per_store, conn=conn, fields=fields, task_id=task_id)
         results.append(res)
     conn.close()
@@ -431,14 +423,15 @@ def refresh_catalog(store_id: str = None, fields: list = None, max_pages: int = 
     if max_pages is None:
         max_pages = cfg.DEFAULT_MAX_PAGES_PER_STORE
 
-    target_stores = STORES
+    available_stores = get_configured_stores() or STORES
+    target_stores = available_stores
     if store_id and str(store_id).lower().strip() not in ("all", "*", ""):
         sid = str(store_id).lower().strip()
-        target_stores = [s for s in STORES if s["id"] == sid]
+        target_stores = [s for s in available_stores if s["id"] == sid]
         if not target_stores:
             return {
                 "status": "error",
-                "message": f"Store ID '{store_id}' not found. Available stores: {[s['id'] for s in STORES]}"
+                "message": f"Store ID '{store_id}' not found. Available stores: {[s['id'] for s in available_stores]}"
             }
 
     own_task = False

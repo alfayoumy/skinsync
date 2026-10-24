@@ -5,6 +5,9 @@ cross-store linking audit, INCI matching gate logs, and similar product breakdow
 
 import json
 import re
+import uuid
+import threading
+from collections import deque
 import sqlite3
 from datetime import datetime, timezone
 from typing import Dict, List, Any, Optional
@@ -980,13 +983,216 @@ class WaterfallResolveRequest(BaseModel):
     limit: Optional[int] = None
     revalidate_all: bool = False
     langsearch_enabled: bool = True
+    queue_jev: bool = True
+    queue_gemini: bool = True
     dry_run: bool = False
+
+
+class WaterfallBatchConfigRequest(BaseModel):
+    scope: str = "unmatched_only"  # "unmatched_only" or "all_skincare"
+    limit: Optional[int] = None
+    langsearch_enabled: bool = True
+    queue_jev: bool = True
+    queue_gemini: bool = True
+    max_workers: int = 6
+    dry_run: bool = False
+
+
+class WaterfallBatchRunner:
+    def __init__(self):
+        self._lock = threading.Lock()
+        self.is_running = False
+        self.task_id = None
+        self.status = "idle"  # idle, running, completed, cancelled, failed
+        self.started_at = None
+        self.completed_at = None
+        self.duration_seconds = 0.0
+        self.total_items = 0
+        self.processed_items = 0
+        self.progress_percent = 0.0
+        self.current_stage = "Idle"
+        self.current_product = ""
+        self.stats = {
+            "total_processed": 0,
+            "resolved": 0,
+            "unresolved": 0,
+            "by_method": {}
+        }
+        self.recent_logs = deque(maxlen=100)
+        self.config = {}
+        self.cancel_event = threading.Event()
+        self._thread = None
+
+    def start(self, config: Dict[str, Any]) -> str:
+        with self._lock:
+            if self.is_running:
+                raise HTTPException(status_code=409, detail=f"A waterfall batch task is already running (Task ID: {self.task_id}). Please wait or cancel it first.")
+
+            task_id = f"waterfall_{datetime.now(timezone.utc).strftime('%Y%m%d_%H%M%S')}_{uuid.uuid4().hex[:6]}"
+            self.task_id = task_id
+            self.is_running = True
+            self.status = "running"
+            self.started_at = datetime.now(timezone.utc).isoformat()
+            self.completed_at = None
+            self.duration_seconds = 0.0
+            self.total_items = 0
+            self.processed_items = 0
+            self.progress_percent = 0.0
+            self.current_stage = "Initializing"
+            self.current_product = "Scanning catalog for targets..."
+            self.stats = {"total_processed": 0, "resolved": 0, "unresolved": 0, "by_method": {}}
+            self.recent_logs.clear()
+            self.config = config
+            self.cancel_event.clear()
+
+            self._add_log(f"Started waterfall batch (Scope: {config.get('scope')}, Limit: {config.get('limit') or 'All'}, LangSearch: {config.get('langsearch_enabled')}, Jev: {config.get('queue_jev')}, Gemini: {config.get('queue_gemini')}, Workers: {config.get('max_workers', 6)})")
+
+            self._thread = threading.Thread(target=self._execute_batch, args=(task_id, config), daemon=True)
+            self._thread.start()
+            return task_id
+
+    def cancel(self) -> bool:
+        with self._lock:
+            if not self.is_running:
+                return False
+            self.cancel_event.set()
+            self._add_log("Cancellation requested by admin user.")
+            return True
+
+    def get_status(self) -> Dict[str, Any]:
+        with self._lock:
+            duration = self.duration_seconds
+            if self.started_at:
+                try:
+                    st = datetime.fromisoformat(self.started_at)
+                    end_time = datetime.fromisoformat(self.completed_at) if self.completed_at else datetime.now(timezone.utc)
+                    duration = round(max(0.0, (end_time - st).total_seconds()), 1)
+                except Exception:
+                    pass
+            return {
+                "is_running": self.is_running,
+                "task_id": self.task_id,
+                "status": self.status,
+                "started_at": self.started_at,
+                "completed_at": self.completed_at,
+                "duration_seconds": duration,
+                "total_items": self.total_items,
+                "processed_items": self.processed_items,
+                "progress_percent": round(self.progress_percent, 1),
+                "current_stage": self.current_stage,
+                "current_product": self.current_product,
+                "stats": self.stats,
+                "recent_logs": list(self.recent_logs),
+                "config": self.config
+            }
+
+    def _add_log(self, msg: str):
+        ts = datetime.now(timezone.utc).strftime("%H:%M:%S")
+        self.recent_logs.append(f"[{ts}] {msg}")
+
+    def _execute_batch(self, task_id: str, config: Dict[str, Any]):
+        try:
+            from pipeline.waterfall_inci_resolver import run_waterfall_pipeline
+
+            def progress_cb(stage, processed, total, stats, current_product, last_outcome=None):
+                with self._lock:
+                    self.current_stage = stage
+                    self.processed_items = processed
+                    self.total_items = total
+                    if total > 0:
+                        self.progress_percent = min(100.0, round((processed / total) * 100, 1))
+                    if current_product:
+                        self.current_product = current_product
+                    if stats:
+                        self.stats = stats
+                    if last_outcome:
+                        status_tag = last_outcome.get("status")
+                        m = last_outcome.get("method") or "empty"
+                        title = last_outcome.get("title") or current_product
+                        pid = last_outcome.get("product_id")
+                        if status_tag == "resolved":
+                            self._add_log(f"[{m.upper()}] #{pid} {title[:45]}")
+                        elif status_tag == "pending_llm_verification":
+                            self._add_log(f"[TIER7_LLM_QUEUED] #{pid} {title[:45]}")
+
+            revalidate = (config.get("scope") == "all_skincare")
+            res_stats = run_waterfall_pipeline(
+                limit=config.get("limit"),
+                revalidate_all=revalidate,
+                langsearch_enabled=config.get("langsearch_enabled", True),
+                queue_jev=config.get("queue_jev", True),
+                queue_gemini=config.get("queue_gemini", True),
+                max_workers=config.get("max_workers", 6),
+                dry_run=config.get("dry_run", False),
+                progress_callback=progress_cb,
+                cancel_event=self.cancel_event
+            )
+
+            with self._lock:
+                self.stats = res_stats
+                self.status = "cancelled" if self.cancel_event.is_set() else "completed"
+                self.completed_at = datetime.now(timezone.utc).isoformat()
+                self.is_running = False
+                self.progress_percent = 100.0 if not self.cancel_event.is_set() else self.progress_percent
+                self._add_log(f"Batch execution finished: {self.status}. Total resolved: {res_stats.get('resolved', 0)}/{self.total_items}")
+
+            if not config.get("dry_run", False) and res_stats.get("resolved", 0) > 0:
+                try:
+                    from services.catalog_service import load_catalog_from_db
+                    load_catalog_from_db()
+                except Exception as ex:
+                    logger.warning(f"Failed to reload catalog cache: {ex}")
+
+        except Exception as e:
+            logger.error(f"Waterfall batch failed: {e}", exc_info=True)
+            with self._lock:
+                self.status = "failed"
+                self.is_running = False
+                self.completed_at = datetime.now(timezone.utc).isoformat()
+                self._add_log(f"ERROR: {str(e)}")
+
+
+_waterfall_batch_runner = WaterfallBatchRunner()
+
+
+@router.post("/waterfall/batch/start")
+def start_waterfall_batch_endpoint(req: WaterfallBatchConfigRequest):
+    """
+    Initiates asynchronous multi-pass waterfall INCI resolution across skincare products
+    with progress tracking, cancellation support, and custom queue toggles.
+    """
+    task_id = _waterfall_batch_runner.start(req.dict())
+    return {
+        "status": "started",
+        "task_id": task_id,
+        "config": req.dict()
+    }
+
+
+@router.get("/waterfall/batch/status")
+def get_waterfall_batch_status_endpoint():
+    """
+    Returns real-time progress, tier outcome counters, duration, and rolling logs for the waterfall batch.
+    """
+    return _waterfall_batch_runner.get_status()
+
+
+@router.post("/waterfall/batch/cancel")
+def cancel_waterfall_batch_endpoint():
+    """
+    Signals graceful cancellation to the active waterfall batch resolution task.
+    """
+    success = _waterfall_batch_runner.cancel()
+    return {
+        "status": "cancelling" if success else "not_running",
+        "message": "Cancellation request acknowledged." if success else "No waterfall batch task is currently running."
+    }
 
 
 @router.post("/waterfall/resolve")
 def run_waterfall_endpoint(req: WaterfallResolveRequest):
     """
-    Executes the 6-tier waterfall INCI resolution pipeline across skincare products.
+    Executes the waterfall INCI resolution pipeline synchronously across skincare products.
     """
     from pipeline.waterfall_inci_resolver import run_waterfall_pipeline
     conn = get_connection()
@@ -996,6 +1202,8 @@ def run_waterfall_endpoint(req: WaterfallResolveRequest):
             limit=req.limit,
             revalidate_all=req.revalidate_all,
             langsearch_enabled=req.langsearch_enabled,
+            queue_jev=req.queue_jev,
+            queue_gemini=req.queue_gemini,
             dry_run=req.dry_run
         )
         if stats.get("resolved", 0) > 0 and not req.dry_run:

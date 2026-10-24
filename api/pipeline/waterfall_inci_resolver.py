@@ -809,18 +809,26 @@ def resolve_tier7_pending_llm(
     candidate: Dict[str, Any],
     conn=None,
     write_to_db: bool = True,
-    dry_run: bool = False
-) -> Dict[str, Any]:
+    dry_run: bool = False,
+    queue_jev: bool = True,
+    queue_gemini: bool = True
+) -> Optional[Dict[str, Any]]:
     """
-    Tier 7: Queues ambiguous SkinSAFE candidate from Tier 3 for Jev and Gemini verification
+    Tier 7: Queues ambiguous SkinSAFE candidate from Tier 3 for Jev and/or Gemini verification
     when Tiers 4, 5, and 6 have all failed to find ingredients.
-    Sets gate4_jev_status='pending_jev', gate4_gemini_status='pending_gemini',
-    records inci_matched_id and inci_matched_name, and sets ingredient_source='pending_tier7_match'.
+    Selectively sets gate4_jev_status='pending_jev' and gate4_gemini_status='pending_gemini'
+    based on separate toggles.
     Leaves ingredients_raw as NULL until an LLM verifier (Jev or Gemini) approves it.
     """
+    if not (queue_jev or queue_gemini):
+        return None
+
     cand_id = candidate["id"]
     cand_name = candidate["product_name"]
     conf = round(candidate.get("confidence", 0.0), 3)
+
+    jev_val = 'pending_jev' if queue_jev else None
+    gemini_val = 'pending_gemini' if queue_gemini else None
 
     if not dry_run and conn and product_id and write_to_db:
         cur = conn.cursor()
@@ -829,13 +837,13 @@ def resolve_tier7_pending_llm(
         SET inci_matched_id = ?,
             inci_matched_name = ?,
             inci_token_score = ?,
-            gate4_jev_status = 'pending_jev',
-            gate4_gemini_status = 'pending_gemini',
+            gate4_jev_status = CASE WHEN ? IS NOT NULL THEN ? ELSE gate4_jev_status END,
+            gate4_gemini_status = CASE WHEN ? IS NOT NULL THEN ? ELSE gate4_gemini_status END,
             gate4_cross_status = 'pending',
             ingredient_source = 'pending_tier7_match',
             updated_at = CURRENT_TIMESTAMP
         WHERE id = ?;
-        """, (cand_id, cand_name, conf, product_id))
+        """, (cand_id, cand_name, conf, jev_val, jev_val, gemini_val, gemini_val, product_id))
         conn.commit()
 
     return {
@@ -845,7 +853,9 @@ def resolve_tier7_pending_llm(
         "inci_matched_id": cand_id,
         "inci_matched_name": cand_name,
         "confidence": conf,
-        "candidate": candidate
+        "candidate": candidate,
+        "queue_jev": queue_jev,
+        "queue_gemini": queue_gemini
     }
 
 # ==============================================================================
@@ -858,6 +868,8 @@ def execute_inci_waterfall_for_product(
     historical_index: Optional[Dict[str, str]] = None,
     langsearch_enabled: bool = True,
     allow_tier7: bool = True,
+    queue_jev: bool = True,
+    queue_gemini: bool = True,
     dry_run: bool = False,
     write_to_db: bool = False
 ) -> Dict[str, Any]:
@@ -903,8 +915,11 @@ def execute_inci_waterfall_for_product(
         res = resolve_tier6_cluster_propagation(p_id, canonical_id, brand, title, conn=conn)
 
     # Tier 7: Pending Jev & Pending Gemini from Tier 3 if Tiers 4, 5, 6 all fail
-    if not res and allow_tier7 and tier3_candidate:
-        return resolve_tier7_pending_llm(p_id, tier3_candidate, conn=conn, write_to_db=write_to_db, dry_run=dry_run)
+    if not res and allow_tier7 and (queue_jev or queue_gemini) and tier3_candidate:
+        return resolve_tier7_pending_llm(
+            p_id, tier3_candidate, conn=conn, write_to_db=write_to_db, dry_run=dry_run,
+            queue_jev=queue_jev, queue_gemini=queue_gemini
+        )
 
     # If successfully resolved, parse actives and commit
     if res and res.get("ingredients_raw"):
@@ -1355,14 +1370,19 @@ def run_waterfall_pipeline(
     limit: Optional[int] = None,
     revalidate_all: bool = False,
     langsearch_enabled: bool = True,
+    queue_jev: bool = True,
+    queue_gemini: bool = True,
     dry_run: bool = False,
-    max_workers: int = 6
+    max_workers: int = 6,
+    progress_callback: Optional[Any] = None,
+    cancel_event: Optional[threading.Event] = None
 ) -> Dict[str, Any]:
     """
     Executes the waterfall resolution across all skincare products using a high-performance
-    two-pass single-writer architecture:
+    multi-pass architecture with real-time telemetry, cancellation support, and custom queue toggles:
     - Pass 1: Multi-threaded read execution of Tiers 1-5 with batched main-thread writes.
     - Pass 2: Cross-store cluster propagation (Tier 6) with batch executemany.
+    - Pass 3: Tier 7 Pending Jev & Gemini arbitration with separate queue toggles.
     """
     should_close = False
     if conn is None:
@@ -1402,7 +1422,7 @@ def run_waterfall_pipeline(
         rows = [dict(r) for r in cur.fetchall()]
 
         total_to_process = len(rows)
-        logger.info(f"--- Starting INCI Waterfall Resolution Pipeline ({total_to_process} products, {max_workers} workers) ---")
+        logger.info(f"--- Starting INCI Waterfall Resolution Pipeline ({total_to_process} products, {max_workers} workers, LangSearch: {langsearch_enabled}, Jev: {queue_jev}, Gemini: {queue_gemini}) ---")
 
         stats = {
             "total_processed": total_to_process,
@@ -1410,6 +1430,19 @@ def run_waterfall_pipeline(
             "unresolved": 0,
             "by_method": {}
         }
+
+        if progress_callback:
+            try:
+                progress_callback(
+                    stage="Initializing",
+                    processed=0,
+                    total=total_to_process,
+                    stats=stats,
+                    current_product="Preparing catalog batches...",
+                    last_outcome=None
+                )
+            except Exception:
+                pass
 
         # --- PASS 1: Tiers 1-5 (Multi-threaded read, main-thread batched write) ---
         logger.info("--- PASS 1: Executing Tiers 1-5 (Store Tab, OpenBeauty, SkinSAFE High, LangSearch, Whitelist) ---")
@@ -1422,6 +1455,8 @@ def run_waterfall_pipeline(
                 historical_index=historical_index,
                 langsearch_enabled=langsearch_enabled,
                 allow_tier7=False,
+                queue_jev=queue_jev,
+                queue_gemini=queue_gemini,
                 dry_run=dry_run,
                 write_to_db=False
             )
@@ -1433,7 +1468,16 @@ def run_waterfall_pipeline(
         with ThreadPoolExecutor(max_workers=max_workers) as executor:
             futures = {executor.submit(worker_task, row): row for row in rows}
             for fut in as_completed(futures):
+                if cancel_event and cancel_event.is_set():
+                    logger.info("Waterfall execution cancelled by user request during Pass 1.")
+                    for f in futures:
+                        f.cancel()
+                    break
+
                 processed_so_far += 1
+                row_item = futures[fut]
+                prod_title = row_item.get("title") or ""
+                res = None
                 try:
                     res = fut.result()
                     if res.get("status") == "resolved":
@@ -1446,6 +1490,7 @@ def run_waterfall_pipeline(
                                 res["ingredients_parsed"],
                                 res["actives"],
                                 res["method"],
+                                res.get("ingredient_source_url"),
                                 res["product_id"]
                             ))
                     else:
@@ -1462,11 +1507,25 @@ def run_waterfall_pipeline(
                         ingredients_parsed = ?,
                         actives = ?,
                         ingredient_source = ?,
+                        ingredient_source_url = ?,
                         updated_at = CURRENT_TIMESTAMP
                     WHERE id = ?;
                     """, batch_updates)
                     conn.commit()
                     batch_updates.clear()
+
+                if progress_callback and (processed_so_far % 5 == 0 or processed_so_far == total_to_process):
+                    try:
+                        progress_callback(
+                            stage="Pass 1: Tiers 1-5 (Store, OpenBeauty, SkinSAFE, LangSearch, Whitelist)",
+                            processed=processed_so_far,
+                            total=total_to_process,
+                            stats=stats,
+                            current_product=prod_title,
+                            last_outcome=res
+                        )
+                    except Exception:
+                        pass
 
                 if processed_so_far % 100 == 0 or processed_so_far == total_to_process:
                     logger.info(f"Pass 1 Progress: [{processed_so_far}/{total_to_process}] Resolved: {stats['resolved']} | {stats['by_method']}")
@@ -1478,6 +1537,7 @@ def run_waterfall_pipeline(
                 ingredients_parsed = ?,
                 actives = ?,
                 ingredient_source = ?,
+                ingredient_source_url = ?,
                 updated_at = CURRENT_TIMESTAMP
             WHERE id = ?;
             """, batch_updates)
@@ -1488,138 +1548,205 @@ def run_waterfall_pipeline(
         close_all_thread_connections()
 
         # --- PASS 2: Tier 6 Cluster Propagation ---
-        logger.info("--- PASS 2: Executing Tier 6 Same-Product Cluster Propagation ---")
-        cur.execute("""
-        SELECT id, canonical_product_id, brand, title, ingredients_raw, ingredients_parsed, actives
-        FROM products
-        WHERE is_skincare = 1 AND ingredients_raw IS NOT NULL AND TRIM(ingredients_raw) != ''
-          AND ingredient_source NOT IN ('cluster_propagation', 'unmatched');
-        """)
-        resolved_rows = cur.fetchall()
-        canonical_map = {}
-        brand_title_map = {}
-        for r in resolved_rows:
-            cid = r[1]
-            b = (r[2] or "").strip().lower()
-            t = (r[3] or "").strip()
-            raw_i = r[4]
-            pars_i = r[5]
-            act_i = r[6]
-            if not raw_i:
-                continue
-            if cid and cid not in canonical_map:
-                canonical_map[cid] = (raw_i, pars_i, act_i, t)
-            clean_t = re.sub(r'\b\d+\s*(?:ml|g|gm|oz|fl\s*oz)\b|[()\[\]\+]', ' ', t, flags=re.I)
-            clean_t = re.sub(r'[^a-zA-Z0-9\s]', ' ', clean_t).strip().lower()
-            if b and len(clean_t) >= 5 and (b, clean_t) not in brand_title_map:
-                brand_title_map[(b, clean_t)] = (raw_i, pars_i, act_i)
+        if not (cancel_event and cancel_event.is_set()):
+            logger.info("--- PASS 2: Executing Tier 6 Same-Product Cluster Propagation ---")
+            if progress_callback:
+                try:
+                    progress_callback(
+                        stage="Pass 2: Tier 6 Same-Product Cluster Propagation",
+                        processed=processed_so_far,
+                        total=total_to_process,
+                        stats=stats,
+                        current_product="Scanning product clusters...",
+                        last_outcome=None
+                    )
+                except Exception:
+                    pass
 
-        cur.execute("""
-        SELECT id, title, brand, canonical_product_id
-        FROM products
-        WHERE is_skincare = 1 AND (ingredients_raw IS NULL OR TRIM(ingredients_raw) = '');
-        """)
-        still_empty = [dict(r) for r in cur.fetchall()]
-        logger.info(f"Found {len(still_empty)} products still missing ingredients for cluster propagation...")
-
-        propagated_updates = []
-        for p in still_empty:
-            matched = None
-            cid = p.get("canonical_product_id")
-            title = p.get("title") or ""
-            target_v = set(get_vehicles(title))
-
-            if cid and cid in canonical_map:
-                cand_raw, cand_pars, cand_act, cand_title = canonical_map[cid]
-                cand_v = set(get_vehicles(cand_title))
-                if not (target_v and cand_v and target_v.isdisjoint(cand_v)):
-                    matched = (cand_raw, cand_pars, cand_act)
-            else:
-                b = (p.get("brand") or "").strip().lower()
-                clean_t = re.sub(r'\b\d+\s*(?:ml|g|gm|oz|fl\s*oz)\b|[()\[\]\+]', ' ', title, flags=re.I)
+            cur.execute("""
+            SELECT id, canonical_product_id, brand, title, ingredients_raw, ingredients_parsed, actives
+            FROM products
+            WHERE is_skincare = 1 AND ingredients_raw IS NOT NULL AND TRIM(ingredients_raw) != ''
+              AND ingredient_source NOT IN ('cluster_propagation', 'unmatched');
+            """)
+            resolved_rows = cur.fetchall()
+            canonical_map = {}
+            brand_title_map = {}
+            for r in resolved_rows:
+                cid = r[1]
+                b = (r[2] or "").strip().lower()
+                t = (r[3] or "").strip()
+                raw_i = r[4]
+                pars_i = r[5]
+                act_i = r[6]
+                if not raw_i:
+                    continue
+                if cid and cid not in canonical_map:
+                    canonical_map[cid] = (raw_i, pars_i, act_i, t)
+                clean_t = re.sub(r'\b\d+\s*(?:ml|g|gm|oz|fl\s*oz)\b|[()\[\]\+]', ' ', t, flags=re.I)
                 clean_t = re.sub(r'[^a-zA-Z0-9\s]', ' ', clean_t).strip().lower()
-                if b and len(clean_t) >= 5 and (b, clean_t) in brand_title_map:
-                    matched = brand_title_map[(b, clean_t)]
+                if b and len(clean_t) >= 5 and (b, clean_t) not in brand_title_map:
+                    brand_title_map[(b, clean_t)] = (raw_i, pars_i, act_i)
 
-            if matched:
-                raw_ings, pars_ings, acts = matched
-                raw_ings = sanitize_inci_list(raw_ings)
-                if not pars_ings or not acts:
-                    p_tokens, act_list = parse_and_normalize_ingredients(raw_ings)
-                    pars_ings = json.dumps(p_tokens)
-                    acts = json.dumps(act_list)
-                elif isinstance(pars_ings, list):
-                    pars_ings = json.dumps(pars_ings)
-                elif isinstance(acts, list):
-                    acts = json.dumps(acts)
+            cur.execute("""
+            SELECT id, title, brand, canonical_product_id
+            FROM products
+            WHERE is_skincare = 1 AND (ingredients_raw IS NULL OR TRIM(ingredients_raw) = '');
+            """)
+            all_empty = [dict(r) for r in cur.fetchall()]
+            target_pids = set(r['id'] for r in rows)
+            still_empty = [p for p in all_empty if p["id"] in target_pids]
+            logger.info(f"Found {len(still_empty)} target products still missing ingredients for cluster propagation...")
 
-                if not dry_run:
-                    propagated_updates.append((
-                        raw_ings,
-                        pars_ings,
-                        acts,
-                        p["id"]
-                    ))
-                stats["resolved"] += 1
-                stats["unresolved"] = max(0, stats["unresolved"] - 1)
-                stats["by_method"]["cluster_propagation"] = stats["by_method"].get("cluster_propagation", 0) + 1
+            propagated_updates = []
+            for p in still_empty:
+                if cancel_event and cancel_event.is_set():
+                    break
+                matched = None
+                cid = p.get("canonical_product_id")
+                title = p.get("title") or ""
+                target_v = set(get_vehicles(title))
 
-        if propagated_updates and not dry_run:
-            cur.executemany("""
-            UPDATE products
-            SET ingredients_raw = ?,
-                ingredients_parsed = ?,
-                actives = ?,
-                ingredient_source = 'cluster_propagation',
-                updated_at = CURRENT_TIMESTAMP
-            WHERE id = ?;
-            """, propagated_updates)
-            conn.commit()
+                if cid and cid in canonical_map:
+                    cand_raw, cand_pars, cand_act, cand_title = canonical_map[cid]
+                    cand_v = set(get_vehicles(cand_title))
+                    if not (target_v and cand_v and target_v.isdisjoint(cand_v)):
+                        matched = (cand_raw, cand_pars, cand_act)
+                else:
+                    b = (p.get("brand") or "").strip().lower()
+                    clean_t = re.sub(r'\b\d+\s*(?:ml|g|gm|oz|fl\s*oz)\b|[()\[\]\+]', ' ', title, flags=re.I)
+                    clean_t = re.sub(r'[^a-zA-Z0-9\s]', ' ', clean_t).strip().lower()
+                    if b and len(clean_t) >= 5 and (b, clean_t) in brand_title_map:
+                        matched = brand_title_map[(b, clean_t)]
 
-        logger.info(f"Pass 2 Complete: Propagated {len(propagated_updates)} ingredients via cluster propagation.")
+                if matched:
+                    raw_ings, pars_ings, acts = matched
+                    raw_ings = sanitize_inci_list(raw_ings)
+                    if not pars_ings or not acts:
+                        p_tokens, act_list = parse_and_normalize_ingredients(raw_ings)
+                        pars_ings = json.dumps(p_tokens)
+                        acts = json.dumps(act_list)
+                    elif isinstance(pars_ings, list):
+                        pars_ings = json.dumps(pars_ings)
+                    elif isinstance(acts, list):
+                        acts = json.dumps(acts)
+
+                    if not dry_run:
+                        propagated_updates.append((
+                            raw_ings,
+                            pars_ings,
+                            acts,
+                            p["id"]
+                        ))
+                    stats["resolved"] += 1
+                    stats["unresolved"] = max(0, stats["unresolved"] - 1)
+                    stats["by_method"]["cluster_propagation"] = stats["by_method"].get("cluster_propagation", 0) + 1
+
+            if propagated_updates and not dry_run:
+                cur.executemany("""
+                UPDATE products
+                SET ingredients_raw = ?,
+                    ingredients_parsed = ?,
+                    actives = ?,
+                    ingredient_source = 'cluster_propagation',
+                    updated_at = CURRENT_TIMESTAMP
+                WHERE id = ?;
+                """, propagated_updates)
+                conn.commit()
+
+            logger.info(f"Pass 2 Complete: Propagated {len(propagated_updates)} ingredients via cluster propagation.")
 
         # --- PASS 3: Tier 7 Pending Jev & Pending Gemini from Tier 3 ---
-        logger.info("--- PASS 3: Executing Tier 7 Pending Jev & Pending Gemini Arbitration ---")
-        cur.execute("""
-        SELECT id, title, brand
-        FROM products
-        WHERE is_skincare = 1 AND (ingredients_raw IS NULL OR TRIM(ingredients_raw) = '');
-        """)
-        empty_after_tier6 = [dict(r) for r in cur.fetchall()]
-        logger.info(f"Evaluating {len(empty_after_tier6)} products still empty after Tiers 1-6 for Tier 7 LLM queue...")
+        if (queue_jev or queue_gemini) and not (cancel_event and cancel_event.is_set()):
+            logger.info(f"--- PASS 3: Executing Tier 7 LLM Queueing (Jev: {queue_jev}, Gemini: {queue_gemini}) ---")
+            if progress_callback:
+                try:
+                    progress_callback(
+                        stage="Pass 3: Tier 7 LLM Queueing",
+                        processed=processed_so_far,
+                        total=total_to_process,
+                        stats=stats,
+                        current_product="Evaluating ambiguous candidates for Jev & Gemini queues...",
+                        last_outcome=None
+                    )
+                except Exception:
+                    pass
 
-        tier7_updates = []
-        for p in empty_after_tier6:
-            pid = p["id"]
-            brand = p.get("brand") or ""
-            title = p.get("title") or ""
-            _, tier3_cand = resolve_tier3_skinsafe_with_candidate(brand, title, conn=conn)
-            if tier3_cand:
-                cand_id = tier3_cand["id"]
-                cand_name = tier3_cand["product_name"]
-                conf = round(tier3_cand.get("confidence", 0.0), 3)
-                if not dry_run:
-                    tier7_updates.append((cand_id, cand_name, conf, pid))
-                stats["resolved"] += 1
-                stats["unresolved"] = max(0, stats["unresolved"] - 1)
-                stats["by_method"]["tier7_pending_llm"] = stats["by_method"].get("tier7_pending_llm", 0) + 1
+            cur.execute("""
+            SELECT id, title, brand
+            FROM products
+            WHERE is_skincare = 1 AND (ingredients_raw IS NULL OR TRIM(ingredients_raw) = '');
+            """)
+            all_empty_after_tier6 = [dict(r) for r in cur.fetchall()]
+            target_pids = set(r['id'] for r in rows)
+            empty_after_tier6 = [p for p in all_empty_after_tier6 if p["id"] in target_pids]
+            logger.info(f"Evaluating {len(empty_after_tier6)} target products still empty after Tiers 1-6 for Tier 7 LLM queue...")
 
-        if tier7_updates and not dry_run:
-            cur.executemany("""
-            UPDATE products
-            SET inci_matched_id = ?,
-                inci_matched_name = ?,
-                inci_token_score = ?,
-                gate4_jev_status = 'pending_jev',
-                gate4_gemini_status = 'pending_gemini',
-                gate4_cross_status = 'pending',
-                ingredient_source = 'pending_tier7_match',
-                updated_at = CURRENT_TIMESTAMP
-            WHERE id = ?;
-            """, tier7_updates)
-            conn.commit()
+            tier7_updates = []
+            jev_val = 'pending_jev' if queue_jev else None
+            gemini_val = 'pending_gemini' if queue_gemini else None
 
-        logger.info(f"Pass 3 Complete: Queued {len(tier7_updates)} products for Jev & Gemini semantic verification.")
+            for p in empty_after_tier6:
+                if cancel_event and cancel_event.is_set():
+                    break
+                pid = p["id"]
+                brand = p.get("brand") or ""
+                title = p.get("title") or ""
+                _, tier3_cand = resolve_tier3_skinsafe_with_candidate(brand, title, conn=conn)
+                if tier3_cand:
+                    cand_id = tier3_cand["id"]
+                    cand_name = tier3_cand["product_name"]
+                    conf = round(tier3_cand.get("confidence", 0.0), 3)
+                    if not dry_run:
+                        tier7_updates.append((cand_id, cand_name, conf, jev_val, jev_val, gemini_val, gemini_val, pid))
+                    stats["resolved"] += 1
+                    stats["unresolved"] = max(0, stats["unresolved"] - 1)
+                    stats["by_method"]["tier7_pending_llm"] = stats["by_method"].get("tier7_pending_llm", 0) + 1
+                    if progress_callback:
+                        try:
+                            progress_callback(
+                                stage="Pass 3: Tier 7 LLM Queueing",
+                                processed=processed_so_far,
+                                total=total_to_process,
+                                stats=stats,
+                                current_product=title,
+                                last_outcome={"status": "pending_llm_verification", "method": "tier7_pending_llm", "product_id": pid, "title": title}
+                            )
+                        except Exception:
+                            pass
+
+            if tier7_updates and not dry_run:
+                cur.executemany("""
+                UPDATE products
+                SET inci_matched_id = ?,
+                    inci_matched_name = ?,
+                    inci_token_score = ?,
+                    gate4_jev_status = CASE WHEN ? IS NOT NULL THEN ? ELSE gate4_jev_status END,
+                    gate4_gemini_status = CASE WHEN ? IS NOT NULL THEN ? ELSE gate4_gemini_status END,
+                    gate4_cross_status = 'pending',
+                    ingredient_source = 'pending_tier7_match',
+                    updated_at = CURRENT_TIMESTAMP
+                WHERE id = ?;
+                """, tier7_updates)
+                conn.commit()
+
+            logger.info(f"Pass 3 Complete: Queued {len(tier7_updates)} products for Jev & Gemini semantic verification.")
+        elif not (queue_jev or queue_gemini):
+            logger.info("Pass 3 Skipped: Both queue_jev and queue_gemini toggles are disabled.")
+
+        if progress_callback:
+            try:
+                progress_callback(
+                    stage="Complete",
+                    processed=total_to_process,
+                    total=total_to_process,
+                    stats=stats,
+                    current_product="Completed all passes.",
+                    last_outcome=None
+                )
+            except Exception:
+                pass
+
         logger.info(f"--- INCI Waterfall Resolution Pipeline Complete ---")
         logger.info(f"Final Stats: Resolved {stats['resolved']}/{total_to_process} ({stats['resolved']/max(total_to_process, 1)*100:.1f}%) | Breakdown: {stats['by_method']}")
         return stats

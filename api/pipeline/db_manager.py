@@ -27,139 +27,10 @@ def get_connection(db_path=DB_PATH):
     conn.execute("PRAGMA busy_timeout = 60000;")
     return conn
 
-# Default authoritative seeds for ingredient synonyms
-DEFAULT_SYNONYMS = [
-    # Carriers / Solvents
-    ('aqua', 'water', 'carrier'),
-    ('eau', 'water', 'carrier'),
-    ('purified water', 'water', 'carrier'),
-    ('deionized water', 'water', 'carrier'),
-
-    # Fragrances / Sensitizers
-    ('parfum', 'fragrance', 'fragrance'),
-    ('perfume', 'fragrance', 'fragrance'),
-    ('fragrance (parfum)', 'fragrance', 'fragrance'),
-
-    # Alcohols
-    ('alcohol denat.', 'alcohol denat', 'alcohol'),
-    ('alcohol denat', 'alcohol denat', 'alcohol'),
-    ('denatured alcohol', 'alcohol denat', 'alcohol'),
-
-    # Surfactants / Cleansers
-    ('sodium lauryl sulfate', 'sls', 'surfactant'),
-    ('sodium laureth sulfate', 'sles', 'surfactant'),
-
-    # Oils & Emollients
-    ('cocos nucifera (coconut) oil', 'coconut oil', 'oil'),
-    ('cocos nucifera oil', 'coconut oil', 'oil'),
-    ('coconut oil', 'coconut oil', 'oil'),
-    ('theobroma cacao (cocoa) seed butter', 'cocoa butter', 'butter'),
-    ('theobroma cacao seed butter', 'cocoa butter', 'butter'),
-    ('cocoa butter', 'cocoa butter', 'butter'),
-    ('butyrospermum parkii (shea) butter', 'shea butter', 'butter'),
-    ('butyrospermum parkii butter', 'shea butter', 'butter'),
-    ('shea butter', 'shea butter', 'butter'),
-    ('simmondsia chinensis (jojoba) seed oil', 'jojoba oil', 'oil'),
-    ('simmondsia chinensis seed oil', 'jojoba oil', 'oil'),
-    ('jojoba oil', 'jojoba oil', 'oil'),
-    ('tea tree oil', 'tea tree oil', 'oil'),
-    ('tea tree', 'tea tree oil', 'oil'),
-    ('melaleuca alternifolia', 'tea tree oil', 'oil'),
-    ('melaleuca alternifolia (tea tree) leaf oil', 'tea tree oil', 'oil'),
-
-    # Actives / Soothing
-    ('aloe barbadensis', 'aloe vera', 'botanical'),
-    ('aloe barbadensis leaf juice', 'aloe vera', 'botanical'),
-    ('aloe vera', 'aloe vera', 'botanical'),
-    ('centella asiatica', 'centella', 'botanical'),
-    ('centella asiatica extract', 'centella', 'botanical'),
-    ('cica', 'centella', 'botanical'),
-    ('madecassoside', 'centella', 'botanical'),
-    ('panthenol', 'panthenol', 'active'),
-    ('d-panthenol', 'panthenol', 'active'),
-    ('pro-vitamin b5', 'panthenol', 'active'),
-    ('provitamin b5', 'panthenol', 'active'),
-    ('vitamin b5', 'panthenol', 'active'),
-    ('niacinamide', 'niacinamide', 'active'),
-    ('nicotinamide', 'niacinamide', 'active'),
-    ('vitamin b3', 'niacinamide', 'active'),
-    ('ascorbic acid', 'l-ascorbic acid', 'active'),
-    ('l-ascorbic acid', 'l-ascorbic acid', 'active'),
-    ('vitamin c', 'l-ascorbic acid', 'active'),
-    ('tocopherol', 'tocopherol', 'active'),
-    ('vitamin e', 'tocopherol', 'active'),
-    ('salicylic acid', 'salicylic acid', 'active'),
-    ('bha', 'salicylic acid', 'active'),
-    ('aha', 'glycolic acid', 'active'),
-    ('glycolic acid', 'glycolic acid', 'active'),
-    ('lactic acid', 'lactic acid', 'active'),
-    ('sodium hyaluronate', 'hyaluronic acid', 'active'),
-    ('hyaluronate', 'hyaluronic acid', 'active'),
-    ('hyaluronic acid', 'hyaluronic acid', 'active'),
-    ('retinol', 'retinol', 'active'),
-    ('retinyl palmitate', 'retinyl palmitate', 'active')
-]
-
-DEFAULT_CLINICAL_INGREDIENTS = [
-    ('Cocos Nucifera (Coconut) Oil', 'Coconut oil', 'oil', 4, 1, ['moisturizer', 'occlusive'],
-     'Widely reported high comedogenic rating; tends to clog pores in acne-prone skin at leave-on concentrations.', [],
-     'Effective emollient for dry skin; avoid in acne-prone/oily skin when used as primary leave-on oil.'),
-    ('Theobroma Cacao (Cocoa) Seed Butter', 'Cocoa butter', 'butter', 4, 1, ['moisturizer'], '', [],
-     'Rich occlusive; useful for very dry skin but can be pore-clogging in acne-prone skin.'),
-    ('Isopropyl Myristate', 'Isopropyl myristate', 'emollient', 5, 2, ['texture', 'emollient'],
-     'Classic comedogenicity tables flag IPM/IPMa as high risk, particularly in leave-on formulations.', [],
-     'Often used to increase spreadability; avoid in acne-prone formulations or keep at low concentrations in rinse-off.'),
-    ('Isopropyl Palmitate', 'Isopropyl palmitate', 'emollient', 4, 1, ['texture'], '', [], ''),
-    ('Ethylhexyl Palmitate', 'Ethylhexyl palmitate', 'emollient', 4, 1, ['texture'], '', [], ''),
-    ('Sodium Laureth Sulfate', 'SLES', 'surfactant', 0, 2, ['cleanser'], '', [],
-     'Less irritating than SLS for many users, but still can be drying/irritating depending on formulation.'),
-    ('Sodium Lauryl Sulfate', 'SLS', 'surfactant', 0, 5, ['cleanser', 'irritant'],
-     'SLS is a well-documented irritant in patch/wash models. Avoid in sensitive-skin-targeted cleansers.', [],
-     'Primarily an irritant; not a comedogen per se.'),
-    ('Alcohol Denat.', 'Denatured alcohol', 'solvent', 0, 3, ['drying'],
-     'Denatured alcohol can be drying and can exacerbate barrier dysfunction in sensitive/dry skin.', [],
-     'Short-term texture benefits; avoid as primary active in dry/sensitive-skin leave-on products.'),
-    ('Parfum', 'Fragrance (generic)', 'fragrance', 0, 4, ['fragrance'],
-     'Fragrance is a leading cause of allergic contact dermatitis from cosmetics; many fragrance components are sensitizers.', [],
-     'Use fragrance-free labeling for sensitive-skin products.'),
-    ('Menthol', 'Menthol', 'sensitizer', 0, 5, ['cooling', 'sensitizer'], '', [], 'Common irritant and sensitizer in leave-on products.'),
-    ('Melaleuca Alternifolia (Tea Tree) Leaf Oil', 'Tea tree oil', 'essential_oil', 1, 2, ['antimicrobial', 'acne_fighting'], '', [],
-     'Has antimicrobial properties but can be irritating/sensitizing to some users; concentration-dependent.'),
-    ('Niacinamide', 'Niacinamide (Vitamin B3)', 'active', 0, 1, ['brightening', 'acne_fighting', 'barrier_repair'],
-     'Clinical testing shows good tolerability up to commonly used concentrations.', [], 'Generally well tolerated.'),
-    ('Salicylic Acid', 'Salicylic acid (BHA)', 'exfoliant', 0, 2, ['acne_fighting', 'bha'],
-     'Proven efficacy for acne; formulations may cause dryness/irritation depending on pH and vehicle.', [], ''),
-    ('Glycolic Acid', 'Glycolic acid (AHA)', 'exfoliant', 0, 3, ['anti_aging', 'aha'], '', [],
-     'Irritancy depends on concentration/pH; leave-on high-strength AHAs can be sensitizing.'),
-    ('Retinol', 'Retinol (vitamin A derivative)', 'retinoid', 0, 4, ['anti_aging', 'acne_fighting'],
-     'Topical retinoids increase skin turnover and can irritate; topical retinoids are generally advised against in pregnancy.',
-     ['pregnancy'], 'Introduce slowly; use sunscreen due to photosensitivity.'),
-    ('Ascorbic Acid', 'L-ascorbic acid (Vitamin C)', 'active', 0, 3, ['brightening', 'antioxidant'], '', [],
-     'Potent antioxidant but acidic and can irritate sensitive skin; stability issues require appropriate formulation.'),
-    ('Sodium Ascorbyl Phosphate', 'Sodium ascorbyl phosphate (SAP)', 'active', 0, 1, ['brightening', 'vitamin_c'],
-     'SAP is a more stable, gentler vitamin C derivative often used for sensitive or acne-prone skin.', [],
-     'Less irritating than L-ascorbic acid in many formulations.'),
-    ('Sodium Hyaluronate', 'Sodium hyaluronate', 'humectant', 0, 0, ['hydration'], '', [], ''),
-    ('Hyaluronic Acid', 'Hyaluronic acid', 'humectant', 0, 0, ['hydration'], '', [], ''),
-    ('Glycerin', 'Glycerin', 'humectant', 0, 0, ['hydration'], '', [], ''),
-    ('Ceramide NP', 'Ceramide NP', 'lipid', 0, 0, ['barrier_repair'], '', [], ''),
-    ('Panthenol', 'Panthenol (pro-vitamin B5)', 'humectant', 0, 0, ['soothing'], '', [], ''),
-    ('Allantoin', 'Allantoin', 'soother', 0, 0, ['soothing'], '', [], ''),
-    ('Centella Asiatica Extract', 'Centella asiatica', 'extract', 0, 0, ['soothing'], '', [], ''),
-    ('Aloe Barbadensis Leaf Juice', 'Aloe vera', 'extract', 0, 0, ['soothing'], '', [], ''),
-    ('Squalane', 'Squalane (plant/synthetic)', 'oil', 1, 0, ['moisturizer'], '', [],
-     'Generally low comedogenic risk and well tolerated in many skin types.'),
-    ('Simmondsia Chinensis (Jojoba) Seed Oil', 'Jojoba oil', 'oil', 2, 0, ['moisturizer'], '', [], ''),
-    ('Butyrospermum Parkii (Shea) Butter', 'Shea butter', 'butter', 2, 0, ['moisturizer'], '', [],
-     'Useful for dry skin; may be heavier for oily/acne-prone skin depending on formula.'),
-    ('Phenoxyethanol', 'Phenoxyethanol', 'preservative', 0, 1, ['preservative'], '', [], ''),
-    ('Parabens', 'Parabens (methylparaben, propylparaben etc.)', 'preservative', 0, 2, ['preservative'], '', [], ''),
-    ('Tocopherol', 'Vitamin E (tocopherol)', 'antioxidant', 2, 1, ['vitamin_e'], '', [], '')
-]
-
-def init_db(db_path=DB_PATH):
+def init_db(db_path=DB_PATH, seed_defaults: bool = True):
     """
     Initializes database schema with proper indexes for fast searches and historical tracking.
+    Optionally seeds default tables via dedicated seed scripts.
     """
     conn = get_connection(db_path)
     cur = conn.cursor()
@@ -500,62 +371,86 @@ def init_db(db_path=DB_PATH):
     cur.execute("CREATE INDEX IF NOT EXISTS idx_price_history_pid ON price_history(product_id);")
     cur.execute("CREATE INDEX IF NOT EXISTS idx_inci_ref_brand ON inci_reference(brand);")
 
-    # Seed Default Stores
-    default_stores = [
-        ('sourcebeauty', 'Source Beauty', 'sourcebeauty.com', 'shopify'),
-        ('feel22', 'Feel22 Egypt', 'eg.feel22.com', 'shopify'),
-        ('bloompharmacy', 'Bloom Pharmacy', 'www.bloompharmacy.com', 'shopify'),
-        ('drdawood', 'Dr Dawood Pharmacy', 'drdawoodstore.com', 'shopify'),
-        ('bashrety', 'Bashrety', 'bashrety.tv', 'shopify'),
-        ('rawafrican', 'Raw African', 'rawafrican.net', 'shopify')
-    ]
-
-    for s_id, s_name, s_dom, s_plat in default_stores:
-        cur.execute("""
-        INSERT OR IGNORE INTO stores (id, name, domain, platform)
-        VALUES (?, ?, ?, ?);
-        """, (s_id, s_name, s_dom, s_plat))
-        cur.execute("""
-        INSERT OR IGNORE INTO scrape_checkpoints (store_id, status)
-        VALUES (?, 'idle');
-        """, (s_id,))
-
-    # Seed Default Synonyms
-    for alias, canon, cat in DEFAULT_SYNONYMS:
-        cur.execute("""
-        INSERT INTO ingredient_synonyms (alias, canonical_name, category)
-        VALUES (?, ?, ?)
-        ON CONFLICT(alias) DO UPDATE SET
-            canonical_name = excluded.canonical_name,
-            category = excluded.category;
-        """, (alias.lower().strip(), canon.strip(), cat))
-
-    # Seed Default Clinical Ingredients (Comedogenicity & Irritancy Database)
-    for inci, c_name, f_type, comedo, irrit, tags, evid, contras, notes in DEFAULT_CLINICAL_INGREDIENTS:
-        cur.execute("""
-        INSERT INTO clinical_ingredients (
-            inci, common_name, functional_type, comedogenicity, irritancy,
-            tags, evidence, contraindications, notes
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-        ON CONFLICT(inci) DO UPDATE SET
-            common_name = excluded.common_name,
-            functional_type = excluded.functional_type,
-            comedogenicity = excluded.comedogenicity,
-            irritancy = excluded.irritancy,
-            tags = excluded.tags,
-            evidence = excluded.evidence,
-            contraindications = excluded.contraindications,
-            notes = excluded.notes,
-            updated_at = CURRENT_TIMESTAMP;
-        """, (inci, c_name, f_type, comedo, irrit, json.dumps(tags), evid, json.dumps(contras), notes))
-
     conn.commit()
+
+    # Delegate default table seeding to dedicated seed scripts
+    if seed_defaults:
+        try:
+            from pipeline.seed_defaults import seed_all_defaults
+            seed_all_defaults(conn=conn, db_path=db_path)
+        except ImportError:
+            try:
+                from seed_defaults import seed_all_defaults
+                seed_all_defaults(conn=conn, db_path=db_path)
+            except Exception as se:
+                logger.warning(f"Could not automatically seed defaults: {se}")
+
     conn.close()
     logger.info("Database initialized successfully at %s", db_path)
 
+def load_stores_from_db(conn=None, db_path=DB_PATH, active_only: bool = True) -> List[Dict[str, Any]]:
+    """
+    Loads all configured stores from the stores database table.
+    """
+    should_close = False
+    if conn is None:
+        conn = get_connection(db_path)
+        should_close = True
+    try:
+        cur = conn.cursor()
+        query = "SELECT id, name, domain, platform, is_active, last_sync_at, total_products FROM stores"
+        if active_only:
+            query += " WHERE is_active = 1"
+        query += " ORDER BY id ASC;"
+        cur.execute(query)
+        rows = cur.fetchall()
+        if not rows:
+            return []
+        if cur.description and not isinstance(rows[0], sqlite3.Row):
+            cols = [c[0] for c in cur.description]
+            return [dict(zip(cols, r)) for r in rows]
+        return [dict(r) for r in rows]
+    except Exception as e:
+        logger.warning(f"Failed to load stores from database: {e}")
+        return []
+    finally:
+        if should_close:
+            conn.close()
+
+def add_store_to_db(store_id: str, name: str, domain: str, platform: str = 'shopify',
+                     is_active: int = 1, conn=None, db_path=DB_PATH) -> bool:
+    """Inserts or updates a store record in the stores database table."""
+    should_close = False
+    if conn is None:
+        conn = get_connection(db_path)
+        should_close = True
+    try:
+        cur = conn.cursor()
+        cur.execute("""
+        INSERT INTO stores (id, name, domain, platform, is_active)
+        VALUES (?, ?, ?, ?, ?)
+        ON CONFLICT(id) DO UPDATE SET
+            name = excluded.name,
+            domain = excluded.domain,
+            platform = excluded.platform,
+            is_active = excluded.is_active;
+        """, (store_id.strip(), name.strip(), domain.strip(), platform.strip(), 1 if is_active else 0))
+        cur.execute("""
+        INSERT OR IGNORE INTO scrape_checkpoints (store_id, status)
+        VALUES (?, 'idle');
+        """, (store_id.strip(),))
+        conn.commit()
+        return True
+    except Exception as e:
+        logger.error(f"Failed to add store '{store_id}': {e}")
+        return False
+    finally:
+        if should_close:
+            conn.close()
+
 def load_synonyms_from_db(conn=None, db_path=DB_PATH) -> dict:
     """
-    Loads all ingredient synonyms from the database into a dictionary.
+    Loads all ingredient synonyms from the ingredient_synonyms database table into a dictionary.
     Returns: {alias: canonical_name}
     """
     should_close = False
@@ -566,12 +461,10 @@ def load_synonyms_from_db(conn=None, db_path=DB_PATH) -> dict:
         cur = conn.cursor()
         cur.execute("SELECT alias, canonical_name FROM ingredient_synonyms;")
         rows = cur.fetchall()
-        if not rows:
-            return {a: c for a, c, _ in DEFAULT_SYNONYMS}
         return {r[0].lower().strip(): r[1].strip() for r in rows}
     except Exception as e:
         logger.warning(f"Failed to load synonyms from database: {e}")
-        return {a: c for a, c, _ in DEFAULT_SYNONYMS}
+        return {}
     finally:
         if should_close:
             conn.close()

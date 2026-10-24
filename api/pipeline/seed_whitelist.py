@@ -16,9 +16,7 @@ from typing import Dict, Set, Tuple, List, Optional, Any
 from collections import Counter
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
-from pipeline.db_manager import (
-    get_connection, DB_PATH, DEFAULT_SYNONYMS, DEFAULT_CLINICAL_INGREDIENTS
-)
+from pipeline.db_manager import get_connection, DB_PATH
 from pipeline.inci_matcher import KEY_ACTIVES, ACTIVE_MARKERS
 from dermo_data import INGREDIENT_DB
 
@@ -316,9 +314,12 @@ def seed_ingredient_whitelist(conn=None, min_frequency: int = 1) -> Dict[str, An
                         "category": "active"
                     }
 
-        # From DEFAULT_CLINICAL_INGREDIENTS in db_manager
-        for row in DEFAULT_CLINICAL_INGREDIENTS:
-            c_inci, c_common, c_ftype = row[0], row[1], row[2]
+        # From clinical_ingredients database table
+        cur.execute("SELECT inci, common_name, functional_type FROM clinical_ingredients;")
+        for row in cur.fetchall():
+            c_inci = row["inci"] if isinstance(row, sqlite3.Row) else row[0]
+            c_common = row["common_name"] if isinstance(row, sqlite3.Row) else row[1]
+            c_ftype = row["functional_type"] if isinstance(row, sqlite3.Row) else row[2]
             c1 = clean_token(c_inci)
             if c1:
                 whitelist_items[c1.lower()] = {
@@ -326,15 +327,16 @@ def seed_ingredient_whitelist(conn=None, min_frequency: int = 1) -> Dict[str, An
                     "canonical_name": c_common or c1,
                     "category": "active" if c_ftype in ("active", "exfoliant", "retinoid") else c_ftype or "general"
                 }
-            c2 = clean_token(c_common)
-            if c2 and c2.lower() not in EXCLUDED_STANDALONE:
-                whitelist_items[c2.lower()] = {
-                    "name": c2,
-                    "canonical_name": c_inci,
-                    "category": "active"
-                }
+            if c_common:
+                c2 = clean_token(c_common)
+                if c2 and c2.lower() not in EXCLUDED_STANDALONE:
+                    whitelist_items[c2.lower()] = {
+                        "name": c2,
+                        "canonical_name": c_inci,
+                        "category": "active"
+                    }
 
-        # From KEY_ACTIVES and synonyms
+        # From KEY_ACTIVES cosmetic actives catalog
         for act_cat, syn_list in KEY_ACTIVES.items():
             for s in syn_list:
                 cs = clean_token(s)
@@ -345,7 +347,12 @@ def seed_ingredient_whitelist(conn=None, min_frequency: int = 1) -> Dict[str, An
                         "category": "active"
                     }
 
-        for alias, canon, cat in DEFAULT_SYNONYMS:
+        # From ingredient_synonyms database table
+        cur.execute("SELECT alias, canonical_name, category FROM ingredient_synonyms;")
+        for row in cur.fetchall():
+            alias = row["alias"] if isinstance(row, sqlite3.Row) else row[0]
+            canon = row["canonical_name"] if isinstance(row, sqlite3.Row) else row[1]
+            cat = row["category"] if isinstance(row, sqlite3.Row) else row[2]
             ca = clean_token(alias)
             cc = clean_token(canon)
             if ca and ca.lower() not in EXCLUDED_STANDALONE:
