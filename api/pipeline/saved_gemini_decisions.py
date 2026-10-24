@@ -307,7 +307,7 @@ def apply_saved_decisions(conn,limit=5000,threshold=MIN_CONFIDENCE,dry_run=True,
         if after_case and (i%25==0 or i==len(rows)):
             after_case(i,dict(stats))
     return {'dry_run':dry_run,'no_gemini_calls':True,'threshold':threshold,
-            'stored_decisions_checked':sum(stats.values()),
+            'stored_decisions_checked':stats['verified']+stats['split']+stats['manual'],
             'automatically_verified':stats['verified'],
             'automatically_split':stats['split'],
             'new_canonical_products':stats['new_canonical_products'],
