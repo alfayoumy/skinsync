@@ -23,3 +23,12 @@ A product with incompatible variants, conflicting credible INCI, unresolved bran
 ## Deployment checklist
 
 Pull latest main, restart the API and rebuild/reload the frontend. Preview legacy identity matches, apply one safe batch and verify the saved count and smaller remaining count. Open Product Reviews to see the persisted cases. Run a multi-source dry run and inspect the outcome for each selected source. GitHub commits and CI do not mutate the running local product database.
+
+
+## Shopify catalog pages
+
+The former 1–3 page testing limit was not a Shopify limit. Under **Add & match products**, choose **All pages** to continue from the starting page until an empty Shopify catalog page is returned. Alternatively disable **All pages** and specify any positive number of pages. Single-store discovery also uses a tracked background job.
+
+For large jobs, the UI shows the current source/page and permits **Stop scan after the current page**. Completed pages of a real import are committed separately; the response includes the last completed page and the next page for manual resumption. Dry-run records are rolled back immediately per observation. Source-specific rate limiting and retry/backoff are preserved. HTTP errors or repeated identical pages are NOT classified as successful end-of-catalog completion.
+
+**Update prices & stock** remains a separate offer-only operation. Its manual page-count field no longer has a three-page validation cap, but that synchronous endpoint does not yet implement indefinite background crawling. For a full initial product catalog, use **Add & match products → All pages**.

@@ -30,8 +30,8 @@ class ShopifyScan(BaseModel):
 
 class OfferRefresh(BaseModel):
     source_id: str
-    start_page: int=Field(default=1,ge=1,le=5000)
-    pages: int=Field(default=1,ge=1,le=3)
+    start_page: int=Field(default=1,ge=1)
+    pages: int=Field(default=1,ge=1)
     update_price: bool=True
     update_stock: bool=True
     dry_run: bool=True
