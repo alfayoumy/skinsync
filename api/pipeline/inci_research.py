@@ -25,30 +25,36 @@ from pipeline.catalog_reset import guard_catalog_writes
 DEFAULT_MODEL = 'gemini-2.5-flash-lite'
 POLICY = 'inci_mcp_research_v1'
 RUN_LOCK = threading.Lock()
-URL_PATTERN = re.compile(r'https://[^\\s<>\\]\)\}\\\"\\\']+', re.I)
+URL_PATTERN = re.compile(r'https://[^\s<>\)\]"'`]+', re.I)
 
 
 def ensure_schema(conn):
-    conn.executescript("""CREATE TABLE IF NOT EXISTS inci_research_queue(
-        canonical_product_id INTEGER PRIMARY KEY REFERENCES canonical_products(id),
-        status TEXT NOT NULL DEFAULT 'queued'
-          CHECK(status IN ('queued','processing','needs_review','no_result','error','approved','rejected')),
-        identity_fingerprint TEXT NOT NULL, attempts INTEGER NOT NULL DEFAULT 0,
-        confidence REAL, model_confidence REAL, identity_confidence REAL,
-        source_confidence REAL, completeness TEXT, source_url TEXT, source_domain TEXT,
-        source_title TEXT, evidence_excerpt TEXT, ingredients_raw TEXT,
-        ingredients_tokens TEXT, evidence_hash TEXT, source_metadata TEXT,
-        analysis TEXT, evidence_id INTEGER, model_name TEXT,
-        error_message TEXT, reviewed_by TEXT, review_reason TEXT,
-        run_id TEXT, queued_at TEXT DEFAULT CURRENT_TIMESTAMP,
-        updated_at TEXT DEFAULT CURRENT_TIMESTAMP);
-    CREATE INDEX IF NOT EXISTS idx_inci_research_queue_status
-      ON inci_research_queue(status,confidence);
-    CREATE TABLE IF NOT EXISTS inci_research_runs(
-        id TEXT PRIMARY KEY,status TEXT NOT NULL,queued_count INTEGER NOT NULL,
-        processed INTEGER NOT NULL DEFAULT 0,succeeded INTEGER NOT NULL DEFAULT 0,
-        failed INTEGER NOT NULL DEFAULT 0,created_at TEXT DEFAULT CURRENT_TIMESTAMP,
-        completed_at TEXT,error_message TEXT);""")
+    # Individual execute() statements never implicitly commit the caller's
+    # waterfall transaction (SQLite executescript() would).
+    statements = (
+        """CREATE TABLE IF NOT EXISTS inci_research_queue(
+            canonical_product_id INTEGER PRIMARY KEY REFERENCES canonical_products(id),
+            status TEXT NOT NULL DEFAULT 'queued'
+              CHECK(status IN ('queued','processing','needs_review','no_result','error','approved','rejected')),
+            identity_fingerprint TEXT NOT NULL, attempts INTEGER NOT NULL DEFAULT 0,
+            confidence REAL, model_confidence REAL, identity_confidence REAL,
+            source_confidence REAL, completeness TEXT, source_url TEXT, source_domain TEXT,
+            source_title TEXT, evidence_excerpt TEXT, ingredients_raw TEXT,
+            ingredients_tokens TEXT, evidence_hash TEXT, source_metadata TEXT,
+            analysis TEXT, evidence_id INTEGER, model_name TEXT,
+            error_message TEXT, reviewed_by TEXT, review_reason TEXT,
+            run_id TEXT, queued_at TEXT DEFAULT CURRENT_TIMESTAMP,
+            updated_at TEXT DEFAULT CURRENT_TIMESTAMP)""",
+        """CREATE INDEX IF NOT EXISTS idx_inci_research_queue_status
+            ON inci_research_queue(status,confidence)""",
+        """CREATE TABLE IF NOT EXISTS inci_research_runs(
+            id TEXT PRIMARY KEY,status TEXT NOT NULL,queued_count INTEGER NOT NULL,
+            processed INTEGER NOT NULL DEFAULT 0,succeeded INTEGER NOT NULL DEFAULT 0,
+            failed INTEGER NOT NULL DEFAULT 0,created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+            completed_at TEXT,error_message TEXT)""",
+    )
+    for statement in statements:
+        conn.execute(statement)
 
 
 def _identity_fingerprint(row):
@@ -78,7 +84,7 @@ def enqueue_unresolved(conn, canonical_ids, limit=500, actor='waterfall'):
             continue
         fp=_identity_fingerprint(row)
         existing=conn.execute('SELECT status,identity_fingerprint FROM inci_research_queue WHERE canonical_product_id=?',(cid,)).fetchone()
-        if existing and existing['status'] in ('approved','rejected','needs_review','processing'):
+        if existing and existing['status'] in ('approved','rejected','needs_review','processing','queued'):
             continue
         if existing and existing['status']=='no_result' and existing['identity_fingerprint']==fp:
             continue  # never re-bill a stable no-result case unless explicitly retried
@@ -149,15 +155,15 @@ def _safe_url(url, domains):
             return None
         if domain not in domains:
             return None
-        if len(url)>1400 or any(c in url for c in '\\r\\n'):
+        if len(url)>1400 or any(c in url for c in '\r\n'):
             return None
-        return p.geturl()
+        return p.geturl().rstrip("\\\"'")
     except ValueError:
         return None
 
 
 def _mcp_text(response):
-    return '\\n'.join(getattr(c,'text','') for c in getattr(response,'content',[])
+    return '\n'.join(getattr(c,'text','') for c in getattr(response,'content',[])
                      if getattr(c,'type',None)=='text')[:30000]
 
 
@@ -269,7 +275,7 @@ def _validate_candidate(product,pages,answer,domains,threshold):
     if type(model_conf) not in (float,int) or not 0<=model_conf<=1:
         return {'status':'no_result','reason':'Invalid model confidence.'}
     text=text.strip()
-    normalized=lambda val:re.sub(r'\\s+',' ',val).casefold()
+    normalized=lambda val:re.sub(r'\s+',' ',val).casefold()
     if len(text)<70 or normalized(text) not in normalized(page['text']):
         return {'status':'no_result','reason':'Extracted ingredients are not literally present in retrieved evidence.'}
     gate_ok, gate_reason=validate_identity_gates(
