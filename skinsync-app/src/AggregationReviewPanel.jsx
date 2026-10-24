@@ -7,8 +7,12 @@ const categories = ['Cleanser', 'Moisturizer', 'Serum', 'Sunscreen', 'Toner', 'E
 const field = 'w-full border border-gray-300 rounded-lg p-2 bg-white text-sm';
 async function api(path, options = {}) {
   const response = await apiFetch(`${API}${path}`, { ...options, headers: { 'Content-Type': 'application/json' } });
-  const data = await response.json();
-  if (!response.ok) throw new Error(typeof data.detail === 'string' ? data.detail : 'Request failed.');
+  const data = await response.json().catch(() => null);
+  if (!response.ok) {
+    const detail=typeof data?.detail==='string' ? data.detail : response.statusText;
+    throw new Error(`${path}: API returned HTTP ${response.status}${detail ? ' — '+detail : ''}`);
+  }
+  if (!data) throw new Error(`${path}: API returned invalid or empty JSON.`);
   return data;
 }
 export default function AggregationReviewPanel({ onClose, initialSourceId = 'sourcebeauty', mode = 'sources' }) {
@@ -29,15 +33,42 @@ export default function AggregationReviewPanel({ onClose, initialSourceId = 'sou
   const [geminiLimit,setGeminiLimit] = useState(500);
   const [canonicalId, setCanonicalId] = useState(''), [category, setCategory] = useState('Moisturizer');
   const [busy, setBusy] = useState(false), [message, setMessage] = useState(''), [error, setError] = useState('');
+  const [reviewsLoading,setReviewsLoading] = useState(false);
+  const [reviewsError,setReviewsError] = useState('');
+  const [geminiError,setGeminiError] = useState('');
   const refresh = useCallback(async () => {
-    const [registry, queue,gemini] = await Promise.all([
-      api('/sources'),
-      api(`/reviews?status=pending&view=${reviewView}&offset=${offset}&limit=50${kind ? `&kind=${kind}` : ''}`),
-      api('/reviews/gemini/queue')
-    ]);
-    setSources(registry.sources); setReviews(queue.reviews); setTotal(queue.total);
-    setQueueStatus(gemini);setSelectedReviewIds([]);
-  }, [offset, kind, reviewView]);
+    // Source settings, saved review records and the optional Gemini status
+    // must not be a single all-or-nothing Promise.all.
+    if (mode === 'sources') {
+      const registry=await api('/sources');
+      setSources(registry.sources || []);
+      return;
+    }
+    setReviewsLoading(true);
+    try {
+      const [casesResult,geminiResult]=await Promise.allSettled([
+        api(`/reviews?status=pending&view=${reviewView}&offset=${offset}&limit=50${kind ? `&kind=${kind}` : ''}`),
+        api('/reviews/gemini/queue')
+      ]);
+      if (casesResult.status === 'fulfilled') {
+        setReviews(casesResult.value.reviews || []);
+        setTotal(casesResult.value.total || 0);
+        setSelectedReviewIds([]);
+        setReviewsError('');
+      } else {
+        setReviewsError('Could not load saved product reviews: '+casesResult.reason.message+
+          '. Check that the API is running on port 8000, then retry.');
+      }
+      if (geminiResult.status === 'fulfilled') {
+        setQueueStatus(geminiResult.value);
+        setGeminiError('');
+      } else {
+        setQueueStatus(null);
+        setGeminiError('Gemini queue status is temporarily unavailable: '+
+          geminiResult.reason.message+'. Existing review cases can still be examined.');
+      }
+    } finally {setReviewsLoading(false);}
+  }, [mode, offset, kind, reviewView]);
   useEffect(() => { dialog.current.showModal(); }, []);
   useEffect(() => { refresh().catch(e => setError(e.message)); }, [refresh]);
   useEffect(()=>{
@@ -91,7 +122,16 @@ export default function AggregationReviewPanel({ onClose, initialSourceId = 'sou
     <header className="p-5 border-b flex justify-between gap-4"><div><h2 className="text-xl font-bold">{mode === 'sources' ? 'Product sources' : 'Product matching reviews'}</h2>
       <p className="text-sm text-gray-500">{mode === 'sources' ? 'Manage which websites SkinSync can collect from, test connections, and inspect source coverage.' : 'Examine uncertain or conflicting products and save an explicit decision. Source settings are managed separately.'}</p></div><button className="border rounded-lg px-3" onClick={onClose}>Close</button></header>
     <main className="p-5 space-y-5 bg-gray-50 overflow-y-auto max-h-[78vh]">
-      {error && <p role="alert" className="bg-red-50 text-red-800 p-3 rounded-lg">{error}</p>}{message && <p role="status" className="bg-green-50 text-green-800 p-3 rounded-lg">{message}</p>}
+      {error && <p role="alert" className="bg-red-50 text-red-800 p-3 rounded-lg">{error}</p>}
+      {mode==='reviews'&&reviewsError&&<div role="alert" className="rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-800">
+        {reviewsError}
+        <button type="button" className="ml-3 underline font-semibold" onClick={()=>refresh().catch(e=>setError(e.message))}>Retry loading reviews</button>
+      </div>}
+      {mode==='reviews'&&geminiError&&<div role="alert" className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-xs text-amber-900">
+        {geminiError}
+        <button type="button" className="ml-3 underline font-semibold" onClick={()=>refresh().catch(e=>setError(e.message))}>Retry Gemini status</button>
+      </div>}
+      {message && <p role="status" className="bg-green-50 text-green-800 p-3 rounded-lg">{message}</p>}
       {mode === 'sources' && <>
       <section aria-label="Registered sources" className="bg-white border rounded-xl p-4 space-y-3">
         <div className="flex flex-wrap items-center justify-between gap-2">
@@ -178,7 +218,10 @@ export default function AggregationReviewPanel({ onClose, initialSourceId = 'sou
         </p>}
         <p className="text-xs text-gray-500">This is separate from Gemini's INCI queue. It never writes ingredient lists, changes prices, or automatically merges two different canonical product IDs.</p>
       </section>}
-      {mode === 'reviews' && <section className="grid md:grid-cols-2 gap-4"><div className="bg-white border rounded-xl p-4"><div className="flex justify-between mb-3"><h3 className="font-semibold">{reviewView==='manual'?'Needs manual review':reviewView==='awaiting_gemini'?'Waiting for Gemini':'All pending reviews'} ({total})</h3><select aria-label="Review type" value={kind} onChange={e => { setKind(e.target.value); setOffset(0); setSelected(null); }} className="border rounded p-1"><option value="">All types</option>{['identity', 'duplicate', 'category', 'formulation'].map(k => <option key={k}>{k}</option>)}</select></div>
+      {mode === 'reviews' && <section className="grid md:grid-cols-2 gap-4"><div className="bg-white border rounded-xl p-4"><div className="flex justify-between mb-3"><h3 className="font-semibold">{reviewView==='manual'?'Needs manual review':reviewView==='awaiting_gemini'?'Waiting for Gemini':'All pending reviews'} ({total})</h3>
+          <button type="button" className="text-xs font-semibold text-purple-700 underline" disabled={reviewsLoading} onClick={()=>refresh().catch(e=>setError(e.message))}>
+            {reviewsLoading?'Loading...':'Refresh cases'}
+          </button><select aria-label="Review type" value={kind} onChange={e => { setKind(e.target.value); setOffset(0); setSelected(null); }} className="border rounded p-1"><option value="">All types</option>{['identity', 'duplicate', 'category', 'formulation'].map(k => <option key={k}>{k}</option>)}</select></div>
         <div className="flex flex-wrap gap-2 mb-3 text-xs">
           {[['manual','Needs manual review'],['awaiting_gemini','Waiting for Gemini'],['all','All unresolved cases']].map(([value,label])=>
             <button type="button" key={value} aria-pressed={reviewView===value} onClick={()=>{setReviewView(value);setOffset(0);setSelected(null)}}
@@ -194,7 +237,12 @@ export default function AggregationReviewPanel({ onClose, initialSourceId = 'sou
             checked={selectedReviewIds.includes(r.id)}
             onChange={e=>setSelectedReviewIds(prev=>e.target.checked?[...prev,r.id]:prev.filter(n=>n!==r.id))}/>
           <button className={`w-full text-left border rounded-lg p-3 ${selected?.id === r.id ? 'bg-purple-50 border-purple-500' : ''}`} onClick={() => { setSelected(r); setAction('request_evidence'); setCanonicalId(r.canonical_product_id || ''); setMergeSurvivor(r.details?.canonical_ids?.[0] || ''); }}><span className="block text-xs text-purple-700 uppercase">{r.kind} · {r.source_id || 'Canonical evidence'}</span><span className="block text-sm font-medium">{r.details.title || r.details.original_title || r.details.details?.titles?.join(' / ') || `Canonical ${r.canonical_product_id || 'unresolved'}`}</span>{r.gemini_status&&<span className="block text-xs text-gray-500 mt-1">Gemini: {r.gemini_status}{r.gemini_verdict?' · '+r.gemini_verdict:''}</span>}</button></li>)}</ul>
-        {!reviews.length && <p className="py-8 text-sm text-gray-500">No pending reviews in this view.</p>}<div className="flex justify-between text-sm mt-3"><button disabled={!offset || busy} onClick={() => setOffset(Math.max(0, offset - 50))}>Previous</button><span>{Math.min(offset + reviews.length, total)} of {total}</span><button disabled={offset + 50 >= total || busy} onClick={() => setOffset(offset + 50)}>Next</button></div>
+        {!reviews.length&&!reviewsError&&<p className="py-8 text-sm text-gray-500">
+          {reviewsLoading?'Loading saved review cases...':
+            reviewView==='manual'?'No cases currently require manual review. Check “All unresolved cases” or “Waiting for Gemini”.':
+            reviewView==='awaiting_gemini'?'No cases are waiting for Gemini. Select cases from “All unresolved cases” to enqueue them.':
+            'No pending reviews in this view.'}
+        </p>}<div className="flex justify-between text-sm mt-3"><button disabled={!offset || busy} onClick={() => setOffset(Math.max(0, offset - 50))}>Previous</button><span>{Math.min(offset + reviews.length, total)} of {total}</span><button disabled={offset + 50 >= total || busy} onClick={() => setOffset(offset + 50)}>Next</button></div>
       </div><div className="bg-white border rounded-xl p-4">{selected ? <form className="space-y-3" onSubmit={e => { e.preventDefault(); perform(async () => { await api(`/reviews/${selected.id}`, { method: 'POST', body: JSON.stringify({ action, reviewer, reason, canonical_id: canonicalId ? Number(canonicalId) : null, category }) }); setMessage('Review saved. Re-ingest the observation to apply an accepted mapping.'); setSelected(null); setReason(''); }); }}>
         <h3 className="font-semibold">Review #{selected.id}</h3>
         {selected.gemini_explanation&&<p className="rounded-lg bg-purple-50 p-2 text-xs">
