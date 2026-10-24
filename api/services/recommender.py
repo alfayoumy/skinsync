@@ -383,10 +383,9 @@ def get_recommendations(
         # 5. Hybrid Formulation Scoring
         if category_mode == "cross_category":
             if target_actives:
-                if actives_sim == 0.0:
-                    formula_sim = 0.05
-                else:
-                    formula_sim = (actives_sim * 0.65) + (non_water_jaccard * 0.25) + (title_sim * 0.10)
+                if actives_sim == 0.0 or not shared_acts:
+                    continue
+                formula_sim = (actives_sim * 0.65) + (non_water_jaccard * 0.25) + (title_sim * 0.10)
             else:
                 formula_sim = (non_water_jaccard * 0.70) + (title_sim * 0.30)
         else:

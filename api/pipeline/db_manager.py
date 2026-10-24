@@ -23,6 +23,7 @@ def get_connection(db_path=DB_PATH):
     conn.execute("PRAGMA journal_mode=WAL;")
     conn.execute("PRAGMA synchronous=NORMAL;")
     conn.execute("PRAGMA foreign_keys=ON;")
+    conn.execute("PRAGMA busy_timeout = 60000;")
     return conn
 
 # Default authoritative seeds for ingredient synonyms

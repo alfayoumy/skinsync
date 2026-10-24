@@ -941,3 +941,71 @@ def reconcile_pending_products_with_whitelist(req: WhitelistReconcileRequest):
         }
     finally:
         conn.close()
+
+
+class WaterfallResolveRequest(BaseModel):
+    limit: Optional[int] = None
+    revalidate_all: bool = False
+    langsearch_enabled: bool = True
+    dry_run: bool = False
+
+
+@router.post("/waterfall/resolve")
+def run_waterfall_endpoint(req: WaterfallResolveRequest):
+    """
+    Executes the 6-tier waterfall INCI resolution pipeline across skincare products.
+    """
+    from pipeline.waterfall_inci_resolver import run_waterfall_pipeline
+    conn = get_connection()
+    try:
+        stats = run_waterfall_pipeline(
+            conn=conn,
+            limit=req.limit,
+            revalidate_all=req.revalidate_all,
+            langsearch_enabled=req.langsearch_enabled,
+            dry_run=req.dry_run
+        )
+        if stats.get("resolved", 0) > 0 and not req.dry_run:
+            try:
+                from services.catalog_service import load_catalog_from_db
+                load_catalog_from_db()
+            except Exception as e:
+                logger.warning(f"Could not refresh catalog service: {e}")
+        return stats
+    finally:
+        conn.close()
+
+
+@router.post("/products/{product_id}/waterfall-resolve")
+def resolve_single_product_waterfall_endpoint(product_id: int):
+    """
+    Executes the 6-tier waterfall INCI resolution for a single product and returns the tier outcome.
+    """
+    from pipeline.waterfall_inci_resolver import execute_inci_waterfall_for_product
+    conn = get_connection()
+    try:
+        cur = conn.cursor()
+        cur.execute("""
+        SELECT id, title, brand, product_url, description_html, ingredients_raw, ingredient_source, canonical_product_id
+        FROM products
+        WHERE id = ?;
+        """, (product_id,))
+        row = cur.fetchone()
+        if not row:
+            raise HTTPException(status_code=404, detail=f"Product #{product_id} not found.")
+
+        product = dict(row)
+        res = execute_inci_waterfall_for_product(product, conn=conn, dry_run=False)
+        conn.commit()
+
+        if res.get("status") == "resolved":
+            try:
+                from services.catalog_service import load_catalog_from_db
+                load_catalog_from_db()
+            except Exception as e:
+                logger.warning(f"Could not refresh catalog service: {e}")
+
+        return res
+    finally:
+        conn.close()
+
