@@ -24,6 +24,7 @@ import sqlite3
 import threading
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from typing import Dict, Any, Optional, List, Tuple, Set
+from datetime import datetime
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
 
@@ -592,6 +593,7 @@ def resolve_tier5_whitelist_description(description_html: str, conn=None, fallba
                 "ingredients_raw": extracted["ingredients_raw"].strip(),
                 "matched_count": extracted.get("matched_count", 0),
                 "matched_ingredients": extracted.get("matched_ingredients", []),
+                "confidence": 0.70,
                 "method": "whitelist_description"
             }
     except Exception as ex:
@@ -636,7 +638,9 @@ def resolve_tier6_cluster_propagation(product_id: int, canonical_id: Optional[in
                         "ingredients_raw": sanitize_inci_list(other_raw),
                         "ingredients_parsed": other_parsed,
                         "actives": other_actives,
-                        "method": "cluster_propagation"
+                        "method": "cluster_propagation",
+                        "sister_product_id": other_id,
+                        "sister_title": other_title
                     }
 
         # Method B: Matching brand and title tokens across stores
@@ -666,7 +670,9 @@ def resolve_tier6_cluster_propagation(product_id: int, canonical_id: Optional[in
                         "ingredients_raw": sanitize_inci_list(other_raw),
                         "ingredients_parsed": other_parsed,
                         "actives": other_actives,
-                        "method": "cluster_propagation"
+                        "method": "cluster_propagation",
+                        "sister_product_id": other_id,
+                        "sister_title": other_title
                     }
 
         return None
@@ -830,7 +836,354 @@ def execute_inci_waterfall_for_product(
         "brand": brand
     }
 
+# ==============================================================================
+# MULTI-TIER COMPARATOR & ADMIN RESOLUTION ARBITRATION
+# ==============================================================================
+
+def execute_all_tiers_for_product(
+    product: Dict[str, Any],
+    conn=None,
+    historical_index: Optional[Dict[str, str]] = None,
+    langsearch_enabled: bool = True,
+    write_to_db: bool = True
+) -> Dict[str, Any]:
+    """
+    Executes all 7 tiers of INCI ingredient resolution independently for a single product.
+    Does not halt upon finding an earlier tier, allowing side-by-side comparison.
+    Captures full metadata, normalized tokens, and clinical actives for each tier.
+    Stores the comparative audit payload in products.tier_resolutions.
+    """
+    should_close = False
+    if conn is None:
+        conn = get_connection(DB_PATH)
+        should_close = True
+
+    try:
+        if historical_index is None:
+            historical_index = load_historical_scrapes_index()
+
+        p_id = product.get("id")
+        title = product.get("title") or ""
+        brand = product.get("brand") or ""
+        desc_html = product.get("description_html") or ""
+        canonical_id = product.get("canonical_product_id")
+        current_source = product.get("ingredient_source")
+        current_raw = product.get("ingredients_raw")
+
+        def _format_tier(
+            tier_num: int,
+            code: str,
+            name: str,
+            res: Optional[Dict[str, Any]],
+            default_details: str = "",
+            is_pending: bool = False,
+            extra_meta: Optional[Dict[str, Any]] = None
+        ) -> Dict[str, Any]:
+            meta = extra_meta or {}
+            if res and res.get("ingredients_raw"):
+                raw = sanitize_inci_list(res["ingredients_raw"]).strip()
+                tokens, acts = parse_and_normalize_ingredients(raw)
+                return {
+                    "tier": tier_num,
+                    "code": code,
+                    "name": name,
+                    "status": "resolved",
+                    "ingredients_raw": raw,
+                    "parsed_tokens": tokens,
+                    "parsed_count": len(tokens),
+                    "actives": acts,
+                    "actives_count": len(acts),
+                    "confidence": round(float(res.get("confidence", 1.0)), 3),
+                    "method": res.get("method", code),
+                    "details": res.get("details") or default_details,
+                    "metadata": {**meta, **{k: v for k, v in res.items() if k not in ("ingredients_raw", "ingredients_parsed", "actives", "parsed_tokens")}}
+                }
+            elif is_pending and res and res.get("candidate"):
+                cand = res["candidate"]
+                raw = (cand.get("ingredients") or "").strip()
+                tokens, acts = parse_and_normalize_ingredients(raw) if raw else ([], [])
+                return {
+                    "tier": tier_num,
+                    "code": code,
+                    "name": name,
+                    "status": "pending_llm",
+                    "ingredients_raw": raw,
+                    "parsed_tokens": tokens,
+                    "parsed_count": len(tokens),
+                    "actives": acts,
+                    "actives_count": len(acts),
+                    "confidence": round(float(cand.get("confidence", 0.0)), 3),
+                    "method": "pending_tier7_match",
+                    "candidate_id": cand.get("id"),
+                    "candidate_name": cand.get("product_name"),
+                    "details": f"Ambiguous SkinSAFE match '{cand.get('product_name')}' (Overlap: {cand.get('confidence', 0):.2f}). Queued for Jev & Gemini arbitration.",
+                    "metadata": {**meta, "candidate_id": cand.get("id"), "candidate_name": cand.get("product_name")}
+                }
+            else:
+                return {
+                    "tier": tier_num,
+                    "code": code,
+                    "name": name,
+                    "status": "skipped" if "disabled" in default_details.lower() else "not_found",
+                    "ingredients_raw": None,
+                    "parsed_tokens": [],
+                    "parsed_count": 0,
+                    "actives": [],
+                    "actives_count": 0,
+                    "confidence": 0.0,
+                    "method": None,
+                    "details": default_details,
+                    "metadata": meta
+                }
+
+        # 1. Tier 1: Store Dedicated Tab / Historical Scrape
+        res_t1 = resolve_tier1_store_tab(product, historical_index)
+        t1 = _format_tier(
+            1, "tier1", "Store Dedicated Tab / Historical Scrape",
+            res_t1,
+            default_details="Found in store dedicated tab / historical scrape (Bashrety Jan 10-12, 2026)" if res_t1 else "No dedicated ingredients tab in current store listing or historical scrape."
+        )
+
+        # 2. Tier 2: OpenBeauty API
+        res_t2 = resolve_tier2_openbeauty(brand, title)
+        t2 = _format_tier(
+            2, "tier2", "OpenBeauty API",
+            res_t2,
+            default_details=f"Matched OpenBeauty product '{res_t2.get('matched_name')}'" if res_t2 else "No match found in OpenBeauty database."
+        )
+
+        # 3. Tier 3: SkinSAFE High-Confidence Match
+        high_t3, cand_t3 = resolve_tier3_skinsafe_with_candidate(brand, title, conn=conn)
+        t3 = _format_tier(
+            3, "tier3", "SkinSAFE High-Confidence Direct Match",
+            high_t3,
+            default_details=f"High-confidence match: '{high_t3.get('inci_matched_name')}' (Score: {high_t3.get('confidence', 0):.2f})" if high_t3 else "No high-confidence SkinSAFE match (overlap < 0.50 or vehicle mismatch).",
+            extra_meta={"candidate_id": high_t3.get("inci_matched_id")} if high_t3 else {}
+        )
+
+        # 4. Tier 4: LangSearch Web Search API
+        if langsearch_enabled:
+            res_t4 = resolve_tier4_langsearch(brand, title)
+            t4 = _format_tier(
+                4, "tier4", "LangSearch Web Search INCI",
+                res_t4,
+                default_details=f"Extracted and validated INCI list from web search ({res_t4.get('url', '')})" if res_t4 else "No valid INCI list found via web search."
+            )
+        else:
+            t4 = _format_tier(
+                4, "tier4", "LangSearch Web Search INCI",
+                None,
+                default_details="LangSearch web search disabled."
+            )
+
+        # 5. Tier 5: Store Description Whitelist Extraction
+        res_t5 = resolve_tier5_whitelist_description(desc_html, conn=conn)
+        cnt5 = (res_t5.get("matched_count") or len(res_t5.get("matched_ingredients", []))) if res_t5 else 0
+        t5 = _format_tier(
+            5, "tier5", "Store Description Whitelist Extraction",
+            res_t5,
+            default_details=f"Extracted {cnt5} verified ingredients from description text." if res_t5 else "No verified whitelist ingredients found in store description."
+        )
+
+        # 6. Tier 6: Same-Product Cluster Propagation
+        res_t6 = resolve_tier6_cluster_propagation(p_id, canonical_id, brand, title, conn=conn)
+        sister_id = res_t6.get("sister_product_id") if res_t6 else None
+        sister_txt = f"Listing #{sister_id}" if sister_id else "cluster sibling"
+        t6 = _format_tier(
+            6, "tier6", "Same-Product Cluster Sister Propagation",
+            res_t6,
+            default_details=f"Propagated from {sister_txt}" if res_t6 else "No verified ingredients present in multi-store cluster siblings.",
+            extra_meta={"sister_product_id": sister_id, "sister_title": res_t6.get("sister_title") if res_t6 else None}
+        )
+
+        # 7. Tier 7: Pending Jev & Gemini Verification from Tier 3
+        if cand_t3:
+            t7 = _format_tier(
+                7, "tier7", "Tier 3 Ambiguous Match (Pending LLM Arbitration)",
+                {"candidate": cand_t3},
+                is_pending=True,
+                extra_meta={"candidate_id": cand_t3.get("id"), "candidate_name": cand_t3.get("product_name")}
+            )
+        else:
+            t7 = _format_tier(
+                7, "tier7", "Tier 3 Ambiguous Match (Pending LLM Arbitration)",
+                None,
+                default_details="No ambiguous SkinSAFE candidate in 0.20-0.49 overlap range."
+            )
+
+        # Determine currently active tier
+        selected_tier = None
+        if current_source in ("historical_store_scrape", "store_tab"):
+            selected_tier = "tier1"
+        elif current_source == "openbeauty_api":
+            selected_tier = "tier2"
+        elif current_source in ("skinsafe_high_match", "skinsafe_matched"):
+            selected_tier = "tier3"
+        elif current_source == "langsearch_web_search":
+            selected_tier = "tier4"
+        elif current_source in ("whitelist_description", "whitelist_extracted"):
+            selected_tier = "tier5"
+        elif current_source == "cluster_propagation":
+            selected_tier = "tier6"
+        elif current_source == "pending_tier7_match":
+            selected_tier = "tier7"
+
+        tiers_dict = {
+            "tier1": t1,
+            "tier2": t2,
+            "tier3": t3,
+            "tier4": t4,
+            "tier5": t5,
+            "tier6": t6,
+            "tier7": t7
+        }
+
+        tier_resolutions = {
+            "product_id": p_id,
+            "executed_at": datetime.now().isoformat(),
+            "selected_tier": selected_tier,
+            "tiers": tiers_dict,
+            "summary": {
+                "total_tiers": 7,
+                "resolved_count": sum(1 for t in tiers_dict.values() if t["status"] == "resolved"),
+                "pending_count": sum(1 for t in tiers_dict.values() if t["status"] == "pending_llm"),
+                "not_found_count": sum(1 for t in tiers_dict.values() if t["status"] == "not_found")
+            }
+        }
+
+        if write_to_db and conn and p_id:
+            cur = conn.cursor()
+            cur.execute("""
+            UPDATE products
+            SET tier_resolutions = ?, updated_at = CURRENT_TIMESTAMP
+            WHERE id = ?;
+            """, (json.dumps(tier_resolutions), p_id))
+            conn.commit()
+
+        return tier_resolutions
+
+    finally:
+        if should_close:
+            conn.close()
+
+
+def apply_tier_resolution_for_product(
+    product_id: int,
+    tier_code: str,
+    conn=None,
+    custom_raw: Optional[str] = None
+) -> Dict[str, Any]:
+    """
+    Applies a specific tier's outcome as the product's active ingredient formula.
+    Updates ingredients_raw, ingredients_parsed, actives, and ingredient_source.
+    Marks selected_tier in products.tier_resolutions.
+    """
+    should_close = False
+    if conn is None:
+        conn = get_connection(DB_PATH)
+        should_close = True
+
+    try:
+        cur = conn.cursor()
+        cur.execute("""
+        SELECT id, title, brand, description_html, canonical_product_id, ingredients_raw, ingredient_source, tier_resolutions
+        FROM products WHERE id = ?;
+        """, (product_id,))
+        row = cur.fetchone()
+        if not row:
+            raise ValueError(f"Product #{product_id} not found.")
+
+        prod = dict(row)
+        resolutions = None
+        if prod.get("tier_resolutions"):
+            try:
+                resolutions = json.loads(prod["tier_resolutions"])
+            except Exception:
+                pass
+
+        if not resolutions or "tiers" not in resolutions or tier_code not in resolutions.get("tiers", {}):
+            resolutions = execute_all_tiers_for_product(prod, conn=conn, write_to_db=False)
+
+        target_tier = resolutions.get("tiers", {}).get(tier_code)
+        if not target_tier:
+            raise ValueError(f"Tier '{tier_code}' not found in resolutions.")
+
+        if tier_code == "tier7":
+            cand_id = target_tier.get("candidate_id")
+            cand_name = target_tier.get("candidate_name")
+            cur.execute("""
+            UPDATE products
+            SET inci_matched_id = ?,
+                inci_matched_name = ?,
+                gate4_jev_status = 'pending_jev',
+                gate4_gemini_status = 'pending_gemini',
+                gate4_cross_status = 'pending',
+                ingredient_source = 'pending_tier7_match',
+                ingredients_raw = NULL,
+                ingredients_parsed = NULL,
+                actives = NULL,
+                updated_at = CURRENT_TIMESTAMP
+            WHERE id = ?;
+            """, (cand_id, cand_name, product_id))
+        elif target_tier.get("status") == "resolved" or custom_raw:
+            raw = (custom_raw or target_tier.get("ingredients_raw") or "").strip()
+            tokens, acts = parse_and_normalize_ingredients(raw)
+            method = target_tier.get("method") or "manual_override"
+            inci_id = target_tier.get("metadata", {}).get("inci_matched_id") or target_tier.get("candidate_id")
+            inci_name = target_tier.get("metadata", {}).get("inci_matched_name") or target_tier.get("candidate_name")
+
+            cur.execute("""
+            UPDATE products
+            SET ingredients_raw = ?,
+                ingredients_parsed = ?,
+                actives = ?,
+                ingredient_source = ?,
+                inci_matched_id = COALESCE(?, inci_matched_id),
+                inci_matched_name = COALESCE(?, inci_matched_name),
+                gate4_cross_status = CASE WHEN ? = 'skinsafe_high_match' THEN 'cross_approved' ELSE gate4_cross_status END,
+                updated_at = CURRENT_TIMESTAMP
+            WHERE id = ?;
+            """, (raw, json.dumps(tokens), json.dumps(acts), method, inci_id, inci_name, method, product_id))
+        elif target_tier.get("status") == "not_found":
+            # Clears ingredients
+            cur.execute("""
+            UPDATE products
+            SET ingredients_raw = NULL,
+                ingredients_parsed = NULL,
+                actives = NULL,
+                ingredient_source = NULL,
+                updated_at = CURRENT_TIMESTAMP
+            WHERE id = ?;
+            """, (product_id,))
+
+        resolutions["selected_tier"] = tier_code
+        resolutions["selected_at"] = datetime.now().isoformat()
+        cur.execute("""
+        UPDATE products
+        SET tier_resolutions = ?
+        WHERE id = ?;
+        """, (json.dumps(resolutions), product_id))
+        conn.commit()
+
+        # Refresh in-memory catalog cache if available
+        try:
+            from services.catalog_service import load_catalog_from_db
+            load_catalog_from_db()
+        except Exception as e:
+            logger.warning(f"Catalog refresh skipped: {e}")
+
+        return {
+            "status": "success",
+            "product_id": product_id,
+            "selected_tier": tier_code,
+            "tier_resolutions": resolutions
+        }
+    finally:
+        if should_close:
+            conn.close()
+
 _thread_local = threading.local()
+
 _all_thread_connections = []
 _conns_lock = threading.Lock()
 

@@ -516,6 +516,14 @@ def get_product_telemetry_forensics(
         except Exception as e:
             logger.warning(f"Similar alternatives generation failed for {product_id}: {e}")
 
+        # 7. Tier Resolutions Snapshot
+        tier_resolutions = None
+        if product.get("tier_resolutions"):
+            try:
+                tier_resolutions = json.loads(product["tier_resolutions"])
+            except Exception:
+                pass
+
         # Assemble Full Telemetry Response
         return {
             "product": {
@@ -581,7 +589,8 @@ def get_product_telemetry_forensics(
                 "sibling_offers": sibling_offers
             },
             "clinical_dermatology": dermo_eval,
-            "similar_formulation_matches": similar_alternatives
+            "similar_formulation_matches": similar_alternatives,
+            "tier_resolutions": tier_resolutions
         }
     finally:
         conn.close()
@@ -1008,4 +1017,112 @@ def resolve_single_product_waterfall_endpoint(product_id: int):
         return res
     finally:
         conn.close()
+
+
+class ApplyTierRequest(BaseModel):
+    tier_code: str
+    custom_raw: Optional[str] = None
+
+
+class ExecuteAllTiersRequest(BaseModel):
+    langsearch_enabled: bool = True
+
+
+@router.get("/products/{product_id}/tier-resolutions")
+def get_product_tier_resolutions_endpoint(product_id: int):
+    """
+    Returns the stored multi-tier INCI resolution payload for a product.
+    """
+    conn = get_connection()
+    try:
+        cur = conn.cursor()
+        cur.execute("""
+        SELECT id, title, brand, ingredient_source, ingredients_raw, tier_resolutions
+        FROM products WHERE id = ?;
+        """, (product_id,))
+        row = cur.fetchone()
+        if not row:
+            raise HTTPException(status_code=404, detail=f"Product #{product_id} not found.")
+
+        p = dict(row)
+        resolutions = None
+        if p.get("tier_resolutions"):
+            try:
+                resolutions = json.loads(p["tier_resolutions"])
+            except Exception:
+                pass
+
+        return {
+            "product_id": product_id,
+            "title": p.get("title"),
+            "brand": p.get("brand"),
+            "current_source": p.get("ingredient_source"),
+            "has_resolutions": resolutions is not None,
+            "tier_resolutions": resolutions
+        }
+    finally:
+        conn.close()
+
+
+@router.post("/products/{product_id}/execute-all-tiers")
+def execute_all_tiers_endpoint(product_id: int, req: Optional[ExecuteAllTiersRequest] = None):
+    """
+    Executes all 7 tiers of INCI ingredient resolution independently for a single product,
+    stores the outcome in products.tier_resolutions, and returns the full comparative payload.
+    """
+    from pipeline.waterfall_inci_resolver import execute_all_tiers_for_product
+    langsearch_enabled = req.langsearch_enabled if req else True
+    conn = get_connection()
+    try:
+        cur = conn.cursor()
+        cur.execute("""
+        SELECT id, title, brand, product_url, description_html, ingredients_raw, ingredient_source, canonical_product_id, tier_resolutions
+        FROM products WHERE id = ?;
+        """, (product_id,))
+        row = cur.fetchone()
+        if not row:
+            raise HTTPException(status_code=404, detail=f"Product #{product_id} not found.")
+
+        product = dict(row)
+        res = execute_all_tiers_for_product(
+            product,
+            conn=conn,
+            langsearch_enabled=langsearch_enabled,
+            write_to_db=True
+        )
+        conn.commit()
+
+        return res
+    finally:
+        conn.close()
+
+
+@router.post("/products/{product_id}/apply-tier")
+def apply_tier_resolution_endpoint(product_id: int, req: ApplyTierRequest):
+    """
+    Applies a specific tier outcome (tier1..tier7) as the product's active ingredient formula.
+    """
+    from pipeline.waterfall_inci_resolver import apply_tier_resolution_for_product
+    conn = get_connection()
+    try:
+        cur = conn.cursor()
+        cur.execute("SELECT id FROM products WHERE id = ?;", (product_id,))
+        if not cur.fetchone():
+            raise HTTPException(status_code=404, detail=f"Product #{product_id} not found.")
+
+        result = apply_tier_resolution_for_product(
+            product_id,
+            tier_code=req.tier_code,
+            conn=conn,
+            custom_raw=req.custom_raw
+        )
+        return result
+    except ValueError as ve:
+        raise HTTPException(status_code=400, detail=str(ve))
+    except Exception as e:
+        logger.error(f"Failed to apply tier {req.tier_code} to #{product_id}: {e}")
+        raise HTTPException(status_code=500, detail=f"Failed to apply tier resolution: {e}")
+    finally:
+        conn.close()
+
 

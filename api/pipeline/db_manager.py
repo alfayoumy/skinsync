@@ -240,7 +240,8 @@ def init_db(db_path=DB_PATH):
         ('gate4_cross_status', 'TEXT'),
         ('gate4_jev_status', 'TEXT'),
         ('gate4_gemini_status', 'TEXT'),
-        ('canonical_product_id', 'INTEGER')
+        ('canonical_product_id', 'INTEGER'),
+        ('tier_resolutions', 'TEXT')
     ]
     for col_name, col_type in telemetry_cols:
         if col_name not in existing_cols:

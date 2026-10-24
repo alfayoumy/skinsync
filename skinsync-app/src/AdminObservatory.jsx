@@ -4,7 +4,7 @@ import {
   ExternalLink, Eye, X, Loader2, Store, BadgePercent, TrendingDown, 
   Check, AlertTriangle, Activity, Sparkles, CheckCircle2, ArrowRight,
   RefreshCw, SlidersHorizontal, RotateCcw, ArrowUpDown, Tag, DollarSign,
-  Layers, Settings2, Plus, Trash2, ListChecks
+  Layers, Settings2, Plus, Trash2, ListChecks, Zap, Copy, Clock
 } from 'lucide-react';
 
 const SKINCARE_CATEGORIES = [
@@ -50,8 +50,15 @@ const AdminObservatory = ({ onBackToApp }) => {
   const [selectedProductId, setSelectedProductId] = useState(null);
   const [telemetry, setTelemetry] = useState(null);
   const [loadingTelemetry, setLoadingTelemetry] = useState(false);
-  const [activeTab, setActiveTab] = useState('scraped'); // 'scraped', 'ingredients', 'inci', 'pricing', 'dermo', 'similar'
+  const [activeTab, setActiveTab] = useState('scraped'); // 'scraped', 'ingredients', 'inci', 'waterfall', 'pricing', 'dermo', 'similar'
   
+  // Waterfall Multi-Tier Comparator States
+  const [executingTiers, setExecutingTiers] = useState(false);
+  const [applyingTier, setApplyingTier] = useState(null);
+  const [includeLangSearch, setIncludeLangSearch] = useState(false);
+  const [tierSuccessMsg, setTierSuccessMsg] = useState(null);
+  const [copiedTier, setCopiedTier] = useState(null);
+
   // Similar Alternatives Filter States
   const [altCategoryMode, setAltCategoryMode] = useState('same_category'); // 'same_category', 'cross_category', 'specific'
   const [altSelectedCategory, setAltSelectedCategory] = useState('');
@@ -423,13 +430,14 @@ const AdminObservatory = ({ onBackToApp }) => {
   };
 
   // Open Telemetry Forensics Modal
-  const handleOpenTelemetry = async (productId) => {
+  const handleOpenTelemetry = async (productId, initialTab = 'scraped') => {
     setSelectedProductId(productId);
-    setActiveTab('scraped');
+    setActiveTab(initialTab);
     setAltCategoryMode('same_category');
     setAltSelectedCategory('');
     setLoadingTelemetry(true);
     setTelemetry(null);
+    setTierSuccessMsg(null);
     try {
       const res = await fetch(`http://127.0.0.1:8000/admin/products/${productId}/telemetry`);
       if (res.ok) {
@@ -442,6 +450,68 @@ const AdminObservatory = ({ onBackToApp }) => {
       console.error('Error fetching product telemetry:', err);
     } finally {
       setLoadingTelemetry(false);
+    }
+  };
+
+  // Execute all 7 tiers for the current product
+  const handleExecuteAllTiers = async () => {
+    if (!selectedProductId) return;
+    try {
+      setExecutingTiers(true);
+      setTierSuccessMsg(null);
+      const res = await fetch(`http://127.0.0.1:8000/admin/products/${selectedProductId}/execute-all-tiers`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ langsearch_enabled: includeLangSearch })
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setTelemetry(prev => prev ? { ...prev, tier_resolutions: data } : prev);
+        setTierSuccessMsg(`All 7 tiers evaluated successfully! ${data?.summary?.resolved_count || 0} tiers resolved.`);
+        setTimeout(() => setTierSuccessMsg(null), 5000);
+      } else {
+        alert('Failed to execute waterfall tiers.');
+      }
+    } catch (err) {
+      console.error('Error executing waterfall tiers:', err);
+      alert('Error executing waterfall tiers.');
+    } finally {
+      setExecutingTiers(false);
+    }
+  };
+
+  // Apply a specific tier resolution as the product's active formula
+  const handleApplyTier = async (tierCode) => {
+    if (!selectedProductId) return;
+    try {
+      setApplyingTier(tierCode);
+      setTierSuccessMsg(null);
+      const res = await fetch(`http://127.0.0.1:8000/admin/products/${selectedProductId}/apply-tier`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ tier_code: tierCode })
+      });
+      if (res.ok) {
+        const data = await res.json();
+        // Re-fetch telemetry to reflect new active formula across all tabs
+        const telRes = await fetch(`http://127.0.0.1:8000/admin/products/${selectedProductId}/telemetry`);
+        if (telRes.ok) {
+          const updatedTelemetry = await telRes.json();
+          setTelemetry(updatedTelemetry);
+        }
+        // Also update products list in background so table row reflects new source
+        fetchProducts();
+        setTierSuccessMsg(`Successfully applied ${tierCode.toUpperCase()} as active catalog formula!`);
+        setTimeout(() => setTierSuccessMsg(null), 5000);
+      } else {
+        const errData = await res.json().catch(() => ({}));
+        alert(errData.detail || 'Failed to apply tier outcome.');
+      }
+    } catch (err) {
+      console.error('Error applying tier outcome:', err);
+      alert('Network error while applying tier.');
+    } finally {
+      setApplyingTier(null);
     }
   };
 
@@ -1103,18 +1173,42 @@ const AdminObservatory = ({ onBackToApp }) => {
                       <td className="py-3.5 px-4 whitespace-nowrap">
                         {p.has_ingredients ? (
                           p.ingredient_source === 'whitelist_extracted' ? (
-                            <span className="bg-teal-100 text-teal-800 font-bold px-2 py-0.5 rounded-full text-[10px] flex items-center gap-1 w-fit" title="Extracted from store description via verified ingredient whitelist fallback">
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleOpenTelemetry(p.id, 'waterfall');
+                              }}
+                              className="bg-teal-100 hover:bg-teal-200 text-teal-800 font-bold px-2 py-0.5 rounded-full text-[10px] flex items-center gap-1 w-fit transition-all cursor-pointer"
+                              title="Extracted from store description via verified ingredient whitelist fallback. Click to view & compare all 7 waterfall tiers"
+                            >
                               <Sparkles className="w-3 h-3 text-teal-600" /> Whitelist Lookup
-                            </span>
+                            </button>
                           ) : (
-                            <span className="bg-emerald-100 text-emerald-800 font-bold px-2 py-0.5 rounded-full text-[10px] flex items-center gap-1 w-fit">
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleOpenTelemetry(p.id, 'waterfall');
+                              }}
+                              className="bg-emerald-100 hover:bg-emerald-200 text-emerald-800 font-bold px-2 py-0.5 rounded-full text-[10px] flex items-center gap-1 w-fit transition-all cursor-pointer"
+                              title={`Source: ${p.ingredient_source || 'Available'}. Click to view & compare all 7 waterfall tiers`}
+                            >
                               <Check className="w-3 h-3" /> {p.ingredient_source || 'Available'}
-                            </span>
+                            </button>
                           )
                         ) : (
-                          <span className="bg-gray-100 text-gray-400 font-medium px-2 py-0.5 rounded text-[10px]">
-                            Missing
-                          </span>
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleOpenTelemetry(p.id, 'waterfall');
+                            }}
+                            className="bg-gray-100 hover:bg-purple-100 hover:text-purple-700 text-gray-400 font-medium px-2 py-0.5 rounded text-[10px] transition-all cursor-pointer flex items-center gap-1"
+                            title="No ingredients found. Click to open 7-tier waterfall comparator and resolve"
+                          >
+                            <Zap className="w-2.5 h-2.5" /> Missing
+                          </button>
                         )}
                       </td>
 
@@ -1273,6 +1367,18 @@ const AdminObservatory = ({ onBackToApp }) => {
                 className={`py-3 px-4 border-b-2 transition-all cursor-pointer ${activeTab === 'inci' ? 'border-purple-600 text-purple-700 bg-white' : 'border-transparent text-gray-500 hover:text-gray-700'}`}
               >
                 🎯 INCI Matching & Gates
+              </button>
+              <button
+                onClick={() => setActiveTab('waterfall')}
+                className={`py-3 px-4 border-b-2 transition-all cursor-pointer flex items-center gap-1.5 ${activeTab === 'waterfall' ? 'border-purple-600 text-purple-700 bg-white' : 'border-transparent text-gray-500 hover:text-gray-700'}`}
+              >
+                <Zap className="w-3.5 h-3.5 text-amber-500" />
+                <span>⚡ 7-Tier Waterfall</span>
+                {telemetry?.tier_resolutions?.summary?.resolved_count > 0 && (
+                  <span className="px-1.5 py-0.2 text-[10px] bg-purple-100 text-purple-700 rounded-full font-extrabold">
+                    {telemetry.tier_resolutions.summary.resolved_count}/7
+                  </span>
+                )}
               </button>
               <button
                 onClick={() => setActiveTab('pricing')}
@@ -1757,6 +1863,313 @@ const AdminObservatory = ({ onBackToApp }) => {
                           </div>
                         </div>
                       </div>
+                    </div>
+                  )}
+
+                  {/* TAB 3.5: 7-TIER WATERFALL RESOLUTION ENGINE */}
+                  {activeTab === 'waterfall' && (
+                    <div className="space-y-6">
+                      {/* Control Panel / Actions Card */}
+                      <div className="p-5 bg-gradient-to-br from-white to-purple-50/40 rounded-2xl border border-gray-200 shadow-sm space-y-4">
+                        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-4 border-b border-gray-200/80">
+                          <div>
+                            <div className="text-[10px] uppercase font-bold text-purple-600 tracking-wider flex items-center gap-1.5">
+                              <Zap className="w-3.5 h-3.5 text-amber-500" />
+                              7-Tier INCI Waterfall Engine & Comparator
+                            </div>
+                            <h3 className="font-extrabold text-base text-gray-900 mt-0.5">
+                              Multi-Tier Formulation Comparative Analysis
+                            </h3>
+                            <p className="text-xs text-gray-500 mt-1 max-w-2xl leading-relaxed">
+                              Execute, compare, and audit all 7 waterfall tiers independently. Review the extracted formulas, token counts, and confidence scores across each tier, then elect which resolution to apply as the product's active formula.
+                            </p>
+                          </div>
+
+                          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 shrink-0">
+                            {/* LangSearch Toggle Checkbox */}
+                            <label className="flex items-center gap-2 px-3 py-2 bg-white rounded-xl border border-gray-200 cursor-pointer hover:bg-gray-50 select-none text-xs">
+                              <input
+                                type="checkbox"
+                                checked={includeLangSearch}
+                                onChange={(e) => setIncludeLangSearch(e.target.checked)}
+                                className="w-4 h-4 text-purple-600 rounded border-gray-300 focus:ring-purple-500"
+                              />
+                              <span className="font-semibold text-gray-700">Include Tier 4 Web Search</span>
+                            </label>
+
+                            {/* Execute All Tiers Action Button */}
+                            <button
+                              onClick={handleExecuteAllTiers}
+                              disabled={executingTiers}
+                              className={`px-4 py-2.5 rounded-xl font-bold text-xs flex items-center justify-center gap-2 text-white shadow-sm transition-all cursor-pointer ${
+                                executingTiers
+                                  ? 'bg-purple-400 cursor-not-allowed'
+                                  : 'bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 hover:shadow'
+                              }`}
+                            >
+                              {executingTiers ? (
+                                <>
+                                  <Loader2 className="w-4 h-4 animate-spin" />
+                                  <span>Evaluating 7 Tiers...</span>
+                                </>
+                              ) : (
+                                <>
+                                  <Zap className="w-4 h-4 text-amber-300" />
+                                  <span>Execute All 7 Tiers</span>
+                                </>
+                              )}
+                            </button>
+                          </div>
+                        </div>
+
+                        {/* Success / Status Notification Banner */}
+                        {tierSuccessMsg && (
+                          <div className="p-3 bg-emerald-50 border border-emerald-200 rounded-xl flex items-center gap-2 text-xs font-semibold text-emerald-800">
+                            <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                            <span>{tierSuccessMsg}</span>
+                          </div>
+                        )}
+
+                        {/* Resolution Summary Strip */}
+                        {telemetry?.tier_resolutions ? (
+                          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                            <div className="p-3 bg-white rounded-xl border border-gray-200">
+                              <div className="text-[10px] text-gray-400 font-bold uppercase">Tiers Resolved</div>
+                              <div className="text-base font-extrabold text-purple-700 mt-0.5">
+                                {telemetry.tier_resolutions.summary?.resolved_count || 0} / 7
+                              </div>
+                            </div>
+                            <div className="p-3 bg-white rounded-xl border border-gray-200">
+                              <div className="text-[10px] text-gray-400 font-bold uppercase">Pending LLM Gate</div>
+                              <div className="text-base font-extrabold text-amber-600 mt-0.5">
+                                {telemetry.tier_resolutions.summary?.pending_llm_count || 0}
+                              </div>
+                            </div>
+                            <div className="p-3 bg-white rounded-xl border border-gray-200">
+                              <div className="text-[10px] text-gray-400 font-bold uppercase">Selected / Active Tier</div>
+                              <div className="text-base font-extrabold text-gray-900 mt-0.5 uppercase truncate" title={telemetry.tier_resolutions.selected_tier || 'None'}>
+                                {telemetry.tier_resolutions.selected_tier || 'Default'}
+                              </div>
+                            </div>
+                            <div className="p-3 bg-white rounded-xl border border-gray-200">
+                              <div className="text-[10px] text-gray-400 font-bold uppercase">Last Executed</div>
+                              <div className="text-xs font-medium text-gray-600 mt-1 truncate">
+                                {telemetry.tier_resolutions.executed_at
+                                  ? new Date(telemetry.tier_resolutions.executed_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })
+                                  : 'Never'}
+                              </div>
+                            </div>
+                          </div>
+                        ) : (
+                          <div className="p-4 bg-white rounded-xl border border-dashed border-gray-300 text-center text-gray-500">
+                            No full waterfall analysis has been executed yet for this product. Click <span className="font-bold text-purple-700">"Execute All 7 Tiers"</span> above to analyze across all 7 sources simultaneously.
+                          </div>
+                        )}
+                      </div>
+
+                      {/* 7 Tiers Side-by-Side Comparison Cards */}
+                      {telemetry?.tier_resolutions?.tiers && (
+                        <div className="space-y-4">
+                          {[
+                            { key: 'tier1', label: 'Tier 1', title: 'Current/Historical Store Page INCI Tab' },
+                            { key: 'tier2', label: 'Tier 2', title: 'OpenBeauty Facts API' },
+                            { key: 'tier3', label: 'Tier 3', title: 'High SkinSAFE Formulation Match (≥95%)' },
+                            { key: 'tier4', label: 'Tier 4', title: 'LangSearch INCI Web Search & Extraction' },
+                            { key: 'tier5', label: 'Tier 5', title: 'Store Description Whitelist Fallback' },
+                            { key: 'tier6', label: 'Tier 6', title: 'Same-Product Cluster Sister Propagation' },
+                            { key: 'tier7', label: 'Tier 7', title: 'Ambiguous SkinSAFE Match (Pending LLM)' },
+                          ].map(({ key, label, title }) => {
+                            const tierData = telemetry.tier_resolutions.tiers[key];
+                            if (!tierData) return null;
+
+                            const isSelected = telemetry.tier_resolutions.selected_tier === key;
+                            const isResolved = tierData.status === 'resolved';
+                            const isPendingLLM = tierData.status === 'pending_llm';
+                            const isSkipped = tierData.status === 'skipped';
+                            const isNotFound = tierData.status === 'not_found';
+                            const hasIngredients = Boolean(tierData.ingredients_raw && tierData.ingredients_raw.trim());
+
+                            return (
+                              <div
+                                key={key}
+                                className={`p-4 rounded-2xl border transition-all ${
+                                  isSelected
+                                    ? 'bg-purple-50/60 border-purple-400 ring-2 ring-purple-300/60 shadow-sm'
+                                    : isResolved
+                                    ? 'bg-white border-emerald-200 hover:border-emerald-300'
+                                    : isPendingLLM
+                                    ? 'bg-white border-amber-200 hover:border-amber-300'
+                                    : 'bg-gray-50/80 border-gray-200 opacity-80'
+                                }`}
+                              >
+                                {/* Header: Title, Status, Confidence, Apply Action */}
+                                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-gray-100">
+                                  <div className="flex items-center gap-2.5 flex-wrap">
+                                    <span className={`px-2 py-0.5 rounded-md text-[10px] font-black uppercase tracking-wider ${
+                                      isSelected
+                                        ? 'bg-purple-600 text-white'
+                                        : isResolved
+                                        ? 'bg-emerald-600 text-white'
+                                        : isPendingLLM
+                                        ? 'bg-amber-500 text-white'
+                                        : 'bg-gray-200 text-gray-700'
+                                    }`}>
+                                      {label}
+                                    </span>
+                                    <h4 className="font-extrabold text-sm text-gray-900">
+                                      {tierData.name || title}
+                                    </h4>
+
+                                    {/* Status Badge */}
+                                    {isResolved && (
+                                      <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-emerald-100 text-emerald-800 rounded-full font-bold text-[10px]">
+                                        <CheckCircle2 className="w-3 h-3 text-emerald-600" />
+                                        Resolved
+                                      </span>
+                                    )}
+                                    {isPendingLLM && (
+                                      <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-amber-100 text-amber-800 rounded-full font-bold text-[10px]">
+                                        <Clock className="w-3 h-3 text-amber-600" />
+                                        Pending LLM Gate
+                                      </span>
+                                    )}
+                                    {isSkipped && (
+                                      <span className="px-2 py-0.5 bg-gray-200 text-gray-600 rounded-full font-medium text-[10px]">
+                                        Skipped
+                                      </span>
+                                    )}
+                                    {isNotFound && (
+                                      <span className="px-2 py-0.5 bg-gray-100 text-gray-400 rounded-full font-medium text-[10px]">
+                                        Not Found
+                                      </span>
+                                    )}
+
+                                    {/* Confidence Pill */}
+                                    {tierData.confidence > 0 && (
+                                      <span className="px-2 py-0.5 bg-indigo-50 text-indigo-700 border border-indigo-200 rounded-full font-semibold text-[10px]">
+                                        {Math.round(tierData.confidence * 100)}% Confidence
+                                      </span>
+                                    )}
+                                  </div>
+
+                                  <div className="flex items-center gap-2 shrink-0">
+                                    {isSelected ? (
+                                      <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-purple-600 text-white rounded-xl font-bold text-xs shadow-sm">
+                                        <Check className="w-3.5 h-3.5" />
+                                        Active Formula
+                                      </span>
+                                    ) : hasIngredients ? (
+                                      <button
+                                        onClick={() => handleApplyTier(key)}
+                                        disabled={applyingTier !== null}
+                                        className="px-3 py-1.5 bg-white border border-purple-300 text-purple-700 hover:bg-purple-600 hover:text-white rounded-xl font-bold text-xs transition-all shadow-sm flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
+                                      >
+                                        {applyingTier === key ? (
+                                          <>
+                                            <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                                            <span>Applying...</span>
+                                          </>
+                                        ) : (
+                                          <>
+                                            <Sparkles className="w-3.5 h-3.5 text-amber-500" />
+                                            <span>Use & Apply This Tier</span>
+                                          </>
+                                        )}
+                                      </button>
+                                    ) : null}
+                                  </div>
+                                </div>
+
+                                {/* Details / Rationale */}
+                                <div className="mt-2 text-xs text-gray-600 leading-relaxed">
+                                  {tierData.details}
+                                </div>
+
+                                {/* Metadata specifics */}
+                                {tierData.metadata && Object.keys(tierData.metadata).length > 0 && (
+                                  <div className="mt-2 flex flex-wrap gap-2 text-[10px]">
+                                    {tierData.metadata.skinsafe_title && (
+                                      <span className="px-2 py-0.5 bg-blue-50 text-blue-700 rounded border border-blue-100">
+                                        SkinSAFE Target: <strong className="font-semibold">{tierData.metadata.skinsafe_title}</strong> (Score: {Math.round((tierData.metadata.hybrid_score || 0) * 100)}%)
+                                      </span>
+                                    )}
+                                    {tierData.metadata.sister_title && (
+                                      <span className="px-2 py-0.5 bg-purple-50 text-purple-700 rounded border border-purple-100">
+                                        Sister Product #{tierData.metadata.sister_product_id}: <strong className="font-semibold">{tierData.metadata.sister_title}</strong>
+                                      </span>
+                                    )}
+                                    {tierData.metadata.source_url && (
+                                      <a
+                                        href={tierData.metadata.source_url}
+                                        target="_blank"
+                                        rel="noreferrer"
+                                        className="px-2 py-0.5 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded border border-gray-200 flex items-center gap-1"
+                                      >
+                                        Source URL <ExternalLink className="w-2.5 h-2.5" />
+                                      </a>
+                                    )}
+                                  </div>
+                                )}
+
+                                {/* If Ingredients Raw Exists: Show Raw, Tokens, Actives */}
+                                {hasIngredients && (
+                                  <div className="mt-3 pt-3 border-t border-gray-100 space-y-2">
+                                    <div className="flex items-center justify-between">
+                                      <span className="text-[10px] font-bold uppercase text-gray-500">
+                                        Raw Formulation ({tierData.parsed_tokens?.length || 0} ingredients):
+                                      </span>
+                                      <button
+                                        onClick={() => {
+                                          navigator.clipboard.writeText(tierData.ingredients_raw);
+                                          setCopiedTier(key);
+                                          setTimeout(() => setCopiedTier(null), 2000);
+                                        }}
+                                        className="text-[10px] font-semibold text-purple-600 hover:text-purple-800 flex items-center gap-1 cursor-pointer"
+                                      >
+                                        <Copy className="w-3 h-3" />
+                                        {copiedTier === key ? 'Copied!' : 'Copy Raw'}
+                                      </button>
+                                    </div>
+                                    <div className="p-2.5 bg-white rounded-xl border border-gray-200 font-mono text-[11px] text-gray-800 leading-relaxed max-h-28 overflow-y-auto whitespace-pre-wrap select-all">
+                                      {tierData.ingredients_raw}
+                                    </div>
+
+                                    {/* Actives & Tokens */}
+                                    <div className="flex flex-wrap items-center gap-1.5 pt-1">
+                                      {tierData.actives && tierData.actives.length > 0 && (
+                                        <div className="flex flex-wrap items-center gap-1 mr-2">
+                                          <span className="text-[10px] font-bold text-emerald-700 uppercase mr-1">Actives:</span>
+                                          {tierData.actives.map((act, i) => (
+                                            <span key={i} className="px-2 py-0.5 bg-emerald-100 text-emerald-800 font-bold rounded text-[10px]">
+                                              ✨ {act}
+                                            </span>
+                                          ))}
+                                        </div>
+                                      )}
+
+                                      {tierData.parsed_tokens && tierData.parsed_tokens.length > 0 && (
+                                        <div className="flex flex-wrap items-center gap-1">
+                                          <span className="text-[10px] font-bold text-gray-400 uppercase mr-1">Tokens:</span>
+                                          {tierData.parsed_tokens.slice(0, 15).map((tok, i) => (
+                                            <span key={i} className="px-1.5 py-0.5 bg-gray-100 text-gray-600 rounded text-[10px]">
+                                              {tok}
+                                            </span>
+                                          ))}
+                                          {tierData.parsed_tokens.length > 15 && (
+                                            <span className="text-[10px] text-gray-400 font-medium">
+                                              +{tierData.parsed_tokens.length - 15} more
+                                            </span>
+                                          )}
+                                        </div>
+                                      )}
+                                    </div>
+                                  </div>
+                                )}
+                              </div>
+                            );
+                          })}
+                        </div>
+                      )}
                     </div>
                   )}
 
