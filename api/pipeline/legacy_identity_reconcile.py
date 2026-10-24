@@ -15,14 +15,16 @@ CRITICAL=('spf','concentrations','timing','fragrance','tint','shade','formula_re
 TRUSTED_INGREDIENT_ORIGINS={'store_page_tab','historical_store_scrape','curated_v10','admin_override'}
 
 
-def reconcile_legacy_exact(conn,dry_run=True,max_verified=500,queue_failures=True):
+def reconcile_legacy_exact(conn,dry_run=True,max_verified=500,queue_failures=True,max_review_cases=250):
     """Verify bounded safe clusters; give exact totals and persist actionable rejects only on apply.
 
     max_verified controls WRITES, not the number of records inspected. Repeated
     applications continue from the next unverified group, never the same first 500.
     """
-    if not 1 <= int(max_verified) <= 5000:
-        raise ValueError('Batch size must be between 1 and 5000.')
+    if not 0 <= int(max_verified) <= 5000:
+        raise ValueError('Batch size must be between 0 and 5000.')
+    if not 1 <= int(max_review_cases) <= 1000:
+        raise ValueError('Review batch size must be between 1 and 1000.')
     pending=pending_identity_ids(conn)
     canonicals=[dict(x) for x in conn.execute("""SELECT id,canonical_title,brand,brand_id,identity_status,
         identity_attributes,ingredients_raw,is_skincare FROM canonical_products
@@ -117,7 +119,7 @@ def reconcile_legacy_exact(conn,dry_run=True,max_verified=500,queue_failures=Tru
                  'Exact compatible legacy listing group with no competing canonical identity or INCI conflict'))
         if queue_failures:
             from pipeline.aggregation_service import queue_review
-            for reason,can,group,extra in failures:
+            for reason,can,group,extra in failures[:max_review_cases]:
                 # A duplicate is a canonical-level decision; a variant discrepancy
                 # references the actual source listing so the reviewer can inspect it.
                 offender=next((o for o in group if o['id']==extra.get('conflicting_offer_id')),None)
@@ -153,6 +155,7 @@ def reconcile_legacy_exact(conn,dry_run=True,max_verified=500,queue_failures=Tru
         'reasons_not_auto_matched':{k:v for k,v in counts.items() if k!='qualified'},
         'sample_canonical_ids':[can['id'] for can,_,_ in qualified[:12]],
         'review_cases_prepared':queued,
+        'review_candidates_found':len(failures),
         'pending_review_cases':pending_total,
         'batch_limit':max_verified,
         'note':('Preview only; no records or review cases were changed.' if dry_run

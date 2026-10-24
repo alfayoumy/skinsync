@@ -319,3 +319,19 @@ def discovery_progress(task_id:str):
         out['metadata']=json.loads(out['metadata'] or '{}')
         return out
     finally:conn.close()
+
+
+@router.post('/products/prepare-reviews')
+def prepare_legacy_review_cases():
+    """Create real review cases without auto-verifying products."""
+    conn=get_connection()
+    try:
+        result=reconcile_legacy_exact(conn,dry_run=False,max_verified=0,
+            queue_failures=True,max_review_cases=250)
+        conn.commit()
+        return result
+    except Exception:
+        conn.rollback()
+        raise
+    finally:
+        conn.close()
