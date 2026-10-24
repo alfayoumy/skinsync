@@ -393,6 +393,10 @@ def gemini_identity_results(
                 'store_id':o.get('store_id'),'brand':o.get('brand'),
                 'title':o.get('title')} for o in (details.get('offers') or [])[:30]
                 if isinstance(o,dict)]
+            explanation=data.get('explanation') or ''
+            parts=explanation.split(' | ',1)
+            data['model_reason']=parts[0]
+            data['application_reason']=parts[1] if len(parts)>1 else None
             data['evidence_current']=data.pop('queued_evidence_hash')==data.pop('current_evidence_hash')
             records.append(data)
         return {'results':records,'total':total,'limit':limit,'offset':offset,

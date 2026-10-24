@@ -139,7 +139,10 @@ export default function GeminiDecisionsTable({refreshKey}) {
               <div className="grid md:grid-cols-2 gap-4 text-xs">
                 <div className="space-y-2">
                   <h4 className="font-bold text-gray-900">Gemini explanation</h4>
-                  <p className="text-gray-800 whitespace-pre-wrap">{row.explanation||'No explanation saved.'}</p>
+                  <p className="text-gray-800 whitespace-pre-wrap">{row.model_reason||'No explanation saved.'}</p>
+                  {row.application_reason&&<div className="rounded-lg bg-white border p-2 text-gray-700">
+                    <strong>SkinSync application check:</strong> {row.application_reason}
+                  </div>}
                   <p className="text-gray-600">Model: {row.model_name||'Not recorded'} · Updated: {row.updated_at||'—'} · Attempts: {row.attempts||0}</p>
                   <p className="text-gray-600">Original issue: {row.issue?.replaceAll('_',' ')||'Not recorded'}</p>
                   {!row.evidence_current&&<p className="text-amber-800 font-semibold">Evidence changed after Gemini evaluated it. Automatic application is blocked.</p>}

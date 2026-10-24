@@ -211,6 +211,15 @@ def apply_saved_decisions(conn,limit=5000,threshold=MIN_CONFIDENCE,dry_run=True,
         conn.execute('SAVEPOINT saved_gemini_case')
         try:
             result,reason=resolve_saved_case(conn,row,threshold)
+            if result=='manual' and not dry_run:
+                # Preserve Gemini's original verdict/explanation and record the
+                # current deterministic reason; a historical 0.97 rejection is
+                # replaced by the latest actual blocker.
+                current_reason=_answer(row)['reason']
+                conn.execute("""UPDATE identity_gemini_queue
+                    SET explanation=?,updated_at=CURRENT_TIMESTAMP
+                    WHERE review_id=? AND status='needs_manual'""",
+                    ((current_reason+' | '+reason)[:800],row['id']))
             if dry_run:
                 conn.execute('ROLLBACK TO SAVEPOINT saved_gemini_case')
             conn.execute('RELEASE SAVEPOINT saved_gemini_case')

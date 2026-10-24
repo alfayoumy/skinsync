@@ -53,6 +53,7 @@ TABLES = [
  queued_at TEXT DEFAULT CURRENT_TIMESTAMP,
  updated_at TEXT DEFAULT CURRENT_TIMESTAMP)''',
 '''CREATE INDEX IF NOT EXISTS idx_identity_gemini_status ON identity_gemini_queue(status,review_id)''',
+'''CREATE INDEX IF NOT EXISTS idx_identity_gemini_confidence ON identity_gemini_queue(confidence,review_id)''',
 '''CREATE TABLE IF NOT EXISTS product_review_queue(id INTEGER PRIMARY KEY,case_key TEXT NOT NULL UNIQUE,kind TEXT NOT NULL,
  source_id TEXT,source_product_id TEXT,canonical_product_id INTEGER,details TEXT NOT NULL,evidence_hash TEXT NOT NULL,
  status TEXT NOT NULL DEFAULT 'pending',decision TEXT,reviewed_by TEXT,review_notes TEXT,
@@ -89,7 +90,8 @@ def ensure_identity_gemini_schema(conn):
     """
     for sql in TABLES:
         if (sql.startswith('CREATE TABLE IF NOT EXISTS identity_gemini_queue(')
-                or sql.startswith('CREATE INDEX IF NOT EXISTS idx_identity_gemini_status')):
+                or sql.startswith('CREATE INDEX IF NOT EXISTS idx_identity_gemini_status')
+                or sql.startswith('CREATE INDEX IF NOT EXISTS idx_identity_gemini_confidence')):
             conn.execute(sql)
 
 
