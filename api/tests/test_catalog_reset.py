@@ -51,6 +51,14 @@ class CatalogResetTests(unittest.TestCase):
             execute_catalog_reset(self.conn, report['fingerprint'], CONFIRMATION, 'tester')
         self.assertEqual(self.conn.execute('SELECT COUNT(*) FROM products').fetchone()[0], 1)
 
+    def test_idle_pending_tasks_do_not_block_reset(self):
+        self.conn.execute("""INSERT INTO pipeline_tasks(task_id,task_type,status)
+            VALUES('pending-review','manual_review','pending')""")
+        self.conn.commit()
+        plan=preview_catalog_reset(self.conn)
+        self.assertTrue(plan['can_reset'])
+        self.assertEqual(plan['active_jobs'],[])
+
     def test_cancelled_worker_must_finish_current_page(self):
         self.conn.execute("""INSERT INTO pipeline_tasks(task_id,task_type,status,updated_at)
             VALUES ('cancelled-1','catalog_discovery','cancelled',CURRENT_TIMESTAMP)""")
