@@ -1,6 +1,7 @@
+import { apiFetch } from './apiFetch';
 import React, { useState, useEffect, useRef } from 'react';
 import { Sparkles, ArrowRight, Search, AlertTriangle, ExternalLink, RotateCcw, Loader2, X, Store, BadgePercent, TrendingDown, Check, ShieldCheck } from 'lucide-react';
-import AdminObservatory from './AdminObservatory';
+import AdminAccess from './AdminAccess';
 
 const SkinSync = () => {
   // Main View Navigation ('app' or 'admin')
@@ -51,7 +52,7 @@ const SkinSync = () => {
 
   const extractImageFromHTML = async (url) => {
     try {
-      const response = await fetch(url);
+      const response = await apiFetch(url);
       const html = await response.text();
       const parser = new DOMParser();
       const doc = parser.parseFromString(html, 'text/html');
@@ -99,7 +100,7 @@ const SkinSync = () => {
   const submitOnboarding = async () => {
     setLoading(true);
     try {
-      await fetch('http://127.0.0.1:8000/onboarding', {
+      await apiFetch('http://127.0.0.1:8000/onboarding', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -130,7 +131,7 @@ const SkinSync = () => {
     if (!userData.email) return;
     setLoading(true);
     try {
-      const response = await fetch(`http://127.0.0.1:8000/user?email=${encodeURIComponent(userData.email)}`);
+      const response = await apiFetch(`http://127.0.0.1:8000/user?email=${encodeURIComponent(userData.email)}`);
       if (response.ok) {
         const data = await response.json();
         setUserData({
@@ -168,7 +169,7 @@ const SkinSync = () => {
     searchTimeoutRef.current = setTimeout(async () => {
       try {
         const API_URL = `http://127.0.0.1:8000/search?query=${encodeURIComponent(query)}`;
-        const response = await fetch(API_URL);
+        const response = await apiFetch(API_URL);
         if (response.ok) {
           const data = await response.json();
           setSuggestions(data);
@@ -220,7 +221,7 @@ const SkinSync = () => {
       try {
         // Point to your Render Backend Search Endpoint
         const API_URL = `http://127.0.0.1:8000/search?query=${encodeURIComponent(value)}`;
-        const response = await fetch(API_URL);
+        const response = await apiFetch(API_URL);
         if (response.ok) {
           const data = await response.json();
           setSuggestions(data);
@@ -244,7 +245,7 @@ const SkinSync = () => {
     if (e) e.stopPropagation();
     setPriceModalLoading(true);
     try {
-      const res = await fetch(`http://127.0.0.1:8000/products/${productId}/price-comparison`);
+      const res = await apiFetch(`http://127.0.0.1:8000/products/${productId}/price-comparison`);
       if (res.ok) {
         const data = await res.json();
         setPriceModalData(data);
@@ -263,7 +264,7 @@ const SkinSync = () => {
     setShowDealsModal(true);
     setDealsLoading(true);
     try {
-      const res = await fetch('http://127.0.0.1:8000/products/price-deals?limit=15&min_savings=25');
+      const res = await apiFetch('http://127.0.0.1:8000/products/price-deals?limit=15&min_savings=25');
       if (res.ok) {
         const data = await res.json();
         setDealsList(data.deals || []);
@@ -289,7 +290,7 @@ const SkinSync = () => {
     try {
       const API_URL = "http://127.0.0.1:8000/recommend";
 
-      const response = await fetch(API_URL, {
+      const response = await apiFetch(API_URL, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -354,7 +355,7 @@ const SkinSync = () => {
   };
 
   if (viewMode === 'admin') {
-    return <AdminObservatory onBackToApp={() => setViewMode('app')} />;
+    return <AdminAccess onBackToApp={() => setViewMode('app')} />;
   }
 
   return (
@@ -1105,7 +1106,7 @@ const SkinSync = () => {
 
                       <button
                         onClick={async () => {
-                          const res = await fetch(`http://127.0.0.1:8000/canonical-products/${deal.canonical_product_id}/offers`);
+                          const res = await apiFetch(`http://127.0.0.1:8000/canonical-products/${deal.canonical_product_id}/offers`);
                           if (res.ok) {
                             const d = await res.json();
                             setPriceModalData(d);

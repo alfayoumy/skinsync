@@ -1,3 +1,4 @@
+import { apiFetch } from './apiFetch';
 import ApiConnectionTests from './ConnectionTests';
 import AggregationReviewPanel from './AggregationReviewPanel';
 import React, { useState, useEffect, useRef } from 'react';
@@ -134,7 +135,7 @@ const AdminObservatory = ({ onBackToApp }) => {
       params.append('offset', (pageToFetch * whitelistPageSize).toString());
       if (query.trim()) params.append('q', query.trim());
       if (cat) params.append('category', cat);
-      const res = await fetch(`http://127.0.0.1:8000/admin/whitelist?${params.toString()}`);
+      const res = await apiFetch(`http://127.0.0.1:8000/admin/whitelist?${params.toString()}`);
       if (res.ok) {
         const data = await res.json();
         setWhitelistItems(data.items || []);
@@ -166,7 +167,7 @@ const AdminObservatory = ({ onBackToApp }) => {
 
   const fetchWaterfallBatchStatus = async () => {
     try {
-      const res = await fetch('http://127.0.0.1:8000/admin/waterfall/batch/status');
+      const res = await apiFetch('http://127.0.0.1:8000/admin/waterfall/batch/status');
       if (res.ok) {
         const data = await res.json();
         setWaterfallBatchStatus(data);
@@ -201,7 +202,7 @@ const AdminObservatory = ({ onBackToApp }) => {
   const handleStartWaterfallBatch = async () => {
     try {
       setBatchStarting(true);
-      const res = await fetch('http://127.0.0.1:8000/admin/waterfall/batch/start', {
+      const res = await apiFetch('http://127.0.0.1:8000/admin/waterfall/batch/start', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(waterfallBatchConfig)
@@ -224,7 +225,7 @@ const AdminObservatory = ({ onBackToApp }) => {
     if (!window.confirm('Are you sure you want to cancel the active waterfall batch run?')) return;
     try {
       setBatchCancelling(true);
-      const res = await fetch('http://127.0.0.1:8000/admin/waterfall/batch/cancel', {
+      const res = await apiFetch('http://127.0.0.1:8000/admin/waterfall/batch/cancel', {
         method: 'POST'
       });
       if (res.ok) {
@@ -239,7 +240,7 @@ const AdminObservatory = ({ onBackToApp }) => {
 
   const fetchQueueStatus = async () => {
     try {
-      const res = await fetch('http://127.0.0.1:8000/admin/queues/status');
+      const res = await apiFetch('http://127.0.0.1:8000/admin/queues/status');
       if (res.ok) {
         const data = await res.json();
         setQueueStatus(data);
@@ -279,7 +280,7 @@ const AdminObservatory = ({ onBackToApp }) => {
         batch_size: parseInt(geminiBatchSize) || 10,
         all_pending: geminiAllPending
       };
-      const res = await fetch('http://127.0.0.1:8000/admin/queues/start', {
+      const res = await apiFetch('http://127.0.0.1:8000/admin/queues/start', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(body)
@@ -301,7 +302,7 @@ const AdminObservatory = ({ onBackToApp }) => {
   const handlePauseQueue = async (worker = 'all') => {
     try {
       setQueueActionLoading(`pause_${worker}`);
-      await fetch('http://127.0.0.1:8000/admin/queues/pause', {
+      await apiFetch('http://127.0.0.1:8000/admin/queues/pause', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ worker })
@@ -317,7 +318,7 @@ const AdminObservatory = ({ onBackToApp }) => {
   const handleResumeQueue = async (worker = 'all') => {
     try {
       setQueueActionLoading(`resume_${worker}`);
-      await fetch('http://127.0.0.1:8000/admin/queues/resume', {
+      await apiFetch('http://127.0.0.1:8000/admin/queues/resume', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ worker })
@@ -334,7 +335,7 @@ const AdminObservatory = ({ onBackToApp }) => {
     if (!window.confirm(`Are you sure you want to stop the ${worker.toUpperCase()} queue worker?`)) return;
     try {
       setQueueActionLoading(`stop_${worker}`);
-      await fetch('http://127.0.0.1:8000/admin/queues/stop', {
+      await apiFetch('http://127.0.0.1:8000/admin/queues/stop', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ worker })
@@ -352,7 +353,7 @@ const AdminObservatory = ({ onBackToApp }) => {
     if (!newIngName.trim()) return;
     try {
       setSubmittingIng(true);
-      const res = await fetch('http://127.0.0.1:8000/admin/whitelist', {
+      const res = await apiFetch('http://127.0.0.1:8000/admin/whitelist', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -381,7 +382,7 @@ const AdminObservatory = ({ onBackToApp }) => {
 
   const handleToggleActive = async (item) => {
     try {
-      const res = await fetch(`http://127.0.0.1:8000/admin/whitelist/${item.id}`, {
+      const res = await apiFetch(`http://127.0.0.1:8000/admin/whitelist/${item.id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ is_active: !item.is_active })
@@ -397,7 +398,7 @@ const AdminObservatory = ({ onBackToApp }) => {
   const handleDeleteIngredient = async (item) => {
     if (!window.confirm(`Delete "${item.name}" from whitelist?`)) return;
     try {
-      const res = await fetch(`http://127.0.0.1:8000/admin/whitelist/${item.id}`, {
+      const res = await apiFetch(`http://127.0.0.1:8000/admin/whitelist/${item.id}`, {
         method: 'DELETE'
       });
       if (res.ok) {
@@ -413,7 +414,7 @@ const AdminObservatory = ({ onBackToApp }) => {
     try {
       setReconcilingPending(true);
       setReconcileResult(null);
-      const res = await fetch('http://127.0.0.1:8000/admin/whitelist/reconcile-pending', {
+      const res = await apiFetch('http://127.0.0.1:8000/admin/whitelist/reconcile-pending', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ limit: 250, min_ingredients: 1 })
@@ -447,7 +448,7 @@ const AdminObservatory = ({ onBackToApp }) => {
   const fetchOverview = async () => {
     try {
       setLoadingOverview(true);
-      const res = await fetch('http://127.0.0.1:8000/admin/overview');
+      const res = await apiFetch('http://127.0.0.1:8000/admin/overview');
       if (res.ok) {
         const data = await res.json();
         setOverview(data);
@@ -464,7 +465,7 @@ const AdminObservatory = ({ onBackToApp }) => {
 
   const fetchLangSearchQuota = async () => {
     try {
-      const res = await fetch('http://127.0.0.1:8000/admin/langsearch/quota-status');
+      const res = await apiFetch('http://127.0.0.1:8000/admin/langsearch/quota-status');
       if (res.ok) {
         const data = await res.json();
         setLangsearchQuota(data);
@@ -477,7 +478,7 @@ const AdminObservatory = ({ onBackToApp }) => {
   const fetchAllApisStatus = async () => {
     try {
       setLoadingApiStatus(true);
-      const res = await fetch('http://127.0.0.1:8000/admin/apis/status');
+      const res = await apiFetch('http://127.0.0.1:8000/admin/apis/status');
       if (res.ok) {
         const data = await res.json();
         setApiStatusData(data);
@@ -495,7 +496,7 @@ const AdminObservatory = ({ onBackToApp }) => {
   const handleResetLangsearchQuota = async () => {
     try {
       setApiActionLoading('reset_ls');
-      const res = await fetch('http://127.0.0.1:8000/admin/langsearch/reset-quota', { method: 'POST' });
+      const res = await apiFetch('http://127.0.0.1:8000/admin/langsearch/reset-quota', { method: 'POST' });
       if (res.ok) {
         await fetchAllApisStatus();
         setApiActionMessage({ type: 'success', text: 'LangSearch quota counter reset to 0. All 10M daily tokens restored!' });
@@ -512,7 +513,7 @@ const AdminObservatory = ({ onBackToApp }) => {
   const handleSetLangsearchExhausted = async () => {
     try {
       setApiActionLoading('exhaust_ls');
-      const res = await fetch('http://127.0.0.1:8000/admin/langsearch/set-quota-exhausted', {
+      const res = await apiFetch('http://127.0.0.1:8000/admin/langsearch/set-quota-exhausted', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ tokens_used: 10000000, reason: 'Manual Admin 100% allowance simulation' })
@@ -532,7 +533,7 @@ const AdminObservatory = ({ onBackToApp }) => {
   const fetchBrands = async () => {
     try {
       setLoadingBrands(true);
-      const res = await fetch('http://127.0.0.1:8000/admin/brands?limit=250');
+      const res = await apiFetch('http://127.0.0.1:8000/admin/brands?limit=250');
       if (res.ok) {
         const data = await res.json();
         setBrandsList(data);
@@ -571,7 +572,7 @@ const AdminObservatory = ({ onBackToApp }) => {
       if (sortBy) params.append('sort_by', sortBy);
       if (sortOrder) params.append('order', sortOrder);
 
-      const res = await fetch(`http://127.0.0.1:8000/admin/products?${params.toString()}`);
+      const res = await apiFetch(`http://127.0.0.1:8000/admin/products?${params.toString()}`);
       if (res.ok) {
         const data = await res.json();
         setProducts(data.products || []);
@@ -658,7 +659,7 @@ const AdminObservatory = ({ onBackToApp }) => {
       if (newIsSkincare !== undefined) payload.is_skincare = newIsSkincare;
       if (newCategory !== undefined) payload.category = newCategory;
 
-      const res = await fetch(`http://127.0.0.1:8000/admin/products/${productId}/classification`, {
+      const res = await apiFetch(`http://127.0.0.1:8000/admin/products/${productId}/classification`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)
@@ -693,7 +694,7 @@ const AdminObservatory = ({ onBackToApp }) => {
   const handleTriggerLinker = async () => {
     try {
       setActionLoading('linker');
-      const res = await fetch('http://127.0.0.1:8000/admin/pipeline/trigger-linker', { method: 'POST' });
+      const res = await apiFetch('http://127.0.0.1:8000/admin/pipeline/trigger-linker', { method: 'POST' });
       if (res.ok) {
         const data = await res.json();
         setActionMessage({
@@ -715,7 +716,7 @@ const AdminObservatory = ({ onBackToApp }) => {
   const handleTriggerClassifier = async () => {
     try {
       setActionLoading('classifier');
-      const res = await fetch('http://127.0.0.1:8000/admin/pipeline/trigger-classifier', { method: 'POST' });
+      const res = await apiFetch('http://127.0.0.1:8000/admin/pipeline/trigger-classifier', { method: 'POST' });
       if (res.ok) {
         const data = await res.json();
         setActionMessage({
@@ -744,7 +745,7 @@ const AdminObservatory = ({ onBackToApp }) => {
     setTelemetry(null);
     setTierSuccessMsg(null);
     try {
-      const res = await fetch(`http://127.0.0.1:8000/admin/products/${productId}/telemetry`);
+      const res = await apiFetch(`http://127.0.0.1:8000/admin/products/${productId}/telemetry`);
       if (res.ok) {
         const data = await res.json();
         setTelemetry(data);
@@ -764,7 +765,7 @@ const AdminObservatory = ({ onBackToApp }) => {
     try {
       setExecutingTiers(true);
       setTierSuccessMsg(null);
-      const res = await fetch(`http://127.0.0.1:8000/admin/products/${selectedProductId}/execute-all-tiers`, {
+      const res = await apiFetch(`http://127.0.0.1:8000/admin/products/${selectedProductId}/execute-all-tiers`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ langsearch_enabled: includeLangSearch })
@@ -792,7 +793,7 @@ const AdminObservatory = ({ onBackToApp }) => {
     try {
       setApplyingTier(tierCode);
       setTierSuccessMsg(null);
-      const res = await fetch(`http://127.0.0.1:8000/admin/products/${selectedProductId}/apply-tier`, {
+      const res = await apiFetch(`http://127.0.0.1:8000/admin/products/${selectedProductId}/apply-tier`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ tier_code: tierCode })
@@ -800,7 +801,7 @@ const AdminObservatory = ({ onBackToApp }) => {
       if (res.ok) {
         const data = await res.json();
         // Re-fetch telemetry to reflect new active formula across all tabs
-        const telRes = await fetch(`http://127.0.0.1:8000/admin/products/${selectedProductId}/telemetry`);
+        const telRes = await apiFetch(`http://127.0.0.1:8000/admin/products/${selectedProductId}/telemetry`);
         if (telRes.ok) {
           const updatedTelemetry = await telRes.json();
           setTelemetry(updatedTelemetry);
@@ -831,7 +832,7 @@ const AdminObservatory = ({ onBackToApp }) => {
       if (mode === 'specific' && specificCat) {
         params.append('target_category', specificCat);
       }
-      const res = await fetch(`http://127.0.0.1:8000/admin/products/${productId}/alternatives?${params.toString()}`);
+      const res = await apiFetch(`http://127.0.0.1:8000/admin/products/${productId}/alternatives?${params.toString()}`);
       if (res.ok) {
         const data = await res.json();
         setTelemetry(prev => prev ? {

@@ -1,3 +1,4 @@
+import { apiFetch } from './apiFetch';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { TestResult } from './ConnectionTests';
 import useConnectionTests from './useConnectionTests';
@@ -5,7 +6,7 @@ const API = 'http://127.0.0.1:8000/admin/aggregation';
 const categories = ['Cleanser', 'Moisturizer', 'Serum', 'Sunscreen', 'Toner', 'Exfoliator', 'Eye Skincare', 'Lip Care', 'Mask', 'Treatment', 'Body Care', 'Tanning', 'Set', 'Makeup', 'Hair Care', 'Fragrance'];
 const field = 'w-full border border-gray-300 rounded-lg p-2 bg-white text-sm';
 async function api(path, options = {}) {
-  const response = await fetch(`${API}${path}`, { ...options, headers: { 'Content-Type': 'application/json' } });
+  const response = await apiFetch(`${API}${path}`, { ...options, headers: { 'Content-Type': 'application/json' } });
   const data = await response.json();
   if (!response.ok) throw new Error(typeof data.detail === 'string' ? data.detail : 'Request failed.');
   return data;

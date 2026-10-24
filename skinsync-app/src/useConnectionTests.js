@@ -1,3 +1,4 @@
+import { apiFetch } from './apiFetch';
 import { useEffect, useState } from 'react';
 const endpoint = 'http://127.0.0.1:8000/admin/aggregation/connection-tests';
 export default function useConnectionTests() {
@@ -7,7 +8,7 @@ export default function useConnectionTests() {
     let active = true;
     async function refresh() {
       try {
-        const response = await fetch(endpoint);
+        const response = await apiFetch(endpoint);
         if (!response.ok) throw new Error('Could not load test results.');
         const data = await response.json();
         if (active) setState(data);
@@ -20,7 +21,7 @@ export default function useConnectionTests() {
   async function test(kind, ids = [], sample_url = null) {
     setError('');
     try {
-      const response = await fetch(endpoint, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ kind, ids, sample_url }) });
+      const response = await apiFetch(endpoint, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ kind, ids, sample_url }) });
       const data = await response.json();
       if (!response.ok) throw new Error(data.detail || 'Could not start test.');
       setState(data);
