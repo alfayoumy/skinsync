@@ -13,6 +13,7 @@ import uuid
 from datetime import datetime, timezone
 
 CATALOG_TABLES = (
+    'inci_research_queue', 'inci_research_runs',
     'identity_gemini_queue', 'product_review_queue',
     'canonical_redirects', 'canonical_identity_constraints',
     'canonical_identity_history', 'canonical_product_aliases',
@@ -72,6 +73,9 @@ def _active_workers(conn, tables):
     if 'identity_gemini_queue' in tables and conn.execute(
         "SELECT 1 FROM identity_gemini_queue WHERE status='processing' LIMIT 1").fetchone():
         names.append('identity_gemini_queue')
+    if 'inci_research_runs' in tables and conn.execute(
+        "SELECT 1 FROM inci_research_runs WHERE status IN ('running','cancelling') LIMIT 1").fetchone():
+        names.append('inci_research_worker')
     manager = getattr(sys.modules.get('pipeline.queue_runner'), 'master_queue_manager', None)
     if manager:
         for name in ('jev', 'gemini'):
