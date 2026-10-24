@@ -84,6 +84,61 @@ class SavedGeminiDecisionTests(unittest.TestCase):
         self.assertEqual(self.conn.execute('SELECT COUNT(*) FROM canonical_identity_constraints').fetchone()[0],2)
         self.assertEqual(apply_saved_decisions(self.conn,dry_run=False)['stored_decisions_checked'],0)
 
+    def test_vacation_six_retailer_listings_become_two_formulation_groups(self):
+        title='Vacation Sunscreen Lotion Spray 200ml'
+        cid,rid=self.make_case(title,'Vacation',[
+            ('sourcebeauty','Vacation Sunscreen Lotion'),
+            ('sourcebeauty','Vacation Sunscreen Spray'),
+            ('feel22','Vacation Sunscreen Lotion 120ml'),
+            ('feel22','Vacation Sunscreen Lotion Spray 200ml'),
+            ('drdawood','Vacation Sunscreen Lotion 120ml 1+1'),
+            ('drdawood','Vacation Sunscreen Lotion 120ml')
+        ],'different_product',.90)
+        from pipeline.saved_gemini_decisions import plan_distinct_split,_case,_answer
+        row=self.conn.execute("""SELECT r.*,q.verdict,q.confidence,q.explanation,q.model_name,
+            q.evidence_hash queued_hash FROM product_review_queue r
+            JOIN identity_gemini_queue q ON q.review_id=r.id WHERE r.id=?""",(rid,)).fetchone()
+        plan,why=plan_distinct_split(self.conn,_case(row),_answer(row))
+        self.assertIsNotNone(plan,why)
+        self.assertEqual(plan['group_count'],2)
+        self.assertEqual(sorted(g['variant'] for g in plan['groups']),
+                         [['delivery_lotion'],['delivery_spray']])
+        self.assertEqual([len(g['product_ids']) for g in plan['groups']],[4,2])
+        self.assertEqual(len(plan['moves']),1)
+        self.assertEqual(len(plan['keep_ids']),2)
+        before=self.conn.execute('SELECT COUNT(*) FROM canonical_products').fetchone()[0]
+        preview=apply_saved_decisions(self.conn,dry_run=True)
+        self.assertEqual(preview['automatically_split'],1)
+        self.assertEqual(preview['new_canonical_products'],1)
+        self.assertEqual(len(preview['sample_results'][0]['proposed_groups']),2)
+        self.assertEqual(self.conn.execute('SELECT COUNT(*) FROM canonical_products').fetchone()[0],before)
+        applied=apply_saved_decisions(self.conn,dry_run=False)
+        self.assertEqual(applied['automatically_split'],1)
+        self.assertEqual(applied['new_canonical_products'],1)
+        self.assertEqual(self.conn.execute('SELECT COUNT(*) FROM canonical_products').fetchone()[0],before+1)
+        kept=self.conn.execute('SELECT title FROM products WHERE canonical_product_id=? ORDER BY id',(cid,)).fetchall()
+        self.assertEqual(len(kept),2)
+        self.assertTrue(all('Spray' in r['title'] for r in kept))
+        moved=self.conn.execute('SELECT title FROM products WHERE canonical_product_id!=? ORDER BY id',(cid,)).fetchall()
+        self.assertEqual(len(moved),4)
+        self.assertTrue(all('Spray' not in r['title'] for r in moved))
+        self.assertEqual(apply_saved_decisions(self.conn,dry_run=False)['stored_decisions_checked'],0)
+
+    def test_stale_vacation_source_offer_prevents_unsafe_partition(self):
+        title='Vacation Sunscreen Lotion Spray 200ml'
+        cid,rid=self.make_case(title,'Vacation',[
+            ('sourcebeauty','Vacation Sunscreen Lotion'),
+            ('sourcebeauty','Vacation Sunscreen Spray'),
+            ('feel22','Vacation Sunscreen Lotion 120ml'),
+            ('feel22','Vacation Sunscreen Lotion Spray 200ml')
+        ],'different_product',.99)
+        self.conn.execute("UPDATE products SET title='Vacation Sunscreen SPF 50 Spray' WHERE canonical_product_id=? AND title='Vacation Sunscreen Spray'",(cid,))
+        result=apply_saved_decisions(self.conn,dry_run=False)
+        self.assertEqual(result['automatically_split'],0)
+        self.assertEqual(result['still_needs_review'],1)
+        self.assertEqual(self.conn.execute('SELECT COUNT(*) FROM canonical_products').fetchone()[0],1)
+        self.assertEqual(self.conn.execute('SELECT status FROM product_review_queue WHERE id=?',(rid,)).fetchone()[0],'pending')
+
     def test_confident_negative_without_safe_partition_stays_structural_review(self):
         name='NUXE Generic Body Oil'
         cid,rid=self.make_case(name,'NUXE',[
