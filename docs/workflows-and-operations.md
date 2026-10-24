@@ -134,6 +134,12 @@ python api/tests/run_regressions.py
 4. Product identity Gemini decisions are not a licensed authority for complete INCI provenance. A confident different-product verdict without deterministic, explicit per-offer partition remains structural review.
 5. Some historical evaluation and benchmarking documents are preserved as dated baselines, not up-to-date production evidence.
 
+### Guarded Reset Catalog operation
+
+Catalog Operations → Add & match products → **Reset catalog data** exposes a preview and a guarded reset. The preview lists row counts for all product-derived tables, active jobs and preserved reference counts. The reset requires `operations` permission, an unchanged preview fingerprint and the exact phrase `RESET ALL PRODUCT DATA`. It refuses pending/running tasks, actively processing Gemini decisions, in-process Jev/Gemini workers, and cancelled discovery scans until the current page worker exits. A maintenance gate blocks new product ingestions and task creation during the backup and reset.
+
+An automatic private SQLite backup is verified before the transactional delete; the backup path and audited reset receipt are returned. Backups default to `api/backups/catalog/` beside the configured SQLite file, or `SKINSYNC_CATALOG_BACKUP_DIR`. Never commit backups to Git. The reset clears legacy products, canonicals, offers, observations, INCI evidence/versions, identity histories and reviews (including saved Gemini decisions), evaluation artifacts, and catalog tasks/checkpoints. It preserves source registry/configuration, brands, taxonomy, INCI reference, whitelists, ingredient synonyms, clinical ingredients, and API usage/rate limits. Gemini decisions survive **only inside the backup** because original product IDs cannot be trusted after re-ingestion. The current discovery must finish or stop fully before preview can be applied. If other external workers use the DB, quiesce them before resetting.
+
 ### Safe clean-catalog rebuild
 
 There is no catalog-wide purge action in the current Catalog Operations UI or `/admin/workflows/*` endpoints. Do not delete the database or product tables while tracked discovery is running. Shopify discovery commits every completed page, and source observations, canonical products, identity links, offers, formulation evidence and saved review decisions are related.

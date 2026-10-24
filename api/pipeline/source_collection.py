@@ -20,6 +20,8 @@ def _read(url, source=None):
 
 
 def collect_source(conn,source_id,urls,max_products=100,dry_run=False):
+    from pipeline.catalog_reset import guard_catalog_writes
+    guard_catalog_writes(conn)
     source=get_source(conn,source_id)
     if not source['enabled']:raise ValueError('Source is staged. Enable collection explicitly before making requests.')
     if not urls or len(urls)>max_products or not 1<=max_products<=1000:raise ValueError('Provide a bounded collection URL list.')
@@ -34,6 +36,7 @@ def collect_source(conn,source_id,urls,max_products=100,dry_run=False):
     results=[]
     adapter=get_adapter(source)
     for url in urls:
+        guard_catalog_writes(conn)
         if not robots.can_fetch(USER_AGENT,url):
             results.append({'url':url,'status':'disallowed_by_robots'});continue
         delay=max(float(source['rate_limit_seconds']),robots.crawl_delay(USER_AGENT) or 0)

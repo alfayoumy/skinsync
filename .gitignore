@@ -52,4 +52,6 @@ tmp/
 *.db-shm
 *.db.bak
 *.db.backup*
+api/backups/
+*.sqlite3.partial
 *backup*.db

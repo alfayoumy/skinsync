@@ -70,6 +70,10 @@ def create_task(
         should_close = True
 
     try:
+        if not conn.in_transaction:
+            conn.execute('BEGIN IMMEDIATE')
+        from pipeline.catalog_reset import guard_catalog_writes
+        guard_catalog_writes(conn)
         cur = conn.cursor()
         cur.execute("""
         INSERT INTO pipeline_tasks (
