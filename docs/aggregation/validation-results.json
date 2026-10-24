@@ -1,0 +1,105 @@
+{
+  "date": "2026-10-24",
+  "source_smoke": {
+    "sourcebeauty": {
+      "discovered_products": 1,
+      "ingredient_candidates": 1,
+      "full_inci_candidates": 1,
+      "ambiguous_records": 0,
+      "reviewed_auto_links": 0,
+      "matched_canonical_count": 1
+    },
+    "feel22": {
+      "discovered_products": 1,
+      "ingredient_candidates": 1,
+      "full_inci_candidates": 1,
+      "ambiguous_records": 1,
+      "reviewed_auto_links": 0,
+      "matched_canonical_count": 0
+    },
+    "zynah": {
+      "discovered_products": 1,
+      "ingredient_candidates": 1,
+      "full_inci_candidates": 1,
+      "ambiguous_records": 0,
+      "reviewed_auto_links": 0,
+      "matched_canonical_count": 1
+    },
+    "zahra": {
+      "discovered_products": 1,
+      "ingredient_candidates": 1,
+      "full_inci_candidates": 1,
+      "ambiguous_records": 0,
+      "reviewed_auto_links": 0,
+      "matched_canonical_count": 0
+    },
+    "cerave_eg": {
+      "discovered_products": 1,
+      "ingredient_candidates": 1,
+      "full_inci_candidates": 1,
+      "ambiguous_records": 0,
+      "reviewed_auto_links": 0,
+      "matched_canonical_count": 1
+    },
+    "jamila": {
+      "discovered_products": 1,
+      "ingredient_candidates": 1,
+      "full_inci_candidates": 1,
+      "ambiguous_records": 1,
+      "reviewed_auto_links": 0,
+      "matched_canonical_count": 0
+    }
+  },
+  "source_smoke_is_catalog_coverage_estimate": false,
+  "source_database_writes": 0,
+  "publications": 0,
+  "full_regression_tests": 234,
+  "full_regression_status": "passed",
+  "frontend_build": "passed",
+  "new_review_panel_eslint": "passed",
+  "migration": {
+    "legacy_mappings": 22800,
+    "preserved": 22800,
+    "applied_to_live": true,
+    "database": "api/skincare.db",
+    "backup": "/mnt/windows/Users/AmrAlfayoumy/Downloads/skincare/data/backups/skincare-before-aggregation-20261024T171654Z.db",
+    "verification_report": "/mnt/windows/Users/AmrAlfayoumy/Downloads/skincare/data/backups/skincare-before-aggregation-20261024T171654Z.verification.json",
+    "integrity_check": "ok",
+    "new_foreign_key_violations": 0,
+    "protected_data_preserved": true
+  },
+  "reconciliation": {
+    "retailer_records": 22800,
+    "canonical_records": 14710,
+    "new_canonicals": 0,
+    "changed_associations": 0,
+    "review_cases": 1347,
+    "live_writes": 0
+  },
+  "registry_dashboard": {
+    "registered_sources": 31,
+    "collection_enabled": 6,
+    "staged_sources": 25,
+    "focused_http_tests": 10,
+    "status": "passed",
+    "frontend_build": "passed",
+    "collection_switches": "per-source enable/pause; legacy collector respects paused state"
+  },
+  "connection_tests": {
+    "unit_tests": 6,
+    "status": "passed",
+    "frontend_lint": "passed",
+    "live_sourcebeauty": {
+      "online": "yes",
+      "functional": "incomplete",
+      "priced_products": 1,
+      "ordered_inci_products": 0
+    }
+  },
+  "refresh_status": "awaiting_user_confirmation",
+  "backup_reverified": {
+    "integrity_check": "ok",
+    "products": 22800,
+    "canonical_products": 14710
+  }
+}

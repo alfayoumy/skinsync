@@ -1,0 +1,43 @@
+{
+  "classification": [
+    {"title":"CeraVe Moisturizing Cream Fragrance-Free","brand":"CeraVe","category":"Moisturizer","is_skincare":true},
+    {"title":"CeraVe Hydrating Cleanser","brand":"CeraVe","source_category":"Body Lotion","category":"Cleanser","is_skincare":true},
+    {"title":"Tinted Sunscreen Fluid SPF 50","category":"Sunscreen","is_skincare":true},
+    {"title":"Eye Repair Cream","category":"Eye Skincare","is_skincare":true},
+    {"title":"Lip Sleeping Mask","category":"Lip Care","is_skincare":true},
+    {"title":"Baby Soothing Moisturizing Cream","category":"Moisturizer","is_skincare":true},
+    {"title":"Salicylic Exfoliating Cleanser","category":"Cleanser","is_skincare":true},
+    {"title":"Body Wash Fragrance-Free","category":"Body Care","is_skincare":true},
+    {"title":"Hyaluronic Acid Serum","category":"Serum","is_skincare":true},
+    {"title":"Hydrating Toner","category":"Toner","is_skincare":true},
+    {"title":"Ginseng Essence","category":"Toner","is_skincare":true},
+    {"title":"AHA BHA Peeling Solution","category":"Exfoliator","is_skincare":true},
+    {"title":"Clay Face Mask","category":"Mask","is_skincare":true},
+    {"title":"Acne Spot Treatment","category":"Treatment","is_skincare":true},
+    {"title":"Self Tanning Oil","category":"Tanning","is_skincare":true},
+    {"title":"Vitamin C Serum Capsules","category":"Serum","is_skincare":true},
+    {"title":"Vitamin C Tablets","category":"Supplements & Health","is_skincare":false},
+    {"title":"Eau de Parfum","category":"Fragrance","is_skincare":false},
+    {"title":"Tinted Foundation SPF 30","category":"Makeup","is_skincare":false},
+    {"title":"Hair Serum Anti Frizz","category":"Hair Care","is_skincare":false},
+    {"title":"Nail Polish","category":"Nail Care","is_skincare":false},
+    {"title":"Deodorant Roll On","category":"Deodorant","is_skincare":false},
+    {"title":"Dental Floss","category":"Oral Care","is_skincare":false},
+    {"title":"Digital Thermometer","category":"Medical Supplies","is_skincare":false},
+    {"title":"Makeup Brush","category":"Tools & Accessories","is_skincare":false},
+    {"title":"Baby Wipes","category":"Baby Care","is_skincare":false},
+    {"title":"Skincare Gift Set","category":"Set","is_skincare":false},
+    {"title":"CeraVe Moisturizing Cream 2 x 50 ml","brand":"CeraVe","category":"Moisturizer","is_skincare":true},
+    {"title":"سيرافي كريم مرطب","brand":"سيرافي","category":"Moisturizer","is_skincare":true},
+    {"title":"غسول الوجه","category":"Cleanser","is_skincare":true}
+  ],
+  "critical_pairs": [
+    ["Brand Sunscreen SPF 30", "Brand Sunscreen SPF 50"],
+    ["Niacinamide Serum 5%", "Niacinamide Serum 10%"],
+    ["Brand Day Cream", "Brand Night Cream"],
+    ["Brand Fragrance-Free Cream", "Brand Scented Cream"],
+    ["Brand Tinted Sunscreen SPF 50", "Brand Untinted Sunscreen SPF 50"],
+    ["Brand Eye Cream", "Brand Lip Cream"],
+    ["Brand Serum", "Brand Cream"]
+  ]
+}

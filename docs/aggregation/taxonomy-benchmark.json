@@ -1,0 +1,335 @@
+{
+  "sample_count": 30,
+  "accuracy": 1.0,
+  "macro_f1": 1.0,
+  "skincare_false_exclusion_rate": 0.0,
+  "per_category": {
+    "Baby Care": {
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0
+    },
+    "Body Care": {
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0
+    },
+    "Cleanser": {
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0
+    },
+    "Deodorant": {
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0
+    },
+    "Exfoliator": {
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0
+    },
+    "Eye Skincare": {
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0
+    },
+    "Fragrance": {
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0
+    },
+    "Hair Care": {
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0
+    },
+    "Lip Care": {
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0
+    },
+    "Makeup": {
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0
+    },
+    "Mask": {
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0
+    },
+    "Medical Supplies": {
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0
+    },
+    "Moisturizer": {
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0
+    },
+    "Nail Care": {
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0
+    },
+    "Oral Care": {
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0
+    },
+    "Serum": {
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0
+    },
+    "Set": {
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0
+    },
+    "Sunscreen": {
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0
+    },
+    "Supplements & Health": {
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0
+    },
+    "Tanning": {
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0
+    },
+    "Toner": {
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0
+    },
+    "Tools & Accessories": {
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0
+    },
+    "Treatment": {
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0
+    }
+  },
+  "records": [
+    {
+      "title": "CeraVe Moisturizing Cream Fragrance-Free",
+      "expected": "Moisturizer",
+      "predicted": "Moisturizer",
+      "status": "auto_approved",
+      "correct": true
+    },
+    {
+      "title": "CeraVe Hydrating Cleanser",
+      "expected": "Cleanser",
+      "predicted": "Cleanser",
+      "status": "auto_approved",
+      "correct": true
+    },
+    {
+      "title": "Tinted Sunscreen Fluid SPF 50",
+      "expected": "Sunscreen",
+      "predicted": "Sunscreen",
+      "status": "auto_approved",
+      "correct": true
+    },
+    {
+      "title": "Eye Repair Cream",
+      "expected": "Eye Skincare",
+      "predicted": "Eye Skincare",
+      "status": "auto_approved",
+      "correct": true
+    },
+    {
+      "title": "Lip Sleeping Mask",
+      "expected": "Lip Care",
+      "predicted": "Lip Care",
+      "status": "auto_approved",
+      "correct": true
+    },
+    {
+      "title": "Baby Soothing Moisturizing Cream",
+      "expected": "Moisturizer",
+      "predicted": "Moisturizer",
+      "status": "auto_approved",
+      "correct": true
+    },
+    {
+      "title": "Salicylic Exfoliating Cleanser",
+      "expected": "Cleanser",
+      "predicted": "Cleanser",
+      "status": "auto_approved",
+      "correct": true
+    },
+    {
+      "title": "Body Wash Fragrance-Free",
+      "expected": "Body Care",
+      "predicted": "Body Care",
+      "status": "auto_approved",
+      "correct": true
+    },
+    {
+      "title": "Hyaluronic Acid Serum",
+      "expected": "Serum",
+      "predicted": "Serum",
+      "status": "auto_approved",
+      "correct": true
+    },
+    {
+      "title": "Hydrating Toner",
+      "expected": "Toner",
+      "predicted": "Toner",
+      "status": "auto_approved",
+      "correct": true
+    },
+    {
+      "title": "Ginseng Essence",
+      "expected": "Toner",
+      "predicted": "Toner",
+      "status": "auto_approved",
+      "correct": true
+    },
+    {
+      "title": "AHA BHA Peeling Solution",
+      "expected": "Exfoliator",
+      "predicted": "Exfoliator",
+      "status": "auto_approved",
+      "correct": true
+    },
+    {
+      "title": "Clay Face Mask",
+      "expected": "Mask",
+      "predicted": "Mask",
+      "status": "auto_approved",
+      "correct": true
+    },
+    {
+      "title": "Acne Spot Treatment",
+      "expected": "Treatment",
+      "predicted": "Treatment",
+      "status": "auto_approved",
+      "correct": true
+    },
+    {
+      "title": "Self Tanning Oil",
+      "expected": "Tanning",
+      "predicted": "Tanning",
+      "status": "auto_approved",
+      "correct": true
+    },
+    {
+      "title": "Vitamin C Serum Capsules",
+      "expected": "Serum",
+      "predicted": "Serum",
+      "status": "auto_approved",
+      "correct": true
+    },
+    {
+      "title": "Vitamin C Tablets",
+      "expected": "Supplements & Health",
+      "predicted": "Supplements & Health",
+      "status": "excluded",
+      "correct": true
+    },
+    {
+      "title": "Eau de Parfum",
+      "expected": "Fragrance",
+      "predicted": "Fragrance",
+      "status": "excluded",
+      "correct": true
+    },
+    {
+      "title": "Tinted Foundation SPF 30",
+      "expected": "Makeup",
+      "predicted": "Makeup",
+      "status": "excluded",
+      "correct": true
+    },
+    {
+      "title": "Hair Serum Anti Frizz",
+      "expected": "Hair Care",
+      "predicted": "Hair Care",
+      "status": "excluded",
+      "correct": true
+    },
+    {
+      "title": "Nail Polish",
+      "expected": "Nail Care",
+      "predicted": "Nail Care",
+      "status": "excluded",
+      "correct": true
+    },
+    {
+      "title": "Deodorant Roll On",
+      "expected": "Deodorant",
+      "predicted": "Deodorant",
+      "status": "excluded",
+      "correct": true
+    },
+    {
+      "title": "Dental Floss",
+      "expected": "Oral Care",
+      "predicted": "Oral Care",
+      "status": "excluded",
+      "correct": true
+    },
+    {
+      "title": "Digital Thermometer",
+      "expected": "Medical Supplies",
+      "predicted": "Medical Supplies",
+      "status": "excluded",
+      "correct": true
+    },
+    {
+      "title": "Makeup Brush",
+      "expected": "Tools & Accessories",
+      "predicted": "Tools & Accessories",
+      "status": "excluded",
+      "correct": true
+    },
+    {
+      "title": "Baby Wipes",
+      "expected": "Baby Care",
+      "predicted": "Baby Care",
+      "status": "excluded",
+      "correct": true
+    },
+    {
+      "title": "Skincare Gift Set",
+      "expected": "Set",
+      "predicted": "Set",
+      "status": "excluded",
+      "correct": true
+    },
+    {
+      "title": "CeraVe Moisturizing Cream 2 x 50 ml",
+      "expected": "Moisturizer",
+      "predicted": "Moisturizer",
+      "status": "auto_approved",
+      "correct": true
+    },
+    {
+      "title": "سيرافي كريم مرطب",
+      "expected": "Moisturizer",
+      "predicted": "Moisturizer",
+      "status": "auto_approved",
+      "correct": true
+    },
+    {
+      "title": "غسول الوجه",
+      "expected": "Cleanser",
+      "predicted": "Cleanser",
+      "status": "auto_approved",
+      "correct": true
+    }
+  ]
+}
