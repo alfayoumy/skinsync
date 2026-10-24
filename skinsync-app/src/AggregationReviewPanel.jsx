@@ -19,6 +19,7 @@ export default function AggregationReviewPanel({ onClose, initialSourceId = 'sou
   const [offset, setOffset] = useState(0), [kind, setKind] = useState(''), [selected, setSelected] = useState(null);
   const [sourceId, setSourceId] = useState(initialSourceId), [coverage, setCoverage] = useState(null);
   const [reviewer, setReviewer] = useState(''), [reason, setReason] = useState(''), [action, setAction] = useState('request_evidence');
+  const [mergeSurvivor, setMergeSurvivor] = useState('');
   const [canonicalId, setCanonicalId] = useState(''), [category, setCategory] = useState('Moisturizer');
   const [busy, setBusy] = useState(false), [message, setMessage] = useState(''), [error, setError] = useState('');
   const refresh = useCallback(async () => {
@@ -63,11 +64,47 @@ export default function AggregationReviewPanel({ onClose, initialSourceId = 'sou
         <button disabled={busy || !source} className="border rounded-lg px-3 py-2" onClick={() => perform(async () => { await api(`/sources/${sourceId}`, { method: 'PATCH', body: JSON.stringify({ enabled: !source.enabled }) }); })}>{source?.enabled ? 'Pause collection' : 'Enable staged collection'}</button>
       </div><div className="flex gap-2"><input aria-label="Diagnostic product URL" placeholder="Product URL for selected source" type="url" className={field} value={sampleUrl} onChange={e => setSampleUrl(e.target.value)} /><button disabled={!sampleUrl || diagnostics.running.includes(`source:${sourceId}`)} className="border rounded px-3 shrink-0" onClick={() => diagnostics.test('source', [sourceId], sampleUrl)}>Test product URL</button></div>{coverage && <dl className="grid grid-cols-2 md:grid-cols-4 gap-3">{[['Products', coverage.discovered_products], ['Canonical matches', coverage.uniquely_matched_canonicals], ['Offers', coverage.additional_offers], ['Full INCI candidates', coverage.validated_full_inci_products]].map(([label, value]) => <div key={label} className="bg-gray-50 p-3 rounded-lg"><dt className="text-sm text-gray-500">{label}</dt><dd className="text-xl font-bold">{value}</dd></div>)}</dl>}</section>
       </>}
+      {mode === 'reviews' && <div className="rounded-xl border bg-white p-4 flex flex-wrap gap-3 items-center justify-between">
+        <p className="text-sm text-gray-600 max-w-2xl">Only saved review cases appear here. A preview does not create cases. Find genuine legacy catalog discrepancies here, without approving any product automatically.</p>
+        <button type="button" disabled={busy} className="rounded-lg bg-purple-700 px-4 py-2 text-white text-sm font-semibold disabled:opacity-50"
+          onClick={()=>perform(async()=>{
+            const response=await apiFetch('http://127.0.0.1:8000/admin/workflows/products/prepare-reviews',{
+              method:'POST',headers:{'Content-Type':'application/json'},body:'{}'
+            });
+            const data=await response.json();
+            if(!response.ok)throw new Error(typeof data.detail==='string'?data.detail:'Could not prepare review cases');
+            setMessage(data.review_cases_prepared+' review cases prepared; '+data.pending_review_cases+' pending in total.');
+          })}>
+          {busy?'Checking products...':'Find legacy products needing review'}
+        </button>
+      </div>}
       {mode === 'reviews' && <section className="grid md:grid-cols-2 gap-4"><div className="bg-white border rounded-xl p-4"><div className="flex justify-between mb-3"><h3 className="font-semibold">Pending reviews ({total})</h3><select aria-label="Review type" value={kind} onChange={e => { setKind(e.target.value); setOffset(0); setSelected(null); }} className="border rounded p-1"><option value="">All types</option>{['identity', 'duplicate', 'category', 'formulation'].map(k => <option key={k}>{k}</option>)}</select></div>
-        <ul className="space-y-2 max-h-96 overflow-auto">{reviews.map(r => <li key={r.id}><button className={`w-full text-left border rounded-lg p-3 ${selected?.id === r.id ? 'bg-purple-50 border-purple-500' : ''}`} onClick={() => { setSelected(r); setAction('request_evidence'); setCanonicalId(r.canonical_product_id || ''); }}><span className="block text-xs text-purple-700 uppercase">{r.kind} · {r.source_id || 'Canonical evidence'}</span><span className="block text-sm font-medium">{r.details.title || r.details.original_title || r.details.details?.titles?.join(' / ') || `Canonical ${r.canonical_product_id || 'unresolved'}`}</span></button></li>)}</ul>
+        <ul className="space-y-2 max-h-96 overflow-auto">{reviews.map(r => <li key={r.id}><button className={`w-full text-left border rounded-lg p-3 ${selected?.id === r.id ? 'bg-purple-50 border-purple-500' : ''}`} onClick={() => { setSelected(r); setAction('request_evidence'); setCanonicalId(r.canonical_product_id || ''); setMergeSurvivor(r.details?.canonical_ids?.[0] || ''); }}><span className="block text-xs text-purple-700 uppercase">{r.kind} · {r.source_id || 'Canonical evidence'}</span><span className="block text-sm font-medium">{r.details.title || r.details.original_title || r.details.details?.titles?.join(' / ') || `Canonical ${r.canonical_product_id || 'unresolved'}`}</span></button></li>)}</ul>
         {!reviews.length && <p className="py-8 text-sm text-gray-500">No pending reviews in this view.</p>}<div className="flex justify-between text-sm mt-3"><button disabled={!offset || busy} onClick={() => setOffset(Math.max(0, offset - 50))}>Previous</button><span>{Math.min(offset + reviews.length, total)} of {total}</span><button disabled={offset + 50 >= total || busy} onClick={() => setOffset(offset + 50)}>Next</button></div>
       </div><div className="bg-white border rounded-xl p-4">{selected ? <form className="space-y-3" onSubmit={e => { e.preventDefault(); perform(async () => { await api(`/reviews/${selected.id}`, { method: 'POST', body: JSON.stringify({ action, reviewer, reason, canonical_id: canonicalId ? Number(canonicalId) : null, category }) }); setMessage('Review saved. Re-ingest the observation to apply an accepted mapping.'); setSelected(null); setReason(''); }); }}>
-        <h3 className="font-semibold">Review #{selected.id}</h3>{selected.details.source_url && <a className="text-purple-700 underline text-sm" target="_blank" rel="noreferrer" href={selected.details.source_url}>Open source declaration</a>}
+        <h3 className="font-semibold">Review #{selected.id}</h3>
+        {selected.details.reason_code&&<p className="rounded-lg bg-amber-50 p-2 text-sm font-medium text-amber-900">Issue: {selected.details.reason_code.replaceAll('_',' ')}</p>}
+        {selected.details.offers?.length>0&&<div className="text-xs text-gray-700 rounded-lg border p-2 space-y-1">
+          <strong>Related store listings</strong>
+          {selected.details.offers.slice(0,5).map(offer=><p key={offer.product_id}>#{offer.product_id} · {offer.store_id}: {offer.title}</p>)}
+        </div>}
+        {selected.kind==='duplicate'&&selected.details.canonical_ids?.length===2&&<div className="border rounded-lg p-3 space-y-2">
+          <p className="text-xs font-semibold">Potential duplicate canonical products</p>
+          <p className="text-xs text-gray-600">Inspect both products and their formulas before merging, or keep them separate using the review action below.</p>
+          <select className={field} value={mergeSurvivor} onChange={e=>setMergeSurvivor(e.target.value)}>
+            {selected.details.canonical_ids.map(cid=><option key={cid} value={cid}>Keep canonical #{cid}</option>)}
+          </select>
+          <button type="button" disabled={busy||!reviewer||!reason}
+            className="rounded-lg border px-3 py-2 text-xs font-bold disabled:opacity-50" onClick={()=>perform(async()=>{
+              if(!window.confirm('Merge the two canonical identities after reviewing their formulas and variants?'))return;
+              const ids=selected.details.canonical_ids;
+              const survivor=Number(mergeSurvivor), merged=ids.find(cid=>cid!==survivor);
+              await api('/identity/merge',{method:'POST',body:JSON.stringify({survivor_id:survivor,merged_id:merged,reviewer,reason})});
+              await api('/reviews/'+selected.id,{method:'POST',body:JSON.stringify({action:'dismiss',reviewer,reason:'Resolved by reviewed merge: '+reason})});
+              setMessage('Canonical merge recorded with audit history.');
+              setSelected(null);
+            })}>Merge reviewed duplicates</button>
+        </div>}{selected.details.source_url && <a className="text-purple-700 underline text-sm" target="_blank" rel="noreferrer" href={selected.details.source_url}>Open source declaration</a>}
         <details open><summary className="text-sm cursor-pointer">Identity and ingredient evidence</summary><pre className="text-xs whitespace-pre-wrap bg-gray-50 rounded p-3 overflow-auto max-h-64">{JSON.stringify(selected.details, null, 2)}</pre></details>
         <label className="block text-sm">Decision<select value={action} onChange={e => setAction(e.target.value)} className={field}><option value="request_evidence">Request further evidence</option><option value="dismiss">Dismiss finding</option><option value="keep_separate">Keep products separate</option>{canLink && <><option value="link">Accept canonical mapping</option><option value="cannot_link">Reject canonical mapping</option></>}<option value="category">Approve category</option></select></label>
         {['link', 'cannot_link'].includes(action) && <label className="block text-sm">Canonical ID<input required min="1" type="number" className={field} value={canonicalId} onChange={e => setCanonicalId(e.target.value)} /></label>}
