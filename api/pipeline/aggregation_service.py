@@ -42,7 +42,7 @@ def save_observation(conn,observation,identity,classification):
     return oid
 
 
-def process_source_observation(conn,observation,dry_run=False,legacy_product_id=None,offer_fields=None):
+def process_source_observation(conn,observation,dry_run=False,legacy_product_id=None,offer_fields=None,existing_observation_id=None):
     from pipeline.catalog_reset import guard_catalog_writes
     guard_catalog_writes(conn)
     source=get_source(conn,observation.source_id)
@@ -61,7 +61,21 @@ def process_source_observation(conn,observation,dry_run=False,legacy_product_id=
         brand_identity=resolve_brand(observation.raw_brand,conn)
         identity=extract_identity(observation.raw_title,brand_identity['name'] if brand_identity else observation.raw_brand,
             observation.market,observation.identity_attributes)
-        oid=save_observation(conn,observation,identity,classification)
+        if existing_observation_id is None:
+            oid=save_observation(conn,observation,identity,classification)
+        else:
+            # Replay only the retained raw observation; never create a new
+            # observation row or accept the old products' ingredient fields.
+            old=conn.execute("""SELECT source_id,source_product_id,source_url,
+                raw_title,payload_hash FROM source_product_observations WHERE id=?""",
+                (existing_observation_id,)).fetchone()
+            if (old is None or old['source_id']!=observation.source_id
+                    or old['source_product_id']!=observation.source_product_id
+                    or old['source_url']!=observation.source_url
+                    or old['raw_title']!=observation.raw_title
+                    or old['payload_hash']!=observation.raw_payload_hash):
+                raise ValueError('Saved observation does not match replay source payload.')
+            oid=existing_observation_id
         reviewed=conn.execute("SELECT details,decision FROM product_review_queue WHERE source_id=? AND source_product_id=? AND kind='category' AND status='confirmed'",(source['id'],observation.source_product_id)).fetchone()
         if reviewed and json.loads(reviewed['details']).get('observation_id')==oid:
             decision=json.loads(reviewed['decision'] or '{}')

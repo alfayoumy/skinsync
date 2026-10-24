@@ -50,6 +50,11 @@ export default function CatalogWorkflowsPanel({onClose, initialTab='products',on
   const [resetConfirmation,setResetConfirmation]=useState('');
   const [resetBusy,setResetBusy]=useState(false);
   const [resetOutcome,setResetOutcome]=useState(null);
+  const [selectivePreview,setSelectivePreview]=useState(null);
+  const [selectiveConfirmation,setSelectiveConfirmation]=useState('');
+  const [selectiveJob,setSelectiveJob]=useState(null);
+  const [selectiveStatus,setSelectiveStatus]=useState(null);
+  const [selectiveBusy,setSelectiveBusy]=useState(false);
   const source=sources.find(s=>s.id===sourceId);
   useEffect(()=>{
     let active=true;
@@ -136,6 +141,40 @@ export default function CatalogWorkflowsPanel({onClose, initialTab='products',on
     } catch(e){setError(e.message);setResetPreview(null)}
     finally {setResetBusy(false)}
   }
+  async function previewSelective() {
+    setSelectiveBusy(true);setError('');setSelectiveConfirmation('');setSelectiveStatus(null);
+    try {setSelectivePreview(await call('/admin/workflows/catalog/selective-rebuild/preview'));}
+    catch(e){setError(e.message);setSelectivePreview(null);}
+    finally{setSelectiveBusy(false);}
+  }
+  async function startSelective() {
+    if(!selectivePreview?.can_rebuild||selectiveConfirmation!=='REBUILD FROM SAVED DISCOVERY')return;
+    setSelectiveBusy(true);setError('');
+    try {
+      const job=await call('/admin/workflows/catalog/selective-rebuild',json({
+        fingerprint:selectivePreview.fingerprint,
+        discovery_task_id:selectivePreview.discovery_task_id,
+        confirmation:selectiveConfirmation
+      }));
+      setSelectiveJob(job.job_id);setSelectivePreview(null);setSelectiveConfirmation('');
+    }catch(e){setError(e.message);setSelectivePreview(null)}
+    finally{setSelectiveBusy(false);}
+  }
+  useEffect(()=>{
+    if(!selectiveJob)return;
+    let active=true;
+    const poll=()=>call('/admin/workflows/catalog/selective-rebuild/jobs/'+encodeURIComponent(selectiveJob))
+      .then(data=>{
+        if(!active)return;
+        setSelectiveStatus(data);
+        if(['completed','failed'].includes(data.status)){
+          setSelectiveJob(null);setEligibility(null);
+        }
+      }).catch(e=>{if(active)setError(e.message)});
+    poll();
+    const timer=setInterval(poll,2000);
+    return ()=>{active=false;clearInterval(timer)};
+  },[selectiveJob]);
   async function run() {
     setBusy(true);setError('');setResult(null);
     try {
@@ -349,6 +388,41 @@ export default function CatalogWorkflowsPanel({onClose, initialTab='products',on
                 Manage product sources
               </button>
             </div>
+          </section>}
+          {tab==='products'&&<section className="rounded-xl border border-green-200 bg-white p-5 space-y-3">
+            <h3 className="font-bold text-gray-900">Selective rebuild from saved discovery</h3>
+            <p className="text-sm text-gray-600">Recommended after your six-source discovery completes. Archives the database, purges historical product identities, old ingredient approvals and Gemini decisions, and rebuilds products, variants and prices from saved Shopify source observations <strong>without scraping again</strong>.</p>
+            <p className="text-xs text-gray-600">Requires a completed full-catalog discovery saved with Preview only turned off. Source observations survive; old saved Gemini decisions remain in the backup.</p>
+            <button type="button" className="rounded-lg border px-3 py-2 text-sm font-bold disabled:opacity-50"
+              disabled={selectiveBusy||Boolean(selectiveJob)||Boolean(discoveryJob)} onClick={previewSelective}>
+              {selectiveBusy?'Checking...':'Preview selective rebuild'}
+            </button>
+            {selectivePreview&&<div role="status" className="border rounded-lg p-3 space-y-2 text-sm">
+              <p className="font-semibold">{selectivePreview.observations_to_replay} saved products from {selectivePreview.source_ids.length} sources can be replayed without scraping.</p>
+              <p className="text-xs">Purge {selectivePreview.legacy_products_to_purge} legacy listings, {selectivePreview.legacy_canonicals_to_purge} old canonicals, {selectivePreview.old_inci_evidence_to_purge} old INCI records and archive {selectivePreview.old_gemini_decisions_to_archive} Gemini decisions.</p>
+              <div className="grid sm:grid-cols-2 gap-1 text-xs">{Object.entries(selectivePreview.sources||{}).map(([sid,data])=>
+                <div key={sid}>{sid}: {data.saved_product_observations} saved / {data.fetched_in_run} scanned</div>)}</div>
+              {!selectivePreview.can_rebuild&&<div className="text-red-700 space-y-1">
+                {selectivePreview.errors.map((item,i)=><p key={i}>{item}</p>)}
+              </div>}
+              {selectivePreview.can_rebuild&&<div className="space-y-2">
+                <label className="block text-sm font-semibold">Type REBUILD FROM SAVED DISCOVERY to proceed.
+                  <input className={input} autoComplete="off" value={selectiveConfirmation}
+                    onChange={e=>setSelectiveConfirmation(e.target.value)}/>
+                </label>
+                <button type="button" className="rounded-lg bg-gray-900 px-4 py-2 text-white font-bold disabled:opacity-50"
+                  disabled={selectiveBusy||selectiveConfirmation!=='REBUILD FROM SAVED DISCOVERY'} onClick={startSelective}>
+                  Back up and rebuild without scraping
+                </button>
+              </div>}
+            </div>}
+            {selectiveStatus&&<div role="status" className="border rounded-lg p-3 text-sm">
+              <p className="font-semibold">Selective rebuild: {selectiveStatus.status}</p>
+              {selectiveStatus.progress&&<p className="text-xs">{selectiveStatus.progress.processed} / {selectiveStatus.progress.total} observations replayed</p>}
+              {selectiveStatus.error_message&&<p className="text-red-700">{selectiveStatus.error_message} — The catalog rebuild was rolled back.</p>}
+              {selectiveStatus.result&&<p>{selectiveStatus.result.canonicals} canonicals and {selectiveStatus.result.offers} offers rebuilt from {selectiveStatus.result.replayed} saved observations.</p>}
+              {selectiveStatus.backup_path&&<p className="text-xs break-all">Full database backup: {selectiveStatus.backup_path}</p>}
+            </div>}
           </section>}
           {tab==='products'&&<section className="rounded-xl border border-red-200 bg-white p-5 space-y-3">
             <h3 className="font-bold text-red-900">Reset catalog data</h3>
