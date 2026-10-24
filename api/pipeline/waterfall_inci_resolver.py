@@ -1566,6 +1566,24 @@ def run_waterfall_pipeline(
                 "tier3_cand": t3_cand
             }
 
+        def preview_publication(candidate):
+            """Check authoritative publishability without writing audit evidence."""
+            from pipeline.identity_trust import publication_block
+            if publication_block(conn,candidate):
+                return False
+            existing=formulation_repo.get_canonical_formulation(candidate.canonical_product_id,conn=conn)
+            if not existing:return False
+            validation=tokenize_inci_string(candidate.raw_ingredients,product_title=existing.get("canonical_title"))
+            if candidate.completeness!="full" or validation.completeness!="full" or validation.is_truncated or candidate.validation_flags.get("is_truncated"):
+                return False
+            if existing.get("ingredients_raw"):
+                old=existing.get("ingredients_parsed")
+                if not isinstance(old,list) or not old:
+                    old=tokenize_inci_string(existing["ingredients_raw"]).tokens
+                if (existing.get("formula_hash") or formulation_repo.compute_formula_hash(old))!=formulation_repo.compute_formula_hash(candidate.parsed_tokens):
+                    return False
+            return True
+
         def process_item_result(item_res):
             cand = item_res.get("candidate")
             can_id = item_res.get("canonical_id")
@@ -1580,27 +1598,19 @@ def run_waterfall_pipeline(
                         conn=conn
                     )
                 else:
-                    # Preview the same conflict policy without writing audit records.
-                    existing = formulation_repo.get_canonical_formulation(cand.canonical_product_id, conn=conn)
-                    validation = tokenize_inci_string(cand.raw_ingredients, product_title=existing.get("canonical_title") if existing else None)
-                    published = bool(existing and validation.completeness == "full" and not validation.is_truncated
-                                     and not cand.validation_flags.get("is_truncated"))
-                    if published and existing.get("ingredients_raw"):
-                        old_tokens = existing.get("ingredients_parsed")
-                        if not isinstance(old_tokens, list) or not old_tokens:
-                            old_tokens = tokenize_inci_string(existing["ingredients_raw"]).tokens
-                        old_hash = existing.get("formula_hash") or formulation_repo.compute_formula_hash(old_tokens)
-                        published = old_hash == formulation_repo.compute_formula_hash(cand.parsed_tokens)
+                    published = preview_publication(cand)
 
                 item_res["status"] = "resolved" if published else "candidate_only"
                 item_res["method"] = cand.source_name
                 item_res["product_id"] = can_id
                 if published:
                     stats["resolved"] += 1
+                    if dry_run:stats["would_publish"] = stats.get("would_publish",0)+1
                     m = cand.source_name
                     stats["by_method"][m] = stats["by_method"].get(m, 0) + 1
                 else:
                     stats["unresolved"] += 1
+                    stats["evidence_only"] = stats.get("evidence_only",0)+1
             else:
                 item_res["status"] = "candidate_only" if cand else "unresolved"
                 item_res["method"] = cand.source_name if cand else None
@@ -1613,6 +1623,7 @@ def run_waterfall_pipeline(
                         conn=conn
                     )
                 stats["unresolved"] += 1
+                if cand:stats["evidence_only"] = stats.get("evidence_only",0)+1
 
         processed_so_far = 0
 

@@ -3996,7 +3996,7 @@ const AdminObservatory = ({ onBackToApp }) => {
                   </div>
                   <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-2 text-center">
                     <div className="p-2.5 rounded-xl bg-emerald-50 border border-emerald-200">
-                      <div className="text-[10px] font-bold text-emerald-800">Formulas approved</div>
+                      <div className="text-[10px] font-bold text-emerald-800">{waterfallBatchConfig.dry_run ? 'Would qualify for publication' : 'Formulas approved'}</div>
                       <div className="text-lg font-black text-emerald-700 mt-0.5">
                         {waterfallBatchStatus?.stats?.resolved || 0}
                       </div>
@@ -4232,7 +4232,7 @@ const AdminObservatory = ({ onBackToApp }) => {
                         )}
                       </div>
                       <p className="text-[11px] text-gray-500 mt-0.5">
-                        Executes all logic & generates logs without writing updates to SQLite database.
+                        Searches sources and checks candidate eligibility without saving formulas or changing catalog records.
                       </p>
                     </div>
                   </label>
