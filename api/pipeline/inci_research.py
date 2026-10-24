@@ -167,7 +167,7 @@ def _mcp_text(response):
                      if getattr(c,'type',None)=='text')[:30000]
 
 
-async def _donsetch_pages(brand,title,domains,max_pages):
+async def _donsetch_pages(brand,title,domains,max_pages,seed_urls=()):
     """MCP over stdio; only bounded search + registered-domain fetch tools."""
     try:
         from mcp import ClientSession, StdioServerParameters
@@ -193,8 +193,18 @@ async def _donsetch_pages(brand,title,domains,max_pages):
             search=await asyncio.wait_for(session.call_tool('web_search',args),timeout=55)
             if search.isError:
                 raise RuntimeError('DonSeTch search failed.')
+            # Known source-product offers are the best exact-variant URLs.
+            # MCP search handles may be opaque. Never dereference an unknown
+            # handle or fetch outside the registered source domains.
             urls=[]
-            for match in URL_PATTERN.findall(_mcp_text(search)):
+            for seed in seed_urls:
+                safe=_safe_url(seed,domains)
+                if safe and safe not in urls and len(urls)<max_pages:urls.append(safe)
+            search_content=_mcp_text(search)
+            structured=getattr(search,'structuredContent',None)
+            if structured:
+                search_content+='\n'+json.dumps(structured,ensure_ascii=False)
+            for match in URL_PATTERN.findall(search_content):
                 url=_safe_url(match,domains)
                 if url and url not in urls:
                     urls.append(url)
@@ -358,6 +368,13 @@ def cancel_run(conn,run_id):
     return {'status':'cancelling' if row['status']=='running' else row['status']}
 
 
+def _known_offer_urls(conn,canonical_id):
+    return [r[0] for r in conn.execute(
+        """SELECT DISTINCT product_url FROM product_offers
+           WHERE canonical_product_id=? AND product_url IS NOT NULL
+           ORDER BY product_url LIMIT 12""",(canonical_id,))]
+
+
 def _process_case(conn,row,threshold,model,max_pages,fetcher,extractor):
     cid=row['canonical_product_id']
     product=conn.execute("""SELECT id,brand,canonical_title,market,formula_revision,
@@ -367,7 +384,8 @@ def _process_case(conn,row,threshold,model,max_pages,fetcher,extractor):
     if _identity_fingerprint(product)!=row['identity_fingerprint']:
         return {'status':'no_result','reason':'Canonical product identity changed since queueing.'}
     domains=_registered_domains(conn)
-    pages=fetcher(product['brand'],product['canonical_title'],domains,max_pages)
+    pages=fetcher(product['brand'],product['canonical_title'],domains,max_pages,
+                  _known_offer_urls(conn,cid))
     if not pages:return {'status':'no_result','reason':'No eligible pages from registered sources.'}
     answer=extractor(product['brand'],product['canonical_title'],pages,model)
     return _validate_candidate(product,pages,answer,domains,threshold)
@@ -377,7 +395,7 @@ def run_queue(run_id,db_path=None,threshold=0.85,max_pages=3,model=None,fetcher=
     """Runs outside the HTTP request; injectable fetcher/extractor for offline tests."""
     path=db_path or DB_PATH
     model=model or os.getenv('INCI_RESEARCH_GEMINI_MODEL',DEFAULT_MODEL)
-    async_fetch=lambda b,t,d,n:asyncio.run(_donsetch_pages(b,t,d,n))
+    async_fetch=lambda b,t,d,n,urls:asyncio.run(_donsetch_pages(b,t,d,n,urls))
     fetcher=fetcher or async_fetch
     extractor=extractor or _gemini_extract
     conn=get_connection(path)

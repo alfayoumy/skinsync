@@ -32,7 +32,7 @@ class InciResearchQueueTests(unittest.TestCase):
             "SELECT id FROM canonical_products WHERE normalized_key='research-product'").fetchone()[0]
         self.conn.commit()
 
-    def _fetch(self,brand,title,domains,max_pages):
+    def _fetch(self,brand,title,domains,max_pages,known_urls=None):
         self.assertIn('sourcebeauty.com',domains)
         return [{'url':URL,'text':f'{brand} {title}. Full ingredients: {INGREDIENTS}. End of declaration. '}]
 
