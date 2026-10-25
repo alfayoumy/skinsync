@@ -136,6 +136,73 @@ class AutoCreateUnmatchedCanonicals(unittest.TestCase):
         self.assertEqual(self.conn.execute('SELECT identity_status FROM canonical_products WHERE id=?',
             (cid,)).fetchone()[0],'provisional')
 
+    def test_all_failures_are_explained_and_dry_run_is_rollback_only(self):
+        from unittest.mock import patch
+        self.old_unanchored(self.obs())
+        before=self.conn.execute('SELECT COUNT(*) FROM canonical_products').fetchone()[0]
+        with patch('pipeline.unmatched_canonical_recovery._parse_saved',
+                   side_effect=ValueError('Test invalid replay schema')):
+            result=recover_unmatched_canonicals(self.conn,limit=5,dry_run=True)
+        self.assertTrue(result['all_failed'])
+        self.assertEqual(result['recovered_observations'],0)
+        self.assertEqual(result['still_unresolved'],1)
+        self.assertEqual(result['failure_reasons'][0]['count'],1)
+        self.assertIn('parse_saved / ValueError',result['failure_reasons'][0]['reason'])
+        self.assertEqual(result['failure_samples'][0]['source_id'],self.sid)
+        self.assertEqual(self.conn.execute('SELECT COUNT(*) FROM canonical_products').fetchone()[0],before)
+        self.assertEqual(self.conn.execute(
+            "SELECT COUNT(*) FROM product_review_queue WHERE status='pending'").fetchone()[0],1)
+
+    def test_dry_run_proves_recovery_without_leaving_new_products(self):
+        self.old_unanchored(self.obs())
+        plan=recover_unmatched_canonicals(self.conn,limit=5,dry_run=True)
+        self.assertEqual(plan['recovered_observations'],1,plan)
+        self.assertEqual(plan['still_unresolved'],0)
+        self.assertFalse(plan['all_failed'])
+        self.assertEqual(self.conn.execute('SELECT COUNT(*) FROM canonical_products').fetchone()[0],0)
+        self.assertEqual(self.conn.execute(
+            "SELECT COUNT(*) FROM product_review_queue WHERE status='pending'").fetchone()[0],1)
+        recovered=recover_unmatched_canonicals(self.conn,limit=5)
+        self.assertEqual(recovered['recovered_observations'],1,recovered)
+
+    def test_category_review_with_variant_suffix_does_not_invalidate_product_replay(self):
+        raw=self.obs(pid=934571,title='Novalab Mystery Balm 30ml')
+        # Test Shopify evidence must encode the variant discriminator in
+        # the raw payload itself. Mutating parsed variants without changing
+        # saved raw Shopify data violates the real replay integrity gate.
+        payload=dict(raw.raw_payload)
+        payload['options']=[{'name':'Fragrance','values':['Fragrance Free']}]
+        payload['variants']=[{**payload['variants'][0],'option1':'Fragrance Free'}]
+        raw=ShopifyAdapter(self.source).parse({'product':payload},raw.source_url)[0]
+        self.old_unanchored(raw,kind='category',method='new_identity',status='new')
+        # Old versions couldn't find the newly anchored category review
+        # because the source identity link includes a variant hash suffix.
+        report=recover_unmatched_canonicals(self.conn,limit=5)
+        self.assertEqual(report['recovered_observations'],1,report)
+        self.assertEqual(report['still_unresolved'],0)
+        pending=self.conn.execute("""SELECT COUNT(*) FROM product_review_queue
+            WHERE kind='category' AND status='pending' AND canonical_product_id IS NOT NULL""").fetchone()[0]
+        self.assertGreaterEqual(pending,1)
+
+    def test_existing_legacy_projection_is_not_overwritten_by_new_variant(self):
+        from pipeline.canonical_identity_resolver import CanonicalIdentityResolver
+        oid=self.old_unanchored(self.obs())
+        resolver=CanonicalIdentityResolver(self.conn)
+        other=resolver.create_provisional(
+            'CeraVe Foaming Cleanser','CeraVe',
+            classify_product_attributes('CeraVe Foaming Cleanser','CeraVe'),
+            extract_identity('CeraVe Foaming Cleanser','CeraVe'),
+            visible=False)
+        self.conn.execute('UPDATE products SET canonical_product_id=? WHERE store_product_id=?',
+                          (other,'934567'))
+        self.conn.commit()
+        result=recover_unmatched_canonicals(self.conn,limit=3)
+        self.assertEqual(result['recovered_observations'],1,result)
+        self.assertEqual(result['legacy_projection_preserved'],1)
+        self.assertEqual(self.conn.execute('SELECT canonical_product_id FROM products WHERE store_product_id=?',
+                          ('934567',)).fetchone()[0],other)
+        self.assertEqual(self.conn.execute('SELECT COUNT(*) FROM canonical_products').fetchone()[0],2)
+
     def test_no_comparison_recovery_requires_identity_permission(self):
         self.assertEqual(permission_for('/admin/workflows/products/recover-unmatched','POST'),'identity')
         self.assertEqual(permission_for('/admin/workflows/products/recover-unmatched/preview','GET'),'read')
