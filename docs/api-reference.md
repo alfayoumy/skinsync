@@ -377,3 +377,15 @@ Only after an operator independently verifies no underlying worker is alive, POS
 `GET /admin/aggregation/reviews/gemini/queue` now includes `readiness.queued_actionable` and `readiness.queued_without_comparable_evidence`, a read-only assessment of queued case evidence. `POST /admin/aggregation/reviews/gemini/retire-unresearchable` (identity capability) moves only unsupported queued cases to `needs_manual` with an explicit explanation and `model_name=NULL`. It makes **zero Gemini provider calls**, does not delete review records, and leaves already evaluated or approved decisions alone. New `/reviews/gemini/enqueue` calls skip unsupported cases rather than charging the model for ungrounded reviews.
 
 - `/admin/aggregation/reviews/gemini/retire-unresearchable`: POST, identity scope, explicitly retires unsupported queued reviews to manual review without Gemini calls.
+
+### Recover previously unmatched product observations (no external lookup)
+
+| Method | Endpoint | Permission |
+|---|---|---|
+| GET | `/admin/workflows/products/recover-unmatched/preview` | `read` |
+| POST | `/admin/workflows/products/recover-unmatched` | `identity` |
+| GET | `/admin/workflows/products/recover-unmatched/jobs/{task_id}` | `read` |
+
+Preview enumerates saved Shopify observations referenced by outstanding *null-canonical* identity/category review records whose original identity decision was **unknown brand** or **new identity**, with zero competing candidates. Other missing-brand, conflicting GTIN, ambiguous candidates, unmatched legacy/review cases are not eligible. Start `{"limit":200}` to recover at most 200 distinct source observations (1–500 supported); poll the background task for progress and failure counts.
+
+For each eligible observation, reparse its immutable Shopify payload using the same source adapter as ingestion, register an **unverified exact vendor label** where not previously known, run normal canonical identity resolution and offer linking, and mark obsolete no-comparison review records confirmed with an explicit `catalog_recovery` attribution. Existing retailer listing/offer pointers are attached where uniquely identified. A separate anchored category review is preserved if classification is still uncertain. On any re-evaluation conflict, the per-observation savepoint rolls back and the old review stays unresolved. No external HTTP, Gemini, scraped INCI publication, source observation replacement or full catalog reset occurs. This does not certify that a newly created provisional identity is independently verified.
