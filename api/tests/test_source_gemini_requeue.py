@@ -162,6 +162,31 @@ class SourceGeminiRequeueTests(unittest.TestCase):
         self.assertEqual(len(candidate_rows(self.conn)),0,
             'Saved-decision application must not auto-apply source-only Gemini suggestions.')
 
+    def test_changed_competing_listing_is_retired_without_empty_gemini_prompt(self):
+        plan=preview_identity_requeue(self.conn)
+        with patch.dict(os.environ,{'SKINSYNC_CATALOG_BACKUP_DIR':
+                                    str(Path(self.folder.name)/'backups')}):
+            reset_and_requeue_identity(self.conn,plan['fingerprint'],CONFIRMATION,db_path=self.path)
+        self.conn.execute("""UPDATE products SET title='Completely Different Formulation'
+            WHERE store_product_id='old-spf50'""")
+        self.conn.execute("""INSERT INTO pipeline_tasks(task_id,task_type,status)
+            VALUES ('changed-source-test','product_identity_gemini','running')""")
+        self.conn.commit()
+        with (
+            patch('pipeline.product_identity_gemini.get_connection',
+                  return_value=OpenConnection(self.conn)),
+            patch('pipeline.product_identity_gemini.update_task_progress'),
+            patch('pipeline.product_identity_gemini.complete_task'),
+            patch('pipeline.product_identity_gemini.fail_task'),
+        ):
+            calls=[]
+            run_identity_gemini_queue('changed-source-test',
+                provider=lambda cases: calls.append(cases))
+        self.assertEqual(calls,[])
+        self.assertEqual(self.conn.execute(
+            'SELECT status FROM identity_gemini_queue WHERE review_id=?',
+            (self.rid,)).fetchone()[0],'needs_manual')
+
     def test_running_worker_blocks_reset(self):
         self.conn.execute("""INSERT INTO pipeline_tasks(task_id,task_type,status)
             VALUES ('do-not-disturb','catalog_discovery','running')""")
