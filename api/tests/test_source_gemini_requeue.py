@@ -158,6 +158,9 @@ class SourceGeminiRequeueTests(unittest.TestCase):
         self.assertEqual(self.conn.execute('SELECT COUNT(*) FROM product_identity_links WHERE status=\'accepted\'').fetchone()[0],0)
         self.assertEqual(self.conn.execute('SELECT ingredients_raw FROM canonical_products WHERE id=?',
                            (self.cid,)).fetchone()[0],None)
+        from pipeline.saved_gemini_decisions import candidate_rows
+        self.assertEqual(len(candidate_rows(self.conn)),0,
+            'Saved-decision application must not auto-apply source-only Gemini suggestions.')
 
     def test_running_worker_blocks_reset(self):
         self.conn.execute("""INSERT INTO pipeline_tasks(task_id,task_type,status)
