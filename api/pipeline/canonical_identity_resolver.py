@@ -194,6 +194,42 @@ class CanonicalIdentityResolver:
                 return IdentityDecision('new',method='no_defensible_existing_match',
                     details={'ignored_weak_candidates':[r['canonical_product_id'] for r in soft],
                              'rule':'No exact marketed name, strong identifier, or durable accepted identity; fuzzy similarity is not a comparison.'})
+            # In restored historical data, an unverified canonical with no
+            # retailer listing, accepted source link or authoritative formula
+            # is only a *name suggestion*. Missing SPF/vehicle/formulation
+            # evidence from such an ungrounded record cannot create a human
+            # comparison obligation for an unrelated saved Shopify product.
+            # Keep durable links, exact names, strong identifiers, verified
+            # canonicals, and near-exact marketed titles protected.
+            possible_unbacked=[r for r in evaluated if (
+                not r['conflicts']
+                and not any(r[key] for key in ('durable_link','exact_name',
+                          'verified_name','strong_identifier','reviewed_link'))
+                and r['similarity'] < .85)]
+            if not existing and len(possible_unbacked)==len(evaluated):
+                def lacks_live_comparator(candidate_id):
+                    record=self.conn.execute("""SELECT identity_status,ingredients_raw
+                        FROM canonical_products WHERE id=?""",(candidate_id,)).fetchone()
+                    if not record or record['identity_status']=='verified' or (
+                        record['ingredients_raw'] and str(record['ingredients_raw']).strip()):
+                        return False
+                    if self.conn.execute("""SELECT 1 FROM product_offers
+                        WHERE canonical_product_id=? LIMIT 1""",(candidate_id,)).fetchone():
+                        return False
+                    if self.conn.execute("""SELECT 1 FROM products
+                        WHERE canonical_product_id=? LIMIT 1""",(candidate_id,)).fetchone():
+                        return False
+                    if self.conn.execute("""SELECT 1 FROM product_identity_links
+                        WHERE canonical_product_id=? AND status='accepted'
+                        LIMIT 1""",(candidate_id,)).fetchone():
+                        return False
+                    return True
+                if all(lacks_live_comparator(r['canonical_product_id'])
+                       for r in possible_unbacked):
+                    return IdentityDecision('new',method='unbacked_fuzzy_candidates',
+                        details={'ignored_candidate_ids':[
+                            r['canonical_product_id'] for r in possible_unbacked],
+                            'rule':'Unverified canonicals without retailer listings, accepted links or INCI are not grounded comparisons.'})
             # Critical, fully specified conflicts are separate marketed variants;
             # missing discriminator values cannot justify creating a duplicate.
             if all(r['state']=='conflict' for r in evaluated) and not existing:
