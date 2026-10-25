@@ -14,6 +14,7 @@ from datetime import datetime, timezone
 
 CATALOG_TABLES = (
     'inci_research_queue', 'inci_research_runs',
+    'identity_gemini_source_cases', 'identity_gemini_requeue_history',
     'identity_gemini_queue', 'product_review_queue',
     'canonical_redirects', 'canonical_identity_constraints',
     'canonical_identity_history', 'canonical_product_aliases',

@@ -244,6 +244,32 @@ def gemini_identity_queue_status():
     return operation(fn)
 
 
+class ResetIdentityGeminiQueueRequest(BaseModel):
+    fingerprint: str = Field(min_length=64,max_length=64)
+    confirmation: str
+
+
+@router.get('/reviews/gemini/requeue/preview')
+def preview_source_identity_requeue():
+    """Read-only inventory: no Gemini calls, product edits or queue deletions."""
+    from pipeline.source_gemini_requeue import preview_identity_requeue
+    return operation(preview_identity_requeue)
+
+
+@router.post('/reviews/gemini/requeue')
+def reset_and_requeue_saved_identity(request:ResetIdentityGeminiQueueRequest):
+    """Archive old identity Gemini responses; enqueue fresh saved-source comparisons."""
+    from pipeline.source_gemini_requeue import reset_and_requeue_identity
+    conn=get_connection()
+    try:
+        return reset_and_requeue_identity(conn,request.fingerprint,request.confirmation)
+    except ValueError as exc:
+        conn.rollback()
+        raise HTTPException(status_code=409,detail=str(exc))
+    finally:
+        conn.close()
+
+
 @router.post('/reviews/gemini/enqueue')
 def gemini_identity_enqueue(request:GeminiEnqueueRequest):
     from pipeline.product_identity_gemini import queue_cases
@@ -431,7 +457,8 @@ def gemini_identity_results(
             term='%'+search.strip()+'%'
             args.extend([term,term,term])
         joins=""" FROM identity_gemini_queue q
-            JOIN product_review_queue r ON r.id=q.review_id """
+            JOIN product_review_queue r ON r.id=q.review_id
+            LEFT JOIN identity_gemini_source_cases s ON s.review_id=q.review_id """
         filter_sql=' WHERE '+' AND '.join(where)
         total=conn.execute('SELECT COUNT(*)'+joins+filter_sql,args).fetchone()[0]
         order=order_fields[sort_by]+' '+sort_order.upper()+', r.id DESC'
@@ -439,7 +466,8 @@ def gemini_identity_results(
             r.canonical_product_id,r.details,r.decision,r.review_notes,
             q.status outcome,q.verdict,q.confidence,q.model_name,
             q.explanation,q.attempts,q.queued_at,q.updated_at,
-            q.evidence_hash queued_evidence_hash,r.evidence_hash current_evidence_hash
+            q.evidence_hash queued_evidence_hash,r.evidence_hash current_evidence_hash,
+            s.payload_json source_candidate_payload,s.suggested_canonical_id
             """+joins+filter_sql+' ORDER BY '+order+' LIMIT ? OFFSET ?'
         records=[]
         for row in conn.execute(sql,args+[limit,offset]):
@@ -467,6 +495,24 @@ def gemini_identity_results(
                     'Historical policy only attempted same-product verification. '
                     'This different-product result has not been regrouped; preview saved '
                     'decisions to see whether a safe product-level split is possible.')
+            source_payload=data.pop('source_candidate_payload')
+            if source_payload:
+                try:
+                    parsed=json.loads(source_payload)
+                    data['compared_candidates']=[{
+                        'canonical_product_id':c['canonical_product_id'],
+                        'title':c['canonical_title'],
+                        'brand':c['brand'],
+                        'conflicts':c.get('comparison',{}).get('conflicts',[]),
+                        'unknown':c.get('comparison',{}).get('unknown',[]),
+                        'retailer_listings':c.get('retailer_listings',[]),
+                    } for c in parsed.get('candidates',[])]
+                    data['title']=parsed.get('source',{}).get('title') or data['title']
+                    data['brand']=parsed.get('source',{}).get('brand') or data['brand']
+                except (TypeError,ValueError,KeyError):
+                    data['compared_candidates']=[]
+            else:
+                data['compared_candidates']=[]
             data['evidence_current']=data.pop('queued_evidence_hash')==data.pop('current_evidence_hash')
             records.append(data)
         return {'results':records,'total':total,'limit':limit,'offset':offset,

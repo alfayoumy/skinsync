@@ -54,6 +54,60 @@ def recover_abandoned_cases(conn):
             WHERE t.task_id=identity_gemini_queue.task_id AND t.status='running'))""")
     return cursor.rowcount
 
+def _source_case_current(conn, case):
+    """A saved-source prompt must still match its immutable observation and live candidates."""
+    rid = case['review_id'] if 'review_id' in case.keys() else case['id']
+    entry = conn.execute("""SELECT evidence_hash,payload_json
+        FROM identity_gemini_source_cases WHERE review_id=?""", (rid,)).fetchone()
+    if not entry or entry['evidence_hash'] != case['evidence_hash']:
+        return None
+    try:
+        data = json.loads(entry['payload_json'])
+        source = data['source']
+        candidates = data['candidates']
+        if (data.get('mode') != 'saved_source_identity_candidates_v1'
+            or not isinstance(candidates, list) or not 1 <= len(candidates) <= 20):
+            return None
+        observed = conn.execute("""SELECT source_id,source_product_id,source_url,
+            raw_title,raw_brand FROM source_product_observations WHERE id=?""",
+            (data['observation_id'],)).fetchone()
+        if (not observed or observed['source_id'] != source['source_id']
+            or observed['source_product_id'] != source['source_product_id']
+            or observed['source_url'] != source['url']
+            or observed['raw_title'] != source['title']
+            or observed['raw_brand'] != source['brand']):
+            return None
+        latest = conn.execute("""SELECT MAX(id) FROM source_product_observations
+            WHERE source_id=? AND source_product_id=?""",
+            (source['source_id'], source['source_product_id'])).fetchone()[0]
+        if latest != data['observation_id']:
+            return None
+        for item in candidates:
+            cid = item['canonical_product_id']
+            row = conn.execute("""SELECT canonical_title,brand,identity_status,identity_attributes
+                FROM canonical_products WHERE id=? AND NOT EXISTS(
+                    SELECT 1 FROM canonical_redirects WHERE canonical_product_id=?)""",
+                (cid,cid)).fetchone()
+            if (not row or row['canonical_title'] != item['canonical_title']
+                or row['brand'] != item['brand']
+                or row['identity_status'] != item['identity_status']
+                or json.loads(row['identity_attributes'] or '{}') != item['identity_attributes']):
+                return None
+            live_offers=[dict(x) for x in conn.execute("""SELECT source_id AS retailer,
+                title FROM product_offers WHERE canonical_product_id=? ORDER BY id LIMIT 8""",(cid,))]
+            live_legacy=[dict(x) for x in conn.execute("""SELECT store_id AS retailer,
+                COALESCE(original_title,title) AS title FROM products
+                WHERE canonical_product_id=? ORDER BY id LIMIT 8""",(cid,))]
+            live_links=conn.execute("""SELECT COUNT(*) FROM product_identity_links
+                WHERE canonical_product_id=? AND status='accepted'""",(cid,)).fetchone()[0]
+            if ((live_offers+live_legacy)[:12] != item['retailer_listings']
+                    or live_links != item['accepted_source_link_count']):
+                return None
+    except (TypeError, ValueError, KeyError, IndexError):
+        return None
+    return data
+
+
 def _actionable_review(conn,case):
     """Gemini can compare only real, fully identified cross-retailer listings.
 
@@ -61,6 +115,8 @@ def _actionable_review(conn,case):
     with canonical_product_id=NULL. Such cases have no canonical identity or
     independent offer snapshot: a Gemini verdict would be a guess, not a match.
     """
+    if case['kind']=='identity' and not case['canonical_product_id']:
+        return _source_case_current(conn,case) is not None
     if case['kind'] != 'identity' or not case['canonical_product_id']:
         return False
     try:
@@ -87,7 +143,7 @@ def _actionable_review(conn,case):
 
 def retire_unresearchable_queue(conn):
     """Preserve prior queue records while preventing wasted Gemini requests."""
-    rows=conn.execute("""SELECT q.review_id,r.kind,r.canonical_product_id,r.details
+    rows=conn.execute("""SELECT q.review_id,r.kind,r.canonical_product_id,r.details,r.evidence_hash
         FROM identity_gemini_queue q JOIN product_review_queue r ON r.id=q.review_id
         WHERE q.status='queued' AND r.status='pending'""").fetchall()
     retired=0
@@ -134,7 +190,7 @@ def queue_cases(conn,review_ids=None,limit=20000,queued_by='admin'):
 
 def gemini_queue_readiness(conn):
     """Read-only count of usable versus impossible-to-ground queued cases."""
-    rows=conn.execute("""SELECT r.kind,r.canonical_product_id,r.details
+    rows=conn.execute("""SELECT r.id,r.evidence_hash,r.kind,r.canonical_product_id,r.details
         FROM identity_gemini_queue q JOIN product_review_queue r ON r.id=q.review_id
         WHERE q.status='queued' AND r.status='pending'""").fetchall()
     valid=sum(bool(_actionable_review(conn,row)) for row in rows)
@@ -152,6 +208,14 @@ def _batch_prompt(cases):
     records=[]
     for case in cases:
         evidence=case['details']
+        if case.get('source_comparison'):
+            records.append({
+                'review_id':case['id'],
+                'case_type':'saved_source_identity_candidates',
+                'saved_source_observation':case['source_comparison']['source'],
+                'current_canonical_candidates':case['source_comparison']['candidates'],
+            })
+            continue
         records.append({
             'review_id':case['id'],
             'case_type':case['kind'],
@@ -172,11 +236,18 @@ def _batch_prompt(cases):
         "Do NOT conflate different SPF ratings, scents, tinted shades, active percentages, "
         "cream versus lotion, cleanser versus serum, AM versus PM, or different product lines. "
         "If the information is incomplete or competing variants might exist, mark uncertain. "
+        "For saved-source candidate comparisons choose exactly ONE existing canonical ID only "
+        "if the independent listing evidence proves they are the same manufactured product. "
+        "If there are multiple plausible candidates or missing SPF, tint, formula or vehicle "
+        "evidence, mark uncertain. Different_product means none of the listed candidates "
+        "is the same product; do not infer this from weak names. Never invent a candidate ID. "
         "For canonical duplicate cases, decide the semantic similarity but do not assume "
         "that equal names prove equal marketed formulations. "
         "Return ONLY a JSON array, one result per review_id, with precisely "
         "{review_id:int,verdict:'same_product'|'different_product'|'uncertain',"
-        "confidence:number between 0 and 1,reason:string}. "
+        "confidence:number between 0 and 1,reason:string,"
+        "matched_canonical_id:int|null}. Return matched_canonical_id only for a "
+        "supported same_product decision; otherwise null. "
         "Do not guess missing details. Catalog cases:\n"+
         json.dumps(records,ensure_ascii=False)
     )
@@ -217,8 +288,22 @@ def call_gemini_identity_batch(cases):
             if (verdict not in GEMINI_VERDICTS or type(confidence) not in (float,int)
                 or not 0<=confidence<=1 or not isinstance(reason,str) or not reason.strip()):
                 continue
+            case=next(c for c in cases if c['id']==cid)
+            matched=entry.get('matched_canonical_id')
+            if case.get('source_comparison'):
+                allowed={c['canonical_product_id'] for c in
+                         case['source_comparison']['candidates']}
+                if verdict=='same_product' and (type(matched) is not int or matched not in allowed):
+                    verdict='uncertain'
+                    matched=None
+                    reason='Model did not identify exactly one supported current canonical candidate.'
+                elif verdict!='same_product':
+                    matched=None
+            else:
+                matched=None
             output[cid]={'verdict':verdict,'confidence':float(confidence),
-                         'reason':reason.strip()[:800],'model_name':model}
+                         'reason':reason.strip()[:800],'model_name':model,
+                         'matched_canonical_id':matched}
         return output
     except Exception as exc:
         raise RuntimeError('Gemini identity request failed; case batch remains queued.') from exc
@@ -295,7 +380,26 @@ def _load_cases(conn,limit,batch_size):
         JOIN product_review_queue r ON r.id=q.review_id
         WHERE q.status='queued' AND r.status='pending' ORDER BY r.id LIMIT ?""",
         (min(limit,batch_size),)).fetchall()
-    return [dict(row,details=json.loads(row['details'])) for row in rows]
+    cases=[]
+    for row in rows:
+        case=dict(row,details=json.loads(row['details']))
+        source_record=(conn.execute('SELECT 1 FROM identity_gemini_source_cases WHERE review_id=?',
+                                    (case['id'],)).fetchone()
+                       if case['canonical_product_id'] is None else None)
+        source=_source_case_current(conn,case) if source_record else None
+        if source_record and source is None:
+            # Never fall back to the legacy empty-list prompt if the saved
+            # source or candidate changed after the queue was prepared.
+            conn.execute("""UPDATE identity_gemini_queue
+                SET status='needs_manual',
+                explanation='Saved-source comparison changed; regenerate evidence before Gemini.',
+                updated_at=CURRENT_TIMESTAMP WHERE review_id=? AND status='queued'""",
+                (case['id'],))
+            continue
+        if source is not None:
+            case['source_comparison']=source
+        cases.append(case)
+    return cases
 
 
 def run_identity_gemini_queue(task_id,limit=500,batch_size=DEFAULT_BATCH,provider=None):
@@ -312,7 +416,9 @@ def run_identity_gemini_queue(task_id,limit=500,batch_size=DEFAULT_BATCH,provide
             if task and task[0]=='cancelled':return {'status':'cancelled',**dict(counts)}
             retire_unresearchable_queue(conn)
             cases=_load_cases(conn,limit-scanned,batch_size)
-            if not cases:break
+            if not cases:
+                conn.commit()
+                break
             for case in cases:
                 conn.execute("UPDATE identity_gemini_queue SET status='processing',attempts=attempts+1,task_id=?,updated_at=CURRENT_TIMESTAMP WHERE review_id=?",
                              (task_id,case['id']))
@@ -349,8 +455,23 @@ def run_identity_gemini_queue(task_id,limit=500,batch_size=DEFAULT_BATCH,provide
                 live=conn.execute('SELECT status,evidence_hash,kind,canonical_product_id,details FROM product_review_queue WHERE id=?',(case['id'],)).fetchone()
                 if not live or live['status']!='pending' or live['evidence_hash']!=case['evidence_hash']:
                     outcome='needs_manual';reason='Case changed during Gemini evaluation.'
+                elif case.get('source_comparison') and not _source_case_current(conn,case):
+                    outcome='needs_manual';reason='Current source/canonical identity evidence changed during evaluation.'
                 elif not answer:
                     outcome='needs_manual';reason='Model omitted the case or returned invalid structured fields.'
+                elif case.get('source_comparison'):
+                    # Product-level ambiguity is NEVER auto-approved from an LLM alone.
+                    outcome='needs_manual'
+                    reason='Source/candidate comparison requires guarded identity review.'
+                    suggested=answer.get('matched_canonical_id')
+                    allowed={x['canonical_product_id'] for x in
+                             case['source_comparison']['candidates']}
+                    if (answer['verdict']!='same_product' or
+                        type(suggested) is not int or suggested not in allowed):
+                        suggested=None
+                    conn.execute("""UPDATE identity_gemini_source_cases
+                        SET suggested_canonical_id=?,updated_at=CURRENT_TIMESTAMP
+                        WHERE review_id=?""",(suggested,case['id']))
                 else:
                     ok,reason=can_auto_resolve(conn,case,answer)
                     outcome='auto_resolved' if ok else 'needs_manual'

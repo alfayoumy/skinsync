@@ -145,6 +145,9 @@ export default function GeminiDecisionsTable({refreshKey}) {
                   </div>}
                   <p className="text-gray-600">Model: {row.model_name||'Not recorded'} · Updated: {row.updated_at||'—'} · Attempts: {row.attempts||0}</p>
                   <p className="text-gray-600">Original issue: {row.issue?.replaceAll('_',' ')||'Not recorded'}</p>
+                  {row.compared_candidates?.length>0&&<p className="text-purple-800 font-semibold">
+                    Saved-source comparison · suggested canonical: {row.suggested_canonical_id?'#'+row.suggested_canonical_id:'none (manual review required)'}
+                  </p>}
                   {!row.evidence_current&&<p className="text-amber-800 font-semibold">Evidence changed after Gemini evaluated it. Automatic application is blocked.</p>}
                   {row.review_notes&&<p className="text-gray-700"><strong>Application notes:</strong> {row.review_notes}</p>}
                 </div>
@@ -154,6 +157,14 @@ export default function GeminiDecisionsTable({refreshKey}) {
                       <strong>#{offer.product_id} · {offer.store_id||'Unknown store'}</strong>
                       <span className="block">{offer.title}</span>
                     </li>)}</ul>
+                  {(row.compared_candidates||[]).length>0&&<div className="space-y-2">
+                    <h4 className="font-bold text-gray-900">Current canonical candidates ({row.compared_candidates.length})</h4>
+                    {row.compared_candidates.map(c=><div key={c.canonical_product_id} className="bg-white border rounded-lg p-2 space-y-1">
+                      <strong>#{c.canonical_product_id} · {c.title}</strong>
+                      <p>Brand: {c.brand} · Variant conflicts: {(c.conflicts||[]).join(', ')||'none'} · Missing attributes: {(c.unknown||[]).join(', ')||'none'}</p>
+                      {(c.retailer_listings||[]).slice(0,6).map((o,i)=><p key={i}>{o.retailer}: {o.title}</p>)}
+                    </div>)}
+                  </div>}
                   {row.decision&&<div className="bg-white border rounded-lg p-2">
                     <strong>Applied action:</strong> {row.decision.action?.replaceAll('_',' ')||'—'}
                     {row.decision.new_canonical_ids&&<span className="block">New canonical IDs: {row.decision.new_canonical_ids.join(', ')}</span>}

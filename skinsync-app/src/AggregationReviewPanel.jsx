@@ -50,6 +50,33 @@ export default function AggregationReviewPanel({ onClose, initialSourceId = 'sou
   const [weakPreview,setWeakPreview]=useState(null);
   const [weakBusy,setWeakBusy]=useState(false);
   const [geminiError,setGeminiError] = useState('');
+  const [sourceRequeuePreview,setSourceRequeuePreview]=useState(null);
+  const [sourceRequeueBusy,setSourceRequeueBusy]=useState(false);
+  async function previewSourceGeminiRequeue(){
+    setSourceRequeueBusy(true);setError('');
+    try{setSourceRequeuePreview(await api('/reviews/gemini/requeue/preview'))}
+    catch(e){setError(e.message)}
+    finally{setSourceRequeueBusy(false)}
+  }
+  async function applySourceGeminiRequeue(){
+    if(!sourceRequeuePreview?.can_apply)return;
+    const confirmation=window.prompt(
+      'This archives the old IDENTITY Gemini responses in a NEW SQLite backup, then clears only the live identity queue and requeues '+sourceRequeuePreview.requeueable_review_cases+
+      ' unresolved saved-source comparisons. Already rematched products, reviews and INCI stay untouched. Type RESET IDENTITY GEMINI AND REQUEUE to proceed.');
+    if(confirmation!=='RESET IDENTITY GEMINI AND REQUEUE')return;
+    setSourceRequeueBusy(true);setError('');
+    try{
+      const result=await api('/reviews/gemini/requeue',{
+        method:'POST',body:JSON.stringify({fingerprint:sourceRequeuePreview.fingerprint,confirmation})
+      });
+      setMessage('New identity Gemini queue: '+result.new_identity_queue_count+
+        ' saved-source cases. Old identity queue archived to '+result.backup_path+
+        '. Gemini has NOT been called. Start a small Gemini run when ready.');
+      setSourceRequeuePreview(null);
+      await refresh();
+    }catch(e){setError(e.message);setSourceRequeuePreview(null)}
+    finally{setSourceRequeueBusy(false)}
+  }
   async function previewWeakSuggestions() {
     setWeakBusy(true);setError('');
     try{setWeakPreview(await api('/reviews/weak-suggestions/preview'))}
@@ -348,6 +375,26 @@ export default function AggregationReviewPanel({ onClose, initialSourceId = 'sou
           <div><h3 className="font-semibold">Gemini product matching</h3>
             <p className="text-xs text-gray-600">Gemini checks multiple retailer product identities in a single call. Clear matches are approved only when independent variant, brand and INCI checks also pass. All other cases stay available for a person.</p></div>
           <span className="text-xs font-semibold text-purple-800">{queueStatus?.pending_identity_cases??'—'} unresolved identity/duplicate cases</span>
+        </div>
+        <div className="rounded-lg border border-purple-200 p-3 space-y-2 text-xs">
+          <strong>Rebuild Gemini queue from failed saved-source matches</strong>
+          <p className="text-gray-600">Preview fresh comparisons against current canonical products, archive all old identity Gemini responses to a full database backup, and replace the identity queue. The INCI Gemini queue and successfully rematched products are unchanged. This never runs Gemini automatically.</p>
+          <button type="button" className="rounded-lg border px-3 py-2 font-semibold disabled:opacity-50"
+            disabled={sourceRequeueBusy||busy||Boolean(geminiTask)} onClick={previewSourceGeminiRequeue}>
+            Preview reset and requeue — no changes
+          </button>
+          {sourceRequeuePreview&&<div className="rounded-lg bg-gray-50 p-3 space-y-1">
+            <p><strong>{sourceRequeuePreview.requeueable_review_cases}</strong> fresh source/canonical comparisons ready ·
+              {' '}{sourceRequeuePreview.old_queue_count} old identity queue entries will be archived and cleared</p>
+            <p>Remaining saved-source reviews: {sourceRequeuePreview.remaining_review_cases} ·
+              skipped: {Object.entries(sourceRequeuePreview.skipped||{}).map(([k,v])=>k.replaceAll('_',' ')+': '+v).join(' · ')||'none'}</p>
+            {!sourceRequeuePreview.can_apply&&<p className="text-red-700">The queue cannot be rebuilt yet. Check for active discovery, rematch, Gemini or maintenance jobs before retrying.</p>}
+            <button type="button" className="rounded-lg border border-purple-700 px-3 py-2 font-bold disabled:opacity-50"
+              disabled={!sourceRequeuePreview.can_apply||sourceRequeueBusy||Boolean(geminiTask)}
+              onClick={applySourceGeminiRequeue}>
+              Back up, clear old identity responses and requeue
+            </button>
+          </div>}
         </div>
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs">
           {[['Waiting for Gemini',queueStatus?.counts?.queued||0],

@@ -757,3 +757,10 @@ See [operations](workflows-and-operations.md) and [API reference](api-reference.
 - `catalog_restore_history` — audit table created after an operator-scheduled restart restore. Records the restoration actor, backup filename, rescue backup path, and SHA-256 identity, without rewriting history in the source backup.
 - Managed `catalog-*.sqlite3` snapshots are full SQLite backups, not product-only export CSVs. Restore request state and last-restore status are stored in private JSON control files in the managed backup directory, outside the database being replaced.
 - `catalog_reset_control.active=1` prevents normal ingestion between scheduling and restart; it is cleared in the restored database after successful verification. Only one backend process may hold the persistent SQLite instance lock at startup.
+
+
+### Saved-source Gemini queue reconstruction
+
+`identity_gemini_source_cases` is an additive table keyed by `review_id` (FK to `product_review_queue.id`) containing `evidence_hash`, serialized `payload_json` with the saved source and current competing canonical profiles, nullable `suggested_canonical_id`, and timestamps. A source comparison is discarded as stale if the observation, canonical identity/attributes, accepted link count, or included retailer listings change. It is not a durable accepted identity link or formula publication.
+
+`identity_gemini_requeue_history` records the reset timestamp, backup path, preview fingerprint, old identity queue count, new source queue count, and reasons cases were skipped. The old model verdicts, explanations, confidence values, attempts and task association are saved in the **full database backup** before the live `identity_gemini_queue` is cleared. The unrelated INCI/Gate-4 Gemini queue remains unchanged.
