@@ -34,13 +34,48 @@ def resolve_brand(value, conn=None):
     if not key or key in ('generic','unknown','unbranded','none','n a'):
         return None
     if conn is not None:
-        row=conn.execute('SELECT b.id,b.name FROM brand_aliases a JOIN brands b ON b.id=a.brand_id WHERE a.alias=?',(key,)).fetchone()
+        row=conn.execute("""SELECT b.id,b.name,b.status,a.approved_by
+            FROM brand_aliases a JOIN brands b ON b.id=a.brand_id WHERE a.alias=?""",(key,)).fetchone()
         if row:
-            return {'id':row[0],'name':row[1],'key':brand_key(row[1]),'verified':True}
+            return {'id':row['id'],'name':row['name'],'key':brand_key(row['name']),
+                    'verified':row['status'] not in ('observed_unverified',)
+                      and row['approved_by']!='observed_source_unverified'}
     for name, aliases in CURATED_BRANDS.items():
         if key in {brand_key(v) for v in [name]+aliases}:
             return {'id':None,'name':name,'key':brand_key(name),'verified':True}
     return {'id':None,'name':value.strip(),'key':key,'verified':False}
+
+
+def register_observed_brand(conn, value):
+    """Create only an exact source-label brand anchor, NOT an approved alias.
+
+    A previously unseen Shopify vendor is not a reason to hold a distinct
+    product in identity review. Untrusted vendor labels remain explicitly
+    unverified until a separate identity/brand-verification workflow approves
+    them. No fuzzy normalization or cross-brand equivalence is inferred.
+    """
+    resolved=resolve_brand(value,conn)
+    if not resolved or not resolved['name'].strip():
+        return None
+    if resolved.get('id'):
+        return resolved
+    key=brand_key(value)
+    label=value.strip()
+    if len(label)>160 or not key:
+        return None
+    # A curated label without an ID on a legacy schema is registered with
+    # its known curated canonical name instead of duplicating a brand.
+    canonical=resolved['name'] if resolved.get('verified') else label
+    status='verified' if resolved.get('verified') else 'observed_unverified'
+    conn.execute('INSERT OR IGNORE INTO brands(name,status) VALUES (?,?)',
+                 (canonical,status))
+    bid=conn.execute('SELECT id FROM brands WHERE name=?',(canonical,)).fetchone()[0]
+    existing=conn.execute('SELECT brand_id FROM brand_aliases WHERE alias=?',(key,)).fetchone()
+    if existing and existing[0]!=bid:
+        return resolve_brand(value,conn)  # Existing curated identity wins.
+    conn.execute('INSERT OR IGNORE INTO brand_aliases(alias,brand_id,approved_by) VALUES(?,?,?)',
+                 (key,bid,'curated_registry_v1' if status=='verified' else 'observed_source_unverified'))
+    return resolve_brand(value,conn)
 
 
 def approve_brand_alias(conn, alias, canonical_name, reviewer):
