@@ -115,9 +115,12 @@ def queue_cases(conn,review_ids=None,limit=20000,queued_by='admin'):
     if review_ids is not None:
         query+=' AND r.id IN ('+','.join('?' for _ in review_ids)+')'
         args.extend(review_ids)
-    query+=' ORDER BY r.id LIMIT ?';args.append(limit)
+    # Invalid review cases can vastly outnumber usable snapshots. Scan all
+    # eligible records, then cap actual Gemini *candidates*, not SQL rows.
+    query+=' ORDER BY r.id'
     candidates=conn.execute(query,args).fetchall()
-    rows=[row for row in candidates if _actionable_review(conn,row)]
+    actionable=[row for row in candidates if _actionable_review(conn,row)]
+    rows=actionable[:limit]
     for row in rows:
         conn.execute("""INSERT INTO identity_gemini_queue(review_id,evidence_hash,status,queued_by)
             VALUES (?,?,'queued',?) ON CONFLICT(review_id) DO UPDATE SET
@@ -125,8 +128,19 @@ def queue_cases(conn,review_ids=None,limit=20000,queued_by='admin'):
             queued_by=excluded.queued_by,updated_at=CURRENT_TIMESTAMP""",
             (row['id'],row['evidence_hash'],queued_by))
     return {'queued':len(rows),'review_ids':[row['id'] for row in rows[:20]],
-            'skipped_unresearchable':len(candidates)-len(rows),
+            'skipped_unresearchable':len(candidates)-len(actionable),
             'retired_unresearchable_queued':retired}
+
+
+def gemini_queue_readiness(conn):
+    """Read-only count of usable versus impossible-to-ground queued cases."""
+    rows=conn.execute("""SELECT r.kind,r.canonical_product_id,r.details
+        FROM identity_gemini_queue q JOIN product_review_queue r ON r.id=q.review_id
+        WHERE q.status='queued' AND r.status='pending'""").fetchall()
+    valid=sum(bool(_actionable_review(conn,row)) for row in rows)
+    return {'queued_actionable':valid,
+            'queued_without_comparable_evidence':len(rows)-valid,
+            'note':'Only cases with a canonical ID and current independent retailer comparison evidence can use Gemini; all others require manual identity matching.'}
 
 
 def queue_counts(conn):
