@@ -410,14 +410,43 @@ def discover_multiple(request:MultiSourceDiscovery,background_tasks:BackgroundTa
             if len(urls)>25:raise HTTPException(status_code=400,detail='Maximum 25 URLs per source.')
     finally:
         conn.close()
-    task_id=create_task('catalog_discovery',target_source='multiple',
-                        params={'source_ids':ids,'pages':request.pages,'dry_run':request.dry_run},
-                        total_items=len(ids),auto_start=True)
+    try:
+        task_id=create_task('catalog_discovery',target_source='multiple',
+                            params={'source_ids':ids,'pages':request.pages,
+                                    'start_page':request.start_page,'dry_run':request.dry_run},
+                            total_items=len(ids),auto_start=True,exclusive_task_type=True)
+    except ValueError as exc:
+        raise HTTPException(status_code=409,detail=str(exc))
     background_tasks.add_task(_multisource_worker,task_id,ids,request.start_page,
                               request.pages,request.dry_run,request.urls_by_source)
     return {'status':'accepted','task_id':task_id,'sources_selected':len(ids),
             'dry_run':request.dry_run,
             'message':'Product discovery started. Individual source results are available in the task status.'}
+
+
+@router.get('/products/discover-multiple/active')
+def current_discovery_jobs():
+    """Discover cancellable work from durable DB rows, never browser memory."""
+    conn=get_connection()
+    try:
+        rows=conn.execute("""SELECT task_id,status,processed_items,total_items,
+            current_stage,metadata,error_message,params,updated_at,created_at
+            FROM pipeline_tasks WHERE task_type='catalog_discovery'
+            AND (status IN ('pending','running') OR
+              (status='cancelled' AND COALESCE(current_stage,'')!='worker_stopped'))
+            ORDER BY created_at DESC,task_id DESC LIMIT 20""").fetchall()
+        jobs=[]
+        for row in rows:
+            item=dict(row)
+            for name in ('metadata','params'):
+                try:item[name]=json.loads(item[name] or '{}')
+                except (ValueError,TypeError):item[name]={}
+            item['cancel_requested']=item['status']=='cancelled'
+            item['cancellable']=item['status'] in ('running','pending')
+            jobs.append(item)
+        return {'jobs':jobs,'active_count':len(jobs)}
+    finally:
+        conn.close()
 
 
 @router.get('/products/discover-multiple/{task_id}')

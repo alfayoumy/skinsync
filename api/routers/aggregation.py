@@ -137,15 +137,16 @@ def observations(source_id:Optional[str]=None,limit:int=Query(50,ge=1,le=500),of
 
 @router.get('/reviews')
 def reviews(kind:Optional[str]=None,status:str='pending',
-            view:Literal['manual','awaiting_gemini','all']='manual',
+            view:Literal['manual','awaiting_gemini','all','evidence_needed']='manual',
             limit:int=Query(50,ge=1,le=500),offset:int=Query(0,ge=0)):
     """Pending human queue excludes Gemini cases until a model verdict requires review."""
     def run(conn):
         from pipeline.aggregation_schema import ensure_identity_gemini_schema
         ensure_identity_gemini_schema(conn)
+        effective_status='deferred' if view=='evidence_needed' else status
         query='''FROM product_review_queue r LEFT JOIN identity_gemini_queue q ON q.review_id=r.id
             WHERE r.status=?'''
-        params=[status]
+        params=[effective_status]
         if kind:query+=' AND r.kind=?';params.append(kind)
         if view=='manual':
             query+=" AND (q.review_id IS NULL OR q.status='needs_manual')"
@@ -168,6 +169,25 @@ def reviews(kind:Optional[str]=None,status:str='pending',
                 row['decision']=None
         return {'reviews':rows,'total':count,'view':view}
     return operation(run)
+
+
+from pipeline.weak_identity_triage import preview_weak_suggestions, defer_weak_suggestions
+
+class WeakSuggestionDeferRequest(BaseModel):
+    fingerprint: str
+    confirmation: str
+    limit: int = Field(default=10000,ge=1,le=10000)
+
+
+@router.get('/reviews/weak-suggestions/preview')
+def weak_identity_review_preview(limit:int=Query(10000,ge=1,le=10000)):
+    return operation(lambda conn: preview_weak_suggestions(conn,limit))
+
+
+@router.post('/reviews/weak-suggestions/defer')
+def defer_weak_identity_reviews(request:WeakSuggestionDeferRequest):
+    return operation(lambda conn:defer_weak_suggestions(
+        conn,request.fingerprint,request.confirmation,request.limit))
 
 
 class GeminiEnqueueRequest(BaseModel):

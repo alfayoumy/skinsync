@@ -14,14 +14,16 @@ def queue_review(conn,kind,source_id,product_id,canonical_id,details):
     key=json.dumps([kind,source_id,product_id,canonical_id],separators=(',',':'))
     evidence=json.dumps(details,sort_keys=True,ensure_ascii=False)
     fingerprint=hashlib.sha256(evidence.encode()).hexdigest()
-    conn.execute('''INSERT INTO product_review_queue(case_key,kind,source_id,source_product_id,canonical_product_id,details,evidence_hash)
-        VALUES (?,?,?,?,?,?,?) ON CONFLICT(case_key) DO UPDATE SET details=excluded.details,
-        status=CASE WHEN evidence_hash=excluded.evidence_hash THEN status ELSE 'pending' END,
+    from pipeline.weak_identity_triage import is_weak_identity_suggestion
+    proposed='deferred' if is_weak_identity_suggestion(details,kind,canonical_id) else 'pending'
+    conn.execute('''INSERT INTO product_review_queue(case_key,kind,source_id,source_product_id,canonical_product_id,details,evidence_hash,status)
+        VALUES (?,?,?,?,?,?,?,?) ON CONFLICT(case_key) DO UPDATE SET details=excluded.details,
+        status=CASE WHEN evidence_hash=excluded.evidence_hash THEN status ELSE excluded.status END,
         decision=CASE WHEN evidence_hash=excluded.evidence_hash THEN decision ELSE NULL END,
         reviewed_by=CASE WHEN evidence_hash=excluded.evidence_hash THEN reviewed_by ELSE NULL END,
         review_notes=CASE WHEN evidence_hash=excluded.evidence_hash THEN review_notes ELSE NULL END,
         evidence_hash=excluded.evidence_hash,updated_at=CURRENT_TIMESTAMP''',
-        (key,kind,source_id,product_id,canonical_id,evidence,fingerprint))
+        (key,kind,source_id,product_id,canonical_id,evidence,fingerprint,proposed))
     return conn.execute('SELECT id FROM product_review_queue WHERE case_key=?',(key,)).fetchone()[0]
 
 
@@ -110,20 +112,25 @@ def process_source_observation(conn,observation,dry_run=False,legacy_product_id=
             if classification.classification_status=='excluded' and not category_needs_review:
                 results.append({'status':'excluded','observation_id':oid});continue
             if decision.status=='ambiguous':
-                for candidate in decision.candidates:
+                from pipeline.weak_identity_triage import is_weak_identity_suggestion
+                review_details={'identity':decision.to_dict(),'observation_id':oid,
+                    'title':observation.raw_title,'raw_brand':observation.raw_brand,
+                    'source_url':observation.source_url,'images':observation.images}
+                weak=is_weak_identity_suggestion(review_details,'identity',None)
+                for candidate in ([] if weak else decision.candidates):
                     candidate_id=candidate['canonical_product_id']
                     existing_link=conn.execute('SELECT status FROM product_identity_links WHERE source_id=? AND source_product_id=? AND canonical_product_id=?',
                         (source['id'],link_product_id,candidate_id)).fetchone()
                     if not existing_link or existing_link[0]=='pending':
                         resolver.record_link(source['id'],link_product_id,candidate_id,'pending','requires_review',decision.to_dict())
-                queue_review(conn,'identity',source['id'],link_product_id,None,
-                    {'identity':decision.to_dict(),'observation_id':oid,'title':observation.raw_title,'raw_brand':observation.raw_brand,
-                     'source_url':observation.source_url,'images':observation.images})
+                queue_review(conn,'identity',source['id'],link_product_id,None,review_details)
                 if category_needs_review:
                     queue_review(conn,'category',source['id'],link_product_id,None,
                         {'classification':classification.to_dict(),'identity':decision.to_dict(),
                          'title':observation.raw_title,'observation_id':oid})
-                results.append({'status':'review','kind':'identity','observation_id':oid,'decision':decision.to_dict()});continue
+                results.append({'status':'evidence_needed' if weak else 'review',
+                                'kind':'identity','observation_id':oid,
+                                'decision':decision.to_dict()});continue
             cid=decision.canonical_product_id
             if decision.status=='new':
                 # Unknown/provisional identities never become consumer-visible by accident.

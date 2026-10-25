@@ -30,6 +30,8 @@ export default function CatalogWorkflowsPanel({onClose, initialTab='products',on
   const [selectedSources,setSelectedSources]=useState([]);
   const [discoveryJob,setDiscoveryJob]=useState(null);
   const [jobStatus,setJobStatus]=useState(null);
+  const [activeDiscoveries,setActiveDiscoveries]=useState([]);
+  const [discoveryControlBusy,setDiscoveryControlBusy]=useState(false);
   const [method,setMethod]=useState('shopify');
   const [startPage,setStartPage]=useState(1);
   const [pages,setPages]=useState(10);
@@ -101,6 +103,31 @@ export default function CatalogWorkflowsPanel({onClose, initialTab='products',on
     return ()=>{active=false};
   },[tab,scope]);
   useEffect(()=>{
+    // A scan belongs to the backend, not to the lifecycle of this dialog.
+    // Also recover runs started in a previous browser tab or prior session.
+    let active=true;
+    const refresh=()=>call('/admin/workflows/products/discover-multiple/active')
+      .then(data=>{
+        if(!active)return;
+        setActiveDiscoveries(data.jobs||[]);
+      }).catch(e=>{if(active)setError(e.message)});
+    refresh();
+    const timer=setInterval(refresh,2500);
+    return ()=>{active=false;clearInterval(timer)};
+  },[]);
+  async function cancelAnyDiscovery(taskId) {
+    if(!taskId)return;
+    setDiscoveryControlBusy(true);setError('');
+    try{
+      await call('/admin/workflows/products/discover-multiple/'+encodeURIComponent(taskId)+'/cancel',{method:'POST'});
+      const refreshed=await call('/admin/workflows/products/discover-multiple/active');
+      setActiveDiscoveries(refreshed.jobs||[]);
+      const status=await call('/admin/workflows/products/discover-multiple/'+encodeURIComponent(taskId));
+      setJobStatus(status);
+    }catch(e){setError(e.message)}
+    finally{setDiscoveryControlBusy(false)}
+  }
+  useEffect(()=>{
     if(!discoveryJob)return;
     let active=true;
     const check=()=>call('/admin/workflows/products/discover-multiple/'+encodeURIComponent(discoveryJob))
@@ -131,11 +158,7 @@ export default function CatalogWorkflowsPanel({onClose, initialTab='products',on
     } catch(e){setError(e.message)} finally {setIdentityBusy(false);}
   }
   async function cancelScan() {
-    if(!discoveryJob)return;
-    try {
-      await call('/admin/workflows/products/discover-multiple/'+encodeURIComponent(discoveryJob)+'/cancel',
-        {method:'POST'});
-    } catch(e){setError(e.message);}
+    await cancelAnyDiscovery(discoveryJob);
   }
   async function checkExisting(dryRun) {
     if(!dryRun&&!window.confirm('Automatically verify only legacy products with matching brand, product identity and variants, with no conflicts or duplicate canonical identity? No prices or ingredients will change.'))return;
@@ -456,7 +479,7 @@ export default function CatalogWorkflowsPanel({onClose, initialTab='products',on
             <div className="flex items-center justify-between flex-wrap gap-3">
               <label className="text-sm"><input type="checkbox" checked={preview} onChange={e=>setPreview(e.target.checked)}/> Preview only — save nothing</label>
               <button type="button" className={button} onClick={run}
-                disabled={busy||Boolean(discoveryJob)||(tab==='products'&&multiSource
+                disabled={busy||Boolean(discoveryJob)||activeDiscoveries.length>0||(tab==='products'&&multiSource
                   ? selectedSources.length===0
                   : !source?.enabled||((tab==='offers'||method==='shopify')&&source?.adapter_type!=='shopify'))
                   ||(tab==='offers'&&(!price&&!stock||source?.source_type!=='retailer'))}>
@@ -467,6 +490,22 @@ export default function CatalogWorkflowsPanel({onClose, initialTab='products',on
               This source is not Shopify. Product pages can be imported using Specific product URLs; automated offer refresh is not supported yet.
             </p>}
           </section>
+          {tab==='products'&&activeDiscoveries.length>0&&<section className="rounded-xl border border-amber-300 bg-white p-4 space-y-2" role="status">
+            <h4 className="font-bold">Running discovery jobs — recovered from the server</h4>
+            <p className="text-xs text-gray-600">This list survives leaving and reopening the page. Stop requests take effect after the current Shopify page. Do not start another scan while one is still stopping.</p>
+            {activeDiscoveries.map(job=><div key={job.task_id} className="rounded-lg border p-3 text-xs space-y-1">
+              <p><strong>{job.status}{job.cancel_requested?' (stopping after current page)':''}</strong>
+                {' '}· {job.processed_items||0}/{job.total_items||0} sources · {job.current_stage||'starting'}</p>
+              <p className="break-all text-gray-500">Job ID: {job.task_id}</p>
+              {job.metadata?.active_source&&<p>{job.metadata.active_source}, page {job.metadata.active_page} · {job.metadata.active_products_found||0} scanned at this source</p>}
+              {job.cancellable&&<button type="button"
+                disabled={discoveryControlBusy}
+                className="rounded-lg border border-red-300 px-3 py-2 font-bold text-red-700 disabled:opacity-50"
+                onClick={()=>cancelAnyDiscovery(job.task_id)}>
+                {discoveryControlBusy?'Sending cancellation…':'Stop this scan'}
+              </button>}
+            </div>)}
+          </section>}
           {jobStatus&&<section className="rounded-xl border bg-white p-4 space-y-2" role="status">
             <h4 className="font-bold">Product discovery: {jobStatus.status}</h4>
             <p className="text-xs text-gray-600">{jobStatus.processed_items||0} / {jobStatus.total_items||selectedSources.length} sources finished</p>
@@ -474,7 +513,7 @@ export default function CatalogWorkflowsPanel({onClose, initialTab='products',on
               Scanning {jobStatus.metadata.active_source}, page {jobStatus.metadata.active_page};
               {jobStatus.metadata.active_products_found} products found in this source so far
             </p>}
-            {discoveryJob&&<button type="button" className="rounded-lg border border-red-300 px-3 py-2 text-xs font-semibold text-red-700" onClick={cancelScan}>
+            {discoveryJob&&<button type="button" disabled={discoveryControlBusy} className="rounded-lg border border-red-300 px-3 py-2 text-xs font-semibold text-red-700" onClick={cancelScan}>
               Stop scan after the current page
             </button>}
             {(jobStatus.metadata?.sources||[]).map(entry=><p key={entry.source_id} className="text-xs">
