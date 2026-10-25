@@ -30,6 +30,8 @@ def permission_for(path, method):
         return 'formula_correction'
     if path.startswith('/admin/inci-research/') and method not in ('GET','HEAD'):
         return 'formula'
+    if path.startswith('/admin/workflows/catalog/restore') and method not in ('GET','HEAD'):
+        return 'operations'
     if path.startswith('/admin/workflows/catalog/stale-tasks') and method not in ('GET','HEAD'):
         return 'operations'
     if path.startswith(('/admin/workflows/catalog/reset', '/admin/workflows/catalog/selective-rebuild')) and method not in ('GET','HEAD'):
@@ -88,6 +90,13 @@ class AdminAuthentication:
         required = permission_for(path, method)
         if required not in actor['permissions'] or (required == 'formula_correction' and 'formula' not in actor['permissions']):
             return await JSONResponse({'detail': f'Administrator permission required: {required}.'}, 403)(scope, receive, send)
+        # Once a full-database restore is scheduled, no HTTP mutation may
+        # race its backend restart. The only permitted write is to cancel the
+        # scheduled restoration and release its maintenance lock.
+        if method not in ('GET','HEAD') and path != '/admin/workflows/catalog/restore/cancel':
+            from pipeline.catalog_restore import restore_is_pending
+            if restore_is_pending():
+                return await JSONResponse({'detail':'Catalog restore is scheduled. Restart the backend to apply it, or cancel the scheduled restore before performing any new writes.'},409)(scope,receive,send)
         scope.setdefault('state', {})['admin'] = actor
         context = ACTOR.set(actor)
         try:

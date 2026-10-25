@@ -751,3 +751,9 @@ PRAGMA foreign_key_check;
 Before bulk imports/reconciliation/replaying saved decisions, create a consistent SQLite backup. Because the service uses WAL, do not blindly copy a live `.db` alone without its committed WAL content: prefer the SQLite online backup API or `VACUUM INTO` at a controlled maintenance point. Test `init_db(seed_defaults=False)` on a clone, verify foreign keys and source inventory, then deploy against the configured `SKINSYNC_DB_PATH` and restart the service. API startup is **not** proof that every initialization/migration ran. Never drop identity history, redirect, cannot-link, evaluation or formula provenance records.
 
 See [operations](workflows-and-operations.md) and [API reference](api-reference.md).
+
+### Backup restore maintenance
+
+- `catalog_restore_history` — audit table created after an operator-scheduled restart restore. Records the restoration actor, backup filename, rescue backup path, and SHA-256 identity, without rewriting history in the source backup.
+- Managed `catalog-*.sqlite3` snapshots are full SQLite backups, not product-only export CSVs. Restore request state and last-restore status are stored in private JSON control files in the managed backup directory, outside the database being replaced.
+- `catalog_reset_control.active=1` prevents normal ingestion between scheduling and restart; it is cleared in the restored database after successful verification. Only one backend process may hold the persistent SQLite instance lock at startup.

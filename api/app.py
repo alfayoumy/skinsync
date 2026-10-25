@@ -4,6 +4,15 @@ Modularized architecture using APIRouter for clean domain separation.
 """
 
 import os
+# Honor api/.env before DB_PATH is resolved by catalog_restore/db_manager.
+from pipeline.config import _load_env_file as _load_catalog_database_env
+_load_catalog_database_env()
+
+# Apply an operator-scheduled SQLite backup restore BEFORE catalog_service
+# imports and loads an in-memory index from the current database.
+from pipeline.catalog_restore import startup_catalog_restore_guard
+startup_catalog_restore_guard()
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 

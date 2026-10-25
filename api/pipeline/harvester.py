@@ -61,44 +61,67 @@ def get_configured_stores(conn=None) -> list:
 STORES = get_configured_stores()
 
 def fetch_shopify_page(domain: str, page: int, retries: int = None, strict: bool = False) -> list:
-    """
-    Fetches a page of products from Shopify /products.json with retry logic.
+    """Fetch a Shopify feed page; never confuse HTTP/network failure with EOF.
+
+    An explicit empty products array alone means catalog exhaustion. Preserve
+    final HTTP status or failure category in the source's failure report.
     """
     if retries is None:
         retries = cfg.SHOPIFY_MAX_RETRIES
+    retries=max(1,int(retries))
     url = f"https://{domain}/products.json?limit={cfg.SHOPIFY_PAGE_LIMIT}&page={page}"
     headers = {
         "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36",
         "Accept": "application/json"
     }
     req = urllib.request.Request(url, headers=headers)
-
-    failure = None
+    failure=None
+    reason='Unknown Shopify response'
     for attempt in range(retries):
         try:
             with urllib.request.urlopen(req, timeout=cfg.SHOPIFY_TIMEOUT_SECONDS) as response:
-                data = json.loads(response.read().decode('utf-8'))
-                return data.get("products", [])
-        except urllib.error.HTTPError as e:
-            failure = e
-            if e.code == 429:
-                wait_sec = (attempt + 1) * 3
-                logger.warning(f"Rate limited by {domain}. Backing off for {wait_sec}s...")
-                time.sleep(wait_sec)
-            elif e.code in (404, 403):
-                logger.error(f"HTTP {e.code} for {domain} page {page}: {e.reason}")
-                if strict:
-                    raise RuntimeError(f"Shopify HTTP {e.code} on {domain} page {page}") from e
-                return []
+                data=json.loads(response.read().decode('utf-8'))
+                if not isinstance(data,dict) or not isinstance(data.get('products'),list):
+                    raise ValueError('Shopify endpoint did not return an object with a products list.')
+                return data['products']
+        except urllib.error.HTTPError as exc:
+            failure=exc
+            reason=f'HTTP {exc.code}'
+            if exc.code in (403,404,401):
+                break  # permanent denial; never treat as end-of-catalog
+            if exc.code == 429:
+                retry_after=exc.headers.get('Retry-After') if exc.headers else None
+                reason='HTTP 429 (rate limited'+(', Retry-After '+str(retry_after)+'s' if retry_after else '')+')'
+                try:
+                    pause=max(3.,min(90.,float(retry_after))) if retry_after else min(90.,3.*(attempt+1))
+                except (ValueError,TypeError):
+                    pause=min(90.,3.*(attempt+1))
             else:
-                time.sleep(1)
-        except Exception as e:
-            failure = e
-            logger.warning(f"Fetch error for {domain} page {page} (attempt {attempt+1}): {e}")
-            time.sleep(1.5)
-
+                pause=min(10.,1.5*(attempt+1))
+            if attempt+1<retries:
+                logger.warning('Shopify %s from %s page %s (attempt %s/%s)',
+                               reason,domain,page,attempt+1,retries)
+                time.sleep(pause)
+        except (urllib.error.URLError,TimeoutError,OSError,ValueError,
+                json.JSONDecodeError,UnicodeDecodeError) as exc:
+            failure=exc
+            if isinstance(exc,urllib.error.URLError):
+                reason='Network failure: '+str(getattr(exc,'reason','unknown'))[:120]
+            elif isinstance(exc,(TimeoutError,)):
+                reason='Network timeout'
+            elif isinstance(exc,(ValueError,json.JSONDecodeError,UnicodeDecodeError)):
+                reason='Invalid Shopify JSON/products response'
+            else:
+                reason='Connection failure ('+type(exc).__name__+')'
+            if attempt+1<retries:
+                logger.warning('Shopify fetch failed: %s on %s page %s attempt %s/%s',
+                               reason,domain,page,attempt+1,retries)
+                time.sleep(min(8.,1.5*(attempt+1)))
     if strict:
-        raise RuntimeError(f"Shopify retrieval failed for {domain} page {page} after retries") from failure
+        raise RuntimeError(
+            f'Shopify retrieval failed for {domain} page {page}: {reason}; '
+            'no catalog-end marker was received') from failure
+    logger.warning('Shopify retrieval failed for %s page %s: %s',domain,page,reason)
     return []
 
 def sync_store(store_cfg: dict, max_pages: int = None, conn=None, fields: list = None, task_id: str = None) -> dict:
