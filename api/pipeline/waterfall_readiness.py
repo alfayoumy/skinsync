@@ -124,6 +124,22 @@ def certifiable_cross_store(conn, limit=None):
                 ):
                     existing_hash=formula_fingerprint(offer)
                     if existing_hash:hashes.add(existing_hash)
+            # Fresh replay stores full ordered declarations in audit evidence,
+            # not in legacy products.ingredients_raw. Two incompatible
+            # source formulas for the same identity must NOT be certified
+            # simply because both retailer titles are identical.
+            if 'inci_audit_evidence' in {r[0] for r in conn.execute(
+                    "SELECT name FROM sqlite_master WHERE type='table'")}:
+                for evidence in conn.execute("""SELECT parsed_tokens
+                    FROM inci_audit_evidence WHERE canonical_product_id=?
+                    AND completeness='full' AND order_verified=1
+                    AND source_name LIKE 'source:%'""",(cid,)):
+                    try:
+                        tokens=json.loads(evidence['parsed_tokens'] or '[]')
+                        if isinstance(tokens,list) and tokens:
+                            hashes.add(tuple(str(t).strip().casefold() for t in tokens))
+                    except (ValueError,TypeError):
+                        continue
             if len(hashes)>1:
                 continue
             candidates.append((cid,offers))
