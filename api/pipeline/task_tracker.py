@@ -50,7 +50,8 @@ def create_task(
     total_items: int = 0,
     metadata: Optional[Dict[str, Any]] = None,
     auto_start: bool = False,
-    conn = None
+    conn = None,
+    exclusive_task_type: bool = False
 ) -> str:
     """
     Creates a new pipeline task in the control table with pending/running status.
@@ -75,6 +76,14 @@ def create_task(
         from pipeline.catalog_reset import guard_catalog_writes
         guard_catalog_writes(conn)
         cur = conn.cursor()
+        if exclusive_task_type:
+            active=cur.execute("""SELECT task_id FROM pipeline_tasks
+                WHERE task_type=? AND (status IN ('running','pending')
+                OR (status='cancelled' AND COALESCE(current_stage,'')!='worker_stopped'))
+                ORDER BY created_at DESC LIMIT 1""",(task_type,)).fetchone()
+            if active:
+                raise ValueError('A '+task_type+' job is already active: '+active[0]+
+                                 '. Resume its status and cancel it before starting another.')
         cur.execute("""
         INSERT INTO pipeline_tasks (
             task_id, task_type, target_source, status, fields, params,
