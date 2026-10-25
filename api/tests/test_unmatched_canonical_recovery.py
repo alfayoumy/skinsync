@@ -126,6 +126,16 @@ class AutoCreateUnmatchedCanonicals(unittest.TestCase):
         self.assertEqual(self.conn.execute("""SELECT COUNT(*) FROM product_review_queue
             WHERE kind='category' AND canonical_product_id=? AND status='pending'""",(cid,)).fetchone()[0],1)
 
+    def test_brand_observed_alias_can_be_corrected_without_implicit_product_merge(self):
+        from pipeline.brand_registry import approve_brand_alias
+        first=process_source_observation(self.conn,self.obs())
+        cid=first['results'][0]['canonical_product_id']
+        approved=approve_brand_alias(self.conn,'Novalab','CeraVe','reviewer')
+        self.assertIsNotNone(approved)
+        self.assertEqual(resolve_brand('Novalab',self.conn)['name'],'CeraVe')
+        self.assertEqual(self.conn.execute('SELECT identity_status FROM canonical_products WHERE id=?',
+            (cid,)).fetchone()[0],'provisional')
+
     def test_no_comparison_recovery_requires_identity_permission(self):
         self.assertEqual(permission_for('/admin/workflows/products/recover-unmatched','POST'),'identity')
         self.assertEqual(permission_for('/admin/workflows/products/recover-unmatched/preview','GET'),'read')

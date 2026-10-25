@@ -41,18 +41,32 @@ class TestAggregationApi(unittest.TestCase):
         resolve=self.client.post(f'/admin/aggregation/formulations/{self.cid}/resolve').json()
         self.assertEqual(resolve['status'],'staged')
         self.assertFalse(resolve['published'])
-    def test_unknown_brand_review_and_manual_alias(self):
+    def test_unknown_brand_creates_provisional_and_reviewed_alias_can_be_corrected(self):
         payload=self.payload();payload['vendor']='Unverified Alias'
-        response=self.client.post('/admin/aggregation/sources/sourcebeauty/ingest',json={'payload':payload,'dry_run':False})
-        self.assertEqual(response.status_code,200)
+        response=self.client.post('/admin/aggregation/sources/sourcebeauty/ingest',
+                                  json={'payload':payload,'dry_run':False})
+        self.assertEqual(response.status_code,200,response.text)
         reviews=self.client.get('/admin/aggregation/reviews').json()['reviews']
-        self.assertEqual(len(reviews),1)
-        result=self.client.post('/admin/aggregation/brands/aliases',json={'alias':'Unverified Alias','canonical_name':'CeraVe',
+        self.assertFalse(any(r['kind']=='identity' for r in reviews))
+        conn=self.connect()
+        try:
+            new=conn.execute("""SELECT id,identity_status,brand_id FROM canonical_products
+                WHERE id!=?""",(self.cid,)).fetchone()
+            self.assertIsNotNone(new)
+            self.assertEqual(new['identity_status'],'provisional')
+            self.assertEqual(conn.execute('SELECT status FROM brands WHERE id=?',(new['brand_id'],)).fetchone()[0],
+                             'observed_unverified')
+            original_id=new['id']
+        finally:conn.close()
+        result=self.client.post('/admin/aggregation/brands/aliases',json={
+            'alias':'Unverified Alias','canonical_name':'CeraVe',
             'reviewer':'curator','reason':'Verified manufacturer brand name'})
-        self.assertEqual(result.status_code,200)
-        decision=self.client.post(f"/admin/aggregation/reviews/{reviews[0]['id']}",json={'action':'link','canonical_id':self.cid,
-            'reviewer':'curator','reason':'Verified package and product identity'})
-        self.assertEqual(decision.status_code,200)
+        self.assertEqual(result.status_code,200,result.text)
+        conn=self.connect()
+        try:
+            self.assertEqual(conn.execute('SELECT identity_status FROM canonical_products WHERE id=?',
+                       (original_id,)).fetchone()[0],'provisional')
+        finally:conn.close()
     def test_rollout_cannot_skip_benchmarks(self):
         response=self.client.post('/admin/aggregation/sources/sourcebeauty/rollout',json={'report':{},'reviewer':'curator','reason':'Enable source'})
         self.assertEqual(response.status_code,422)
