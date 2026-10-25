@@ -234,6 +234,34 @@ def run(action,payload):
         conn.close()
 
 
+class ShopifyDiscoveryProbe(BaseModel):
+    source_id: str
+    page: int = Field(default=1,ge=1,le=1000)
+
+
+@router.post('/products/discovery-probe')
+def probe_shopify_discovery(request: ShopifyDiscoveryProbe):
+    """One explicit operator-requested HTTP page with no catalog mutations."""
+    from pipeline.harvester import fetch_shopify_page
+    conn=get_connection()
+    try:
+        source=_shopify_source(conn,request.source_id)
+        if source['adapter_type']!='shopify':
+            raise HTTPException(status_code=400,detail='Source is not a Shopify feed.')
+    finally:
+        conn.close()
+    try:
+        items=fetch_shopify_page(source['domain'],request.page,retries=1,strict=True)
+        return {'source_id':request.source_id,'page':request.page,
+                'status':'reachable','http_status':200,'products_returned':len(items),
+                'note':'A successful single page does not establish full-catalog completeness.'}
+    except RuntimeError as exc:
+        return {'source_id':request.source_id,'page':request.page,
+                'status':'unavailable','products_returned':None,
+                'reason':str(exc)[:500],
+                'note':'The catalog is unchanged. A blocked/rate-limited page must not be treated as end-of-catalog.'}
+
+
 @router.post('/products/discover')
 def discover(request:ShopifyScan):
     return run(discover_shopify,request)
