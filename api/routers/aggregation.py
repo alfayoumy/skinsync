@@ -444,6 +444,170 @@ def gemini_identity_results(
     return operation(fn)
 
 
+
+# Recalculate unanchored identity reviews against the actual saved source
+# observations and CURRENT canonicals; never send empty lists to Gemini.
+class SavedRematchStart(BaseModel):
+    fingerprint: str
+    confirmation: str
+    limit: int=Field(default=500,ge=1,le=10000)
+
+
+@router.get('/reviews/rematch/preview')
+def saved_rematch_preview(limit:int=Query(500,ge=1,le=10000)):
+    from pipeline.saved_identity_rematch import preview_saved_rematch
+    return operation(lambda conn: preview_saved_rematch(conn,limit))
+
+
+@router.get('/reviews/rematch/diagnose')
+def saved_rematch_diagnose(limit:int=Query(5,ge=1,le=10)):
+    """No-write sample replay of old Gemini/manual identity reviews."""
+    from pipeline.saved_identity_rematch import rematch_saved_reviews
+    conn=get_connection()
+    try:
+        result=rematch_saved_reviews(conn,limit,dry_run=True)
+        conn.rollback()
+        return result
+    except Exception:
+        conn.rollback()
+        raise
+    finally:
+        conn.close()
+
+
+def _run_saved_review_rematch(task_id,limit,fingerprint):
+    from pathlib import Path
+    from pipeline.catalog_reset import _backup
+    from pipeline.saved_identity_rematch import rematch_saved_reviews
+    from pipeline.task_tracker import update_task_progress,complete_task,fail_task
+    from pipeline.db_manager import DB_PATH
+    conn=get_connection()
+    try:
+        from pipeline.saved_identity_rematch import preview_saved_rematch
+        plan=preview_saved_rematch(conn,limit)
+        # This task is the only legitimate active job while it runs.
+        other=[r for r in plan['active_jobs'] if r['task_id']!=task_id]
+        if other or plan['fingerprint']!=fingerprint:
+            raise ValueError('The source catalog/review queue changed or another worker is active.')
+        # Always retain a restorable complete SQLite snapshot before touching
+        # any identity link or review record.
+        rescue=_backup(conn,Path(DB_PATH))
+        last={'processed':0}
+        def progress(counters,oid):
+            last.update(counters)
+            if counters['processed']%20==0:
+                conn.commit()
+                update_task_progress(task_id,
+                    processed_items=counters['processed'],
+                    successful_items=counters.get('recovered_products',0),
+                    failed_items=counters.get('failed_products',0),
+                    current_stage='rematched_saved_observation_'+str(oid),
+                    metadata={'stats':counters,'pre_rematch_backup':str(rescue)})
+        def cancelled():
+            from pipeline.db_manager import get_connection as connect
+            with connect() as check:
+                r=check.execute("SELECT status FROM pipeline_tasks WHERE task_id=?",
+                                (task_id,)).fetchone()
+                return bool(r and r[0]=='cancelled')
+        result=rematch_saved_reviews(conn,limit,progress=progress,
+            expected_fingerprint=fingerprint,should_cancel=cancelled)
+        conn.commit()
+        result['pre_rematch_backup']=str(rescue)
+        state=conn.execute('SELECT status FROM pipeline_tasks WHERE task_id=?',(task_id,)).fetchone()
+        if state and state[0]=='cancelled':
+            update_task_progress(task_id,processed_items=result['processed'],
+                successful_items=result['recovered_products'],failed_items=result['failed_products'],
+                current_stage='worker_stopped',metadata={'stats':result})
+        elif not result['recovered_products'] and result['failed_products']:
+            fail_task(task_id,'No products could be rematched. Inspect error groups.',
+                metadata={'stats':result,'pre_rematch_backup':str(rescue)})
+        else:
+            complete_task(task_id,status=('completed_with_errors' if result['failed_products'] else 'completed'),
+                          metadata={'stats':result,'pre_rematch_backup':str(rescue)})
+    except Exception as exc:
+        conn.rollback()
+        fail_task(task_id,'Saved observation rematch failed: '+str(exc)[:180])
+    finally:
+        conn.close()
+        state=get_connection()
+        try:
+            state.execute("""UPDATE pipeline_tasks SET current_stage='worker_stopped',
+                updated_at=CURRENT_TIMESTAMP WHERE task_id=?""",(task_id,))
+            state.commit()
+        finally:state.close()
+
+
+@router.get('/reviews/rematch/active')
+def active_saved_review_rematch():
+    def query(conn):
+        rows=[dict(x) for x in conn.execute("""SELECT task_id,status,processed_items,
+            total_items,successful_items,failed_items,current_stage,
+            metadata,error_message FROM pipeline_tasks
+            WHERE task_type='saved_observation_identity_rematch'
+            ORDER BY created_at DESC LIMIT 3""")]
+        for item in rows:
+            try:item['metadata']=json.loads(item['metadata'] or '{}')
+            except (ValueError,TypeError):item['metadata']={}
+        return {'jobs':rows}
+    return operation(query)
+
+
+@router.get('/reviews/rematch/jobs/{task_id}')
+def saved_review_rematch_status(task_id:str):
+    def query(conn):
+        row=conn.execute("""SELECT task_id,status,processed_items,
+            total_items,successful_items,failed_items,current_stage,
+            metadata,error_message FROM pipeline_tasks
+            WHERE task_id=? AND task_type='saved_observation_identity_rematch'""",
+            (task_id,)).fetchone()
+        if not row:raise ValueError('Unknown rematch task.')
+        item=dict(row)
+        try:item['metadata']=json.loads(item['metadata'] or '{}')
+        except (ValueError,TypeError):item['metadata']={}
+        return item
+    return operation(query)
+
+
+@router.post('/reviews/rematch/jobs/{task_id}/cancel')
+def cancel_saved_review_rematch(task_id:str):
+    from pipeline.task_tracker import cancel_task
+    conn=get_connection()
+    try:
+        row=conn.execute("""SELECT status FROM pipeline_tasks
+            WHERE task_id=? AND task_type='saved_observation_identity_rematch'""",
+            (task_id,)).fetchone()
+        if not row:raise HTTPException(status_code=404,detail='Unknown rematch task.')
+        if row[0] not in ('running','pending'):
+            return {'task_id':task_id,'status':row[0],'cancel_requested':False}
+    finally:conn.close()
+    result=cancel_task(task_id,reason='Operator stopped source-backed identity rematch')
+    return {'task_id':task_id,'status':'stopping' if result else 'not_running',
+            'cancel_requested':bool(result)}
+
+
+@router.post('/reviews/rematch/start')
+def start_saved_review_rematch(request:SavedRematchStart,background_tasks:BackgroundTasks):
+    from pipeline.saved_identity_rematch import preview_saved_rematch,CONFIRMATION
+    from pipeline.task_tracker import create_task
+    if request.confirmation!=CONFIRMATION:
+        raise HTTPException(status_code=422,detail='Type REMATCH SAVED PRODUCTS exactly.')
+    conn=get_connection()
+    try:
+        plan=preview_saved_rematch(conn,request.limit)
+        if not plan['can_start']:
+            raise HTTPException(status_code=409,detail='Finish running catalog/Gemini workers first.')
+        if plan['fingerprint']!=request.fingerprint:
+            raise HTTPException(status_code=409,detail='Evidence changed after preview; refresh.')
+        task_id=create_task('saved_observation_identity_rematch',
+            target_source='saved_source_observations',total_items=plan['eligible_products'],
+            params={'limit':request.limit,'fingerprint':request.fingerprint},
+            auto_start=True,exclusive_task_type=True,conn=conn)
+    finally:conn.close()
+    background_tasks.add_task(_run_saved_review_rematch,task_id,request.limit,request.fingerprint)
+    return {'task_id':task_id,'status':'running','selected':plan['eligible_products'],
+            'no_rescrape':True,'gemini_calls':0}
+
+
 @router.post('/reviews/{review_id}')
 def review(review_id:int,request:ReviewRequest):
     from pipeline.review_service import resolve_review
