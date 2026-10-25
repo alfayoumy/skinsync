@@ -525,6 +525,27 @@ export default function AggregationReviewPanel({ onClose, initialSourceId = 'sou
         {selected.gemini_explanation&&<p className="rounded-lg bg-purple-50 p-2 text-xs">
           Gemini: {selected.gemini_verdict} · confidence {selected.gemini_confidence} · {selected.gemini_explanation}
         </p>}
+        {selected.kind==='identity'&&selected.current_comparators?.length>0&&
+          <div className="rounded-lg border p-3 space-y-2 text-xs">
+            <strong>What the system was comparing this product to</strong>
+            {selected.current_comparators.map((candidate,i)=><div className="rounded border p-2 space-y-1" key={candidate.canonical_id||i}>
+              <p>Suggested canonical #{candidate.canonical_id} ·
+                {candidate.exists?' '+candidate.brand+' — '+candidate.title:' no longer exists in current database'}</p>
+              {candidate.exists&&!candidate.comparator_available&&<p className="text-red-700 font-bold">
+                No current retailer product listing supports this canonical. The old Gemini comparison contained no products.
+              </p>}
+              {!!candidate.listings?.length&&<>
+                <p className="font-semibold">Actual current retailer listings:</p>
+                {candidate.listings.map((offer,j)=><p key={j}>
+                  {offer.retailer} · {offer.title}
+                  {offer.product_url&&<> · <a className="underline text-purple-700" href={offer.product_url}
+                    target="_blank" rel="noreferrer">Open listing</a></>}
+                </p>)}
+              </>}
+              <p className="text-gray-600">Previous similarity suggestion: {candidate.similarity_suggestion??'none'} ·
+                missing: {(candidate.unknown_attributes||[]).join(', ')||'none'}</p>
+            </div>)}
+          </div>}
         {selected.details.reason_code&&<p className="rounded-lg bg-amber-50 p-2 text-sm font-medium text-amber-900">Issue: {selected.details.reason_code.replaceAll('_',' ')}</p>}
         {selected.details.offers?.length>0&&<div className="text-xs text-gray-700 rounded-lg border p-2 space-y-1">
           <strong>Related store listings</strong>
