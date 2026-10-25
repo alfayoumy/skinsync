@@ -41,7 +41,30 @@ export default function AggregationReviewPanel({ onClose, initialSourceId = 'sou
   const [busy, setBusy] = useState(false), [message, setMessage] = useState(''), [error, setError] = useState('');
   const [reviewsLoading,setReviewsLoading] = useState(false);
   const [reviewsError,setReviewsError] = useState('');
+  const [weakPreview,setWeakPreview]=useState(null);
+  const [weakBusy,setWeakBusy]=useState(false);
   const [geminiError,setGeminiError] = useState('');
+  async function previewWeakSuggestions() {
+    setWeakBusy(true);setError('');
+    try{setWeakPreview(await api('/reviews/weak-suggestions/preview'))}
+    catch(e){setError(e.message)}
+    finally{setWeakBusy(false)}
+  }
+  async function deferWeakSuggestions() {
+    if(!weakPreview?.eligible)return;
+    if(!window.confirm('Move '+weakPreview.eligible+' weak, unevaluated identity suggestions to Awaiting stronger evidence? Source observations stay saved; no product identities are linked or merged and no INCI is changed.'))return;
+    setWeakBusy(true);setError('');
+    try{
+      const result=await api('/reviews/weak-suggestions/defer',{
+        method:'POST',body:JSON.stringify({
+          fingerprint:weakPreview.fingerprint,
+          confirmation:'DEFER WEAK MATCH SUGGESTIONS',limit:weakPreview.limit})});
+      setMessage(result.deferred+' unsupported identity suggestions preserved in Awaiting stronger evidence. No products, formulas or source observations changed.');
+      setWeakPreview(null);setOffset(0);setSelected(null);
+      await refresh();
+    }catch(e){setError(e.message);setWeakPreview(null)}
+    finally{setWeakBusy(false)}
+  }
   const refresh = useCallback(async () => {
     // Source settings, saved review records and the optional Gemini status
     // must not be a single all-or-nothing Promise.all.
@@ -354,14 +377,30 @@ export default function AggregationReviewPanel({ onClose, initialSourceId = 'sou
         </p>}
       </section>}
       {mode === 'reviews' && <GeminiDecisionsTable refreshKey={String(savedApplyTask||'')+'-'+String(savedApplyJob?.status||'')+'-'+String(geminiJob?.status||'')} />}
-      {mode === 'reviews' && <section className="grid md:grid-cols-2 gap-4"><div className="bg-white border rounded-xl p-4"><div className="flex justify-between mb-3"><h3 className="font-semibold">{reviewView==='manual'?'Needs manual review':reviewView==='awaiting_gemini'?'Waiting for Gemini':'All pending reviews'} ({total})</h3>
+      {mode === 'reviews' && <section className="grid md:grid-cols-2 gap-4"><div className="bg-white border rounded-xl p-4"><div className="flex justify-between mb-3"><h3 className="font-semibold">{reviewView==='manual'?'Needs manual review':reviewView==='awaiting_gemini'?'Waiting for Gemini':reviewView==='evidence_needed'?'Awaiting stronger evidence':'All pending reviews'} ({total})</h3>
           <button type="button" className="text-xs font-semibold text-purple-700 underline" disabled={reviewsLoading} onClick={()=>refresh().catch(e=>setError(e.message))}>
             {reviewsLoading?'Loading...':'Refresh cases'}
           </button><select aria-label="Review type" value={kind} onChange={e => { setKind(e.target.value); setOffset(0); setSelected(null); }} className="border rounded p-1"><option value="">All types</option>{['identity', 'duplicate', 'category', 'formulation'].map(k => <option key={k}>{k}</option>)}</select></div>
         <div className="flex flex-wrap gap-2 mb-3 text-xs">
-          {[['manual','Needs manual review'],['awaiting_gemini','Waiting for Gemini'],['all','All unresolved cases']].map(([value,label])=>
+          {[['manual','Needs manual review'],['evidence_needed','Awaiting stronger evidence'],['awaiting_gemini','Waiting for Gemini'],['all','All unresolved cases']].map(([value,label])=>
             <button type="button" key={value} aria-pressed={reviewView===value} onClick={()=>{setReviewView(value);setOffset(0);setSelected(null)}}
               className={reviewView===value?'rounded-lg bg-purple-100 text-purple-900 px-2 py-1 font-semibold':'rounded-lg border px-2 py-1'}>{label}</button>)}
+        </div>
+        <div className="rounded-lg border p-3 space-y-2 mb-3 text-xs">
+          <p className="font-bold">Separate weak suggestions from real review conflicts</p>
+          <p className="text-gray-600">A similarity suggestion with no exact name, durable link, identifier or verified variant cannot establish a match. Keep its source observation and candidate for later evidence enrichment, rather than labeling it a mandatory manual decision.</p>
+          <button type="button" className="rounded-lg border px-3 py-2 font-bold disabled:opacity-50"
+            disabled={weakBusy} onClick={previewWeakSuggestions}>
+            {weakBusy?'Checking…':'Preview weak-review triage — no changes'}
+          </button>
+          {weakPreview&&<div className="space-y-2">
+            <p><strong>{weakPreview.eligible}</strong> safely identifiable weak suggestions among {weakPreview.total_pending} pending cases.
+              Others remain in their existing review states.</p>
+            {weakPreview.eligible>0&&<button type="button"
+              disabled={weakBusy} className="rounded-lg border border-amber-500 px-3 py-2 font-bold text-amber-900 disabled:opacity-50"
+              onClick={deferWeakSuggestions}>Move {weakPreview.eligible} weak suggestions to Awaiting stronger evidence</button>}
+            <p className="text-gray-600">No canonical identities, source observations, offers or ingredient lists are changed.</p>
+          </div>}
         </div>
         <label className="flex gap-2 items-center text-xs mb-2">
           <input type="checkbox" checked={reviews.length>0 && reviews.filter(x=>['identity','duplicate'].includes(x.kind)).every(x=>selectedReviewIds.includes(x.id))}
@@ -376,6 +415,7 @@ export default function AggregationReviewPanel({ onClose, initialSourceId = 'sou
         {!reviews.length&&!reviewsError&&<p className="py-8 text-sm text-gray-500">
           {reviewsLoading?'Loading saved review cases...':
             reviewView==='manual'?'No cases currently require manual review. Check “All unresolved cases” or “Waiting for Gemini”.':
+            reviewView==='evidence_needed'?'No deferred weak suggestions are waiting for stronger product evidence.':
             reviewView==='awaiting_gemini'?'No cases are waiting for Gemini. Select cases from “All unresolved cases” to enqueue them.':
             'No pending reviews in this view.'}
         </p>}<div className="flex justify-between text-sm mt-3"><button disabled={!offset || busy} onClick={() => setOffset(Math.max(0, offset - 50))}>Previous</button><span>{Math.min(offset + reviews.length, total)} of {total}</span><button disabled={offset + 50 >= total || busy} onClick={() => setOffset(offset + 50)}>Next</button></div>
