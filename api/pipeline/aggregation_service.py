@@ -101,11 +101,13 @@ def process_source_observation(conn,observation,dry_run=False,legacy_product_id=
                 link_product_id+=':'+hashlib.sha256(key.encode()).hexdigest()[:16]
             decision=resolver.resolve(variant_identity,observation.raw_brand,observation.raw_title,
                 source['id'],link_product_id,(representative.gtin if representative else None) or observation.source_gtin,observation.manufacturer_sku)
-            if classification.classification_status=='review' or classification.primary_category=='Set':
-                queue_review(conn,'category',source['id'],link_product_id,decision.canonical_product_id,
-                    {'classification':classification.to_dict(),'identity':decision.to_dict(),'title':observation.raw_title,'observation_id':oid})
-                results.append({'status':'review','kind':'category','observation_id':oid});continue
-            if classification.classification_status=='excluded':
+            # Uncertain *category* is not an uncertain product match. Keep
+            # the new distinct product and its retailer offers, with a separate
+            # category review; only explicit non-skincare exclusions are skipped.
+            category_needs_review = (
+                classification.classification_status=='review'
+                or classification.primary_category=='Set')
+            if classification.classification_status=='excluded' and not category_needs_review:
                 results.append({'status':'excluded','observation_id':oid});continue
             if decision.status=='ambiguous':
                 for candidate in decision.candidates:
@@ -117,6 +119,10 @@ def process_source_observation(conn,observation,dry_run=False,legacy_product_id=
                 queue_review(conn,'identity',source['id'],link_product_id,None,
                     {'identity':decision.to_dict(),'observation_id':oid,'title':observation.raw_title,'raw_brand':observation.raw_brand,
                      'source_url':observation.source_url,'images':observation.images})
+                if category_needs_review:
+                    queue_review(conn,'category',source['id'],link_product_id,None,
+                        {'classification':classification.to_dict(),'identity':decision.to_dict(),
+                         'title':observation.raw_title,'observation_id':oid})
                 results.append({'status':'review','kind':'identity','observation_id':oid,'decision':decision.to_dict()});continue
             cid=decision.canonical_product_id
             if decision.status=='new':
@@ -124,7 +130,12 @@ def process_source_observation(conn,observation,dry_run=False,legacy_product_id=
                 cid=resolver.create_provisional(observation.raw_title,observation.raw_brand,classification,variant_identity,
                     visible=False)
             accepted_category=conn.execute('SELECT category,classification_status FROM canonical_products WHERE id=?',(cid,)).fetchone()
-            if accepted_category['category']!=classification.primary_category:
+            if category_needs_review:
+                queue_review(conn,'category',source['id'],link_product_id,cid,
+                    {'classification':classification.to_dict(),'identity':decision.to_dict(),
+                     'title':observation.raw_title,'observation_id':oid,
+                     'review_reason':'category_or_set_uncertainty'})
+            if accepted_category['category']!=classification.primary_category and not category_needs_review:
                 queue_review(conn,'category',source['id'],link_product_id,cid,
                     {'observation_id':oid,'title':observation.raw_title,'current_category':accepted_category['category'],
                      'classification':classification.to_dict(),'approved_category_preserved':accepted_category['classification_status']=='approved'})
