@@ -49,10 +49,19 @@ def eligible_waterfall(conn, revalidate_all=False, limit=None):
     verified=[r for r in scoped if r['identity_status']=='verified']
     ready=[r['id'] for r in verified if r['id'] not in pending]
     count=len(ready) if limit is None else min(len(ready),max(0,int(limit)))
+    from collections import Counter
+    states=dict(Counter(r['identity_status'] or 'unknown' for r in scoped))
+    # Provisional is normal for fresh discovery, but still cannot publish INCI
+    # until separately corroborated or explicitly reviewed.
+    certified_candidates=certifiable_cross_store(conn,limit=1000)
+    known_multi_store=len(certified_candidates)
     return {
         'total_skincare':len(rows), 'in_scope':len(scoped),
         'blocked_unverified':len(scoped)-len(verified),
         'blocked_pending_review':sum(r['id'] in pending for r in verified),
+        'identity_status_breakdown':states,
+        'certifiable_cross_store_preview_count':known_multi_store,
+        'certifiable_preview_capped':known_multi_store==1000,
         'eligible_before_limit':len(ready), 'eligible':count,
         'eligible_ids':ready[:count], 'scope':'all_skincare' if revalidate_all else 'unmatched_only',
     }
@@ -67,11 +76,19 @@ def certifiable_cross_store(conn, limit=None):
         ingredients_raw,ingredient_source
         FROM products WHERE canonical_product_id IS NOT NULL ORDER BY canonical_product_id,id"""):
         groups[row['canonical_product_id']].append(dict(row))
+    # Reject competing same-brand marketed identities even if two retailers
+    # independently point at one provisional canonical. A duplicate pending
+    # canonical cannot be safely ignored as an alternate formulation.
+    profiles=defaultdict(set)
+    for row in conn.execute("""SELECT id,brand_id,canonical_title,brand FROM canonical_products
+        WHERE identity_status NOT IN ('redirected','reversed_split')"""):
+        if row['brand_id']:
+            profiles[(row['brand_id'],identity_name(row['canonical_title'],row['brand']))].add(row['id'])
     candidates=[]
     for canonical in conn.execute("""SELECT id,canonical_title,brand,brand_id,identity_status,is_skincare,
-        ingredients_raw
+        ingredients_raw,classification_status
         FROM canonical_products WHERE is_skincare=1 AND identity_status IN
-        ('legacy','legacy_preserved_unverified') ORDER BY id"""):
+        ('legacy','legacy_preserved_unverified','provisional') ORDER BY id"""):
         cid=canonical['id']
         if cid in pending or not canonical['brand_id']:
             continue
@@ -79,7 +96,12 @@ def certifiable_cross_store(conn, limit=None):
         if len({p['store_id'] for p in offers})<2:
             continue
         expected=identity_name(canonical['canonical_title'],canonical['brand'])
-        if not expected:continue
+        if not expected or profiles[(canonical['brand_id'],expected)]!={cid}:continue
+        if canonical['classification_status'] not in ('approved','auto_approved'):
+            continue
+        if conn.execute("""SELECT 1 FROM product_review_queue
+            WHERE status='pending' AND kind='category' AND canonical_product_id=? LIMIT 1""",(cid,)).fetchone():
+            continue
         identity=extract_identity(canonical['canonical_title'],canonical['brand'])
         good=True
         for offer in offers:
@@ -122,9 +144,18 @@ def certify_cross_store(conn, reviewer, apply=False, limit=200):
                     'accepted','cross_store_exact_identity',{'product_id':p['id'],
                     'independent_stores':sorted({o['store_id'] for o in offers}),
                     'rule':'all_members_exact_identity_and_hard_gates'})
-            conn.execute("""UPDATE canonical_products SET identity_status='verified',updated_at=CURRENT_TIMESTAMP
-                WHERE id=? AND identity_status IN ('legacy','legacy_preserved_unverified')""",(cid,))
+            old=conn.execute("SELECT identity_status FROM canonical_products WHERE id=?",(cid,)).fetchone()[0]
+            updated=conn.execute("""UPDATE canonical_products SET identity_status='verified',updated_at=CURRENT_TIMESTAMP
+                WHERE id=? AND identity_status IN ('legacy','legacy_preserved_unverified','provisional')""",(cid,))
+            if updated.rowcount!=1:
+                raise ValueError('Identity changed during independent cross-store certification.')
+            conn.execute("""INSERT INTO canonical_identity_history(operation,canonical_product_id,
+                before_state,after_state,reviewed_by,reason)
+                VALUES(?,?,?,?,?,?)""",('cross_store_exact_certification',cid,
+                json.dumps({'identity_status':old}),
+                json.dumps({'identity_status':'verified','independent_stores':sorted({o['store_id'] for o in offers})}),
+                reviewer,'Exact registered brand, marketed identity and variant across independent stores; no competing canonical or pending review.'))
     return {'dry_run':not apply,'certifiable':len(candidates),'processed':len(candidates) if apply else 0,
             'canonical_ids':[cid for cid,_ in candidates[:25]],
-            'rule':'two independent stores; every title, brand and formulation discriminator must agree',
+            'rule':'two independent stores; reviewed brand, every title and formulation discriminator agree; unique canonical; approved category; no pending reviews',
             'limit':limit}
