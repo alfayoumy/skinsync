@@ -59,6 +59,14 @@ export default function CatalogWorkflowsPanel({onClose, initialTab='products',on
   const [resetConfirmation,setResetConfirmation]=useState('');
   const [resetBusy,setResetBusy]=useState(false);
   const [resetOutcome,setResetOutcome]=useState(null);
+  const [backups,setBackups]=useState(null);
+  const [backupBusy,setBackupBusy]=useState(false);
+  const [selectedBackup,setSelectedBackup]=useState('');
+  const [restorePreview,setRestorePreview]=useState(null);
+  const [restoreConfirm,setRestoreConfirm]=useState('');
+  const [restoreOutcome,setRestoreOutcome]=useState(null);
+  const [shopifyProbe,setShopifyProbe]=useState(null);
+  const [shopifyProbeBusy,setShopifyProbeBusy]=useState(false);
   const [selectivePreview,setSelectivePreview]=useState(null);
   const [selectiveConfirmation,setSelectiveConfirmation]=useState('');
   const [selectiveJob,setSelectiveJob]=useState(null);
@@ -185,6 +193,52 @@ export default function CatalogWorkflowsPanel({onClose, initialTab='products',on
       if(apply)setEligibility(null);
     }catch(e){setError(e.message)}
     finally{setFreshCertBusy(false)}
+  }
+  async function probeShopify() {
+    setShopifyProbeBusy(true);setError('');
+    try{
+      setShopifyProbe(await call('/admin/workflows/products/discovery-probe',
+        json({source_id:sourceId,page:Number(startPage)})));
+    }catch(e){setError(e.message)}
+    finally{setShopifyProbeBusy(false)}
+  }
+  async function listBackups() {
+    setBackupBusy(true);setError('');setRestorePreview(null);setRestoreOutcome(null);
+    try{
+      const report=await call('/admin/workflows/catalog/backups');
+      setBackups(report);
+      setSelectedBackup(report.backups?.[0]?.filename||'');
+    }catch(e){setError(e.message)}
+    finally{setBackupBusy(false)}
+  }
+  async function inspectBackup() {
+    if(!selectedBackup)return;
+    setBackupBusy(true);setError('');setRestoreConfirm('');setRestoreOutcome(null);
+    try{
+      setRestorePreview(await call('/admin/workflows/catalog/backups/'+encodeURIComponent(selectedBackup)+'/preview'));
+    }catch(e){setRestorePreview(null);setError(e.message)}
+    finally{setBackupBusy(false)}
+  }
+  async function stageRestore() {
+    if(!restorePreview?.can_schedule||restoreConfirm!=='RESTORE CATALOG BACKUP')return;
+    setBackupBusy(true);setError('');
+    try{
+      const result=await call('/admin/workflows/catalog/restore',json({
+        filename:restorePreview.filename,sha256:restorePreview.sha256,
+        confirmation:restoreConfirm
+      }));
+      setRestoreOutcome(result);setRestorePreview(null);
+      setBackups({...backups,pending:result});
+    }catch(e){setError(e.message)}
+    finally{setBackupBusy(false)}
+  }
+  async function cancelRestore() {
+    setBackupBusy(true);setError('');
+    try {
+      await call('/admin/workflows/catalog/restore/cancel',{method:'POST'});
+      setRestoreOutcome(null);setRestorePreview(null);await listBackups();
+    }catch(e){setError(e.message)}
+    finally{setBackupBusy(false)}
   }
   async function previewReset() {
     setResetBusy(true);setError('');setResetOutcome(null);setResetConfirmation('');
@@ -444,6 +498,17 @@ export default function CatalogWorkflowsPanel({onClose, initialTab='products',on
             </div>}
             <p className="text-sm text-gray-600">{result.note || 'Review source observations and products that need a decision.'}</p>
           </section>}
+          {tab==='products'&&<section className="rounded-xl border bg-white p-5 space-y-3">
+            <h3 className="font-bold text-gray-900">Diagnose Shopify discovery connection</h3>
+            <p className="text-sm text-gray-600">Fetches just one page for the selected source and starting page; no database changes. Reports whether the feed is reachable or gives the HTTP/network failure reason. A blocked source is not an empty catalog.</p>
+            <button type="button" className="rounded-lg border px-3 py-2 text-sm font-bold disabled:opacity-50"
+              disabled={shopifyProbeBusy||Boolean(discoveryJob)||!source?.enabled||source?.adapter_type!=='shopify'}
+              onClick={probeShopify}>{shopifyProbeBusy?'Checking…':'Test selected Shopify source and page'}</button>
+            {shopifyProbe&&<p className={'text-xs break-words '+(shopifyProbe.status==='reachable'?'text-green-800':'text-red-700')} role="status">
+              {shopifyProbe.source_id} page {shopifyProbe.page} · {shopifyProbe.status} ·
+              {shopifyProbe.status==='reachable'?shopifyProbe.products_returned+' products returned':shopifyProbe.reason}
+            </p>}
+          </section>}
           {tab==='products'&&<section className="rounded-xl border border-purple-200 bg-white p-5 space-y-3">
             <h3 className="font-bold text-gray-900">Recover unmatched listings into new canonical products</h3>
             <p className="text-sm text-gray-600">No existing product to compare against is <strong>not</strong> a review problem. This repairs older unanchored cases caused by unknown vendor labels or a category check that skipped product creation. It replays the saved source observation, creates a <strong>provisional canonical</strong> and links its original offers without rescraping, Gemini or INCI approval. Genuine ambiguous matches remain for review.</p>
@@ -627,6 +692,56 @@ export default function CatalogWorkflowsPanel({onClose, initialTab='products',on
               {selectiveStatus.result&&<p>{selectiveStatus.result.canonicals} canonicals and {selectiveStatus.result.offers} offers rebuilt from {selectiveStatus.result.replayed} saved observations.</p>}
               {selectiveStatus.backup_path&&<p className="text-xs break-all">Full database backup: {selectiveStatus.backup_path}</p>}
             </div>}
+          </section>}
+          {tab==='products'&&<section className="rounded-xl border bg-white p-5 space-y-3">
+            <h3 className="font-bold text-gray-900">Restore from catalog backup</h3>
+            <p className="text-sm text-gray-600">Reset and selective rebuild create full SQLite backups. Inspect the catalog and saved source observations inside a backup before choosing one. A restore replaces the entire live database, including product IDs, ingredients, decisions and source observations. The current database is backed up again immediately before restoration.</p>
+            <button type="button" className="rounded-lg border px-3 py-2 text-sm font-bold disabled:opacity-50"
+              disabled={backupBusy||Boolean(discoveryJob)} onClick={listBackups}>
+              {backupBusy?'Checking backups…':'List available backups'}
+            </button>
+            {backups&&<div className="space-y-3 rounded-lg border p-3 text-sm">
+              {backups.pending&&<p className="text-amber-800 font-semibold">Restore scheduled. Stop and restart the SkinSync backend to apply it. Do not start another scan before restart.</p>}
+              {backups.pending&&<button type="button" disabled={backupBusy} className="rounded-lg border px-3 py-2"
+                onClick={cancelRestore}>Cancel scheduled restore before restart</button>}
+              {backups.last_restore&&<p className="text-xs text-green-800">Most recent restore: {backups.last_restore.filename} · rescue snapshot: {backups.last_restore.rescue_backup}</p>}
+              {!backups.backups?.length&&<p>No managed backups found on this backend. Backups are stored server-side.</p>}
+              {backups.backups?.length>0&&<>
+                <label className="block font-semibold">Choose a backup
+                  <select className={input} value={selectedBackup} onChange={e=>{setSelectedBackup(e.target.value);setRestorePreview(null);setRestoreConfirm('')}}>
+                    {backups.backups.map(item=><option key={item.filename} value={item.filename}>
+                      {item.filename} — {(item.bytes/1048576).toFixed(1)} MB
+                    </option>)}
+                  </select>
+                </label>
+                <button type="button" className="rounded-lg border px-3 py-2 font-bold disabled:opacity-50"
+                  disabled={backupBusy||Boolean(backups.pending)} onClick={inspectBackup}>
+                  Inspect backup contents and integrity
+                </button>
+              </>}
+              {restorePreview&&<div className="rounded-lg border border-amber-300 p-3 space-y-2">
+                <p className="font-bold text-amber-900">Verified backup: {restorePreview.filename}</p>
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                  {Object.entries(restorePreview.tables||{}).map(([key,count])=><Metric key={key} label={key.replaceAll('_',' ')} value={count}/>)}
+                </div>
+                <p className="text-amber-800 text-xs">{restorePreview.warning}</p>
+                {restorePreview.active_jobs?.length>0&&<p className="text-red-700">A job is active. Stop all workers before scheduling a restore.</p>}
+                {restorePreview.can_schedule&&<>
+                  <label className="block text-xs font-bold">Type RESTORE CATALOG BACKUP to authorize replacement
+                    <input className={input} autoComplete="off" value={restoreConfirm}
+                      onChange={e=>setRestoreConfirm(e.target.value)}/>
+                  </label>
+                  <button type="button" className="rounded-lg bg-amber-700 px-3 py-2 text-white font-bold disabled:opacity-50"
+                    disabled={backupBusy||restoreConfirm!=='RESTORE CATALOG BACKUP'} onClick={stageRestore}>
+                    Schedule restore on next backend restart
+                  </button>
+                </>}
+                {!restorePreview.can_schedule&&<p className="text-red-700 text-xs">Restore cannot be scheduled while another job or catalog maintenance is active.</p>}
+              </div>}
+            </div>}
+            {restoreOutcome&&<p role="status" className="text-amber-800 text-sm font-semibold">
+              Restore scheduled for {restoreOutcome.filename}. You must stop and restart the backend. The application restores and integrity-checks this backup before loading the catalog. A rescue backup of the current live database will also be created.
+            </p>}
           </section>}
           {tab==='products'&&<section className="rounded-xl border border-red-200 bg-white p-5 space-y-3">
             <h3 className="font-bold text-red-900">Reset catalog data</h3>
