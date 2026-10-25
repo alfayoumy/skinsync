@@ -257,3 +257,9 @@ def startup_catalog_restore_guard():
     _INSTANCE_LOCK=fd
     atexit.register(lambda:os.close(fd))
     apply_pending_catalog_restore(db)
+
+
+def restore_is_pending():
+    """Cheap filesystem-only guard for mutating HTTP operations."""
+    from pipeline.db_manager import DB_PATH
+    return _manifest(Path(DB_PATH).resolve()).exists()
