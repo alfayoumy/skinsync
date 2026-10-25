@@ -92,7 +92,7 @@ def process_source_observation(conn,observation,dry_run=False,legacy_product_id=
                 # The caller must build variants from immutable saved rows.
                 expected={str(r[0]) for r in conn.execute(
                     'SELECT source_variant_id FROM source_product_variants WHERE observation_id=?',
-                    (oid:=existing_observation_id,))}
+                    (existing_observation_id,))}
                 actual={str(v.source_variant_id) for v in observation.variants}
                 if expected!=actual or observation.ingredient_text is not None:
                     raise ValueError('Saved rematch must not change variants or reuse old INCI as new evidence.')

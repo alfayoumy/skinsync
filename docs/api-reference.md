@@ -438,3 +438,12 @@ Quality report includes per-retailer historical listings, distinct saved source 
 | POST | `/admin/aggregation/reviews/rematch/jobs/{task_id}/cancel` | Request stop after the current saved product, preserving completed commits |
 
 Only *unreviewed* pending/deferred identity cases with a matching **latest** saved source observation and a null canonical are eligible for this automatic replay. Previous uncertain Gemini answers with empty listing arrays are not treated as proof of product identity; prior model results are retained as historical records. Replay is based on saved, immutable source-derived **identity and variant data**, not the stale Gemini prompt, and does not reuse old ingredient text as newly verified source evidence. A fully unsupported fuzzy suggestion with no exact name, strong identifier, or durable link cannot block creating a distinct provisional canonical. Existing source evidence, approved identity decisions, canonical formulas, category reviews and source observations are preserved. If rematching a case cannot resolve the actual identity safely, its transaction is rolled back and its original review remains in place. Successfully rematched old reviews are marked `confirmed` with `superseded_by_saved_rematch` and an explicit system actor; they are **not** marked human-verified or deemed eligible for INCI publication. If the legacy retailer-to-canonical pointer was manually accepted or identity-verified, the pointer is never force-overwritten. Every actual batch creates an additional complete SQLite backup first; no Shopify/Gemini network calls or destructive reset occur.
+
+Exact API route inventory:
+
+- `/admin/aggregation/reviews/rematch/preview`
+- `/admin/aggregation/reviews/rematch/diagnose`
+- `/admin/aggregation/reviews/rematch/start`
+- `/admin/aggregation/reviews/rematch/active`
+- `/admin/aggregation/reviews/rematch/jobs/{task_id}`
+- `/admin/aggregation/reviews/rematch/jobs/{task_id}/cancel`
