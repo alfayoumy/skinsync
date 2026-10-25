@@ -5,7 +5,7 @@ from pathlib import Path
 import unittest
 
 from pipeline.db_manager import init_db, get_connection
-from pipeline.catalog_reset import _active_tasks
+from pipeline.catalog_reset import _active_tasks, _control_schema
 from pipeline.catalog_task_reconciliation import (
     CONFIRMATION, preview_stale_task_reconciliation, reconcile_stale_task_records,
 )
@@ -20,6 +20,10 @@ class StaleTaskReconciliationTests(unittest.TestCase):
         self.conn=get_connection(self.path)
         self.addCleanup(self.conn.close)
         init_db(conn=self.conn,seed_defaults=False)
+        _control_schema(self.conn)
+        self.conn.execute("""INSERT INTO stores(id,name,domain)
+            VALUES ('sourcebeauty','SourceBeauty','sourcebeauty.com')
+            ON CONFLICT(id) DO NOTHING""")
         self.conn.execute("""INSERT INTO products(store_id,title,brand,category,product_url)
             VALUES ('sourcebeauty','Preserve Me','Brand','Serum','https://sourcebeauty.com/preserve')""")
         self.conn.commit()
