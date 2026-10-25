@@ -4,6 +4,7 @@ This router intentionally contains no INCI publication and no LLM calls.
 """
 from collections import Counter
 import time
+import json
 from pipeline.legacy_identity_reconcile import reconcile_legacy_exact
 from typing import Literal
 from fastapi import APIRouter, HTTPException, BackgroundTasks
@@ -436,3 +437,83 @@ def cancel_discovery(task_id:str):
         conn.close()
     changed=cancel_task(task_id,reason='User stopped catalog discovery')
     return {'task_id':task_id,'status':'cancelled' if changed else 'completed','cancelled':changed}
+
+
+# No-scrape recovery of old null-canonical reviews created by the former
+# "unknown brand => ambiguous" ingestion bug. This never auto-verifies INCI.
+class RecoverUnmatchedRequest(BaseModel):
+    limit: int=Field(default=200,ge=1,le=500)
+
+
+@router.get('/products/recover-unmatched/preview')
+def preview_unmatched_canonical_recovery():
+    from pipeline.unmatched_canonical_recovery import preview_unmatched_recovery
+    conn=get_connection()
+    try:
+        return preview_unmatched_recovery(conn)
+    finally:
+        conn.close()
+
+
+def _run_unmatched_recovery_task(task_id,limit):
+    from pipeline.unmatched_canonical_recovery import recover_unmatched_canonicals
+    from pipeline.task_tracker import update_task_progress, complete_task, fail_task
+    conn=get_connection()
+    try:
+        def on_progress(stats,observation_id):
+            if stats['processed']%10==0:
+                conn.commit()
+                update_task_progress(task_id,
+                    processed_items=stats['processed'],
+                    successful_items=stats.get('recovered_observations',0),
+                    failed_items=stats.get('still_unresolved',0),
+                    current_stage='saved_observation_'+str(observation_id),
+                    metadata={'stats':stats})
+        result=recover_unmatched_canonicals(conn,limit,progress=on_progress)
+        conn.commit()
+        complete_task(task_id,metadata={'stats':result,'provider_calls':0})
+    except Exception:
+        conn.rollback()
+        fail_task(task_id,'No-candidate canonical recovery stopped; saved observations remain intact.')
+    finally:
+        conn.close()
+
+
+@router.post('/products/recover-unmatched')
+def start_unmatched_canonical_recovery(request: RecoverUnmatchedRequest, background_tasks: BackgroundTasks):
+    from pipeline.unmatched_canonical_recovery import preview_unmatched_recovery
+    from pipeline.task_tracker import create_task
+    conn=get_connection()
+    try:
+        # Serialize active-task check and task creation. Two operators cannot
+        # both start a recovery worker from the same stale preview.
+        conn.execute('BEGIN IMMEDIATE')
+        plan=preview_unmatched_recovery(conn)
+        if not plan['can_start']:
+            raise HTTPException(status_code=409,detail='No eligible orphaned products, or a catalog worker is currently active.')
+        selected=min(request.limit,plan['eligible_observations'])
+        task_id=create_task('canonical_no_comparison_recovery',target_source='saved_observations',
+            total_items=selected,params={'limit':selected},auto_start=True,conn=conn)
+    except Exception:
+        conn.rollback()
+        raise
+    finally:
+        conn.close()
+    background_tasks.add_task(_run_unmatched_recovery_task,task_id,selected)
+    return {'task_id':task_id,'status':'running','selected':selected,'provider_calls':0}
+
+
+@router.get('/products/recover-unmatched/jobs/{task_id}')
+def unmatched_canonical_recovery_status(task_id: str):
+    conn=get_connection()
+    try:
+        row=conn.execute("""SELECT task_id,status,total_items,processed_items,successful_items,
+            failed_items,metadata,error_message FROM pipeline_tasks
+            WHERE task_id=? AND task_type='canonical_no_comparison_recovery'""",(task_id,)).fetchone()
+        if not row:
+            raise HTTPException(status_code=404,detail='Unknown recovery task.')
+        result=dict(row)
+        result['metadata']=json.loads(result['metadata'] or '{}')
+        return result
+    finally:
+        conn.close()

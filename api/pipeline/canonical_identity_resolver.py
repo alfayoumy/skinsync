@@ -4,7 +4,7 @@ import hashlib
 import json
 import re
 from difflib import SequenceMatcher
-from pipeline.brand_registry import resolve_brand, brand_key
+from pipeline.brand_registry import resolve_brand, register_observed_brand, brand_key
 from pipeline.taxonomy_service import normalize, classify_product_attributes
 from pipeline.identity_gates import validate_identity_gates
 
@@ -95,8 +95,13 @@ class CanonicalIdentityResolver:
 
     def resolve(self, identity, brand, title, source_id=None, source_product_id=None, gtin=None, manufacturer_sku=None):
         resolved=resolve_brand(brand,self.conn)
+        # A real new brand is not a product-identity conflict. Preserve the
+        # exact vendor label as *unverified*; never fabricate alias equivalence.
+        if resolved and not resolved.get('id') and source_id and source_product_id:
+            resolved=register_observed_brand(self.conn,brand)
         if not resolved or not resolved.get('id'):
-            return IdentityDecision('ambiguous',method='unknown_brand',details={'raw_brand':brand})
+            return IdentityDecision('ambiguous',method='missing_or_unusable_brand',
+                                    details={'raw_brand':brand})
         mappings=[]
         if source_id and source_product_id:
             mappings=[dict(r) for r in self.conn.execute('SELECT * FROM product_identity_links WHERE source_id=? AND source_product_id=?',(source_id,source_product_id))]
@@ -176,12 +181,15 @@ class CanonicalIdentityResolver:
 
     def create_provisional(self,title,brand,classification,identity,visible=False):
         resolved=resolve_brand(brand,self.conn)
-        if not resolved or not resolved.get('id'): raise ValueError('Resolve the brand before creating a canonical identity.')
+        if resolved and not resolved.get('id'):
+            resolved=register_observed_brand(self.conn,brand)
+        if not resolved or not resolved.get('id'):
+            raise ValueError('A usable source vendor or brand is required to create a canonical identity.')
         import uuid
         result=self.conn.execute('''INSERT INTO canonical_products(canonical_title,brand,category,normalized_key,brand_id,
             identity_attributes,identity_status,classification,classification_status,catalog_visible,is_skincare,market)
             VALUES (?,?,?,?,?,?,?,?,?,?,?,?)''',(title,resolved['name'],classification.primary_category,'identity:'+uuid.uuid4().hex,
-            resolved['id'],json.dumps(identity),'verified' if visible else 'provisional',json.dumps(classification.to_dict()),
+            resolved['id'],json.dumps(identity),'verified' if visible and resolved['verified'] else 'provisional',json.dumps(classification.to_dict()),
             classification.classification_status,int(visible),int(classification.is_skincare),identity.get('market')))
         return result.lastrowid
 

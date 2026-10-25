@@ -109,10 +109,14 @@ class TestAggregationDatabase(unittest.TestCase):
         self.assertEqual(self.conn.execute('SELECT family_name FROM canonical_products').fetchone()[0],'pending')
         self.conn.rollback()
         self.assertIsNone(self.conn.execute('SELECT family_name FROM canonical_products').fetchone()[0])
-    def test_unknown_brand_stays_in_review_without_canonical(self):
+    def test_unknown_brand_creates_provisional_canonical_without_identity_review(self):
         result=process_source_observation(self.conn,replace(self.observation(),raw_brand='Unverified Brand'))
-        self.assertEqual(result['results'][0]['status'],'review')
-        self.assertEqual(self.conn.execute('SELECT COUNT(*) FROM canonical_products').fetchone()[0],0)
+        self.assertEqual(result['results'][0]['status'],'provisional')
+        cid=result['results'][0]['canonical_product_id']
+        row=self.conn.execute('SELECT identity_status,brand_id FROM canonical_products WHERE id=?',(cid,)).fetchone()
+        self.assertEqual(row['identity_status'],'provisional')
+        self.assertEqual(self.conn.execute('SELECT status FROM brands WHERE id=?',(row['brand_id'],)).fetchone()[0],'observed_unverified')
+        self.assertEqual(self.conn.execute("SELECT COUNT(*) FROM product_review_queue WHERE kind='identity' AND status='pending'").fetchone()[0],0)
     def test_missing_variant_discriminator_does_not_create_duplicate(self):
         self.canonical('CeraVe Sunscreen SPF50')
         o=replace(self.observation(title='CeraVe Sunscreen'),raw_category='Sun Protection')

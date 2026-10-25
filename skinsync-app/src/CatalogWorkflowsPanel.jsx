@@ -47,6 +47,11 @@ export default function CatalogWorkflowsPanel({onClose, initialTab='products',on
   const [identityBusy,setIdentityBusy]=useState(false);
   const [freshCert,setFreshCert]=useState(null);
   const [freshCertBusy,setFreshCertBusy]=useState(false);
+  const [orphanPreview,setOrphanPreview]=useState(null);
+  const [orphanBusy,setOrphanBusy]=useState(false);
+  const [orphanBatch,setOrphanBatch]=useState(200);
+  const [orphanJob,setOrphanJob]=useState(null);
+  const [orphanStatus,setOrphanStatus]=useState(null);
   const [scope,setScope]=useState('unmatched_only');
   const [resetPreview,setResetPreview]=useState(null);
   const [resetConfirmation,setResetConfirmation]=useState('');
@@ -130,6 +135,37 @@ export default function CatalogWorkflowsPanel({onClose, initialTab='products',on
       setIdentityResult(report);
     } catch(e){setError(e.message)} finally {setIdentityBusy(false)}
   }
+  async function previewOrphanCanonicals() {
+    setOrphanBusy(true);setError('');
+    try {setOrphanPreview(await call('/admin/workflows/products/recover-unmatched/preview'))}
+    catch(e){setError(e.message)}
+    finally{setOrphanBusy(false)}
+  }
+  async function startOrphanCanonicalRecovery() {
+    if(!orphanPreview?.can_start)return;
+    setOrphanBusy(true);setError('');
+    try {
+      const job=await call('/admin/workflows/products/recover-unmatched',json({limit:Number(orphanBatch)}));
+      setOrphanJob(job.task_id);setOrphanStatus({status:'running',total_items:job.selected});
+    }catch(e){setError(e.message)}
+    finally{setOrphanBusy(false)}
+  }
+  useEffect(()=>{
+    if(!orphanJob)return;
+    let active=true;
+    const poll=()=>call('/admin/workflows/products/recover-unmatched/jobs/'+encodeURIComponent(orphanJob))
+      .then(data=>{
+        if(!active)return;
+        setOrphanStatus(data);
+        if(!['running','pending'].includes(data.status)){
+          setOrphanJob(null);setOrphanPreview(null);setFreshCert(null);
+          setEligibility(null);
+        }
+      }).catch(e=>{if(active)setError(e.message)});
+    poll();
+    const timer=setInterval(poll,1500);
+    return ()=>{active=false;clearInterval(timer)};
+  },[orphanJob]);
   async function inspectFreshIdentity(apply=false) {
     if(apply&&!window.confirm('Certify only exact independently agreeing brand, product and formulation variants from at least two different retailers? Single-source and conflicting items will remain unverified.'))return;
     setFreshCertBusy(true);setError('');
@@ -397,6 +433,35 @@ export default function CatalogWorkflowsPanel({onClose, initialTab='products',on
               </>}
             </div>}
             <p className="text-sm text-gray-600">{result.note || 'Review source observations and products that need a decision.'}</p>
+          </section>}
+          {tab==='products'&&<section className="rounded-xl border border-purple-200 bg-white p-5 space-y-3">
+            <h3 className="font-bold text-gray-900">Recover unmatched listings into new canonical products</h3>
+            <p className="text-sm text-gray-600">No existing product to compare against is <strong>not</strong> a review problem. This repairs older unanchored cases caused by unknown vendor labels or a category check that skipped product creation. It replays the saved source observation, creates a <strong>provisional canonical</strong> and links its original offers without rescraping, Gemini or INCI approval. Genuine ambiguous matches remain for review.</p>
+            <div className="flex flex-wrap items-center gap-3">
+              <button type="button" className={button} disabled={orphanBusy||Boolean(orphanJob)}
+                onClick={previewOrphanCanonicals}>Preview no-candidate recovery</button>
+              {orphanPreview?.can_start&&<>
+                <label className="text-xs font-bold">Products per run
+                  <input type="number" min={1} max={500} className="block rounded-lg border p-2 w-24 mt-1"
+                    value={orphanBatch} onChange={e=>setOrphanBatch(e.target.value)}/>
+                </label>
+                <button type="button" disabled={orphanBusy||Boolean(orphanJob)||Number(orphanBatch)<1||Number(orphanBatch)>500}
+                  onClick={startOrphanCanonicalRecovery}
+                  className="rounded-lg bg-purple-700 text-white px-3 py-2 text-sm font-bold disabled:opacity-50">
+                  Recover next {Math.min(Number(orphanBatch)||0,orphanPreview.eligible_observations)} products
+                </button>
+              </>}
+            </div>
+            {orphanPreview&&<div className="text-xs rounded-lg bg-gray-50 p-3 space-y-1">
+              <p><strong>{orphanPreview.eligible_observations}</strong> saved product observations eligible · {orphanPreview.orphan_identity_reviews} obsolete identity reviews · {orphanPreview.orphan_category_reviews} obsolete unanchored category reviews.</p>
+              {!orphanPreview.can_start&&<p className="text-amber-800">{orphanPreview.active_tasks?.length||orphanPreview.active_workers?.length?'A catalog worker is active; finish it first.':'No eligible cases, or catalog maintenance is locked.'}</p>}
+            </div>}
+            {orphanStatus&&<p role="status" className="text-xs">
+              Recovery {orphanStatus.status} · {orphanStatus.processed_items||0}/{orphanStatus.total_items||0} processed ·
+              {orphanStatus.metadata?.stats?.recovered_observations||0} repaired ·
+              {orphanStatus.metadata?.stats?.still_unresolved||0} left unresolved.
+              {orphanStatus.error_message&&<span className="text-red-700"> {orphanStatus.error_message}</span>}
+            </p>}
           </section>}
           {tab==='products'&&<section className="rounded-xl border border-purple-200 bg-white p-5 space-y-3">
             <h3 className="font-bold">Verify fresh identities using independent retailers</h3>
