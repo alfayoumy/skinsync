@@ -215,6 +215,10 @@ def recover_unmatched_canonicals(conn,limit=200,progress=None,dry_run=False):
     stats['provider_calls']=0
     stats['saved_source_observations_deleted']=0
     report=dict(stats)
+    for name in ('recovered_observations','linked_canonicals',
+                 'closed_unanchored_reviews','anchored_category_reviews',
+                 'preserved_category_reviews','still_unresolved','processed'):
+        report.setdefault(name,0)
     report.update({'dry_run':dry_run,
         'failure_reasons':[{'reason':reason,'count':count}
                            for reason,count in errors.most_common(12)],
