@@ -136,11 +136,17 @@ def recover_unmatched_canonicals(conn,limit=200,progress=None,dry_run=False):
                     (observation.source_id,observation.source_product_id)).fetchone()
                 if legacy:
                     if legacy['canonical_product_id'] not in (None,cid):
-                        raise ValueError('Legacy product has a different canonical assignment.')
-                    conn.execute("UPDATE products SET canonical_product_id=? WHERE id=?",(cid,legacy['id']))
-                    conn.execute("""UPDATE product_offers SET legacy_product_id=?
-                        WHERE source_id=? AND source_product_id=?""",
-                        (legacy['id'],observation.source_id,observation.source_product_id))
+                        # A retailer product can expose several distinct
+                        # formulation variants. The legacy one-canonical
+                        # projection may already reference a different
+                        # accepted variant. Never overwrite that assignment,
+                        # and don't throw away the safe newly created variant.
+                        stats['legacy_projection_preserved']+=1
+                    else:
+                        conn.execute("UPDATE products SET canonical_product_id=? WHERE id=?",(cid,legacy['id']))
+                        conn.execute("""UPDATE product_offers SET legacy_product_id=?
+                            WHERE source_id=? AND source_product_id=?""",
+                            (legacy['id'],observation.source_id,observation.source_product_id))
             stage='reconcile_old_reviews'
             for row in reviews:
                 if row['kind']=='category':
@@ -217,7 +223,8 @@ def recover_unmatched_canonicals(conn,limit=200,progress=None,dry_run=False):
     report=dict(stats)
     for name in ('recovered_observations','linked_canonicals',
                  'closed_unanchored_reviews','anchored_category_reviews',
-                 'preserved_category_reviews','still_unresolved','processed'):
+                 'preserved_category_reviews','legacy_projection_preserved',
+                 'still_unresolved','processed')
         report.setdefault(name,0)
     report.update({'dry_run':dry_run,
         'failure_reasons':[{'reason':reason,'count':count}
