@@ -93,10 +93,10 @@ def _diagnostic(exc,stage):
     # Avoid leaking payload text, database values, tokens or product names to
     # UI; show only a concise, reproducible error class and stage. Common
     # deterministic SQLite errors are useful, but redact long raw values.
-    message=str(exc).replace('\\n',' ')
-    message=re.sub(r'https?://\\S+','[source-url]',message)
-    message=re.sub(r'(?i)(key|token|secret|authorization|password)\\s*[:=]\\s*\\S+',
-                   r'\\1=[redacted]',message)
+    message=str(exc).replace(chr(10),' ')
+    message=re.sub(r'https?://\S+','[source-url]',message)
+    message=re.sub(r'(?i)(key|token|secret|authorization|password)\s*[:=]\s*\S+',
+                   r'\1=[redacted]',message)
     return {'stage':stage,'error_type':type(exc).__name__,
             'message':message[:220]}
 
