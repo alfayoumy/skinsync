@@ -32,7 +32,6 @@ def candidate_rows(conn,limit=5000,threshold=MIN_CONFIDENCE):
         JOIN identity_gemini_queue q ON q.review_id=r.id
         LEFT JOIN identity_gemini_source_cases s ON s.review_id=r.id
         WHERE r.status='pending' AND q.status='needs_manual'
-          AND q.evidence_hash=r.evidence_hash
           AND q.confidence>=?
           AND ((s.review_id IS NULL AND q.verdict IN ('same_product','different_product'))
             OR (s.review_id IS NOT NULL AND q.verdict='same_product'
