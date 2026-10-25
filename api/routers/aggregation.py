@@ -167,6 +167,37 @@ def reviews(kind:Optional[str]=None,status:str='pending',
                 row['decision']=json.loads(row['decision']) if row['decision'] else None
             except (ValueError,TypeError):
                 row['decision']=None
+            # Historical Gemini prompts had no offer comparison. Show the
+            # ACTUAL current canonical and retailer listing, or clearly
+            # identify it as an ungrounded fuzzy suggestion.
+            row['current_comparators']=[]
+            identity=row['details'].get('identity')
+            candidates=identity.get('candidates') if isinstance(identity,dict) else None
+            for candidate in (candidates if isinstance(candidates,list) else [])[:5]:
+                if not isinstance(candidate,dict) or type(candidate.get('canonical_product_id')) is not int:
+                    continue
+                cid=candidate['canonical_product_id']
+                can=conn.execute("""SELECT id,canonical_title,brand,identity_status
+                    FROM canonical_products WHERE id=?""",(cid,)).fetchone()
+                if not can:
+                    row['current_comparators'].append({'canonical_id':cid,
+                        'exists':False,'listings':[],'comparator_available':False})
+                    continue
+                listings=[dict(o) for o in conn.execute("""SELECT
+                    source_id retailer,title,product_url FROM product_offers
+                    WHERE canonical_product_id=? ORDER BY id DESC LIMIT 4""",(cid,))]
+                if not listings:
+                    listings=[dict(o) for o in conn.execute("""SELECT
+                        store_id retailer,title,product_url FROM products
+                        WHERE canonical_product_id=? ORDER BY id DESC LIMIT 4""",(cid,))]
+                row['current_comparators'].append({
+                    'canonical_id':cid,'exists':True,
+                    'title':can['canonical_title'],'brand':can['brand'],
+                    'identity_status':can['identity_status'],
+                    'comparator_available':bool(listings),
+                    'listings':listings,
+                    'similarity_suggestion':candidate.get('similarity'),
+                    'unknown_attributes':candidate.get('unknown') or []})
         return {'reviews':rows,'total':count,'view':view}
     return operation(run)
 
