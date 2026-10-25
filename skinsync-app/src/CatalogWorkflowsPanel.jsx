@@ -45,6 +45,8 @@ export default function CatalogWorkflowsPanel({onClose, initialTab='products',on
   const [queues,setQueues]=useState(null);
   const [identityResult,setIdentityResult]=useState(null);
   const [identityBusy,setIdentityBusy]=useState(false);
+  const [freshCert,setFreshCert]=useState(null);
+  const [freshCertBusy,setFreshCertBusy]=useState(false);
   const [scope,setScope]=useState('unmatched_only');
   const [resetPreview,setResetPreview]=useState(null);
   const [resetConfirmation,setResetConfirmation]=useState('');
@@ -127,6 +129,16 @@ export default function CatalogWorkflowsPanel({onClose, initialTab='products',on
       }));
       setIdentityResult(report);
     } catch(e){setError(e.message)} finally {setIdentityBusy(false)}
+  }
+  async function inspectFreshIdentity(apply=false) {
+    if(apply&&!window.confirm('Certify only exact independently agreeing brand, product and formulation variants from at least two different retailers? Single-source and conflicting items will remain unverified.'))return;
+    setFreshCertBusy(true);setError('');
+    try{
+      const plan=await call('/admin/waterfall/identity-certification',json({apply,limit:200}));
+      setFreshCert(plan);
+      if(apply)setEligibility(null);
+    }catch(e){setError(e.message)}
+    finally{setFreshCertBusy(false)}
   }
   async function previewReset() {
     setResetBusy(true);setError('');setResetOutcome(null);setResetConfirmation('');
@@ -386,8 +398,25 @@ export default function CatalogWorkflowsPanel({onClose, initialTab='products',on
             </div>}
             <p className="text-sm text-gray-600">{result.note || 'Review source observations and products that need a decision.'}</p>
           </section>}
+          {tab==='products'&&<section className="rounded-xl border border-purple-200 bg-white p-5 space-y-3">
+            <h3 className="font-bold">Verify fresh identities using independent retailers</h3>
+            <p className="text-sm text-gray-600">After a selective rebuild, new canonicals are <strong>provisional</strong>, so the INCI waterfall cannot run on them yet. Confirming a product's exact matching brand, identity and formulation-defining variant across at least two independent stores can verify its identity without Gemini. Single-source, ambiguous, duplicate or conflicting products are excluded.</p>
+            <div className="flex gap-2 flex-wrap">
+              <button type="button" className="rounded-lg border px-3 py-2 text-sm font-bold disabled:opacity-50"
+                disabled={freshCertBusy} onClick={()=>inspectFreshIdentity(false)}>
+                Preview independent exact matches
+              </button>
+              {freshCert?.certifiable>0&&<button type="button" className={button}
+                disabled={freshCertBusy} onClick={()=>inspectFreshIdentity(true)}>
+                Certify next {Math.min(200,freshCert.certifiable)} verified cross-store identities
+              </button>}
+            </div>
+            {freshCert&&<p className="text-xs text-gray-600" role="status">
+              {freshCert.dry_run?freshCert.certifiable+' certifiable products':freshCert.processed+' identity certifications saved'} · No INCI, Gemini decisions or prices modified.
+            </p>}
+          </section>}
           {tab==='products'&&<section className="rounded-xl border bg-white p-5 space-y-3">
-            <h3 className="font-bold text-gray-900">Check existing products automatically</h3>
+            <h3 className="font-bold text-gray-900">Check existing products automatically (legacy)</h3>
             <p className="text-sm text-gray-600">A product can be verified without a person when its brand and product identity match, its variants are compatible, and no competing product or ingredient conflict exists. Uncertain records stay unchanged for review.</p>
             <div className="flex flex-wrap gap-3">
               <button type="button" disabled={identityBusy} className="rounded-lg border px-3 py-2 text-sm font-bold disabled:opacity-50" onClick={()=>checkExisting(true)}>

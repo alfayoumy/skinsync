@@ -182,12 +182,12 @@ class GeminiRunRequest(BaseModel):
 
 @router.get('/reviews/gemini/queue')
 def gemini_identity_queue_status():
-    from pipeline.product_identity_gemini import queue_counts
+    from pipeline.product_identity_gemini import queue_counts,gemini_queue_readiness
     def fn(conn):
         from pipeline.aggregation_schema import ensure_identity_gemini_schema
         ensure_identity_gemini_schema(conn)
         counts=queue_counts(conn)
-        return {'counts':counts,
+        return {'counts':counts,'readiness':gemini_queue_readiness(conn),
             'pending_identity_cases':conn.execute("""SELECT COUNT(*) FROM product_review_queue
                 WHERE status='pending' AND kind IN ('identity','duplicate')""").fetchone()[0]}
     return operation(fn)
@@ -200,6 +200,19 @@ def gemini_identity_enqueue(request:GeminiEnqueueRequest):
         from pipeline.aggregation_schema import ensure_identity_gemini_schema
         ensure_identity_gemini_schema(conn)
         return queue_cases(conn,request.review_ids,request.limit,reviewer_name('identity_admin'))
+    return operation(fn)
+
+
+@router.post('/reviews/gemini/retire-unresearchable')
+def retire_unsupported_identity_gemini_cases():
+    """Move ungrounded cases back to manual review without any Gemini call."""
+    from pipeline.product_identity_gemini import retire_unresearchable_queue
+    def fn(conn):
+        from pipeline.aggregation_schema import ensure_identity_gemini_schema
+        ensure_identity_gemini_schema(conn)
+        retired=retire_unresearchable_queue(conn)
+        return {'retired_to_manual_review':retired,'provider_calls':0,
+                'note':'Unanchored or unsupported identity reviews remain pending for a person.'}
     return operation(fn)
 
 

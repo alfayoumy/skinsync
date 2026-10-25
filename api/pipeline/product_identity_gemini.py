@@ -54,13 +54,60 @@ def recover_abandoned_cases(conn):
             WHERE t.task_id=identity_gemini_queue.task_id AND t.status='running'))""")
     return cursor.rowcount
 
+def _actionable_review(conn,case):
+    """Gemini can compare only real, fully identified cross-retailer listings.
+
+    Fresh discovery often creates review cases for a single unknown candidate
+    with canonical_product_id=NULL. Such cases have no canonical identity or
+    independent offer snapshot: a Gemini verdict would be a guess, not a match.
+    """
+    if case['kind'] != 'identity' or not case['canonical_product_id']:
+        return False
+    try:
+        details=json.loads(case['details'] or '{}')
+    except (TypeError,ValueError):
+        return False
+    cid=case['canonical_product_id']
+    if details.get('canonical_ids',[cid]) != [cid]:
+        return False
+    row=conn.execute("""SELECT canonical_title,brand FROM canonical_products WHERE id=?""",(cid,)).fetchone()
+    if not row or details.get('title') != row['canonical_title'] or not details.get('brand'):
+        return False
+    offers=details.get('offers')
+    if not isinstance(offers,list) or len(offers)<2:
+        return False
+    if len({x.get('store_id') for x in offers if isinstance(x,dict)})<2:
+        return False
+    if any(not isinstance(x,dict) or type(x.get('product_id')) is not int
+           or not x.get('title') or not x.get('brand') or not x.get('store_id')
+           for x in offers):
+        return False
+    return _all_current_offers(conn,cid,offers) is not None
+
+
+def retire_unresearchable_queue(conn):
+    """Preserve prior queue records while preventing wasted Gemini requests."""
+    rows=conn.execute("""SELECT q.review_id,r.kind,r.canonical_product_id,r.details
+        FROM identity_gemini_queue q JOIN product_review_queue r ON r.id=q.review_id
+        WHERE q.status='queued' AND r.status='pending'""").fetchall()
+    retired=0
+    for row in rows:
+        if _actionable_review(conn,row):continue
+        updated=conn.execute("""UPDATE identity_gemini_queue SET status='needs_manual',
+            explanation='Insufficient comparable retailer evidence; Gemini not called.',
+            verdict=NULL,confidence=NULL,model_name=NULL,updated_at=CURRENT_TIMESTAMP
+            WHERE review_id=? AND status='queued'""",(row['review_id'],))
+        retired+=updated.rowcount
+    return retired
+
 
 def queue_cases(conn,review_ids=None,limit=20000,queued_by='admin'):
     if limit<1 or limit>20000:raise ValueError('Limit must be between 1 and 20000 cases.')
     recover_abandoned_cases(conn)
+    retired=retire_unresearchable_queue(conn)
     if review_ids is not None and (not review_ids or len(review_ids)>20000):
         raise ValueError('Provide 1–20000 review IDs.')
-    query="""SELECT r.id,r.evidence_hash FROM product_review_queue r
+    query="""SELECT r.id,r.evidence_hash,r.kind,r.canonical_product_id,r.details FROM product_review_queue r
         LEFT JOIN identity_gemini_queue q ON q.review_id=r.id
         WHERE r.status='pending' AND r.kind IN ('identity','duplicate')
         AND (q.review_id IS NULL OR q.status='queued')"""
@@ -68,15 +115,32 @@ def queue_cases(conn,review_ids=None,limit=20000,queued_by='admin'):
     if review_ids is not None:
         query+=' AND r.id IN ('+','.join('?' for _ in review_ids)+')'
         args.extend(review_ids)
-    query+=' ORDER BY r.id LIMIT ?';args.append(limit)
-    rows=conn.execute(query,args).fetchall()
+    # Invalid review cases can vastly outnumber usable snapshots. Scan all
+    # eligible records, then cap actual Gemini *candidates*, not SQL rows.
+    query+=' ORDER BY r.id'
+    candidates=conn.execute(query,args).fetchall()
+    actionable=[row for row in candidates if _actionable_review(conn,row)]
+    rows=actionable[:limit]
     for row in rows:
         conn.execute("""INSERT INTO identity_gemini_queue(review_id,evidence_hash,status,queued_by)
             VALUES (?,?,'queued',?) ON CONFLICT(review_id) DO UPDATE SET
             evidence_hash=excluded.evidence_hash,status='queued',
             queued_by=excluded.queued_by,updated_at=CURRENT_TIMESTAMP""",
             (row['id'],row['evidence_hash'],queued_by))
-    return {'queued':len(rows),'review_ids':[row['id'] for row in rows[:20]]}
+    return {'queued':len(rows),'review_ids':[row['id'] for row in rows[:20]],
+            'skipped_unresearchable':len(candidates)-len(actionable),
+            'retired_unresearchable_queued':retired}
+
+
+def gemini_queue_readiness(conn):
+    """Read-only count of usable versus impossible-to-ground queued cases."""
+    rows=conn.execute("""SELECT r.kind,r.canonical_product_id,r.details
+        FROM identity_gemini_queue q JOIN product_review_queue r ON r.id=q.review_id
+        WHERE q.status='queued' AND r.status='pending'""").fetchall()
+    valid=sum(bool(_actionable_review(conn,row)) for row in rows)
+    return {'queued_actionable':valid,
+            'queued_without_comparable_evidence':len(rows)-valid,
+            'note':'Only cases with a canonical ID and current independent retailer comparison evidence can use Gemini; all others require manual identity matching.'}
 
 
 def queue_counts(conn):
@@ -188,7 +252,7 @@ def can_auto_resolve(conn,case,answer,threshold=None):
     c=conn.execute('SELECT * FROM canonical_products WHERE id=?',(cid,)).fetchone()
     if not c:return False,'Canonical record missing.'
     c=dict(c)
-    if c['identity_status'] not in ('legacy','legacy_preserved_unverified','verified'):
+    if c['identity_status'] not in ('legacy','legacy_preserved_unverified','provisional','verified'):
         return False,'Identity state changed.'
     if details.get('title')!=c['canonical_title']:
         return False,'Canonical title changed since review case creation.'
@@ -246,6 +310,7 @@ def run_identity_gemini_queue(task_id,limit=500,batch_size=DEFAULT_BATCH,provide
             recover_abandoned_cases(conn)
             task=conn.execute('SELECT status FROM pipeline_tasks WHERE task_id=?',(task_id,)).fetchone()
             if task and task[0]=='cancelled':return {'status':'cancelled',**dict(counts)}
+            retire_unresearchable_queue(conn)
             cases=_load_cases(conn,limit-scanned,batch_size)
             if not cases:break
             for case in cases:
