@@ -140,11 +140,13 @@ class SourceGeminiRequeueTests(unittest.TestCase):
                 'verdict':'same_product','confidence':0.999,
                 'matched_canonical_id':self.cid,'reason':'Listings look similar.',
                 'model_name':'mock-model'}}
-        with patch('pipeline.product_identity_gemini.get_connection',
-                   return_value=OpenConnection(self.conn)), \\
-             patch('pipeline.product_identity_gemini.update_task_progress'), \\
-             patch('pipeline.product_identity_gemini.complete_task'), \\
-             patch('pipeline.product_identity_gemini.fail_task') as fail:
+        with (
+            patch('pipeline.product_identity_gemini.get_connection',
+                  return_value=OpenConnection(self.conn)),
+            patch('pipeline.product_identity_gemini.update_task_progress'),
+            patch('pipeline.product_identity_gemini.complete_task'),
+            patch('pipeline.product_identity_gemini.fail_task') as fail,
+        ):
             result=run_identity_gemini_queue('source-gemini-test',provider=mock_provider)
         fail.assert_not_called()
         self.assertEqual(result['needs_manual'],1)
