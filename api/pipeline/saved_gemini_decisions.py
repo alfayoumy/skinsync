@@ -406,7 +406,21 @@ def apply_saved_decisions(conn,limit=5000,threshold=MIN_CONFIDENCE,dry_run=True,
                                  'reason':'Automated checks could not safely apply this decision: '+str(exc)[:180]})
         if after_case and (i%25==0 or i==len(rows)):
             after_case(i,dict(stats))
+    source_counts=conn.execute("""SELECT
+        COUNT(*) total,
+        SUM(CASE WHEN q.verdict='same_product' AND q.confidence>=?
+             AND s.suggested_canonical_id IS NOT NULL THEN 1 ELSE 0 END) eligible
+        FROM product_review_queue r
+        JOIN identity_gemini_queue q ON q.review_id=r.id
+        JOIN identity_gemini_source_cases s ON s.review_id=r.id
+        WHERE r.status='pending' AND q.status='needs_manual'
+          AND q.evidence_hash=r.evidence_hash""",(threshold,)).fetchone()
+    source_total=source_counts['total']
+    source_eligible=source_counts['eligible'] or 0
     return {'dry_run':dry_run,'no_gemini_calls':True,'threshold':threshold,
+            'source_verdicts_seen':source_total,
+            'source_verdicts_eligible':source_eligible,
+            'source_verdicts_not_eligible':source_total-source_eligible,
             'stored_decisions_checked':stats['verified']+stats['source_linked']+stats['split']+stats['manual'],
             'automatically_verified':stats['verified'],
             'source_matches_linked':stats['source_linked'],
