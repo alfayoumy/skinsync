@@ -491,7 +491,7 @@ def saved_rematch_preview(limit:int=Query(500,ge=1,le=10000)):
 
 
 @router.get('/reviews/rematch/diagnose')
-def saved_rematch_diagnose(limit:int=Query(5,ge=1,le=10)):
+def saved_rematch_diagnose(limit:int=Query(50,ge=1,le=100)):
     """No-write sample replay of old Gemini/manual identity reviews."""
     from pipeline.saved_identity_rematch import rematch_saved_reviews
     conn=get_connection()
