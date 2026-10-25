@@ -111,7 +111,7 @@ export default function AggregationReviewPanel({ onClose, initialSourceId = 'sou
   }
   async function diagnoseIdentityRematch(){
     setRematchBusy(true);setError('');
-    try{setRematchDiagnosis(await api('/reviews/rematch/diagnose?limit=5'))}
+    try{setRematchDiagnosis(await api('/reviews/rematch/diagnose?limit=50'))}
     catch(e){setError(e.message)}
     finally{setRematchBusy(false)}
   }
@@ -476,7 +476,7 @@ export default function AggregationReviewPanel({ onClose, initialSourceId = 'sou
             disabled={rematchBusy||Number(rematchLimit)<1||Number(rematchLimit)>10000}
             onClick={previewIdentityRematch}>Preview current backlog</button>
           <button type="button" className="rounded-lg border px-3 py-2 text-xs font-bold disabled:opacity-50"
-            disabled={rematchBusy} onClick={diagnoseIdentityRematch}>Test 5 products — roll back</button>
+            disabled={rematchBusy} onClick={diagnoseIdentityRematch}>Diagnose next 50 — no changes</button>
         </div>
         {rematchPreview&&<div className="rounded-lg border p-3 text-xs space-y-2">
           <p><strong>{rematchPreview.eligible_products}</strong> saved products eligible ·
@@ -532,7 +532,20 @@ export default function AggregationReviewPanel({ onClose, initialSourceId = 'sou
           <p><strong>Read-only replay test:</strong> {rematchDiagnosis.recovered_products} of
             {' '}{rematchDiagnosis.eligible_products} would rematch; {rematchDiagnosis.failed_products} would fail.</p>
           {(rematchDiagnosis.error_groups||[]).map((r,i)=><p className="text-red-700" key={i}>
-            {r.count} × {r.reason}</p>)}
+            {r.count} × {r.reason.replaceAll('_',' ')}</p>)}
+          {(rematchDiagnosis.error_samples||[]).length>0&&<details className="space-y-2">
+            <summary className="cursor-pointer font-bold">See exact products and existing comparisons ({rematchDiagnosis.error_samples.length} examples)</summary>
+            {(rematchDiagnosis.error_samples||[]).map((sample,i)=><div key={i} className="rounded border p-2 my-2 space-y-1">
+              <p className="font-semibold">{sample.source_title||'Saved observation #'+sample.observation_id}</p>
+              <p className="text-red-800">Why unresolved: {(sample.reason_code||sample.message||'Unknown').replaceAll('_',' ')}</p>
+              <p className="text-gray-600">Source {sample.source_id||'unknown'} · observation #{sample.observation_id} · {(sample.methods||[]).join(', ')}</p>
+              {(sample.candidates||[]).map((candidate,j)=><div key={candidate.canonical_id||j} className="rounded bg-gray-50 p-2 space-y-1">
+                <p>Candidate #{candidate.canonical_id} — {candidate.canonical_title||'No longer present'} ({candidate.identity_status||'unknown status'})</p>
+                {candidate.exists&&<p>Current retailer offers: <strong>{candidate.offers}</strong> · historical listings: <strong>{candidate.legacy_listings}</strong> · accepted source links: <strong>{candidate.accepted_source_links}</strong></p>}
+                <p>Similarity: {candidate.similarity??'unknown'} · missing: {(candidate.unknown||[]).join(', ')||'none'} · conflicts: {(candidate.conflicts||[]).join(', ')||'none'}</p>
+              </div>)}
+            </div>)}
+          </details>}
         </div>}
         {rematchJob?.task_id&&<div className="rounded-lg border p-3 text-xs space-y-2" role="status">
           <p><strong>Rematch {rematchJob.status}</strong> ·
