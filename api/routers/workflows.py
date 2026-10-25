@@ -471,10 +471,42 @@ def _run_unmatched_recovery_task(task_id,limit):
                     metadata={'stats':stats})
         result=recover_unmatched_canonicals(conn,limit,progress=on_progress)
         conn.commit()
-        complete_task(task_id,metadata={'stats':result,'provider_calls':0})
+        if result['all_failed']:
+            top=(result.get('failure_reasons') or [{}])[0].get('reason','unknown reason')
+            fail_task(task_id,
+                'All '+str(result['total_selected'])+' attempts rolled back: '+top[:300],
+                metadata={'stats':result,'provider_calls':0})
+        else:
+            complete_task(task_id,
+                status='completed_with_errors' if result['still_unresolved'] else 'completed',
+                metadata={'stats':result,'provider_calls':0})
     except Exception:
         conn.rollback()
         fail_task(task_id,'No-candidate canonical recovery stopped; saved observations remain intact.')
+    finally:
+        conn.close()
+
+
+
+@router.get('/products/recover-unmatched/diagnose')
+def diagnose_unmatched_canonical_recovery(limit: int=5):
+    """Simulate a few replay cases in savepoints; never persist catalog writes."""
+    from pipeline.unmatched_canonical_recovery import recover_unmatched_canonicals,preview_unmatched_recovery
+    if not 1<=limit<=10:
+        raise HTTPException(status_code=422,detail='Diagnose 1–10 saved observations.')
+    conn=get_connection()
+    try:
+        from pipeline.catalog_reset import _active_tasks,_active_workers,_tables
+        tables=_tables(conn)
+        if _active_tasks(conn,tables) or _active_workers(conn,tables):
+            raise HTTPException(status_code=409,detail='Finish any active worker before diagnosing replay.')
+        conn.execute('BEGIN IMMEDIATE')
+        result=recover_unmatched_canonicals(conn,limit,dry_run=True)
+        conn.rollback()
+        return result
+    except Exception:
+        conn.rollback()
+        raise
     finally:
         conn.close()
 
