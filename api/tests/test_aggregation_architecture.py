@@ -121,8 +121,11 @@ class TestAggregationDatabase(unittest.TestCase):
         self.canonical('CeraVe Sunscreen SPF50')
         o=replace(self.observation(title='CeraVe Sunscreen'),raw_category='Sun Protection')
         result=process_source_observation(self.conn,o)
-        self.assertEqual(result['results'][0]['status'],'review')
+        # A low-evidence unknown SPF/vehicle case is not a *human-required*
+        # conflict. Keep it deferred, but never merge or create a duplicate.
+        self.assertEqual(result['results'][0]['status'],'evidence_needed')
         self.assertEqual(self.conn.execute('SELECT COUNT(*) FROM canonical_products').fetchone()[0],1)
+        self.assertEqual(self.conn.execute("SELECT COUNT(*) FROM product_review_queue WHERE status='deferred' AND kind='identity'").fetchone()[0],1)
     def test_identity_conflicting_spf_creates_separate_hidden_identity(self):
         self.canonical('CeraVe Sunscreen SPF30')
         result=process_source_observation(self.conn,self.observation(title='CeraVe Sunscreen SPF50'))
