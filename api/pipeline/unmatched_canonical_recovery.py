@@ -52,6 +52,14 @@ def _cases(conn,limit=None):
             continue
         if saved['source_id']!=case['source_id']:
             continue
+        # Repair only the latest immutable snapshot for this source product.
+        # A review from an older payload must never resurrect a superseded
+        # title, identity or formulation variant.
+        newest=conn.execute("""SELECT MAX(id) FROM source_product_observations
+            WHERE source_id=? AND source_product_id=?""",
+            (saved['source_id'],saved['source_product_id'])).fetchone()[0]
+        if newest!=oid:
+            continue
         by_observation.setdefault(oid,[]).append(dict(case))
     selected=list(by_observation.items())
     return selected if limit is None else selected[:limit]
