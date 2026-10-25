@@ -1,0 +1,148 @@
+"""Replay only old *no-candidate* observation cases into new provisional canonicals.
+
+A review without an existing comparison is not an identity conflict. Only cases
+whose original resolver reported unknown brand/new identity and zero rival
+candidates qualify. Existing true conflicts and past human decisions are never
+auto-closed. Does not rescrape, infer INCI or approve product identity.
+"""
+import json
+from collections import Counter
+
+from pipeline.aggregation_service import process_source_observation
+from pipeline.catalog_selective_rebuild import _parse_saved
+from pipeline.catalog_reset import _active_tasks, _active_workers, _tables, guard_catalog_writes
+
+ELIGIBLE_METHODS={'unknown_brand','new_identity'}
+REPAIR_ORIGIN='new_canonical_no_existing_candidates_v1'
+
+
+def _recoverable(case):
+    try:
+        evidence=json.loads(case['details'] or '{}')
+    except (ValueError,TypeError):
+        return None
+    identity=evidence.get('identity')
+    if not isinstance(identity,dict):
+        return None
+    if identity.get('candidates') not in (None,[]):
+        return None
+    if identity.get('method') not in ELIGIBLE_METHODS:
+        return None
+    if identity.get('status') not in ('ambiguous','new'):
+        return None
+    oid=evidence.get('observation_id')
+    if not isinstance(oid,int) or oid<1:
+        return None
+    return oid
+
+
+def _cases(conn,limit=None):
+    cases=conn.execute("""SELECT id,kind,source_id,source_product_id,details
+        FROM product_review_queue WHERE status='pending'
+        AND canonical_product_id IS NULL AND kind IN ('identity','category')
+        ORDER BY id""").fetchall()
+    by_observation={}
+    for case in cases:
+        oid=_recoverable(case)
+        if oid is None:
+            continue
+        saved=conn.execute("""SELECT id,source_id,source_product_id,raw_brand
+            FROM source_product_observations WHERE id=?""",(oid,)).fetchone()
+        if not saved or not saved['raw_brand'] or not saved['raw_brand'].strip():
+            continue
+        if saved['source_id']!=case['source_id']:
+            continue
+        by_observation.setdefault(oid,[]).append(dict(case))
+    selected=list(by_observation.items())
+    return selected if limit is None else selected[:limit]
+
+
+def preview_unmatched_recovery(conn):
+    tables=_tables(conn)
+    cases=_cases(conn)
+    active=_active_tasks(conn,tables)
+    workers=_active_workers(conn,tables)
+    locked=False
+    if 'catalog_reset_control' in tables:
+        row=conn.execute('SELECT active FROM catalog_reset_control WHERE singleton=1').fetchone()
+        locked=bool(row and row[0])
+    counts=Counter(case['kind'] for _,cases_for_ob in cases for case in cases_for_ob)
+    return {'eligible_observations':len(cases),
+            'orphan_identity_reviews':counts.get('identity',0),
+            'orphan_category_reviews':counts.get('category',0),
+            'sample_observation_ids':[oid for oid,_ in cases[:15]],
+            'active_tasks':active,'active_workers':workers,
+            'maintenance_locked':locked,
+            'can_start':bool(cases) and not active and not workers and not locked,
+            'note':'Creates provisional canonical identities from existing source observations only; old no-candidate review cases are closed only after a successful exact-source replay. Real matching conflicts remain pending; no INCI is approved.'}
+
+
+def recover_unmatched_canonicals(conn,limit=200,progress=None):
+    if not 1<=limit<=500:
+        raise ValueError('Recovery batch limit must be 1..500 saved source products.')
+    guard_catalog_writes(conn)
+    stats=Counter()
+    selected=_cases(conn,limit)
+    source_cache={}
+    for oid,reviews in selected:
+        conn.execute('SAVEPOINT recover_unmatched_observation')
+        try:
+            observation_row=conn.execute('SELECT * FROM source_product_observations WHERE id=?',(oid,)).fetchone()
+            observation=_parse_saved(conn,observation_row,source_cache)
+            # Recalculate all matching, variants and categories from saved raw
+            # Shopify evidence. Never blindly trust the stale review payload.
+            decision=process_source_observation(conn,observation,existing_observation_id=oid)
+            entries=decision['results']
+            canonicals={r['canonical_product_id'] for r in entries if r.get('canonical_product_id')}
+            if not canonicals or any(r['status']=='review' and r.get('kind')=='identity' for r in entries):
+                raise ValueError('Re-evaluation still requires an actual identity comparison.')
+            # Source link/variant offer binding is written by the ordinary
+            # ingestion pipeline. Update the compatibility projection only
+            # when the entire saved listing has exactly one canonical.
+            if len(canonicals)==1:
+                cid=next(iter(canonicals))
+                legacy=conn.execute("""SELECT id,canonical_product_id FROM products
+                    WHERE store_id=? AND store_product_id=?""",
+                    (observation.source_id,observation.source_product_id)).fetchone()
+                if legacy:
+                    if legacy['canonical_product_id'] not in (None,cid):
+                        raise ValueError('Legacy product has a different canonical assignment.')
+                    conn.execute("UPDATE products SET canonical_product_id=? WHERE id=?",(cid,legacy['id']))
+                    conn.execute("""UPDATE product_offers SET legacy_product_id=?
+                        WHERE source_id=? AND source_product_id=?""",
+                        (legacy['id'],observation.source_id,observation.source_product_id))
+            for row in reviews:
+                # If category is still uncertain, the ordinary ingestion
+                # created a new *anchored* category review. Do not waive it.
+                new_category=conn.execute("""SELECT 1 FROM product_review_queue
+                    WHERE kind='category' AND canonical_product_id IN
+                        (SELECT canonical_product_id FROM product_identity_links
+                         WHERE source_id=? AND source_product_id=?
+                           AND status='accepted')
+                    AND status='pending' LIMIT 1""",(row['source_id'],row['source_product_id'])).fetchone()
+                if row['kind']=='category' and not new_category:
+                    raise ValueError('Missing the anchored category review after replay.')
+                conn.execute("""UPDATE product_review_queue
+                    SET status='confirmed',decision=?,reviewed_by=?,
+                        review_notes=?,updated_at=CURRENT_TIMESTAMP
+                    WHERE id=? AND status='pending' AND canonical_product_id IS NULL""",
+                    (json.dumps({'action':'recovered_unmatched_source_identity',
+                                 'canonical_ids':sorted(canonicals),'observation_id':oid,
+                                 'category_review_preserved':bool(new_category)}),
+                     REPAIR_ORIGIN,'Old unmatched review replaced by a canonical identity sourced from saved Shopify evidence.',
+                     row['id']))
+            stats['recovered_observations']+=1
+            stats['linked_canonicals']+=len(canonicals)
+            stats['closed_unanchored_reviews']+=len(reviews)
+            conn.execute('RELEASE SAVEPOINT recover_unmatched_observation')
+        except Exception:
+            conn.execute('ROLLBACK TO SAVEPOINT recover_unmatched_observation')
+            conn.execute('RELEASE SAVEPOINT recover_unmatched_observation')
+            stats['still_unresolved']+=1
+        stats['processed']+=1
+        if progress:
+            progress(dict(stats),oid)
+    stats['total_selected']=len(selected)
+    stats['provider_calls']=0
+    stats['saved_source_observations_deleted']=0
+    return dict(stats)
