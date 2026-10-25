@@ -244,6 +244,32 @@ def gemini_identity_queue_status():
     return operation(fn)
 
 
+class ResetIdentityGeminiQueueRequest(BaseModel):
+    fingerprint: str = Field(min_length=64,max_length=64)
+    confirmation: str
+
+
+@router.get('/reviews/gemini/requeue/preview')
+def preview_source_identity_requeue():
+    """Read-only inventory: no Gemini calls, product edits or queue deletions."""
+    from pipeline.source_gemini_requeue import preview_identity_requeue
+    return operation(preview_identity_requeue)
+
+
+@router.post('/reviews/gemini/requeue')
+def reset_and_requeue_saved_identity(request:ResetIdentityGeminiQueueRequest):
+    """Archive old identity Gemini responses; enqueue fresh saved-source comparisons."""
+    from pipeline.source_gemini_requeue import reset_and_requeue_identity
+    conn=get_connection()
+    try:
+        return reset_and_requeue_identity(conn,request.fingerprint,request.confirmation)
+    except ValueError as exc:
+        conn.rollback()
+        raise HTTPException(status_code=409,detail=str(exc))
+    finally:
+        conn.close()
+
+
 @router.post('/reviews/gemini/enqueue')
 def gemini_identity_enqueue(request:GeminiEnqueueRequest):
     from pipeline.product_identity_gemini import queue_cases
