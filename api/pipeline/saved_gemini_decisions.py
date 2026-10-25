@@ -35,7 +35,8 @@ def candidate_rows(conn,limit=5000,threshold=MIN_CONFIDENCE):
           AND q.confidence>=?
           AND ((s.review_id IS NULL AND q.verdict IN ('same_product','different_product'))
             OR (s.review_id IS NOT NULL AND q.verdict='same_product'
-                AND s.suggested_canonical_id IS NOT NULL))
+                AND s.suggested_canonical_id IS NOT NULL
+                AND r.reviewed_by IS NULL AND r.decision IS NULL))
         ORDER BY r.id LIMIT ?""",(threshold,limit)).fetchall()
 
 
@@ -217,6 +218,8 @@ def _source_match_plan(conn,row,case,answer):
         return None,'No supported same-product canonical candidate was selected.'
     if case['kind']!='identity' or case['canonical_product_id'] is not None:
         return None,'This is not an unresolved retailer-source identity.'
+    if case['reviewed_by'] or case['decision']:
+        return None,'A prior human review or explicit decision must not be overridden.'
     source_payload=_source_case_current(conn,row)
     if source_payload is None:
         return None,'Saved source or canonical comparison changed since Gemini responded.'
@@ -264,10 +267,11 @@ def _source_match_plan(conn,row,case,answer):
     verified_barcode=bool(barcode and conn.execute("""SELECT 1 FROM canonical_product_aliases
         WHERE canonical_product_id=? AND alias_type='gtin'
         AND alias_value=? AND verified=1""",(cid,barcode)).fetchone())
+    if not any(x['retailer']!=source['source_id']
+               for x in profile['retailer_listings']):
+        return None,'No independent retailer listing anchors the proposed match.'
     if not corroboration and not verified_barcode:
-        return None,'No independent retailer listing matches the exact marketed identity or verified GTIN.'
-    if not profile['retailer_listings'] and not verified_barcode:
-        return None,'No durable independent listing anchors the proposed match.'
+        return None,'Independent retailer evidence does not corroborate the marketed identity or verified GTIN.'
     for rival in candidates:
         if rival['canonical_product_id']==cid:
             continue
@@ -285,6 +289,13 @@ def _source_match_plan(conn,row,case,answer):
     if any((x['status']=='accepted' and x['canonical_product_id']!=cid)
            or (x['status']=='rejected' and x['canonical_product_id']==cid) for x in old):
         return None,'An existing accepted/rejected source identity decision conflicts with Gemini.'
+    other_source_reviews=conn.execute("""SELECT COUNT(*) FROM product_review_queue
+        WHERE id!=? AND kind='identity' AND status='pending' AND source_id=?
+          AND (source_product_id=? OR source_product_id LIKE ?)""",
+        (case['id'],source['source_id'],source['source_product_id'],
+         source['source_product_id']+':%')).fetchone()[0]
+    if other_source_reviews:
+        return None,'Other source-product variant reviews remain pending.'
     legacy=conn.execute("""SELECT canonical_product_id FROM products
         WHERE store_id=? AND store_product_id=?""",
         (source['source_id'],source['source_product_id'])).fetchone()
