@@ -89,6 +89,54 @@ class SavedIdentityRematchTests(unittest.TestCase):
             'SELECT ingredients_raw FROM canonical_products WHERE id=?',
             (entry['canonical_product_id'],)).fetchone()[0])
 
+    def test_missing_spf_candidate_without_a_real_product_creates_provisional(self):
+        # The same shallow canonical name can reappear after restore, but its
+        # unverified row contains no retailer listing or accepted source link.
+        # There is nothing to compare; keep the newly observed SKU separately.
+        obs=self.source_observation(title='SVR Sun Secure Water')
+        result=process_source_observation(self.conn,obs)
+        output=result['results'][0]
+        self.assertEqual(output['status'],'provisional',output)
+        self.assertEqual(output['decision']['method'],'unbacked_fuzzy_candidates',output)
+        self.assertNotEqual(output['canonical_product_id'],self.candidate)
+        self.assertIsNone(self.conn.execute(
+            'SELECT ingredients_raw FROM canonical_products WHERE id=?',
+            (output['canonical_product_id'],)).fetchone()[0])
+
+    def test_backed_spf_candidate_remains_unresolved_with_actual_comparator(self):
+        self.conn.execute("""INSERT OR IGNORE INTO stores(id,name,domain)
+            VALUES('bashrety','Bashrety','bashrety.tv')""")
+        self.conn.execute("""INSERT INTO products(
+            store_id,store_product_id,title,brand,category,product_url,canonical_product_id)
+            VALUES('bashrety','old-svr','SVR Sun Secure Water SPF50','SVR',
+                   'Sunscreen','https://bashrety.tv/products/old-svr',?)""",
+            (self.candidate,))
+        self.conn.commit()
+        oid,rid=self.create_stale_review(self.source_observation(
+            title='SVR Sun Secure Water'))
+        result=rematch_saved_reviews(self.conn,10,dry_run=True)
+        self.assertEqual(result['recovered_products'],0,result)
+        self.assertEqual(result['failed_products'],1,result)
+        sample=result['error_samples'][0]
+        self.assertEqual(sample['reason_code'],'missing_formulation_or_variant_discriminator')
+        self.assertEqual(sample['source_title'],'SVR Sun Secure Water')
+        self.assertEqual(sample['candidates'][0]['canonical_id'],self.candidate)
+        self.assertEqual(sample['candidates'][0]['legacy_listings'],1)
+        self.assertIn('spf',sample['candidates'][0]['unknown'])
+        self.assertEqual(self.conn.execute(
+            'SELECT status FROM product_review_queue WHERE id=?',(rid,)).fetchone()[0],
+            'pending')
+        self.assertEqual(self.conn.execute('SELECT COUNT(*) FROM canonical_products').fetchone()[0],1)
+
+    def test_unverified_canonical_with_approved_formula_is_not_ignored(self):
+        self.conn.execute("""UPDATE canonical_products SET ingredients_raw='Water, Glycerin'
+            WHERE id=?""",(self.candidate,))
+        self.conn.commit()
+        obs=self.source_observation(title='SVR Sun Secure Water')
+        result=process_source_observation(self.conn,obs)
+        self.assertIn(result['results'][0]['status'],('review','evidence_needed'))
+        self.assertEqual(self.conn.execute('SELECT COUNT(*) FROM canonical_products').fetchone()[0],1)
+
     def test_real_empty_gemini_list_is_reprocessed_with_saved_source_no_ai(self):
         oid,rid=self.create_stale_review()
         plan=preview_saved_rematch(self.conn,500)
