@@ -97,6 +97,24 @@ class WaterfallReadinessTests(unittest.TestCase):
         self.assertNotEqual(self.cid,other)
         self.assertEqual(certify_cross_store(self.conn,'operator',apply=False)['certifiable'],0)
 
+    def test_fresh_conflicting_full_source_formulas_prevent_certification(self):
+        self.conn.execute("UPDATE canonical_products SET identity_status='provisional' WHERE id=?",(self.cid,))
+        for i,store in enumerate(('fresh_one','fresh_two'),1):
+            self.conn.execute('INSERT INTO stores(id,name,domain) VALUES(?,?,?)',
+                              (store,store,store+'.test'))
+            self.conn.execute("""INSERT INTO products(store_id,store_product_id,title,brand,category,
+                product_url,canonical_product_id) VALUES(?,?,?,?,'Moisturizer',?,?)""",
+                (store,str(i),self.title,'CeraVe','https://'+store+'.test/p',self.cid))
+        for raw in ('Water, Glycerin, Panthenol, Phenoxyethanol',
+                    'Water, Glycerin, Niacinamide, Phenoxyethanol'):
+            candidate=FormulationCandidate(self.cid,'source:fresh_one',raw,
+                [x.strip().lower() for x in raw.split(',')],completeness='full')
+            eid=FormulationRepository().record_candidate_evidence(candidate,conn=self.conn)
+            self.conn.execute("UPDATE inci_audit_evidence SET order_verified=1 WHERE id=?",(eid,))
+        self.assertEqual(certify_cross_store(self.conn,'operator')['certifiable'],0)
+        self.assertEqual(self.conn.execute("SELECT identity_status FROM canonical_products WHERE id=?",
+                         (self.cid,)).fetchone()[0],'provisional')
+
     def test_conflicting_legacy_variants_cannot_be_certified(self):
         for i,(store,title) in enumerate((('first',self.title),('second','CeraVe Moisturizing Lotion')),1):
             self.conn.execute("INSERT INTO stores(id,name,domain) VALUES (?,?,?)",(store,store,store+'.test'))
