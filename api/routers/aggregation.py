@@ -536,10 +536,13 @@ def _run_saved_review_rematch(task_id,limit,fingerprint):
                     metadata={'stats':counters,'pre_rematch_backup':str(rescue)})
         def cancelled():
             from pipeline.db_manager import get_connection as connect
-            with connect() as check:
+            check=connect()
+            try:
                 r=check.execute("SELECT status FROM pipeline_tasks WHERE task_id=?",
                                 (task_id,)).fetchone()
                 return bool(r and r[0]=='cancelled')
+            finally:
+                check.close()
         result=rematch_saved_reviews(conn,limit,progress=progress,
             expected_fingerprint=fingerprint,should_cancel=cancelled)
         conn.commit()
