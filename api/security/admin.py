@@ -24,6 +24,10 @@ def credentials():
 
 
 def permission_for(path, method):
+    if path.startswith('/admin/aggregation/reviews/gemini/requeue') and method not in ('GET','HEAD'):
+        # Archival deletion of prior live model responses requires operations,
+        # not ordinary product identity review permissions.
+        return 'operations'
     if path.startswith('/admin/workflows/products/recover-unmatched') and method not in ('GET','HEAD'):
         return 'identity'
     if path.startswith('/admin/inci-research/queue/') and path.endswith('/review') and method=='POST':
