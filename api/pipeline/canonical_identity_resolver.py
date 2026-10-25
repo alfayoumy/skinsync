@@ -172,6 +172,22 @@ class CanonicalIdentityResolver:
                 return IdentityDecision('matched',candidate['canonical_product_id'],'durable_link' if candidate['durable_link'] else
                     ('validated_identifier' if candidate['strong_identifier'] else 'exact_structured_identity'),evaluated)
         if evaluated:
+            # A fuzzy candidate is not a product comparison. In particular,
+            # a weak lexical suggestion with missing variant evidence and no
+            # durable listing/verified identifier must not generate a Gemini
+            # job or strand a genuine new product in mandatory human review.
+            # Keep suggestions only as audit metadata, never as pending links.
+            soft=[r for r in evaluated if
+                r['state'] in ('compatible','unknown')
+                and not r['conflicts']
+                and not any(r[key] for key in
+                    ('durable_link','exact_name','verified_name',
+                     'strong_identifier','reviewed_link'))
+                and r['similarity'] < 0.85]
+            if len(soft)==len(evaluated) and not existing:
+                return IdentityDecision('new',method='no_defensible_existing_match',
+                    details={'ignored_weak_candidates':[r['canonical_product_id'] for r in soft],
+                             'rule':'No exact marketed name, strong identifier, or durable accepted identity; fuzzy similarity is not a comparison.'})
             # Critical, fully specified conflicts are separate marketed variants;
             # missing discriminator values cannot justify creating a duplicate.
             if all(r['state']=='conflict' for r in evaluated) and not existing:
