@@ -383,7 +383,19 @@ def _load_cases(conn,limit,batch_size):
     cases=[]
     for row in rows:
         case=dict(row,details=json.loads(row['details']))
-        source=_source_case_current(conn,case) if case['canonical_product_id'] is None else None
+        source_record=(conn.execute('SELECT 1 FROM identity_gemini_source_cases WHERE review_id=?',
+                                    (case['id'],)).fetchone()
+                       if case['canonical_product_id'] is None else None)
+        source=_source_case_current(conn,case) if source_record else None
+        if source_record and source is None:
+            # Never fall back to the legacy empty-list prompt if the saved
+            # source or candidate changed after the queue was prepared.
+            conn.execute("""UPDATE identity_gemini_queue
+                SET status='needs_manual',
+                explanation='Saved-source comparison changed; regenerate evidence before Gemini.',
+                updated_at=CURRENT_TIMESTAMP WHERE review_id=? AND status='queued'""",
+                (case['id'],))
+            continue
         if source is not None:
             case['source_comparison']=source
         cases.append(case)
@@ -404,7 +416,9 @@ def run_identity_gemini_queue(task_id,limit=500,batch_size=DEFAULT_BATCH,provide
             if task and task[0]=='cancelled':return {'status':'cancelled',**dict(counts)}
             retire_unresearchable_queue(conn)
             cases=_load_cases(conn,limit-scanned,batch_size)
-            if not cases:break
+            if not cases:
+                conn.commit()
+                break
             for case in cases:
                 conn.execute("UPDATE identity_gemini_queue SET status='processing',attempts=attempts+1,task_id=?,updated_at=CURRENT_TIMESTAMP WHERE review_id=?",
                              (task_id,case['id']))
