@@ -158,9 +158,116 @@ class SourceGeminiRequeueTests(unittest.TestCase):
         self.assertEqual(self.conn.execute('SELECT COUNT(*) FROM product_identity_links WHERE status=\'accepted\'').fetchone()[0],0)
         self.assertEqual(self.conn.execute('SELECT ingredients_raw FROM canonical_products WHERE id=?',
                            (self.cid,)).fetchone()[0],None)
-        from pipeline.saved_gemini_decisions import candidate_rows
-        self.assertEqual(len(candidate_rows(self.conn)),0,
-            'Saved-decision application must not auto-apply source-only Gemini suggestions.')
+        from pipeline.saved_gemini_decisions import candidate_rows, apply_saved_decisions
+        self.assertEqual(len(candidate_rows(self.conn)),1,
+            'A source suggestion may enter validation but may not bypass it.')
+        preview=apply_saved_decisions(self.conn,dry_run=True)
+        self.assertEqual(preview['source_matches_linked'],0)
+        self.assertEqual(preview['still_needs_review'],1)
+        self.assertIn('formulation discriminator',preview['sample_results'][0]['reason'])
+        applied=apply_saved_decisions(self.conn,dry_run=False)
+        self.assertEqual(applied['source_matches_linked'],0)
+        self.assertEqual(self.conn.execute(
+            "SELECT COUNT(*) FROM product_identity_links WHERE status='accepted'").fetchone()[0],0)
+
+    def _prepare_independently_corroborated_saved_verdict(self):
+        """Synthetic stored verdict with a current matching source and second retailer."""
+        from pipeline.source_gemini_requeue import _profile
+        title='SVR Sun Secure Water SPF50'
+        self.conn.execute("""INSERT OR IGNORE INTO stores(id,name,domain)
+            VALUES('bloom','Bloom','bloom.example')""")
+        self.conn.execute("""INSERT INTO products(store_id,store_product_id,title,
+            brand,category,product_url,canonical_product_id)
+            VALUES ('bloom','svr-water',?,'SVR','Sunscreen',?,?)""",
+            (title,'https://bloom.example/svr-water',self.cid))
+        self.conn.execute("""UPDATE source_product_observations SET raw_title=?,
+            identity_attributes=? WHERE id=?""",
+            (title,json.dumps(extract_identity(title,'SVR')),self.oid))
+        row=self.conn.execute('SELECT details FROM product_review_queue WHERE id=?',
+                              (self.rid,)).fetchone()
+        details=json.loads(row['details'])
+        details['title']=title
+        self.conn.execute('UPDATE product_review_queue SET details=? WHERE id=?',
+                          (json.dumps(details),self.rid))
+        obs=self.conn.execute("""SELECT source_id,source_product_id,source_url,raw_title,
+            raw_brand FROM source_product_observations WHERE id=?""",
+            (self.oid,)).fetchone()
+        payload={
+            'mode':'saved_source_identity_candidates_v1',
+            'observation_id':self.oid,
+            'source':{
+                'source_id':obs['source_id'],
+                'source_product_id':obs['source_product_id'],
+                'url':obs['source_url'],'title':obs['raw_title'],
+                'brand':obs['raw_brand'],'gtin':None,
+                'identity_attributes':extract_identity(title,'SVR'),
+                'variants':[],
+            },
+            'candidates':[_profile(self.conn,{'canonical_product_id':self.cid})],
+        }
+        self.conn.execute("""INSERT INTO identity_gemini_source_cases
+            (review_id,evidence_hash,payload_json,suggested_canonical_id)
+            SELECT id,evidence_hash,?,? FROM product_review_queue WHERE id=?""",
+            (json.dumps(payload),self.cid,self.rid))
+        self.conn.execute("""UPDATE identity_gemini_queue SET
+            confidence=0.99,verdict='same_product',status='needs_manual',
+            explanation='Independent listings indicate same product.',
+            model_name='test-model' WHERE review_id=?""",(self.rid,))
+        self.conn.commit()
+
+    def test_saved_source_match_links_after_independent_identity_checks(self):
+        from pipeline.saved_gemini_decisions import candidate_rows,apply_saved_decisions
+        self._prepare_independently_corroborated_saved_verdict()
+        self.assertEqual(len(candidate_rows(self.conn)),1)
+        canonical_before=dict(self.conn.execute('SELECT * FROM canonical_products WHERE id=?',
+                                                (self.cid,)).fetchone())
+        preview=apply_saved_decisions(self.conn,dry_run=True)
+        self.assertEqual(preview['source_verdicts_eligible'],1)
+        self.assertEqual(preview['source_matches_linked'],1,preview)
+        self.assertEqual(self.conn.execute(
+            "SELECT COUNT(*) FROM product_identity_links WHERE status='accepted'").fetchone()[0],0)
+        self.assertEqual(self.conn.execute(
+            'SELECT status FROM product_review_queue WHERE id=?',
+            (self.rid,)).fetchone()[0],'pending')
+        outcome=apply_saved_decisions(self.conn,dry_run=False)
+        self.assertEqual(outcome['source_matches_linked'],1,outcome)
+        self.assertEqual(self.conn.execute("""SELECT COUNT(*) FROM product_identity_links
+            WHERE source_id='bashrety' AND source_product_id='937001'
+            AND canonical_product_id=? AND status='accepted'""",
+            (self.cid,)).fetchone()[0],1)
+        self.assertEqual(self.conn.execute('SELECT status FROM product_review_queue WHERE id=?',
+                           (self.rid,)).fetchone()[0],'confirmed')
+        self.assertEqual(self.conn.execute('SELECT status FROM identity_gemini_queue WHERE review_id=?',
+                           (self.rid,)).fetchone()[0],'auto_resolved')
+        canonical_after=dict(self.conn.execute('SELECT * FROM canonical_products WHERE id=?',
+                                               (self.cid,)).fetchone())
+        self.assertEqual(canonical_after,canonical_before,
+            'Source linking must never rewrite the canonical identity or its INCI.')
+        self.assertEqual(apply_saved_decisions(self.conn,dry_run=False)['source_matches_linked'],0)
+
+    def test_saved_source_verdict_cannot_apply_when_independent_listing_changes(self):
+        from pipeline.saved_gemini_decisions import apply_saved_decisions
+        self._prepare_independently_corroborated_saved_verdict()
+        self.conn.execute("UPDATE products SET title='Different Sunscreen Lotion' WHERE store_id='bloom'")
+        self.conn.commit()
+        report=apply_saved_decisions(self.conn,dry_run=False)
+        self.assertEqual(report['source_matches_linked'],0,report)
+        self.assertEqual(report['still_needs_review'],1)
+        self.assertIn('comparison changed',report['sample_results'][0]['reason'])
+        self.assertEqual(self.conn.execute(
+            "SELECT COUNT(*) FROM product_identity_links WHERE status='accepted'").fetchone()[0],0)
+
+    def test_uncertain_source_verdict_cannot_enter_saved_application(self):
+        from pipeline.saved_gemini_decisions import candidate_rows,apply_saved_decisions
+        self._prepare_independently_corroborated_saved_verdict()
+        self.conn.execute("""UPDATE identity_gemini_queue SET verdict='uncertain'
+            WHERE review_id=?""",(self.rid,))
+        self.conn.commit()
+        self.assertEqual(len(candidate_rows(self.conn)),0)
+        result=apply_saved_decisions(self.conn,dry_run=False)
+        self.assertEqual(result['source_verdicts_seen'],1)
+        self.assertEqual(result['source_verdicts_eligible'],0)
+        self.assertEqual(result['stored_decisions_checked'],0)
 
     def test_changed_competing_listing_is_retired_without_empty_gemini_prompt(self):
         plan=preview_identity_requeue(self.conn)

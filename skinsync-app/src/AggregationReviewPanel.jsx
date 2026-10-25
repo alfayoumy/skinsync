@@ -261,7 +261,7 @@ export default function AggregationReviewPanel({ onClose, initialSourceId = 'sou
     });
   }
   async function applySavedDecisions() {
-    if(!window.confirm('Apply existing Gemini decisions without any model calls? Safe matches will be verified; safe distinct formulation groups will be split, preserving all retailer listings. Unresolved cases stay for review. A preview is recommended but not required.'))return;
+    if(!window.confirm('Apply stored Gemini decisions without any model calls? Only independently corroborated source matches will be linked; eligible canonical cases may be verified or safely split. Uncertain or conflicting cases stay for review. Preview first to inspect the reasons.'))return;
     await perform(async()=>{
       const started=await api('/reviews/gemini/saved/apply',{
         method:'POST',body:JSON.stringify({
@@ -449,7 +449,7 @@ export default function AggregationReviewPanel({ onClose, initialSourceId = 'sou
       {mode === 'reviews' && <section className="rounded-xl border border-purple-200 bg-purple-50 p-4 space-y-3">
         <div>
           <h3 className="font-bold text-gray-900">Apply Gemini decisions already saved</h3>
-          <p className="text-sm text-gray-700 mt-1">No need to rerun thousands of products or spend more Gemini calls. Recheck the verdicts stored in the database, apply safe same-product matches automatically, and split clearly distinct product variants where the listings prove which items belong together. Unresolved structural conflicts remain for review.</p>
+          <p className="text-sm text-gray-700 mt-1">Recheck stored Gemini verdicts without API calls. Guarded source-to-canonical links require independent retailer corroboration, verified brand and formulation compatibility, and no plausible competing canonical. Existing canonical cases may be verified or safely split. Uncertain verdicts and unsafe matches stay for review.</p>
         </div>
         <div className="flex flex-wrap gap-3 items-end">
           <label className="text-xs font-semibold">Minimum Gemini confidence
@@ -478,11 +478,23 @@ export default function AggregationReviewPanel({ onClose, initialSourceId = 'sou
           {[
             ['Stored cases checked',savedDecisionsPreview.stored_decisions_checked],
             ['Would verify matches',savedDecisionsPreview.automatically_verified],
+            ['Would link source products',savedDecisionsPreview.source_matches_linked??0],
             ['Would split mixed cases',savedDecisionsPreview.automatically_split],
             ['New canonical products',savedDecisionsPreview.new_canonical_products??0],
-            ['Still need review',savedDecisionsPreview.still_needs_review]
+            ['Still need review after checks',savedDecisionsPreview.still_needs_review]
           ].map(([label,value])=><div key={label} className="rounded-lg border bg-white p-3"><strong className="block text-lg">{value}</strong>{label}</div>)}
         </div>}
+        {savedDecisionsPreview&&<p className="text-xs text-gray-700 bg-white border rounded-lg p-3" role="status">
+          {savedDecisionsPreview.source_verdicts_seen??0} saved source-level Gemini results pending review ·
+          {savedDecisionsPreview.source_verdicts_eligible??0} have a proposed canonical and meet the selected model-confidence threshold ·
+          {savedDecisionsPreview.source_verdicts_not_eligible??0} remain ineligible (e.g. uncertain, different product, missing canonical, or low confidence).
+          {savedDecisionsPreview.stored_decisions_checked===0&&<strong className="block mt-1 text-amber-800">
+            Nothing can be applied at this confidence threshold. Running Apply would make no changes. “Need a person” does not mean there is an approvable saved decision.
+          </strong>}
+          {savedDecisionsPreview.source_verdicts_eligible>0&&<span className="block mt-1">
+            Matching the confidence threshold only enters guarded validation; not every proposed match will pass the independent product-identity checks.
+          </span>}
+        </p>}
         {savedDecisionsPreview?.sample_results?.length>0&&<details className="bg-white border rounded-lg p-3">
           <summary className="font-semibold text-xs cursor-pointer">Example application decisions and reasons</summary>
           <div className="max-h-56 overflow-auto space-y-1 mt-2 text-xs">

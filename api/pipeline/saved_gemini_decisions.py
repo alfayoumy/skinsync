@@ -9,13 +9,13 @@ import re
 from collections import Counter
 
 from pipeline.brand_registry import resolve_brand
-from pipeline.canonical_identity_resolver import identity_name
+from pipeline.canonical_identity_resolver import identity_name, extract_identity, compare_attributes, valid_gtin
 from pipeline.identity_gates import validate_identity_gates
 from pipeline.identity_review import formula_fingerprint
 from pipeline.product_identity_gemini import (
-    can_auto_resolve, _all_current_offers, equivalent_brand, POLICY_VERSION,
+    can_auto_resolve, _all_current_offers, _source_case_current, equivalent_brand, POLICY_VERSION,
 )
-from pipeline.review_service import split_canonical
+from pipeline.review_service import split_canonical, resolve_review
 from pipeline.canonical_identity_resolver import CanonicalIdentityResolver
 from pipeline.db_manager import get_connection
 from pipeline.task_tracker import update_task_progress, complete_task, fail_task
@@ -27,13 +27,16 @@ VERDICTS=('same_product','different_product')
 def candidate_rows(conn,limit=5000,threshold=MIN_CONFIDENCE):
     """Only previously evaluated cases; do not requeue or rerun model."""
     return conn.execute("""SELECT r.*,q.evidence_hash queued_hash,q.verdict,q.confidence,
-        q.explanation,q.model_name FROM product_review_queue r
+        q.explanation,q.model_name,s.suggested_canonical_id,s.review_id source_case_id
+        FROM product_review_queue r
         JOIN identity_gemini_queue q ON q.review_id=r.id
         LEFT JOIN identity_gemini_source_cases s ON s.review_id=r.id
         WHERE r.status='pending' AND q.status='needs_manual'
-          AND s.review_id IS NULL
-          AND q.verdict IN ('same_product','different_product')
           AND q.confidence>=?
+          AND ((s.review_id IS NULL AND q.verdict IN ('same_product','different_product'))
+            OR (s.review_id IS NOT NULL AND q.verdict='same_product'
+                AND s.suggested_canonical_id IS NOT NULL
+                AND r.reviewed_by IS NULL AND r.decision IS NULL))
         ORDER BY r.id LIMIT ?""",(threshold,limit)).fetchall()
 
 
@@ -205,6 +208,101 @@ def _close_decision(conn,case,answer,action,reason,extras=None):
         ((answer['reason']+' | '+reason)[:800],case['id']))
 
 
+def _source_match_plan(conn,row,case,answer):
+    """Independent checks before accepting a saved source-to-canonical suggestion.
+
+    The LLM cannot force a merge: current evidence, retailer corroboration,
+    specific formulation attributes and rival candidates must all agree.
+    """
+    if answer['verdict']!='same_product' or type(row['suggested_canonical_id']) is not int:
+        return None,'No supported same-product canonical candidate was selected.'
+    if case['kind']!='identity' or case['canonical_product_id'] is not None:
+        return None,'This is not an unresolved retailer-source identity.'
+    if case['reviewed_by'] or case['decision']:
+        return None,'A prior human review or explicit decision must not be overridden.'
+    source_payload=_source_case_current(conn,row)
+    if source_payload is None:
+        return None,'Saved source or canonical comparison changed since Gemini responded.'
+    source=source_payload['source']
+    cid=row['suggested_canonical_id']
+    candidates=source_payload['candidates']
+    profile=next((x for x in candidates if x['canonical_product_id']==cid),None)
+    if profile is None:
+        return None,'Suggested canonical is not in the saved comparison.'
+    if (case['source_id']!=source['source_id']
+        or case['source_product_id']!=source['source_product_id']):
+        return None,'Source variant identity needs a separate per-variant review.'
+    canonical=conn.execute('SELECT * FROM canonical_products WHERE id=?',(cid,)).fetchone()
+    if not canonical:
+        return None,'Suggested canonical no longer exists.'
+    canonical=dict(canonical)
+    if canonical['identity_status'] not in ('legacy','legacy_preserved_unverified','provisional','verified'):
+        return None,'Canonical identity state is not eligible.'
+    if not equivalent_brand(conn,source['brand'],canonical['brand']):
+        return None,'Source and canonical brands lack independently verified equivalence.'
+    a=source['identity_attributes']
+    b=json.loads(canonical['identity_attributes'] or '{}')
+    if not b.get('name'):
+        b=extract_identity(canonical['canonical_title'],canonical['brand'],
+                           canonical.get('market'),b)
+    comparison=compare_attributes(a,b)
+    if comparison['conflicts']:
+        return None,'Source/canonical formulation attributes conflict: '+', '.join(comparison['conflicts'])
+    critical={'spf','concentrations','timing','fragrance','tint','shade',
+              'formula_revision','vehicle','function'}
+    if critical.intersection(comparison['unknown']):
+        return None,'Missing source/canonical formulation discriminator: '+', '.join(
+            sorted(critical.intersection(comparison['unknown'])))
+    compatible,reason=validate_identity_gates(
+        source['title'],canonical['canonical_title'],source['brand'],canonical['brand'])
+    if not compatible:
+        return None,'Hard variant gate rejected the source/canonical comparison: '+str(reason)
+    # At least one independent retailer must corroborate the marketed name;
+    # two listings on the same source website are not independent evidence.
+    source_name=identity_name(source['title'],source['brand'])
+    corroboration=[x for x in profile['retailer_listings']
+        if x['retailer']!=source['source_id'] and
+           identity_name(x['title'],canonical['brand'])==source_name]
+    barcode=valid_gtin(source.get('gtin'))
+    verified_barcode=bool(barcode and conn.execute("""SELECT 1 FROM canonical_product_aliases
+        WHERE canonical_product_id=? AND alias_type='gtin'
+        AND alias_value=? AND verified=1""",(cid,barcode)).fetchone())
+    if not any(x['retailer']!=source['source_id']
+               for x in profile['retailer_listings']):
+        return None,'No independent retailer listing anchors the proposed match.'
+    if not corroboration and not verified_barcode:
+        return None,'Independent retailer evidence does not corroborate the marketed identity or verified GTIN.'
+    for rival in candidates:
+        if rival['canonical_product_id']==cid:
+            continue
+        attrs=rival.get('identity_attributes') or extract_identity(
+            rival['canonical_title'],rival['brand'])
+        if not compare_attributes(a,attrs)['conflicts']:
+            return None,'Another canonical remains plausible without an explicit formulation conflict.'
+    for variant in source.get('variants') or []:
+        variant_attrs=variant.get('attributes') or {}
+        if compare_attributes(a,{**a,**variant_attrs})['conflicts']:
+            return None,'Saved source has internally conflicting formulation variants.'
+    old=conn.execute("""SELECT canonical_product_id,status FROM product_identity_links
+        WHERE source_id=? AND source_product_id=? AND status IN ('accepted','rejected')""",
+        (source['source_id'],source['source_product_id'])).fetchall()
+    if any((x['status']=='accepted' and x['canonical_product_id']!=cid)
+           or (x['status']=='rejected' and x['canonical_product_id']==cid) for x in old):
+        return None,'An existing accepted/rejected source identity decision conflicts with Gemini.'
+    other_source_reviews=conn.execute("""SELECT COUNT(*) FROM product_review_queue
+        WHERE id!=? AND kind='identity' AND status='pending' AND source_id=?
+          AND (source_product_id=? OR source_product_id LIKE ?)""",
+        (case['id'],source['source_id'],source['source_product_id'],
+         source['source_product_id']+':%')).fetchone()[0]
+    if other_source_reviews:
+        return None,'Other source-product variant reviews remain pending.'
+    legacy=conn.execute("""SELECT canonical_product_id FROM products
+        WHERE store_id=? AND store_product_id=?""",
+        (source['source_id'],source['source_product_id'])).fetchone()
+    if legacy and legacy['canonical_product_id'] not in (None,cid):
+        return None,'Existing legacy product mapping needs independent review.'
+    return {'canonical_id':cid},'Independent retailer name/GTIN, brand and formulation checks passed; no competing canonical remains.'
+
 def resolve_saved_case(conn,row,threshold=MIN_CONFIDENCE):
     """Apply one stored verdict. Returns a durable outcome, never a model call."""
     case=_case(row)
@@ -212,6 +310,16 @@ def resolve_saved_case(conn,row,threshold=MIN_CONFIDENCE):
     if (case['status']!='pending' or row['queued_hash']!=case['evidence_hash']
         or answer['verdict'] not in VERDICTS or answer['confidence']<threshold):
         return 'manual','Stored decision is missing or its evidence has changed.'
+    if row['source_case_id'] is not None:
+        plan,reason=_source_match_plan(conn,row,case,answer)
+        if not plan:return 'manual',reason
+        cid=plan['canonical_id']
+        resolve_review(conn,case['id'],'link','gemini_saved_source_guarded',
+                       'Guarded saved Gemini identity decision: '+reason,canonical_id=cid)
+        conn.execute("""UPDATE identity_gemini_queue SET status='auto_resolved',
+            explanation=?,updated_at=CURRENT_TIMESTAMP WHERE review_id=? AND status='needs_manual'""",
+            ((answer['reason']+' | '+reason)[:800],case['id']))
+        return 'source_linked',reason
     if answer['verdict']=='same_product':
         ok,reason=can_auto_resolve(conn,case,answer,threshold=threshold)
         if not ok:return 'manual',reason
@@ -308,9 +416,24 @@ def apply_saved_decisions(conn,limit=5000,threshold=MIN_CONFIDENCE,dry_run=True,
                                  'reason':'Automated checks could not safely apply this decision: '+str(exc)[:180]})
         if after_case and (i%25==0 or i==len(rows)):
             after_case(i,dict(stats))
+    source_counts=conn.execute("""SELECT
+        COUNT(*) total,
+        SUM(CASE WHEN q.verdict='same_product' AND q.confidence>=?
+             AND s.suggested_canonical_id IS NOT NULL THEN 1 ELSE 0 END) eligible
+        FROM product_review_queue r
+        JOIN identity_gemini_queue q ON q.review_id=r.id
+        JOIN identity_gemini_source_cases s ON s.review_id=r.id
+        WHERE r.status='pending' AND q.status='needs_manual'
+          AND q.evidence_hash=r.evidence_hash""",(threshold,)).fetchone()
+    source_total=source_counts['total']
+    source_eligible=source_counts['eligible'] or 0
     return {'dry_run':dry_run,'no_gemini_calls':True,'threshold':threshold,
-            'stored_decisions_checked':stats['verified']+stats['split']+stats['manual'],
+            'source_verdicts_seen':source_total,
+            'source_verdicts_eligible':source_eligible,
+            'source_verdicts_not_eligible':source_total-source_eligible,
+            'stored_decisions_checked':stats['verified']+stats['source_linked']+stats['split']+stats['manual'],
             'automatically_verified':stats['verified'],
+            'source_matches_linked':stats['source_linked'],
             'automatically_split':stats['split'],
             'new_canonical_products':stats['new_canonical_products'],
             'still_needs_review':stats['manual'],
@@ -329,7 +452,7 @@ def background_apply_saved(task_id,limit=5000,threshold=MIN_CONFIDENCE):
         def progress(n,stats):
             conn.commit()
             update_task_progress(task_id,processed_items=n,
-                successful_items=stats.get('verified',0)+stats.get('split',0),
+                successful_items=stats.get('verified',0)+stats.get('source_linked',0)+stats.get('split',0),
                 skipped_items=stats.get('manual',0),current_stage='Applying saved Gemini verdicts',
                 metadata={'no_gemini_calls':True,'stats':stats})
         result=apply_saved_decisions(conn,limit,threshold,dry_run=False,
