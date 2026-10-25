@@ -190,6 +190,78 @@ def _from_frozen_observation(conn,oid,source_cache):
         identity_attributes=json.loads(row['identity_attributes'] or '{}'))
 
 
+class UnresolvedProductIdentity(ValueError):
+    """A rematch result with concrete comparisons, not a generic ValueError."""
+    def __init__(self,detail):
+        self.detail=detail
+        super().__init__(detail['reason_code'])
+
+
+def _unresolved_identity_detail(conn,observation,result):
+    results=result.get('results') or []
+    decisions=[entry.get('decision') or {} for entry in results
+               if entry.get('status') in ('review','evidence_needed')]
+    candidate_ids=[]
+    for d in decisions:
+        for candidate in d.get('candidates') or []:
+            if (isinstance(candidate,dict) and type(candidate.get('canonical_product_id')) is int
+                and candidate['canonical_product_id'] not in candidate_ids):
+                candidate_ids.append(candidate['canonical_product_id'])
+        if type((d.get('details') or {}).get('canonical_product_id')) is int:
+            cid=d['details']['canonical_product_id']
+            if cid not in candidate_ids:candidate_ids.append(cid)
+    samples=[]
+    for cid in candidate_ids[:8]:
+        can=conn.execute("""SELECT canonical_title,brand,identity_status
+            FROM canonical_products WHERE id=?""",(cid,)).fetchone()
+        if not can:
+            samples.append({'canonical_id':cid,'exists':False})
+            continue
+        actual_offers=conn.execute("SELECT COUNT(*) FROM product_offers WHERE canonical_product_id=?",(cid,)).fetchone()[0]
+        legacy=conn.execute("SELECT COUNT(*) FROM products WHERE canonical_product_id=?",(cid,)).fetchone()[0]
+        accepted=conn.execute("""SELECT COUNT(*) FROM product_identity_links
+            WHERE canonical_product_id=? AND status='accepted'""",(cid,)).fetchone()[0]
+        evidence=next((c for d in decisions for c in (d.get('candidates') or [])
+                       if isinstance(c,dict) and c.get('canonical_product_id')==cid),{})
+        samples.append({
+            'canonical_id':cid,'exists':True,
+            'canonical_title':can['canonical_title'],'brand':can['brand'],
+            'identity_status':can['identity_status'],'offers':actual_offers,
+            'legacy_listings':legacy,'accepted_source_links':accepted,
+            'similarity':evidence.get('similarity'),
+            'unknown':evidence.get('unknown') or [],
+            'conflicts':evidence.get('conflicts') or [],
+            'exact_name':evidence.get('exact_name',False),
+            'strong_identifier':evidence.get('strong_identifier',False),
+            'durable_link':evidence.get('durable_link',False),
+        })
+    methods=[d.get('method') or 'unknown' for d in decisions]
+    if not decisions:
+        reason='no_resolvable_product_output'
+    elif 'gtin_identity_conflict' in methods:
+        reason='conflicting_gtin_or_mismatched_identifier'
+    elif 'missing_or_unusable_brand' in methods:
+        reason='unusable_source_brand'
+    elif any(s.get('conflicts') for s in samples):
+        reason='competing_variant_conflict'
+    elif samples and all(s.get('exists') and not (s.get('offers')
+             or s.get('legacy_listings') or s.get('accepted_source_links'))
+             for s in samples):
+        reason='candidate_has_no_retailer_comparison'
+    elif any(s.get('unknown') for s in samples):
+        reason='missing_formulation_or_variant_discriminator'
+    elif len(candidate_ids)>1:
+        reason='multiple_plausible_canonicals'
+    else:
+        reason='unresolved_candidate_identity'
+    return {'reason_code':reason,'source_id':observation.source_id,
+        'source_product_id':observation.source_product_id,
+        'source_title':observation.raw_title,
+        'methods':methods,'candidates':samples,
+        'candidates_examined':len(candidate_ids),
+        'note':'No identity was forced; this saved observation and old reviews remain available.'}
+
+
 def _apply_one(conn,oid,reviews,source_cache):
     original=_from_frozen_observation(conn,oid,source_cache)
     result=process_source_observation(conn,original,existing_observation_id=oid,
@@ -197,7 +269,7 @@ def _apply_one(conn,oid,reviews,source_cache):
     outputs=result['results']
     canonicals={x.get('canonical_product_id') for x in outputs if x.get('canonical_product_id')}
     if not canonicals or any(x.get('status') not in ('provisional','matched') for x in outputs):
-        raise ValueError('Current matching still found a supported unresolved identity conflict.')
+        raise UnresolvedProductIdentity(_unresolved_identity_detail(conn,original,result))
     cid=next(iter(canonicals)) if len(canonicals)==1 else None
     linked=0
     preserved=0
@@ -292,10 +364,15 @@ def rematch_saved_reviews(conn,limit=100,progress=None,dry_run=False,expected_fi
             conn.execute('ROLLBACK TO SAVEPOINT rematch_saved_source')
             conn.execute('RELEASE SAVEPOINT rematch_saved_source')
             counts['failed_products']+=1
-            reason=type(exc).__name__+': '+str(exc)[:180]
+            if isinstance(exc,UnresolvedProductIdentity):
+                reason=exc.detail['reason_code']
+                detail={'observation_id':oid,**exc.detail}
+            else:
+                reason=type(exc).__name__+': '+str(exc)[:180]
+                detail={'observation_id':oid,'error_type':type(exc).__name__,
+                        'message':str(exc)[:180]}
             errors[reason]+=1
-            if len(samples)<12:samples.append({'observation_id':oid,'error_type':type(exc).__name__,
-                                               'message':str(exc)[:180]})
+            if len(samples)<20:samples.append(detail)
             logger.warning('Saved identity rematch skipped observation %s: %s',oid,type(exc).__name__)
         counts['processed']+=1
         if progress:progress(dict(counts),oid)
