@@ -84,6 +84,9 @@ def certifiable_cross_store(conn, limit=None):
         WHERE identity_status NOT IN ('redirected','reversed_split')"""):
         if row['brand_id']:
             profiles[(row['brand_id'],identity_name(row['canonical_title'],row['brand']))].add(row['id'])
+    has_inci_audit=bool(conn.execute("""SELECT 1 FROM sqlite_master
+        WHERE type='table' AND name='inci_audit_evidence'""").fetchone())
+    from pipeline.formulation_service import FormulationRepository
     candidates=[]
     for canonical in conn.execute("""SELECT id,canonical_title,brand,brand_id,identity_status,is_skincare,
         ingredients_raw,classification_status
@@ -128,8 +131,7 @@ def certifiable_cross_store(conn, limit=None):
             # not in legacy products.ingredients_raw. Two incompatible
             # source formulas for the same identity must NOT be certified
             # simply because both retailer titles are identical.
-            if 'inci_audit_evidence' in {r[0] for r in conn.execute(
-                    "SELECT name FROM sqlite_master WHERE type='table'")}:
+            if has_inci_audit:
                 for evidence in conn.execute("""SELECT parsed_tokens
                     FROM inci_audit_evidence WHERE canonical_product_id=?
                     AND completeness='full' AND order_verified=1
@@ -137,7 +139,7 @@ def certifiable_cross_store(conn, limit=None):
                     try:
                         tokens=json.loads(evidence['parsed_tokens'] or '[]')
                         if isinstance(tokens,list) and tokens:
-                            hashes.add(tuple(str(t).strip().casefold() for t in tokens))
+                            hashes.add(FormulationRepository.compute_formula_hash(tokens))
                     except (ValueError,TypeError):
                         continue
             if len(hashes)>1:
