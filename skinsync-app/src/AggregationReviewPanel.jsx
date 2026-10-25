@@ -45,6 +45,7 @@ export default function AggregationReviewPanel({ onClose, initialSourceId = 'sou
   const [rematchDiagnosis,setRematchDiagnosis]=useState(null);
   const [rematchJob,setRematchJob]=useState(null);
   const [rematchBusy,setRematchBusy]=useState(false);
+  const [blockingTaskDetails,setBlockingTaskDetails]=useState(null);
   const [rematchLimit,setRematchLimit]=useState(500);
   const [weakPreview,setWeakPreview]=useState(null);
   const [weakBusy,setWeakBusy]=useState(false);
@@ -75,6 +76,36 @@ export default function AggregationReviewPanel({ onClose, initialSourceId = 'sou
     try{
       const preview=await api('/reviews/rematch/preview?limit='+Number(rematchLimit));
       setRematchPreview(preview);
+    }catch(e){setError(e.message)}
+    finally{setRematchBusy(false)}
+  }
+  async function inspectBlockingTask(taskId){
+    setRematchBusy(true);setError('');
+    try{
+      const response=await apiFetch('http://127.0.0.1:8000/tasks/'+encodeURIComponent(taskId)+'?include_subtasks=false&log_limit=10');
+      const data=await response.json().catch(()=>null);
+      if(!response.ok)throw new Error(data?.detail||'Could not inspect blocking task.');
+      setBlockingTaskDetails(data);
+    }catch(e){setError(e.message)}
+    finally{setRematchBusy(false)}
+  }
+  async function cancelBlockingJob(job){
+    let url=null;
+    const id=encodeURIComponent(job.task_id);
+    if(job.task_type==='catalog_discovery')url='/admin/workflows/products/discover-multiple/'+id+'/cancel';
+    if(job.task_type==='product_identity_gemini')url='/admin/aggregation/reviews/gemini/jobs/'+id+'/cancel';
+    if(job.task_type==='apply_saved_gemini')url='/admin/aggregation/reviews/gemini/saved/jobs/'+id+'/cancel';
+    if(job.task_type==='saved_observation_identity_rematch')url='/admin/aggregation/reviews/rematch/jobs/'+id+'/cancel';
+    if(!url)return;
+    if(!window.confirm('Request cancellation for '+job.task_type+' '+job.task_id+'? The worker may finish its current unit before stopping.'))return;
+    setRematchBusy(true);setError('');
+    try{
+      const response=await apiFetch('http://127.0.0.1:8000'+url,{method:'POST',
+        headers:{'Content-Type':'application/json'}});
+      const result=await response.json().catch(()=>null);
+      if(!response.ok)throw new Error(result?.detail||'Unable to request cancellation.');
+      setMessage('Cancellation requested for '+job.task_id+'. Refresh the rematch preview after the worker exits.');
+      await previewIdentityRematch();
     }catch(e){setError(e.message)}
     finally{setRematchBusy(false)}
   }
@@ -451,10 +482,50 @@ export default function AggregationReviewPanel({ onClose, initialSourceId = 'sou
           <p><strong>{rematchPreview.eligible_products}</strong> saved products eligible ·
             {' '}{rematchPreview.review_cases_replaced_on_success} stale review records can be replaced if all recover.</p>
           <p>Excluded from automatic processing: {Object.entries(rematchPreview.excluded_reasons||{}).map(([k,v])=>k.replaceAll('_',' ')+': '+v).join(' · ')||'none'}</p>
-          {!rematchPreview.can_start&&<p className="text-amber-800">Finish active workers before applying.</p>}
+          {!rematchPreview.can_start&&<div className="rounded-lg border border-amber-300 p-3 space-y-2">
+            <strong className="text-amber-900">Why re-matching is blocked</strong>
+            {(rematchPreview.active_jobs||[]).length>0&&<>
+              <p>A job is still marked as executing. Its task ID and stage are shown below.
+                A non-updating timestamp does not prove its worker has stopped.</p>
+              {(rematchPreview.active_jobs||[]).map(job=><div key={job.task_id} className="rounded border p-2 space-y-2">
+                <p><strong>{job.task_type}</strong> · {job.status} · {job.current_stage||'stage not recorded'}</p>
+                <p className="break-all">Task ID: {job.task_id}</p>
+                <p>Last recorded update: {job.updated_at||'unknown'}</p>
+                <div className="flex flex-wrap gap-2">
+                  <button type="button" className="rounded border px-2 py-1 disabled:opacity-50"
+                    disabled={rematchBusy} onClick={()=>inspectBlockingTask(job.task_id)}>Inspect task and logs</button>
+                  {['running','pending'].includes(job.status)&&
+                   ['catalog_discovery','product_identity_gemini','apply_saved_gemini',
+                    'saved_observation_identity_rematch'].includes(job.task_type)&&
+                    <button type="button" className="rounded border border-red-300 px-2 py-1 text-red-700 disabled:opacity-50"
+                      disabled={rematchBusy} onClick={()=>cancelBlockingJob(job)}>Request safe cancellation</button>}
+                </div>
+              </div>)}
+            </>}
+            {(rematchPreview.active_workers||[]).length>0&&<p className="text-red-700">
+              Active worker indicators: {(rematchPreview.active_workers||[]).join(', ')}.
+              Inspect or stop their running tasks before re-matching.</p>}
+            {rematchPreview.maintenance_locked&&<p className="text-red-700">
+              Catalog maintenance or backup restore is locked. Finish or cancel that operation first.</p>}
+            {blockingTaskDetails&&<details open className="rounded border p-2">
+              <summary className="cursor-pointer font-semibold">Task inspection: {blockingTaskDetails.task_id}</summary>
+              <p>Status: {blockingTaskDetails.status} · stage: {blockingTaskDetails.current_stage||'none'}</p>
+              <p>Started: {blockingTaskDetails.started_at||'unknown'} · updated: {blockingTaskDetails.updated_at||'unknown'}</p>
+              {blockingTaskDetails.error_message&&<p className="text-red-700">{blockingTaskDetails.error_message}</p>}
+              {(blockingTaskDetails.logs||[]).map((log,i)=><p key={i} className="break-words">{log.level}: {log.message}</p>)}
+            </details>}
+            <button type="button" className="rounded border px-3 py-2 font-bold disabled:opacity-50"
+              disabled={rematchBusy} onClick={previewIdentityRematch}>Recheck blockers</button>
+          </div>}
+          {rematchPreview.idle_pending_records>0&&<p className="text-gray-600">
+            {rematchPreview.idle_pending_records} task records are queued but never started; they do not block rematching.</p>}
+          {rematchPreview.old_cancelled_records>0&&<p className="text-gray-600">
+            {rematchPreview.old_cancelled_records} old cancelled task records are not treated as live workers.</p>}
+          {rematchPreview.orphaned_gemini_processing_rows>0&&<p className="text-gray-600">
+            {rematchPreview.orphaned_gemini_processing_rows} Gemini processing rows belong to nonrunning tasks; their historical state is preserved, but they do not block rematching.</p>}
           {rematchPreview.can_start&&<button type="button"
             className="rounded-lg bg-purple-800 px-3 py-2 text-white font-bold disabled:opacity-50"
-            disabled={rematchBusy||Boolean(rematchJob&&['running','pending','cancelled'].includes(rematchJob.status))}
+            disabled={rematchBusy}
             onClick={startIdentityRematch}>Back up and re-match {rematchPreview.eligible_products} saved products</button>}
         </div>}
         {rematchDiagnosis&&<div className="rounded-lg border p-3 text-xs space-y-2">

@@ -515,11 +515,9 @@ def _run_saved_review_rematch(task_id,limit,fingerprint):
     conn=get_connection()
     try:
         from pipeline.saved_identity_rematch import preview_saved_rematch
-        plan=preview_saved_rematch(conn,limit)
-        # This task is the only legitimate active job while it runs.
-        other=[r for r in plan['active_jobs'] if r['task_id']!=task_id]
-        if other or plan['fingerprint']!=fingerprint:
-            raise ValueError('The source catalog/review queue changed or another worker is active.')
+        plan=preview_saved_rematch(conn,limit,exclude_task_id=task_id)
+        if not plan['can_start'] or plan['fingerprint']!=fingerprint:
+            raise ValueError('Source evidence changed or active workers/maintenance block rematch. Inspect the preview details.')
         # Always retain a restorable complete SQLite snapshot before touching
         # any identity link or review record.
         rescue=_backup(conn,Path(DB_PATH))
@@ -627,16 +625,27 @@ def start_saved_review_rematch(request:SavedRematchStart,background_tasks:Backgr
         raise HTTPException(status_code=422,detail='Type REMATCH SAVED PRODUCTS exactly.')
     conn=get_connection()
     try:
+        # Serialize the preflight with task creation, so two rematch requests
+        # cannot both pass on an unlocked snapshot.
+        conn.execute('BEGIN IMMEDIATE')
         plan=preview_saved_rematch(conn,request.limit)
         if not plan['can_start']:
-            raise HTTPException(status_code=409,detail='Finish running catalog/Gemini workers first.')
+            conn.rollback()
+            raise HTTPException(status_code=409,detail={
+                'message':'An actual running job or maintenance lock prevents rematching.',
+                'active_jobs':plan['active_jobs'],
+                'active_workers':plan['active_workers'],
+                'maintenance_locked':plan['maintenance_locked']})
         if plan['fingerprint']!=request.fingerprint:
+            conn.rollback()
             raise HTTPException(status_code=409,detail='Evidence changed after preview; refresh.')
         task_id=create_task('saved_observation_identity_rematch',
             target_source='saved_source_observations',total_items=plan['eligible_products'],
             params={'limit':request.limit,'fingerprint':request.fingerprint},
             auto_start=True,exclusive_task_type=True,conn=conn)
-    finally:conn.close()
+    finally:
+        if conn.in_transaction:conn.rollback()
+        conn.close()
     background_tasks.add_task(_run_saved_review_rematch,task_id,request.limit,request.fingerprint)
     return {'task_id':task_id,'status':'running','selected':plan['eligible_products'],
             'no_rescrape':True,'gemini_calls':0}

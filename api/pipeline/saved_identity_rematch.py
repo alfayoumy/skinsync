@@ -86,21 +86,71 @@ def _fingerprint(grouped):
     return hashlib.sha256(json.dumps(signatures,separators=(',',':')).encode()).hexdigest()
 
 
-def preview_saved_rematch(conn,limit=BATCH_LIMIT):
+def rematch_execution_blockers(conn,exclude_task_id=None):
+    """Show exactly what prevents a rematch; don't equate queued work with a worker.
+
+    The restored database may contain hundreds of pending work items which
+    were never started. They must not impersonate executing jobs. A running
+    job is still blocked regardless of its heartbeat age: age cannot prove
+    the operating-system process stopped.
+    """
+    from pipeline.catalog_reset import _active_workers,_tables
+    tables=_tables(conn)
+    rows=[dict(r) for r in conn.execute("""SELECT task_id,task_type,status,
+        current_stage,started_at,updated_at,error_message FROM pipeline_tasks
+        WHERE (status='running' AND COALESCE(current_stage,'')!='worker_stopped')
+        OR (status='pending' AND started_at IS NOT NULL)
+        OR (status='cancelled' AND COALESCE(current_stage,'')!='worker_stopped'
+            AND datetime(updated_at)>=datetime('now','-1 hour'))
+        ORDER BY created_at DESC,task_id DESC LIMIT 100""")]
+    active=[r for r in rows if r['task_id']!=exclude_task_id]
+    workers=_active_workers(conn,tables)
+    # A historical Gemini row can say "processing" despite belonging to a
+    # completed/failed task restored from backup. It is not proof that a
+    # process is currently working. Only running-task-backed Gemini batches
+    # must block this rematch.
+    orphaned_gemini=0
+    if 'identity_gemini_queue' in tables:
+        orphaned_gemini=conn.execute("""SELECT COUNT(*) FROM identity_gemini_queue q
+            LEFT JOIN pipeline_tasks t ON t.task_id=q.task_id
+            WHERE q.status='processing'
+            AND (q.task_id IS NULL OR t.task_id IS NULL
+                 OR t.status NOT IN ('running','pending'))""").fetchone()[0]
+        genuinely_processing=conn.execute("""SELECT COUNT(*) FROM identity_gemini_queue q
+            JOIN pipeline_tasks t ON t.task_id=q.task_id
+            WHERE q.status='processing'
+            AND t.status IN ('running','pending')""").fetchone()[0]
+        if not genuinely_processing:
+            workers=[name for name in workers if name!='identity_gemini_queue']
+    maintenance=False
+    if 'catalog_reset_control' in tables:
+        row=conn.execute('SELECT active FROM catalog_reset_control WHERE singleton=1').fetchone()
+        maintenance=bool(row and row[0])
+    idle_pending=conn.execute("""SELECT COUNT(*) FROM pipeline_tasks
+        WHERE status='pending' AND started_at IS NULL""").fetchone()[0]
+    old_cancelled=conn.execute("""SELECT COUNT(*) FROM pipeline_tasks
+        WHERE status='cancelled' AND COALESCE(current_stage,'')!='worker_stopped'
+        AND (updated_at IS NULL OR datetime(updated_at)<datetime('now','-1 hour'))""").fetchone()[0]
+    return {'active_jobs':active,'active_workers':workers,
+            'maintenance_locked':maintenance,
+            'idle_pending_records':idle_pending,
+            'old_cancelled_records':old_cancelled,
+            'orphaned_gemini_processing_rows':orphaned_gemini,
+            'can_start':not active and not workers and not maintenance}
+
+
+def preview_saved_rematch(conn,limit=BATCH_LIMIT,exclude_task_id=None):
     if not 1<=limit<=BATCH_LIMIT:raise ValueError('Limit must be 1–10000 products.')
     grouped,excluded=_eligible(conn,limit)
-    active=[dict(r) for r in conn.execute("""SELECT task_id,task_type,status,current_stage
-        FROM pipeline_tasks WHERE (status IN ('pending','running')
-        OR (status='cancelled' AND COALESCE(current_stage,'')!='worker_stopped'))
-        ORDER BY created_at DESC LIMIT 20""")]
+    blockers=rematch_execution_blockers(conn,exclude_task_id=exclude_task_id)
     return {'eligible_products':len(grouped),
         'review_cases_replaced_on_success':sum(map(len,grouped.values())),
-        'excluded_reasons':excluded,'active_jobs':active,
-        'can_start':bool(grouped) and not active,
+        'excluded_reasons':excluded,**blockers,
+        'can_start':bool(grouped) and blockers['can_start'],
         'fingerprint':_fingerprint(grouped),'limit':limit,
         'sample_observation_ids':list(grouped)[:12],
         'confirmation_phrase':CONFIRMATION,
-        'note':'Only saved, latest unreviewed source observations qualify. Re-runs current deterministic identity matching; creates provisional identities where no defensible match exists. Supersedes stale reviews/Gemini verdicts only after a successful replay. Never deletes retailer source evidence or republishes INCI.'}
+        'note':'Saved observations are eligible independently of queued/idle task rows. A live running worker, recent cancellation still finishing, or maintenance lock prevents writes; the specific blockers are shown. No catalog/source/INCI data is deleted.'}
 
 
 def _from_frozen_observation(conn,oid,source_cache):
