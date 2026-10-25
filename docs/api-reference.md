@@ -356,3 +356,14 @@ Results with a complete INCI string literally present in the source page and pas
 
 Statuses: `queued`, `processing`, `needs_review`, `no_result`, `error`, `approved`, `rejected`.
 
+
+### Audited orphaned task-record reconciliation
+
+| Method | Endpoint | Permission |
+|---|---|---|
+| GET | `/admin/workflows/catalog/stale-tasks/preview` | `read` |
+| POST | `/admin/workflows/catalog/stale-tasks/reconcile` | `operations` |
+
+The preview is read-only and classifies `pipeline_tasks.status='running'` rows into `candidates` (at least 6 hours old and matching very specific known terminal stages: `refresh_catalog`/`refresh_store` after `finished_store_...`; `batch_match_inci`/`batch_fill_ingredients` after `processed_item_N_of_N`; or `api_*_test` task artifacts), and `ineligible_running` (all other, live, unknown, recent, or discovery work). Cancelled-but-active discovery is always protected by the existing reset preflight. The preview returns a fingerprint of **all** running tasks and an active-worker and maintenance check.
+
+Only after an operator independently verifies no underlying worker is alive, POST `{"fingerprint":"...","confirmation":"RECONCILE STALE TASK RECORDS","workers_checked":true}` to atomically mark *just the eligible records* failed, preserve original task stage/logs and store each prior row in `catalog_task_reconciliation_audit`. The endpoint rejects invalid fingerprints, active AI workers or catalog maintenance. No actual workers are cancelled, no product/observation/ingredient/identity rows are changed and no task history is deleted. Refresh the selective rebuild preview afterward.

@@ -28,6 +28,8 @@ def permission_for(path, method):
         return 'formula_correction'
     if path.startswith('/admin/inci-research/') and method not in ('GET','HEAD'):
         return 'formula'
+    if path.startswith('/admin/workflows/catalog/stale-tasks') and method not in ('GET','HEAD'):
+        return 'operations'
     if path.startswith(('/admin/workflows/catalog/reset', '/admin/workflows/catalog/selective-rebuild')) and method not in ('GET','HEAD'):
         return 'operations'
     if path.startswith(('/admin/workflows/products/verify-existing','/admin/workflows/products/prepare-reviews')) and method not in ('GET','HEAD'):

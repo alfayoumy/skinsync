@@ -168,3 +168,11 @@ If DonSeTch or the Gemini API key is absent, the UI shows that missing dependenc
 ### Diagnose inactive pending catalog tasks before a selective rebuild
 
 Ordinary task rows in `pending` state mean work has not started and should not block an offline catalog rebuild. A new product-discovery scan enters `running` when submitted and still blocks; so does any running task, recently cancelled discovery not yet stopped, or active AI worker. The selective preview displays the IDs, types, stages and update times of blocking task records and the number of idle pending tasks. This change does not auto-retire a `running` record merely due to age: verify a stuck task with its status and workers before handling it separately. A preview is read-only.
+
+### Safely unblock false running-task records after saved product discovery
+
+A completed six-source discovery may coexist with older `pipeline_tasks` rows incorrectly left in `running` state by legacy refresh/matching jobs or HTTP test artifacts. **Do not delete tasks, clear all running statuses or reset the catalog.** The selective rebuild preview now offers **Inspect potentially orphaned task records**, which shows candidate records and deliberately excluded running tasks.
+
+Only the exact approved patterns are eligible: `api_*_test` records with no stage; `refresh_catalog` / `refresh_store` records with `finished_store_...`; and `batch_match_inci` / `batch_fill_ingredients` with `processed_item_N_of_N` at the last item. Every candidate must have been idle at least 6 hours. A currently running discovery, recent or partial tasks, unknown task types, and all workers reported active remain protected. This is a conservative **record reconciliation**, not proof of process death, so the operator must separately check backend processes before confirming. Confirm with `RECONCILE STALE TASK RECORDS`, the exact preview fingerprint and worker-inspection checkbox. The transaction marks eligible rows `failed` and audits the old values but never deletes records or alters product data. After applying, the UI refreshes the rebuild preview.
+
+If other, non-eligible `running` tasks remain, investigate them rather than force clearing them.
