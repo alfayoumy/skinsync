@@ -4,6 +4,12 @@ Modularized architecture using APIRouter for clean domain separation.
 """
 
 import os
+
+# Apply an operator-scheduled SQLite backup restore BEFORE catalog_service
+# imports and loads an in-memory index from the current database.
+from pipeline.catalog_restore import startup_catalog_restore_guard
+startup_catalog_restore_guard()
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 

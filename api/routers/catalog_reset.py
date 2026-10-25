@@ -111,3 +111,56 @@ def stale_tasks_reconcile(request: StaleTaskReconciliationRequest):
         raise HTTPException(status_code=409, detail=str(exc))
     finally:
         conn.close()
+
+
+from pipeline.catalog_restore import (list_catalog_backups,preview_catalog_restore,
+    queue_catalog_restore,cancel_catalog_restore)
+
+
+class RestoreRequest(BaseModel):
+    filename: str
+    sha256: str = Field(min_length=64,max_length=64)
+    confirmation: str
+
+
+@router.get('/backups')
+def catalog_backups():
+    conn=get_connection()
+    try:
+        return list_catalog_backups(conn)
+    finally:
+        conn.close()
+
+
+@router.get('/backups/{filename}/preview')
+def catalog_backup_preview(filename: str):
+    conn=get_connection()
+    try:
+        return preview_catalog_restore(conn,filename)
+    except ValueError as exc:
+        raise HTTPException(status_code=409,detail=str(exc))
+    finally:
+        conn.close()
+
+
+@router.post('/restore')
+def schedule_catalog_restore(request: RestoreRequest):
+    conn=get_connection()
+    try:
+        return queue_catalog_restore(conn,request.filename,request.sha256,
+                                     request.confirmation,reviewer_name('unattributed'))
+    except ValueError as exc:
+        raise HTTPException(status_code=409,detail=str(exc))
+    finally:
+        conn.close()
+
+
+@router.post('/restore/cancel')
+def cancel_scheduled_restore():
+    conn=get_connection()
+    try:
+        return cancel_catalog_restore(conn)
+    except ValueError as exc:
+        raise HTTPException(status_code=409,detail=str(exc))
+    finally:
+        conn.close()
