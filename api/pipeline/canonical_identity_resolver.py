@@ -180,6 +180,12 @@ class CanonicalIdentityResolver:
             soft=[r for r in evaluated if
                 r['state'] in ('compatible','unknown')
                 and not r['conflicts']
+                # Missing SPF, tint, concentration, market or formula version
+                # may describe the SAME marketed product. Do not manufacture
+                # a second canonical just because that discriminator is absent.
+                and not set(r.get('unknown') or []) & {
+                    'spf','concentrations','timing','fragrance','tint',
+                    'shade','formula_revision','market'}
                 and not any(r[key] for key in
                     ('durable_link','exact_name','verified_name',
                      'strong_identifier','reviewed_link'))

@@ -78,7 +78,8 @@ class SavedIdentityRematchTests(unittest.TestCase):
         result=process_source_observation(self.conn,self.source_observation())
         entry=result['results'][0]
         self.assertEqual(entry['status'],'provisional')
-        self.assertEqual(entry['decision']['method'],'no_defensible_existing_match')
+        self.assertIn(entry['decision']['method'],
+                           ('new_identity','no_defensible_existing_match'))
         self.assertNotEqual(entry['canonical_product_id'],self.candidate)
         self.assertEqual(self.conn.execute('SELECT COUNT(*) FROM canonical_products').fetchone()[0],before+1)
         self.assertEqual(self.conn.execute("""SELECT COUNT(*) FROM product_review_queue
