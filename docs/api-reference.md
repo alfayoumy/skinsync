@@ -447,3 +447,8 @@ Exact API route inventory:
 - `/admin/aggregation/reviews/rematch/active`
 - `/admin/aggregation/reviews/rematch/jobs/{task_id}`
 - `/admin/aggregation/reviews/rematch/jobs/{task_id}/cancel`
+
+
+### Rematch admission diagnostics (restored task statuses)
+
+`GET /admin/aggregation/reviews/rematch/preview` now additionally returns `active_jobs` (actual running tasks with task ID, type, stage and update timestamp, or a recent cancel still stopping), `active_workers`, `maintenance_locked`, `idle_pending_records`, `old_cancelled_records`, and `orphaned_gemini_processing_rows`. Historic `pending` task rows without a `started_at` are queued work, not active workers; they no longer block rematching. Gemini queue rows whose owner task is terminal are still preserved but no longer masquerade as live model workers. A running task remains blocked regardless of how old its heartbeat is. A cancelled task remains blocking until worker shutdown or a conservative cancellation grace period. The restore/maintenance lock still blocks writes. `POST /admin/aggregation/reviews/rematch/start` checks admission under `BEGIN IMMEDIATE` and returns the actual blocker details on HTTP 409, rather than a generic error.
