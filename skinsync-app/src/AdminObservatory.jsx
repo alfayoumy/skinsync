@@ -4303,7 +4303,32 @@ const AdminObservatory = ({ onBackToApp }) => {
                       <div className="rounded-lg bg-purple-50 p-3"><strong className="block text-xl text-purple-900">{waterfallEligibility.eligible_before_limit}</strong><span className="text-xs">Ready for lookup</span></div>
                       <div className="rounded-lg bg-gray-50 p-3"><strong className="block text-xl">{waterfallEligibility.blocked_unverified}</strong><span className="text-xs">Need identity checks first</span></div>
                     </div>
-                    <p className="text-xs text-gray-500">From {waterfallEligibility.in_scope} existing skincare products in this scope. {waterfallEligibility.blocked_pending_review} verified products have pending identity conflicts. Product matching is a separate workflow.</p>
+                    <p className="text-xs text-gray-500">From {waterfallEligibility.in_scope} skincare identities in scope. {waterfallEligibility.blocked_pending_review} verified identities have unresolved conflicts. Only verified product identity can publish INCI.</p>
+                    <div className="rounded-lg border p-3 text-xs space-y-2">
+                      <p className="font-bold text-gray-800">Identity readiness after source discovery</p>
+                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-gray-600">
+                        {Object.entries(waterfallEligibility.identity_status_breakdown||{}).map(([status,count])=>
+                          <div key={status} className="rounded-lg bg-gray-50 p-2"><strong className="text-base block text-gray-900">{count}</strong>{status.replaceAll('_',' ')}</div>)}
+                      </div>
+                      <p>New source observations create <strong>provisional</strong> identities. This is not an INCI provider failure. The existing legacy-only verifier does not certify these identities.</p>
+                      <p><strong>{waterfallEligibility.certifiable_cross_store_preview_count||0}{waterfallEligibility.certifiable_preview_capped?'+':''}</strong> potential exact identities have independently agreeing retailer listings and no conflicting identity/category review. These can be checked without Gemini calls; a one-source listing does not qualify.</p>
+                      <div className="flex flex-wrap gap-2 items-center">
+                        <button type="button" disabled={certifyingIdentity}
+                          className="rounded-lg border border-purple-300 bg-white px-3 py-2 text-xs font-bold disabled:opacity-50"
+                          onClick={()=>certifyWaterfallIdentities(false)}>
+                          {certifyingIdentity?'Checking…':'Preview exact cross-store certification'}
+                        </button>
+                        {certificationResult?.certifiable>0&&
+                          <button type="button" disabled={certifyingIdentity}
+                            className="rounded-lg bg-purple-700 text-white px-3 py-2 text-xs font-bold disabled:opacity-50"
+                            onClick={()=>certifyWaterfallIdentities(true)}>
+                            Certify next {Math.min(200,certificationResult.certifiable)} safe identities
+                          </button>}
+                      </div>
+                      {certificationResult&&<p role="status">{certificationResult.dry_run?'Preview: '+certificationResult.certifiable+' certifiable':'Verified '+certificationResult.processed+' exact identities'} · {certificationResult.rule}</p>}
+                      {(waterfallEligibility.eligible_before_limit===0)&&
+                        <p className="text-amber-800">Do not start the INCI waterfall or Gemini identity batches with no verified identities. Single-source, incomplete and conflicting identities need their own review.</p>}
+                    </div>
                   </> : <p className="text-xs text-gray-500">Checking eligibility...</p>}
                   <button type="button" className="text-xs font-semibold text-purple-700 underline"
                     onClick={() => { setShowWaterfallBatchModal(false); setWorkflowTab('products'); setShowCatalogWorkflows(true); }}>
