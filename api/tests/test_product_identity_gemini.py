@@ -131,6 +131,30 @@ class GeminiIdentityReviewTests(unittest.TestCase):
         self.assertFalse(ok)
         self.assertIn('listings',reason.lower())
 
+    def test_unanchored_fresh_review_is_not_sent_to_gemini(self):
+        from pipeline.product_identity_gemini import retire_unresearchable_queue
+        rid=queue_review(self.conn,'identity','bashrety','unknown-canonical',None,
+            {'title':'Some moisturiser','raw_brand':'CeraVe','identity':{'candidates':[]}})
+        report=queue_cases(self.conn,queued_by='test')
+        self.assertEqual(report['queued'],1)  # existing actionable case only
+        self.assertGreaterEqual(report['skipped_unresearchable'],1)
+        self.conn.execute("""INSERT INTO identity_gemini_queue(review_id,evidence_hash,status,queued_by)
+            SELECT id,evidence_hash,'queued','previous_bug' FROM product_review_queue WHERE id=?""",
+            (rid,))
+        self.assertEqual(retire_unresearchable_queue(self.conn),1)
+        row=self.conn.execute("""SELECT status,verdict,model_name,explanation
+            FROM identity_gemini_queue WHERE review_id=?""",(rid,)).fetchone()
+        self.assertEqual(row['status'],'needs_manual')
+        self.assertIsNone(row['verdict'])
+        self.assertIsNone(row['model_name'])
+        self.assertIn('not called',row['explanation'])
+
+    def test_fresh_provisional_multiretailer_can_be_guarded_gemini_verified(self):
+        self.conn.execute("UPDATE canonical_products SET identity_status='provisional' WHERE id=?",
+            (self.cid,))
+        ok,why=can_auto_resolve(self.conn,self.case(),self.answer())
+        self.assertTrue(ok,why)
+
     def test_multiple_cases_are_evaluated_in_one_gemini_request(self):
         for i in (2,3):
             details=self.case()['details']
