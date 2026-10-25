@@ -159,11 +159,12 @@ class GeminiIdentityReviewTests(unittest.TestCase):
         from pipeline.product_identity_gemini import gemini_queue_readiness
         rid=queue_review(self.conn,'identity','bashrety','missing',None,
                          {'title':'Anonymous moisturizer','raw_brand':'Unknown'})
+        queue_cases(self.conn,review_ids=[self.review_id],queued_by='test')
+        # Simulate historical queued rows created before the eligibility guard.
         self.conn.execute("""INSERT INTO identity_gemini_queue
             (review_id,evidence_hash,status,queued_by)
             SELECT id,evidence_hash,'queued','historical_worker' FROM product_review_queue
             WHERE id=?""",(rid,))
-        queue_cases(self.conn,review_ids=[self.review_id],queued_by='test')
         report=gemini_queue_readiness(self.conn)
         self.assertEqual(report['queued_actionable'],1)
         self.assertEqual(report['queued_without_comparable_evidence'],1)
