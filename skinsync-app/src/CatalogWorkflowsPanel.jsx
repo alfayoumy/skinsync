@@ -52,6 +52,8 @@ export default function CatalogWorkflowsPanel({onClose, initialTab='products',on
   const [orphanBatch,setOrphanBatch]=useState(200);
   const [orphanJob,setOrphanJob]=useState(null);
   const [orphanStatus,setOrphanStatus]=useState(null);
+  const [orphanDiagnosis,setOrphanDiagnosis]=useState(null);
+  const [orphanDiagBusy,setOrphanDiagBusy]=useState(false);
   const [scope,setScope]=useState('unmatched_only');
   const [resetPreview,setResetPreview]=useState(null);
   const [resetConfirmation,setResetConfirmation]=useState('');
@@ -140,6 +142,14 @@ export default function CatalogWorkflowsPanel({onClose, initialTab='products',on
     try {setOrphanPreview(await call('/admin/workflows/products/recover-unmatched/preview'))}
     catch(e){setError(e.message)}
     finally{setOrphanBusy(false)}
+  }
+  async function diagnoseOrphanCanonicals() {
+    setOrphanDiagBusy(true);setError('');
+    try{
+      const report=await call('/admin/workflows/products/recover-unmatched/diagnose?limit=5');
+      setOrphanDiagnosis(report);
+    }catch(e){setError(e.message)}
+    finally{setOrphanDiagBusy(false)}
   }
   async function startOrphanCanonicalRecovery() {
     if(!orphanPreview?.can_start)return;
@@ -440,6 +450,10 @@ export default function CatalogWorkflowsPanel({onClose, initialTab='products',on
             <div className="flex flex-wrap items-center gap-3">
               <button type="button" className={button} disabled={orphanBusy||Boolean(orphanJob)}
                 onClick={previewOrphanCanonicals}>Preview no-candidate recovery</button>
+              <button type="button" className={button} disabled={orphanBusy||orphanDiagBusy||Boolean(orphanJob)}
+                onClick={diagnoseOrphanCanonicals}>
+                {orphanDiagBusy?'Diagnosing…':'Diagnose 5 saved products — no changes'}
+              </button>
               {orphanPreview?.can_start&&<>
                 <label className="text-xs font-bold">Products per run
                   <input type="number" min={1} max={500} className="block rounded-lg border p-2 w-24 mt-1"
@@ -456,12 +470,33 @@ export default function CatalogWorkflowsPanel({onClose, initialTab='products',on
               <p><strong>{orphanPreview.eligible_observations}</strong> saved product observations eligible · {orphanPreview.orphan_identity_reviews} obsolete identity reviews · {orphanPreview.orphan_category_reviews} obsolete unanchored category reviews.</p>
               {!orphanPreview.can_start&&<p className="text-amber-800">{orphanPreview.active_tasks?.length||orphanPreview.active_workers?.length?'A catalog worker is active; finish it first.':'No eligible cases, or catalog maintenance is locked.'}</p>}
             </div>}
-            {orphanStatus&&<p role="status" className="text-xs">
-              Recovery {orphanStatus.status} · {orphanStatus.processed_items||0}/{orphanStatus.total_items||0} processed ·
-              {orphanStatus.metadata?.stats?.recovered_observations||0} repaired ·
-              {orphanStatus.metadata?.stats?.still_unresolved||0} left unresolved.
-              {orphanStatus.error_message&&<span className="text-red-700"> {orphanStatus.error_message}</span>}
-            </p>}
+            {orphanStatus&&<div role="status" className="text-xs rounded-lg border p-3 space-y-2">
+              <p className={(orphanStatus.status==='failed'||orphanStatus.status==='completed_with_errors')?'font-bold text-red-700':''}>
+                Recovery {orphanStatus.status} · {orphanStatus.processed_items||0}/{orphanStatus.total_items||0} processed ·
+                {orphanStatus.metadata?.stats?.recovered_observations||0} repaired ·
+                {orphanStatus.metadata?.stats?.still_unresolved||0} failed.
+              </p>
+              {orphanStatus.error_message&&<p className="text-red-700">{orphanStatus.error_message}</p>}
+              {orphanStatus.metadata?.stats?.failure_reasons?.map((r,i)=><p key={i} className="text-red-700">
+                {r.count} × {r.reason}
+              </p>)}
+            </div>}
+            {orphanDiagnosis&&<div className="text-xs rounded-lg border border-amber-300 p-3 space-y-2">
+              <strong>Saved-observation diagnosis (rolled back, no catalog changes)</strong>
+              <p>Simulated {orphanDiagnosis.total_selected} cases:
+                {' '}{orphanDiagnosis.recovered_observations||0} would recover,
+                {' '}{orphanDiagnosis.still_unresolved||0} failed.
+              </p>
+              {orphanDiagnosis.failure_reasons?.map((e,i)=><p key={i} className="text-red-700">
+                {e.count} × {e.reason}
+              </p>)}
+              {orphanDiagnosis.failure_samples?.length>0&&<details>
+                <summary className="font-semibold cursor-pointer">Failed observation IDs and stages</summary>
+                {orphanDiagnosis.failure_samples.map((item,i)=><p key={i} className="break-all">
+                  {item.source_id} observation #{item.observation_id} · {item.stage} · {item.error_type} · {item.message}
+                </p>)}
+              </details>}
+            </div>}
           </section>}
           {tab==='products'&&<section className="rounded-xl border border-purple-200 bg-white p-5 space-y-3">
             <h3 className="font-bold">Verify fresh identities using independent retailers</h3>
