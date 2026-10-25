@@ -210,7 +210,11 @@ def apply_pending_catalog_restore(db_path):
                 if live.execute('PRAGMA foreign_key_check').fetchone():
                     raise RuntimeError('Restored database failed foreign-key check.')
                 _control_schema(live)
-                live.execute('UPDATE catalog_reset_control SET active=0 WHERE singleton=1')
+                # Backups created before any reset may have the control table
+                # without its singleton row. Create it as safely inactive.
+                live.execute("""INSERT INTO catalog_reset_control(singleton,active,started_at)
+                    VALUES(1,0,NULL) ON CONFLICT(singleton)
+                    DO UPDATE SET active=0,started_at=NULL""")
                 live.execute("""CREATE TABLE IF NOT EXISTS catalog_restore_history(
                     id INTEGER PRIMARY KEY,restored_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
                     actor TEXT NOT NULL,source_backup TEXT NOT NULL,rescue_backup TEXT NOT NULL,
