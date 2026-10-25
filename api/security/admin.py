@@ -24,6 +24,8 @@ def credentials():
 
 
 def permission_for(path, method):
+    if path.startswith('/admin/workflows/products/recover-unmatched') and method not in ('GET','HEAD'):
+        return 'identity'
     if path.startswith('/admin/inci-research/queue/') and path.endswith('/review') and method=='POST':
         return 'formula_correction'
     if path.startswith('/admin/inci-research/') and method not in ('GET','HEAD'):

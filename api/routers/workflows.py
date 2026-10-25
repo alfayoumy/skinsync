@@ -485,14 +485,20 @@ def start_unmatched_canonical_recovery(request: RecoverUnmatchedRequest, backgro
     from pipeline.task_tracker import create_task
     conn=get_connection()
     try:
+        # Serialize active-task check and task creation. Two operators cannot
+        # both start a recovery worker from the same stale preview.
+        conn.execute('BEGIN IMMEDIATE')
         plan=preview_unmatched_recovery(conn)
         if not plan['can_start']:
             raise HTTPException(status_code=409,detail='No eligible orphaned products, or a catalog worker is currently active.')
+        selected=min(request.limit,plan['eligible_observations'])
+        task_id=create_task('canonical_no_comparison_recovery',target_source='saved_observations',
+            total_items=selected,params={'limit':selected},auto_start=True,conn=conn)
+    except Exception:
+        conn.rollback()
+        raise
     finally:
         conn.close()
-    selected=min(request.limit,plan['eligible_observations'])
-    task_id=create_task('canonical_no_comparison_recovery',target_source='saved_observations',
-        total_items=selected,params={'limit':selected},auto_start=True)
     background_tasks.add_task(_run_unmatched_recovery_task,task_id,selected)
     return {'task_id':task_id,'status':'running','selected':selected,'provider_calls':0}
 
