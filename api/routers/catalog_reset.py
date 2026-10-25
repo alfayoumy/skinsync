@@ -164,3 +164,14 @@ def cancel_scheduled_restore():
         raise HTTPException(status_code=409,detail=str(exc))
     finally:
         conn.close()
+
+
+@router.get('/quality-audit')
+def catalog_quality_audit():
+    """Read-only post-restore catalog completeness, identity and INCI report."""
+    from pipeline.catalog_quality_audit import inspect_catalog_quality
+    conn=get_connection()
+    try:
+        return inspect_catalog_quality(conn)
+    finally:
+        conn.close()
