@@ -41,6 +41,11 @@ export default function AggregationReviewPanel({ onClose, initialSourceId = 'sou
   const [busy, setBusy] = useState(false), [message, setMessage] = useState(''), [error, setError] = useState('');
   const [reviewsLoading,setReviewsLoading] = useState(false);
   const [reviewsError,setReviewsError] = useState('');
+  const [rematchPreview,setRematchPreview]=useState(null);
+  const [rematchDiagnosis,setRematchDiagnosis]=useState(null);
+  const [rematchJob,setRematchJob]=useState(null);
+  const [rematchBusy,setRematchBusy]=useState(false);
+  const [rematchLimit,setRematchLimit]=useState(500);
   const [weakPreview,setWeakPreview]=useState(null);
   const [weakBusy,setWeakBusy]=useState(false);
   const [geminiError,setGeminiError] = useState('');
@@ -65,7 +70,57 @@ export default function AggregationReviewPanel({ onClose, initialSourceId = 'sou
     }catch(e){setError(e.message);setWeakPreview(null)}
     finally{setWeakBusy(false)}
   }
-  const refresh = useCallback(async () => {
+  async function previewIdentityRematch(){
+    setRematchBusy(true);setError('');
+    try{
+      const preview=await api('/reviews/rematch/preview?limit='+Number(rematchLimit));
+      setRematchPreview(preview);
+    }catch(e){setError(e.message)}
+    finally{setRematchBusy(false)}
+  }
+  async function diagnoseIdentityRematch(){
+    setRematchBusy(true);setError('');
+    try{setRematchDiagnosis(await api('/reviews/rematch/diagnose?limit=5'))}
+    catch(e){setError(e.message)}
+    finally{setRematchBusy(false)}
+  }
+  async function startIdentityRematch(){
+    if(!rematchPreview?.can_start)return;
+    if(!window.confirm('Recalculate '+rematchPreview.eligible_products+
+      ' saved products against the CURRENT catalog? A full database backup is taken first. Stale reviews are closed ONLY after valid source-backed rematch; no shops or Gemini will be called and no INCI is published.'))return;
+    setRematchBusy(true);setError('');
+    try{
+      const job=await api('/reviews/rematch/start',{
+        method:'POST',body:JSON.stringify({
+          fingerprint:rematchPreview.fingerprint,
+          limit:rematchPreview.limit,
+          confirmation:'REMATCH SAVED PRODUCTS'})});
+      setRematchJob({...job,task_id:job.task_id});
+      setRematchPreview(null);
+    }catch(e){setError(e.message)}
+    finally{setRematchBusy(false)}
+  }
+  async function stopIdentityRematch(){
+    if(!rematchJob?.task_id)return;
+    setRematchBusy(true);setError('');
+    try{
+      await api('/reviews/rematch/jobs/'+encodeURIComponent(rematchJob.task_id)+'/cancel',
+                {method:'POST'});
+    }catch(e){setError(e.message)}
+    finally{setRematchBusy(false)}
+  }
+  useEffect(()=>{
+    // Jobs are server-owned. Reopening Product Reviews must recover control.
+    let active=true;
+    const poll=()=>api('/reviews/rematch/active').then(report=>{
+      if(!active)return;
+      const latest=report.jobs?.[0];
+      if(latest)setRematchJob(latest);
+    }).catch(()=>{});
+    poll();const id=setInterval(poll,2200);
+    return ()=>{active=false;clearInterval(id)};
+  },[]);
+    const refresh = useCallback(async () => {
     // Source settings, saved review records and the optional Gemini status
     // must not be a single all-or-nothing Promise.all.
     if (mode === 'sources') {
@@ -377,6 +432,52 @@ export default function AggregationReviewPanel({ onClose, initialSourceId = 'sou
         </p>}
       </section>}
       {mode === 'reviews' && <GeminiDecisionsTable refreshKey={String(savedApplyTask||'')+'-'+String(savedApplyJob?.status||'')+'-'+String(geminiJob?.status||'')} />}
+      {mode === 'reviews' && <section className="rounded-xl border bg-white p-4 space-y-3 mb-4">
+        <h3 className="font-bold">Re-match existing products — no rescraping or Gemini</h3>
+        <p className="text-sm text-gray-600">Old identity reviews with empty Gemini comparison lists are not decisions. Re-check the original saved retailer observations against current canonical products. No defensible match creates a new provisional canonical. Only successfully rematched cases leave the old review backlog. All source evidence is retained; no ingredients are republished.</p>
+        <div className="flex flex-wrap items-center gap-2">
+          <label className="text-xs font-semibold">Saved products per batch
+            <input type="number" min={1} max={10000} className={field+' w-28'}
+              value={rematchLimit}
+              onChange={e=>{setRematchLimit(e.target.value);setRematchPreview(null)}}/>
+          </label>
+          <button type="button" className="rounded-lg border px-3 py-2 text-xs font-bold disabled:opacity-50"
+            disabled={rematchBusy||Number(rematchLimit)<1||Number(rematchLimit)>10000}
+            onClick={previewIdentityRematch}>Preview current backlog</button>
+          <button type="button" className="rounded-lg border px-3 py-2 text-xs font-bold disabled:opacity-50"
+            disabled={rematchBusy} onClick={diagnoseIdentityRematch}>Test 5 products — roll back</button>
+        </div>
+        {rematchPreview&&<div className="rounded-lg border p-3 text-xs space-y-2">
+          <p><strong>{rematchPreview.eligible_products}</strong> saved products eligible ·
+            {' '}{rematchPreview.review_cases_replaced_on_success} stale review records can be replaced if all recover.</p>
+          <p>Excluded from automatic processing: {Object.entries(rematchPreview.excluded_reasons||{}).map(([k,v])=>k.replaceAll('_',' ')+': '+v).join(' · ')||'none'}</p>
+          {!rematchPreview.can_start&&<p className="text-amber-800">Finish active workers before applying.</p>}
+          {rematchPreview.can_start&&<button type="button"
+            className="rounded-lg bg-purple-800 px-3 py-2 text-white font-bold disabled:opacity-50"
+            disabled={rematchBusy||Boolean(rematchJob&&['running','pending','cancelled'].includes(rematchJob.status))}
+            onClick={startIdentityRematch}>Back up and re-match {rematchPreview.eligible_products} saved products</button>}
+        </div>}
+        {rematchDiagnosis&&<div className="rounded-lg border p-3 text-xs space-y-2">
+          <p><strong>Read-only replay test:</strong> {rematchDiagnosis.recovered_products} of
+            {' '}{rematchDiagnosis.eligible_products} would rematch; {rematchDiagnosis.failed_products} would fail.</p>
+          {(rematchDiagnosis.error_groups||[]).map((r,i)=><p className="text-red-700" key={i}>
+            {r.count} × {r.reason}</p>)}
+        </div>}
+        {rematchJob?.task_id&&<div className="rounded-lg border p-3 text-xs space-y-2" role="status">
+          <p><strong>Rematch {rematchJob.status}</strong> ·
+            {' '}{rematchJob.processed_items||rematchJob.metadata?.stats?.processed||0}/{rematchJob.total_items||rematchJob.selected||'?'} processed ·
+            {' '}{rematchJob.metadata?.stats?.recovered_products||0} rematched ·
+            {' '}{rematchJob.metadata?.stats?.failed_products||0} failed.</p>
+          {rematchJob.metadata?.pre_rematch_backup&&<p className="break-all">Backup: {rematchJob.metadata.pre_rematch_backup}</p>}
+          {rematchJob.error_message&&<p className="text-red-700">{rematchJob.error_message}</p>}
+          {(rematchJob.metadata?.stats?.error_groups||[]).map((x,i)=><p key={i} className="text-red-700">{x.count} × {x.reason}</p>)}
+          {['running','pending'].includes(rematchJob.status)&&<button type="button"
+            disabled={rematchBusy} className="border border-red-300 rounded-lg px-3 py-2 text-red-700 font-bold"
+            onClick={stopIdentityRematch}>Stop rematch after current product</button>}
+          {['completed','completed_with_errors','failed'].includes(rematchJob.status)&&
+            <button type="button" className="text-purple-700 underline" onClick={()=>refresh().catch(e=>setError(e.message))}>Refresh old review count</button>}
+        </div>}
+      </section>}
       {mode === 'reviews' && <section className="grid md:grid-cols-2 gap-4"><div className="bg-white border rounded-xl p-4"><div className="flex justify-between mb-3"><h3 className="font-semibold">{reviewView==='manual'?'Needs manual review':reviewView==='awaiting_gemini'?'Waiting for Gemini':reviewView==='evidence_needed'?'Awaiting stronger evidence':'All pending reviews'} ({total})</h3>
           <button type="button" className="text-xs font-semibold text-purple-700 underline" disabled={reviewsLoading} onClick={()=>refresh().catch(e=>setError(e.message))}>
             {reviewsLoading?'Loading...':'Refresh cases'}
