@@ -61,6 +61,8 @@ export default function CatalogWorkflowsPanel({onClose, initialTab='products',on
   const [resetOutcome,setResetOutcome]=useState(null);
   const [backups,setBackups]=useState(null);
   const [backupBusy,setBackupBusy]=useState(false);
+  const [qualityAudit,setQualityAudit]=useState(null);
+  const [qualityAuditBusy,setQualityAuditBusy]=useState(false);
   const [selectedBackup,setSelectedBackup]=useState('');
   const [restorePreview,setRestorePreview]=useState(null);
   const [restoreConfirm,setRestoreConfirm]=useState('');
@@ -201,6 +203,16 @@ export default function CatalogWorkflowsPanel({onClose, initialTab='products',on
         json({source_id:sourceId,page:Number(startPage)})));
     }catch(e){setError(e.message)}
     finally{setShopifyProbeBusy(false)}
+  }
+  async function inspectCatalogHealth() {
+    setQualityAuditBusy(true);setError('');
+    try {
+      setQualityAudit(await call('/admin/workflows/catalog/quality-audit'));
+      // Refresh last-restore panel without modifying any database records.
+      const report=await call('/admin/workflows/catalog/backups');
+      setBackups(report);
+    }catch(e){setError(e.message)}
+    finally{setQualityAuditBusy(false)}
   }
   async function listBackups() {
     setBackupBusy(true);setError('');setRestorePreview(null);setRestoreOutcome(null);
@@ -691,6 +703,69 @@ export default function CatalogWorkflowsPanel({onClose, initialTab='products',on
               {selectiveStatus.error_message&&<p className="text-red-700">{selectiveStatus.error_message} — The catalog rebuild was rolled back.</p>}
               {selectiveStatus.result&&<p>{selectiveStatus.result.canonicals} canonicals and {selectiveStatus.result.offers} offers rebuilt from {selectiveStatus.result.replayed} saved observations.</p>}
               {selectiveStatus.backup_path&&<p className="text-xs break-all">Full database backup: {selectiveStatus.backup_path}</p>}
+            </div>}
+          </section>}
+          {tab==='products'&&<section className="rounded-xl border bg-white p-5 space-y-3">
+            <h3 className="font-bold text-gray-900">Verify restored catalog and audit data quality</h3>
+            <p className="text-sm text-gray-600">A completed SQLite restore does not mean historically linked identities, category labels or INCI declarations are correct. This read-only report checks restore state, preserved retailer coverage, potential duplicate identities and ingredient provenance before any cleanup. No products are deleted, merged or rewritten.</p>
+            <button type="button" className="rounded-lg border px-3 py-2 text-sm font-bold disabled:opacity-50"
+              disabled={qualityAuditBusy} onClick={inspectCatalogHealth}>
+              {qualityAuditBusy?'Checking…':'Check restore completion and catalog integrity'}
+            </button>
+            {qualityAudit&&<div role="status" className="space-y-3 rounded-lg border p-3 text-sm">
+              <p className={'font-bold '+(qualityAudit.restore.status==='restored'?'text-green-800':'text-amber-800')}>
+                Restore: {qualityAudit.restore.status==='restored'?'completed and audit-logged':
+                  qualityAudit.restore.status==='restart_required'?'restart needed':
+                  qualityAudit.restore.status==='no_recent_restore'?'no recent restore on record':'restore evidence incomplete'}
+              </p>
+              {qualityAudit.restore.last_restore&&<p className="text-xs break-all">Source backup: {qualityAudit.restore.last_restore.filename} · recorded at {qualityAudit.restore.last_restore.restored_at||'unknown'}.</p>}
+              <p className={'text-xs '+(qualityAudit.integrity.quick_check==='ok'&&!qualityAudit.integrity.foreign_key_errors?'text-green-800':'text-red-700')}>
+                Database integrity: {qualityAudit.integrity.quick_check}; foreign-key violations: {qualityAudit.integrity.foreign_key_errors}.
+              </p>
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                {Object.entries(qualityAudit.catalog_counts||{}).map(([key,count])=><Metric key={key} label={key.replaceAll('_',' ')} value={count}/>)}
+              </div>
+              {qualityAudit.restore.baseline_counts&&<details>
+                <summary className="font-bold cursor-pointer">Compare current catalog with restored backup</summary>
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mt-2">
+                  {Object.entries(qualityAudit.restore.baseline_counts).map(([key,value])=><div key={key} className="rounded border p-2">
+                    <strong>{key.replaceAll('_',' ')}</strong>
+                    <p>Backup {value} · Now {qualityAudit.catalog_counts?.[key]??'—'} · Change {qualityAudit.restore.current_minus_baseline?.[key]??0}</p>
+                  </div>)}
+                </div>
+                <p className="text-xs text-gray-500">Counts can change when you resume catalog work. A later difference is not automatically a failed restore.</p>
+              </details>}
+              <div className="grid sm:grid-cols-2 gap-3">
+                <div className="rounded-lg border p-3">
+                  <p className="font-bold">Identity states</p>
+                  {Object.entries(qualityAudit.identity_statuses||{}).map(([status,n])=><p key={status} className="text-xs">{status}: {n}</p>)}
+                </div>
+                <div className="rounded-lg border p-3">
+                  <p className="font-bold">Category confidence</p>
+                  {Object.entries(qualityAudit.classification_statuses||{}).map(([status,n])=><p key={status} className="text-xs">{status}: {n}</p>)}
+                </div>
+              </div>
+              <div className="rounded-lg border p-3">
+                <p className="font-bold mb-1">Quality risk indicators — candidates for audit, not automatic errors</p>
+                <div className="grid sm:grid-cols-2 gap-x-6 gap-y-1">
+                  {Object.entries(qualityAudit.risk_indicators||{}).map(([key,n])=><p key={key} className="text-xs">
+                    <strong>{n}</strong> · {key.replaceAll('_',' ')}
+                  </p>)}
+                </div>
+              </div>
+              <details>
+                <summary className="cursor-pointer font-bold">Preserved retailer coverage</summary>
+                <div className="overflow-x-auto mt-2">
+                  <table className="text-xs w-full"><thead><tr><th className="text-left">Retailer</th><th>Historical listings</th><th>Saved source products</th><th>Variant offers</th></tr></thead>
+                    <tbody>{(qualityAudit.sources||[]).map(src=><tr key={src.id} className="border-t">
+                      <td>{src.name}</td><td className="text-center">{src.historical_listings}</td>
+                      <td className="text-center">{src.observed_unique_products}</td>
+                      <td className="text-center">{src.variant_offers}</td>
+                    </tr>)}</tbody>
+                  </table>
+                </div>
+              </details>
+              <p className="text-xs text-gray-500">This report never certifies the catalog as clean. It identifies what needs identity, category and exact-source INCI validation before bulk publication.</p>
             </div>}
           </section>}
           {tab==='products'&&<section className="rounded-xl border bg-white p-5 space-y-3">
