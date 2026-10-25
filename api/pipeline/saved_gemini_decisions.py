@@ -29,7 +29,9 @@ def candidate_rows(conn,limit=5000,threshold=MIN_CONFIDENCE):
     return conn.execute("""SELECT r.*,q.evidence_hash queued_hash,q.verdict,q.confidence,
         q.explanation,q.model_name FROM product_review_queue r
         JOIN identity_gemini_queue q ON q.review_id=r.id
+        LEFT JOIN identity_gemini_source_cases s ON s.review_id=r.id
         WHERE r.status='pending' AND q.status='needs_manual'
+          AND s.review_id IS NULL
           AND q.verdict IN ('same_product','different_product')
           AND q.confidence>=?
         ORDER BY r.id LIMIT ?""",(threshold,limit)).fetchall()
