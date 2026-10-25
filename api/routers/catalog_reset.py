@@ -79,3 +79,35 @@ def selective_rebuild_job(job_id: str):
         raise HTTPException(status_code=404, detail=str(exc))
     finally:
         conn.close()
+
+from pipeline.catalog_task_reconciliation import (
+    preview_stale_task_reconciliation, reconcile_stale_task_records,
+)
+
+
+class StaleTaskReconciliationRequest(BaseModel):
+    fingerprint: str = Field(min_length=64, max_length=64)
+    confirmation: str
+    workers_checked: bool = False
+
+
+@router.get('/stale-tasks/preview')
+def stale_tasks_preview():
+    conn = get_connection()
+    try:
+        return preview_stale_task_reconciliation(conn)
+    finally:
+        conn.close()
+
+
+@router.post('/stale-tasks/reconcile')
+def stale_tasks_reconcile(request: StaleTaskReconciliationRequest):
+    conn = get_connection()
+    try:
+        return reconcile_stale_task_records(
+            conn, request.fingerprint, request.confirmation,
+            reviewer_name('unattributed'), request.workers_checked)
+    except ValueError as exc:
+        raise HTTPException(status_code=409, detail=str(exc))
+    finally:
+        conn.close()
