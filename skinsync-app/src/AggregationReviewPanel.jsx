@@ -148,8 +148,15 @@ export default function AggregationReviewPanel({ onClose, initialSourceId = 'sou
     await perform(async()=>{
       const payload=reviewIds?{review_ids:reviewIds,limit:reviewIds.length}:{limit:20000};
       const res=await api('/reviews/gemini/enqueue',{method:'POST',body:JSON.stringify(payload)});
-      setMessage(res.queued+' product identity cases added to the Gemini review queue.');
+      setMessage(res.queued+' comparable identity cases added to Gemini. '+(res.skipped_unresearchable||0)+' unsupported reviews skipped; no model calls were made.');
       setReviewView('awaiting_gemini');setOffset(0);
+    });
+  }
+  async function removeUnsupportedGeminiCases() {
+    await perform(async()=>{
+      const report=await api('/reviews/gemini/retire-unresearchable',{method:'POST'});
+      setMessage(report.retired_to_manual_review+' cases moved to human review. No Gemini calls made; existing evidence and decisions preserved.');
+      setReviewView('manual');setOffset(0);
     });
   }
   async function startGemini() {
@@ -240,6 +247,15 @@ export default function AggregationReviewPanel({ onClose, initialSourceId = 'sou
             ['Need a person',queueStatus?.counts?.needs_manual||0]].map(([label,value])=>
             <div key={label} className="rounded-lg bg-gray-50 p-2"><strong className="text-lg block">{value}</strong>{label}</div>)}
         </div>
+        {queueStatus?.readiness&&<div className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-xs text-amber-900 space-y-1">
+          <strong>{queueStatus.readiness.queued_actionable} researchable queued cases · {queueStatus.readiness.queued_without_comparable_evidence} unsupported queued cases</strong>
+          <p>Fresh provisional identities often have no canonical anchor or second retailer listing. Gemini cannot establish an identity match from that information alone; those cases remain for human review.</p>
+          {queueStatus.readiness.queued_without_comparable_evidence>0&&
+            <button type="button" className="mt-2 rounded-lg border border-amber-400 bg-white px-3 py-2 font-semibold disabled:opacity-50"
+              disabled={busy||Boolean(geminiTask)} onClick={removeUnsupportedGeminiCases}>
+              Move unsupported cases to manual review — 0 Gemini calls
+            </button>}
+        </div>}
         <div className="flex gap-2 flex-wrap items-center">
           <button type="button" disabled={busy||Boolean(geminiTask)} onClick={()=>sendToGemini(null)}
             className="rounded-lg bg-purple-700 text-white px-3 py-2 text-sm font-semibold disabled:opacity-50">
@@ -259,7 +275,7 @@ export default function AggregationReviewPanel({ onClose, initialSourceId = 'sou
             <input type="number" min="1" max="20000" value={geminiLimit} onChange={e=>setGeminiLimit(e.target.value)}
               className="border rounded p-2 ml-2 w-24"/>
           </label>
-          <button type="button" disabled={busy||Boolean(geminiTask)||!(queueStatus?.counts?.queued>0)}
+          <button type="button" disabled={busy||Boolean(geminiTask)||!(queueStatus?.readiness?.queued_actionable>0)}
             onClick={startGemini} className="rounded-lg border border-purple-600 bg-purple-50 text-purple-800 px-3 py-2 font-semibold text-sm disabled:opacity-50">
             Run Gemini matching
           </button>
