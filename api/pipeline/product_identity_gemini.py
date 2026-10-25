@@ -93,6 +93,16 @@ def _source_case_current(conn, case):
                 or row['identity_status'] != item['identity_status']
                 or json.loads(row['identity_attributes'] or '{}') != item['identity_attributes']):
                 return None
+            live_offers=[dict(x) for x in conn.execute("""SELECT source_id AS retailer,
+                title FROM product_offers WHERE canonical_product_id=? ORDER BY id LIMIT 8""",(cid,))]
+            live_legacy=[dict(x) for x in conn.execute("""SELECT store_id AS retailer,
+                COALESCE(original_title,title) AS title FROM products
+                WHERE canonical_product_id=? ORDER BY id LIMIT 8""",(cid,))]
+            live_links=conn.execute("""SELECT COUNT(*) FROM product_identity_links
+                WHERE canonical_product_id=? AND status='accepted'""",(cid,)).fetchone()[0]
+            if ((live_offers+live_legacy)[:12] != item['retailer_listings']
+                    or live_links != item['accepted_source_link_count']):
+                return None
     except (TypeError, ValueError, KeyError, IndexError):
         return None
     return data
