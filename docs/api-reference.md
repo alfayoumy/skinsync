@@ -425,3 +425,16 @@ Quality report includes per-retailer historical listings, distinct saved source 
 - GET `/admin/workflows/products/discover-multiple/active` — list running and cancellation-pending scans across browser sessions.
 - GET `/admin/aggregation/reviews/weak-suggestions/preview` — read-only count and fingerprint of unevaluated, weak one-candidate identity suggestions.
 - POST `/admin/aggregation/reviews/weak-suggestions/defer` — confirmed reclassification to retained, evidence-needed queue (no canonical or INCI changes).
+
+### Deterministic rematch of stale identity reviews after database restoration
+
+| Method | Endpoint | Purpose |
+|---|---|---|
+| GET | `/admin/aggregation/reviews/rematch/preview?limit=500` | Count eligible saved product observations, protected cases, concurrency conditions and evidence fingerprint |
+| GET | `/admin/aggregation/reviews/rematch/diagnose?limit=5` | Re-evaluate a sample with complete transaction rollback; no provider calls |
+| POST | `/admin/aggregation/reviews/rematch/start` | Confirmation `REMATCH SAVED PRODUCTS`, preview fingerprint and limit (1–10000); create a full database backup, rematch saved observations, track outcomes |
+| GET | `/admin/aggregation/reviews/rematch/active` | Recent backend-owned rematch task states, including across browser navigations |
+| GET | `/admin/aggregation/reviews/rematch/jobs/{task_id}` | Per-task progress and grouped exceptions |
+| POST | `/admin/aggregation/reviews/rematch/jobs/{task_id}/cancel` | Request stop after the current saved product, preserving completed commits |
+
+Only *unreviewed* pending/deferred identity cases with a matching **latest** saved source observation and a null canonical are eligible for this automatic replay. Previous uncertain Gemini answers with empty listing arrays are not treated as proof of product identity; prior model results are retained as historical records. Replay is based on saved, immutable source-derived **identity and variant data**, not the stale Gemini prompt, and does not reuse old ingredient text as newly verified source evidence. A fully unsupported fuzzy suggestion with no exact name, strong identifier, or durable link cannot block creating a distinct provisional canonical. Existing source evidence, approved identity decisions, canonical formulas, category reviews and source observations are preserved. If rematching a case cannot resolve the actual identity safely, its transaction is rolled back and its original review remains in place. Successfully rematched old reviews are marked `confirmed` with `superseded_by_saved_rematch` and an explicit system actor; they are **not** marked human-verified or deemed eligible for INCI publication. If the legacy retailer-to-canonical pointer was manually accepted or identity-verified, the pointer is never force-overwritten. Every actual batch creates an additional complete SQLite backup first; no Shopify/Gemini network calls or destructive reset occur.
