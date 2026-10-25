@@ -55,6 +55,11 @@ export default function CatalogWorkflowsPanel({onClose, initialTab='products',on
   const [selectiveJob,setSelectiveJob]=useState(null);
   const [selectiveStatus,setSelectiveStatus]=useState(null);
   const [selectiveBusy,setSelectiveBusy]=useState(false);
+  const [stalePreview,setStalePreview]=useState(null);
+  const [staleConfirmation,setStaleConfirmation]=useState('');
+  const [staleWorkersChecked,setStaleWorkersChecked]=useState(false);
+  const [staleBusy,setStaleBusy]=useState(false);
+  const [staleOutcome,setStaleOutcome]=useState(null);
   const source=sources.find(s=>s.id===sourceId);
   useEffect(()=>{
     let active=true;
@@ -146,6 +151,29 @@ export default function CatalogWorkflowsPanel({onClose, initialTab='products',on
     try {setSelectivePreview(await call('/admin/workflows/catalog/selective-rebuild/preview'));}
     catch(e){setError(e.message);setSelectivePreview(null);}
     finally{setSelectiveBusy(false);}
+  }
+  async function previewStaleTasks() {
+    setStaleBusy(true);setError('');setStalePreview(null);
+    setStaleOutcome(null);setStaleConfirmation('');setStaleWorkersChecked(false);
+    try {setStalePreview(await call('/admin/workflows/catalog/stale-tasks/preview'))}
+    catch(e){setError(e.message)}
+    finally{setStaleBusy(false)}
+  }
+  async function reconcileStaleTasks() {
+    if(!stalePreview?.can_reconcile||!staleWorkersChecked
+       ||staleConfirmation!=='RECONCILE STALE TASK RECORDS')return;
+    setStaleBusy(true);setError('');
+    try {
+      const data=await call('/admin/workflows/catalog/stale-tasks/reconcile',json({
+        fingerprint:stalePreview.fingerprint,
+        confirmation:staleConfirmation,workers_checked:true
+      }));
+      setStaleOutcome(data);setStalePreview(null);setStaleConfirmation('');
+      setStaleWorkersChecked(false);
+      // Immediately rerun the rebuild preflight from unchanged observations.
+      await previewSelective();
+    }catch(e){setError(e.message);setStalePreview(null)}
+    finally{setStaleBusy(false)}
   }
   async function startSelective() {
     if(!selectivePreview?.can_rebuild||selectiveConfirmation!=='REBUILD FROM SAVED DISCOVERY')return;
@@ -414,6 +442,11 @@ export default function CatalogWorkflowsPanel({onClose, initialTab='products',on
                 {selectivePreview.active_workers?.length>0&&<p>Active workers: {selectivePreview.active_workers.join(', ')}</p>}
               </div>}
               {selectivePreview.pending_tasks_not_running>0&&<p className="text-xs text-gray-500">{selectivePreview.pending_tasks_not_running} pending task records are not running and do not block a rebuild.</p>}
+              {!selectivePreview.can_rebuild&&selectivePreview.active_jobs?.length>0&&
+                <button type="button" className="rounded-lg border border-amber-400 bg-amber-50 px-3 py-2 text-sm font-semibold text-amber-900 disabled:opacity-50"
+                  disabled={staleBusy||selectiveBusy} onClick={previewStaleTasks}>
+                  Inspect potentially orphaned task records
+                </button>}
               {selectivePreview.can_rebuild&&<div className="space-y-2">
                 <label className="block text-sm font-semibold">Type REBUILD FROM SAVED DISCOVERY to proceed.
                   <input className={input} autoComplete="off" value={selectiveConfirmation}
@@ -425,7 +458,40 @@ export default function CatalogWorkflowsPanel({onClose, initialTab='products',on
                 </button>
               </div>}
             </div>}
-            {selectiveStatus&&<div role="status" className="border rounded-lg p-3 text-sm">
+            {staleOutcome&&<p className="rounded-lg border p-3 text-sm" role="status">
+              {staleOutcome.reconciled_count} stale task records marked failed and audit-logged. No source observations or products were changed.
+            </p>}
+            {stalePreview&&<div className="rounded-xl border border-amber-300 p-4 space-y-3 text-sm">
+              <h4 className="font-bold">Reconcile stale task records</h4>
+              <p className="text-xs text-gray-600">These task rows are at least {stalePreview.minimum_age_hours} hours old and match strict terminal-stage or test-task patterns. This is a database status repair only, not a worker cancellation or product reset.</p>
+              <p className="text-xs font-semibold">{stalePreview.candidates.length} eligible records · {stalePreview.ineligible_running.length} other running records remain protected</p>
+              {stalePreview.candidates.map(job=><p className="break-all text-xs" key={job.task_id}>
+                <strong>{job.task_type}</strong> · {job.age_hours}h old · {job.reason} · <code>{job.task_id}</code>
+              </p>)}
+              {stalePreview.ineligible_running.length>0&&<details className="text-xs">
+                <summary className="cursor-pointer">Other running tasks (not eligible for automatic reconciliation)</summary>
+                {stalePreview.ineligible_running.map(job=><p className="break-all" key={job.task_id}>
+                  {job.task_type} · {job.age_hours??'?'}h · <code>{job.task_id}</code>
+                </p>)}
+              </details>}
+              {stalePreview.errors.map((e,i)=><p className="text-red-700 text-xs" key={i}>{e}</p>)}
+              {stalePreview.can_reconcile&&<>
+                <label className="flex gap-2 text-xs items-start">
+                  <input type="checkbox" checked={staleWorkersChecked} onChange={e=>setStaleWorkersChecked(e.target.checked)}/>
+                  I checked the running backend processes and confirmed that none of these task IDs is actually executing.
+                </label>
+                <label className="block text-xs font-semibold">Type RECONCILE STALE TASK RECORDS
+                  <input className={input} value={staleConfirmation} autoComplete="off"
+                    onChange={e=>setStaleConfirmation(e.target.value)}/>
+                </label>
+                <button type="button" className="rounded-lg border border-amber-400 px-3 py-2 font-semibold text-amber-900 disabled:opacity-50"
+                  disabled={staleBusy||!staleWorkersChecked||staleConfirmation!=='RECONCILE STALE TASK RECORDS'}
+                  onClick={reconcileStaleTasks}>
+                  Mark {stalePreview.candidates.length} orphaned records failed and recheck rebuild
+                </button>
+              </>}
+            </div>}
+                        {selectiveStatus&&<div role="status" className="border rounded-lg p-3 text-sm">
               <p className="font-semibold">Selective rebuild: {selectiveStatus.status}</p>
               {selectiveStatus.progress&&<p className="text-xs">{selectiveStatus.progress.processed} / {selectiveStatus.progress.total} observations replayed</p>}
               {selectiveStatus.error_message&&<p className="text-red-700">{selectiveStatus.error_message} — The catalog rebuild was rolled back.</p>}
