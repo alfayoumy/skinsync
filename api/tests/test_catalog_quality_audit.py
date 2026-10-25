@@ -64,7 +64,7 @@ class CatalogQualityAuditTests(unittest.TestCase):
         self.assertEqual(risk['legacy_listings_without_canonical'],1)
         self.assertEqual(risk['approved_formula_missing_approval_evidence'],2)
         self.assertEqual(self.conn.total_changes,before)
-        self.assertEqual(report['sources'][0]['historical_listings'],2)
+        self.assertEqual(next(v for v in report['sources'] if v['id']=='sourcebeauty')['historical_listings'],2)
 
     def test_report_distinguishes_scheduled_from_confirmed_restore(self):
         full_backup=_backup(self.conn,self.path)
