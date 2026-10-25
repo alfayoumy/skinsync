@@ -174,6 +174,21 @@ def _apply_one(conn,oid,reviews,source_cache):
                 linked=1
             else:
                 preserved=1
+    # An older taxonomy review with no canonical should follow its *new*
+    # identity. Keep taxonomy pending rather than counting it as resolved.
+    if cid:
+        old_categories=conn.execute("""SELECT id,details FROM product_review_queue
+            WHERE kind='category' AND status='pending'
+            AND canonical_product_id IS NULL AND source_id=?""",(original.source_id,)).fetchall()
+        for cat in old_categories:
+            try:d=json.loads(cat['details'] or '{}')
+            except (ValueError,TypeError):continue
+            if d.get('observation_id')==oid:
+                conn.execute("""UPDATE product_review_queue
+                    SET canonical_product_id=?,review_notes=?,
+                    updated_at=CURRENT_TIMESTAMP WHERE id=? AND status='pending'""",
+                    (cid,'Saved-source rematch identified the product. Category remains pending.',
+                     cat['id']))
     superseded=0
     for row in reviews:
         changed=conn.execute("""UPDATE product_review_queue SET status='confirmed',
