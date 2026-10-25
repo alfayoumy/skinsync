@@ -44,7 +44,9 @@ def save_observation(conn,observation,identity,classification):
     return oid
 
 
-def process_source_observation(conn,observation,dry_run=False,legacy_product_id=None,offer_fields=None,existing_observation_id=None):
+def process_source_observation(conn,observation,dry_run=False,legacy_product_id=None,
+                               offer_fields=None,existing_observation_id=None,
+                               replay_saved_projection=False):
     from pipeline.catalog_reset import guard_catalog_writes
     guard_catalog_writes(conn)
     source=get_source(conn,observation.source_id)
@@ -69,14 +71,31 @@ def process_source_observation(conn,observation,dry_run=False,legacy_product_id=
             # Replay only the retained raw observation; never create a new
             # observation row or accept the old products' ingredient fields.
             old=conn.execute("""SELECT source_id,source_product_id,source_url,
-                raw_title,payload_hash FROM source_product_observations WHERE id=?""",
+                raw_title,raw_brand,raw_category,source_gtin,manufacturer_sku,
+                description,market,payload_hash FROM source_product_observations WHERE id=?""",
                 (existing_observation_id,)).fetchone()
             if (old is None or old['source_id']!=observation.source_id
                     or old['source_product_id']!=observation.source_product_id
                     or old['source_url']!=observation.source_url
                     or old['raw_title']!=observation.raw_title
-                    or old['payload_hash']!=observation.raw_payload_hash):
+                    or old['raw_brand']!=observation.raw_brand
+                    or old['raw_category']!=observation.raw_category
+                    or old['source_gtin']!=observation.source_gtin
+                    or old['manufacturer_sku']!=observation.manufacturer_sku
+                    or old['description']!=observation.description
+                    or old['market']!=observation.market
+                    or (not replay_saved_projection
+                        and old['payload_hash']!=observation.raw_payload_hash)):
                 raise ValueError('Saved observation does not match replay source payload.')
+            if replay_saved_projection:
+                # This is NOT a fresh scrape or a new source declaration.
+                # The caller must build variants from immutable saved rows.
+                expected={str(r[0]) for r in conn.execute(
+                    'SELECT source_variant_id FROM source_product_variants WHERE observation_id=?',
+                    (oid:=existing_observation_id,))}
+                actual={str(v.source_variant_id) for v in observation.variants}
+                if expected!=actual or observation.ingredient_text is not None:
+                    raise ValueError('Saved rematch must not change variants or reuse old INCI as new evidence.')
             oid=existing_observation_id
         reviewed=conn.execute("SELECT details,decision FROM product_review_queue WHERE source_id=? AND source_product_id=? AND kind='category' AND status='confirmed'",(source['id'],observation.source_product_id)).fetchone()
         if reviewed and json.loads(reviewed['details']).get('observation_id')==oid:
