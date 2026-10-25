@@ -105,6 +105,23 @@ def rematch_execution_blockers(conn,exclude_task_id=None):
         ORDER BY created_at DESC,task_id DESC LIMIT 100""")]
     active=[r for r in rows if r['task_id']!=exclude_task_id]
     workers=_active_workers(conn,tables)
+    # A historical Gemini row can say "processing" despite belonging to a
+    # completed/failed task restored from backup. It is not proof that a
+    # process is currently working. Only running-task-backed Gemini batches
+    # must block this rematch.
+    orphaned_gemini=0
+    if 'identity_gemini_queue' in tables:
+        orphaned_gemini=conn.execute("""SELECT COUNT(*) FROM identity_gemini_queue q
+            LEFT JOIN pipeline_tasks t ON t.task_id=q.task_id
+            WHERE q.status='processing'
+            AND (q.task_id IS NULL OR t.task_id IS NULL
+                 OR t.status NOT IN ('running','pending'))""").fetchone()[0]
+        genuinely_processing=conn.execute("""SELECT COUNT(*) FROM identity_gemini_queue q
+            JOIN pipeline_tasks t ON t.task_id=q.task_id
+            WHERE q.status='processing'
+            AND t.status IN ('running','pending')""").fetchone()[0]
+        if not genuinely_processing:
+            workers=[name for name in workers if name!='identity_gemini_queue']
     maintenance=False
     if 'catalog_reset_control' in tables:
         row=conn.execute('SELECT active FROM catalog_reset_control WHERE singleton=1').fetchone()
@@ -118,6 +135,7 @@ def rematch_execution_blockers(conn,exclude_task_id=None):
             'maintenance_locked':maintenance,
             'idle_pending_records':idle_pending,
             'old_cancelled_records':old_cancelled,
+            'orphaned_gemini_processing_rows':orphaned_gemini,
             'can_start':not active and not workers and not maintenance}
 
 
