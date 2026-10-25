@@ -155,6 +155,24 @@ class GeminiIdentityReviewTests(unittest.TestCase):
         ok,why=can_auto_resolve(self.conn,self.case(),self.answer())
         self.assertTrue(ok,why)
 
+    def test_readiness_uses_current_multi_source_evidence_and_pruning_is_zero_call(self):
+        from pipeline.product_identity_gemini import gemini_queue_readiness
+        rid=queue_review(self.conn,'identity','bashrety','missing',None,
+                         {'title':'Anonymous moisturizer','raw_brand':'Unknown'})
+        self.conn.execute("""INSERT INTO identity_gemini_queue
+            (review_id,evidence_hash,status,queued_by)
+            SELECT id,evidence_hash,'queued','historical_worker' FROM product_review_queue
+            WHERE id=?""",(rid,))
+        queue_cases(self.conn,review_ids=[self.review_id],queued_by='test')
+        report=gemini_queue_readiness(self.conn)
+        self.assertEqual(report['queued_actionable'],1)
+        self.assertEqual(report['queued_without_comparable_evidence'],1)
+        from pipeline.product_identity_gemini import retire_unresearchable_queue
+        self.assertEqual(retire_unresearchable_queue(self.conn),1)
+        refreshed=gemini_queue_readiness(self.conn)
+        self.assertEqual(refreshed['queued_without_comparable_evidence'],0)
+        self.assertEqual(refreshed['queued_actionable'],1)
+
     def test_multiple_cases_are_evaluated_in_one_gemini_request(self):
         for i in (2,3):
             details=self.case()['details']
