@@ -83,10 +83,22 @@ def approve_brand_alias(conn, alias, canonical_name, reviewer):
         raise ValueError('Brand, alias and reviewer are required.')
     conn.execute('INSERT OR IGNORE INTO brands(name) VALUES (?)',(canonical_name,))
     brand_id=conn.execute('SELECT id FROM brands WHERE name=?',(canonical_name,)).fetchone()[0]
-    existing=conn.execute('SELECT brand_id FROM brand_aliases WHERE alias=?',(brand_key(alias),)).fetchone()
-    if existing and existing[0] != brand_id:
-        raise ValueError('Alias is already assigned to a different verified brand.')
-    conn.execute('INSERT OR IGNORE INTO brand_aliases(alias,brand_id,approved_by) VALUES (?,?,?)',(brand_key(alias),brand_id,reviewer))
+    existing=conn.execute("""SELECT a.brand_id,a.approved_by,b.status
+        FROM brand_aliases a JOIN brands b ON b.id=a.brand_id WHERE a.alias=?""",
+        (brand_key(alias),)).fetchone()
+    if existing and existing['brand_id'] != brand_id:
+        if (existing['status']!='observed_unverified'
+                or existing['approved_by']!='observed_source_unverified'):
+            raise ValueError('Alias is already assigned to a different verified brand.')
+        # A curator may correct a previously unapproved source *label*.
+        # Do not auto-merge canonicals created under that source label;
+        # those products still need an explicit audited identity operation.
+        conn.execute("""UPDATE brand_aliases SET brand_id=?,approved_by=?
+            WHERE alias=? AND brand_id=?""",
+            (brand_id,reviewer,brand_key(alias),existing['brand_id']))
+    else:
+        conn.execute('INSERT OR IGNORE INTO brand_aliases(alias,brand_id,approved_by) VALUES (?,?,?)',
+                     (brand_key(alias),brand_id,reviewer))
     return brand_id
 
 
