@@ -37,6 +37,7 @@ from routers.aggregation import router as aggregation_router
 from routers.workflows import router as workflows_router
 from routers.catalog_reset import router as catalog_reset_router
 from routers.inci_research import router as inci_research_router
+from routers.admin_v2 import router as admin_v2_router
 
 setup_logging()
 logger = get_logger("skincare_engine")
@@ -128,6 +129,7 @@ app.include_router(aggregation_router)
 app.include_router(workflows_router)
 app.include_router(catalog_reset_router)
 app.include_router(inci_research_router)
+app.include_router(admin_v2_router)
 
 # ==============================================================================
 # 3. BACKWARDS COMPATIBILITY EXPORTS
