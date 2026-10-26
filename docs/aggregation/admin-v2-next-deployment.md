@@ -16,7 +16,7 @@
 ## Next deployment: pre-merge tasks
 
 - [ ] Verify newest PR #18 CI **backend regressions**, **Vite production build**, and **ESLint** are green (do not rely on an earlier green commit).
-- [ ] Inspect new Match Arena source links/photos on a statistically useful sample across each retailer; no broken, malicious or incorrect source-image pairing.
+- [ ] Inspect new Match Arena source links/photos on a statistically useful sample across each retailer; no broken, malicious or incorrect source-image pairing. Include multiple sizes/SPF variants with hashed source IDs, verifying SKU/GTIN/variant title and source evidence point to the correct exact variant.
 - [ ] Test all three actions on both queues with at least two authenticated reviewers. Confirm recorded user is derived from sign-in and client-supplied reviewer is ignored. Test concurrent votes and stale fingerprints (409, zero unintended write).
 - [ ] Verify source-to-canonical Match and No Match do not auto-merge canonicals, erase offers, or publish INCI; confirm correct decisions and audit row are persisted atomically.
 - [ ] Verify INCI Match publishes only with exact identity, complete ordered source declaration, registered evidence source and allowed market; otherwise returns 409 and leaves candidate pending. INCI No Match rejects only the candidate.
