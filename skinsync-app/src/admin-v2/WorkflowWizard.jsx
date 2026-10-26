@@ -1,6 +1,6 @@
 import React,{useEffect,useState} from 'react';
 import {Check,ChevronRight,ChevronLeft,Play,Save,Search,AlertTriangle,RefreshCw,ExternalLink} from 'lucide-react';
-import {request,post,put,formatNumber} from './api';
+import {request,post,put} from './api';
 
 const STEPS=[
   ['sources','Sources & scope','Choose the source population and scan boundaries'],
@@ -31,7 +31,6 @@ export default function WorkflowWizard({navigate,workflowKind='catalog_build'}) 
   const [error,setError]=useState('');
   const [busy,setBusy]=useState(false);
   const [runningJob,setRunningJob]=useState('');
-  const [reviewCount,setReviewCount]=useState(null);
   const allSteps=workflowKind==='offer_refresh'?OFFER_STEPS:STEPS;
   async function loadRuns() {
     try{
