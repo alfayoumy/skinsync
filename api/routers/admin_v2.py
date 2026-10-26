@@ -84,6 +84,28 @@ def _workflow(conn, workflow_id):
         s = dict(row)
         s["configuration"] = _decode(s.pop("config_json"), {})
         s["result"] = _decode(s.pop("result_json"), {})
+        s["effective_status"] = s["status"]
+        s["job_status"] = None
+        if s.get("job_id"):
+            task=get_task_details(s["job_id"],include_logs=False,include_subtasks=False)
+            if task:
+                state=task["status"]
+                if task["task_type"]=="v2_offer_refresh":
+                    from pipeline.v2_offer_jobs import state as offer_state
+                    offer=offer_state(s["job_id"])
+                    if offer: state=offer["effective_state"]
+                s["job_status"]=state
+            elif s["job_id"].startswith("waterfall_"):
+                from routers.admin import _waterfall_batch_runner
+                water=_waterfall_batch_runner.get_status()
+                if water.get("task_id")==s["job_id"]:
+                    s["job_status"]=water["status"]
+            if s["status"]=="running" and s["job_status"]:
+                outcome=s["job_status"]
+                if outcome in ("completed","succeeded"):
+                    s["effective_status"]="completed"
+                elif outcome in ("completed_with_errors","failed","cancelled","stopped","interrupted","paused"):
+                    s["effective_status"]=outcome
         data["steps"].append(s)
     return data
 
