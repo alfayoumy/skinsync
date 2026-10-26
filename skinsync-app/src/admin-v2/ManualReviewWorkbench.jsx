@@ -73,6 +73,7 @@ function ProductEvidence({item,kind,side}) {
 const sessionDefaults={match:0,no_match:0,skip:0};
 export default function ManualReviewWorkbench({actor}) {
   const [kind,setKind]=useState('identity');
+  const [view,setView]=useState('ready');
   const [items,setItems]=useState([]);
   const [counts,setCounts]=useState(null);
   const [index,setIndex]=useState(0);
@@ -87,7 +88,7 @@ export default function ManualReviewWorkbench({actor}) {
   async function load(queue=kind) {
     setFetching(true);
     try {
-      const data=await request('/admin/v2/manual-reviews?kind='+encodeURIComponent(queue)+'&limit=30');
+      const data=await request('/admin/v2/manual-reviews?kind='+encodeURIComponent(queue)+'&view='+view+'&limit=30');
       setItems(data.items||[]);setCounts(data.counts);setReviewer(data.reviewer);
       setIndex(0);setNotes('');setError('');
     }catch(err){setError(err.message);}finally{setFetching(false);}
@@ -97,7 +98,7 @@ export default function ManualReviewWorkbench({actor}) {
     async function fetchQueue() {
       setFetching(true);
       try{
-        const data=await request('/admin/v2/manual-reviews?kind='+encodeURIComponent(kind)+'&limit=30');
+        const data=await request('/admin/v2/manual-reviews?kind='+encodeURIComponent(kind)+'&view='+view+'&limit=30');
         if(enabled){setItems(data.items||[]);setCounts(data.counts);setReviewer(data.reviewer);
           setIndex(0);setNotes('');setError('');}
       }catch(e){if(enabled)setError(e.message);}
@@ -105,7 +106,7 @@ export default function ManualReviewWorkbench({actor}) {
     }
     fetchQueue();
     return ()=>{enabled=false};
-  },[kind]);
+  },[kind,view]);
   const current=items[index];
   async function choose(action) {
     if(!current||busy)return;
@@ -150,6 +151,13 @@ export default function ManualReviewWorkbench({actor}) {
         className={`rounded-xl px-4 py-3 text-sm font-bold inline-flex gap-2 items-center ${kind==='inci'?'bg-violet-700 text-white':'bg-white border border-slate-200'}`}>
         <FlaskConical size={17}/>INCI formulation</button>
     </nav>
+    <label className="flex items-center gap-3 text-sm font-semibold">Review population
+      <select className="rounded-xl bg-white border border-slate-300 px-3 py-2 text-sm" value={view}
+        onChange={e=>setView(e.target.value)}>
+        <option value="ready">Ready for a decision</option>
+        <option value="skipped">Skipped by me (revisit)</option>
+      </select>
+    </label>
     <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
       {[
         ['Ready to compare',counts?.ready],['Needs advanced review',counts?.advanced],
@@ -164,7 +172,7 @@ export default function ManualReviewWorkbench({actor}) {
     {fetching?<div className="border rounded-2xl bg-white p-10 text-center text-slate-500">Loading saved queue evidence…</div>:
       !current?<section className="rounded-2xl bg-white border text-center py-16 px-6">
         <Trophy className="mx-auto text-amber-500" size={40}/>
-        <h3 className="font-bold text-xl mt-4">No more quick-review pairs in this queue</h3>
+        <h3 className="font-bold text-xl mt-4">No more pairs in this view</h3>
         <p className="text-sm text-slate-500 mt-2">Complex variants, out-of-market formulations and skipped items may still require attention. They have not been auto-approved.</p>
         <button onClick={()=>load()} className="mt-5 text-violet-700 font-semibold text-sm"><RefreshCw className="inline mr-2" size={16}/>Refresh queue</button>
       </section>:
