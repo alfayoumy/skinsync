@@ -7,6 +7,7 @@ import AiOps from './AiOps';
 import JobCenter from './JobCenter';
 import AdminObservatory from '../AdminObservatory';
 import AggregationReviewPanel from '../AggregationReviewPanel';
+import InciResearchQueue from '../InciResearchQueue';
 import CatalogWorkflowsPanel from '../CatalogWorkflowsPanel';
 
 const NAV = [
@@ -79,6 +80,27 @@ function OperationsHome({navigate}) {
     {data?.note && <p className="text-xs text-amber-800">{data.note}</p>}
   </div>;
 }
+function ReviewHub() {
+  const [mode,setMode]=useState(null);
+  return <section className="space-y-5">
+    <div><h2 className="text-2xl font-bold">Review Workbench</h2>
+      <p className="text-sm text-slate-500">Identity and formulation evidence have separate decision paths. No model verdict automatically publishes full INCI.</p></div>
+    <div className="grid gap-4 md:grid-cols-2">
+      <article className="rounded-2xl border bg-white p-5 space-y-3">
+        <h3 className="text-lg font-bold">Product identity reviews</h3>
+        <p className="text-sm text-slate-600">Compare retailer listings and variants; inspect saved Gemini reasoning, rematch results and human decisions.</p>
+        <button className="rounded-lg bg-violet-700 px-4 py-2 text-white text-sm font-semibold" onClick={()=>setMode('identity')}>Open identity reviews</button>
+      </article>
+      <article className="rounded-2xl border bg-white p-5 space-y-3">
+        <h3 className="text-lg font-bold">INCI formulation research</h3>
+        <p className="text-sm text-slate-600">Inspect exact source-page declarations and candidate evidence. Review region, ordered completeness and formulation identity.</p>
+        <button className="rounded-lg bg-violet-700 px-4 py-2 text-white text-sm font-semibold" onClick={()=>setMode('inci')}>Open INCI research</button>
+      </article>
+    </div>
+    {mode==='identity'&&<AggregationReviewPanel mode="reviews" onClose={()=>setMode(null)}/>}
+    {mode==='inci'&&<InciResearchQueue onClose={()=>setMode(null)}/>}
+  </section>;
+}
 export default function AdminV2({onBackToApp}) {
   const [route,setRoute]=useState(initialRoute);
   const [aiTab,setAiTab]=useState('providers');
@@ -126,7 +148,7 @@ export default function AdminV2({onBackToApp}) {
         {route==='repair' && <WorkflowWizard navigate={navigate} workflowKind="catalog_repair"/>}
         {route==='jobs' && <JobCenter/>}
         {route==='ai' && <AiOps tab={aiTab} onTabChange={setAiTab} navigate={navigate}/>}
-        {route==='reviews' && <AggregationReviewPanel mode="reviews" onClose={()=>navigate('home')}/>}
+        {route==='reviews' && <ReviewHub/>}
         {route==='offers' && <WorkflowWizard navigate={navigate} workflowKind="offer_refresh"/>}
         {route==='catalog' && <div className="space-y-3">
           <div className="rounded-xl bg-white p-3 border text-sm">Existing catalog explorer is retained while the new workflow navigation is rolled out.</div>
