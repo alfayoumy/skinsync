@@ -10,6 +10,8 @@ Unit tests for the overhauled Alternative Recommender Engine:
 import os
 import sys
 import unittest
+from unittest.mock import patch
+import pandas as pd
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
 
@@ -25,6 +27,36 @@ from pipeline.classifier import classify_and_tag
 
 
 class TestRecommenderOverhaul(unittest.TestCase):
+    def setUp(self):
+        # Ranking tests must not depend on which retailer products happen to
+        # be visible in the evolving catalog snapshot.
+        specs=[
+            (1,'&honey Cleansing Balm Clear 90g','&honey','Cleanser',set()),
+            (2,'&honey Skin Care Cleansing Oil 180ml','&honey','Cleanser',set()),
+            (3,'Cutie Tribe Cleansing Balm','Cutie Tribe','Cleanser',set()),
+            (4,'Gentle Cleansing Balm','Different Brand','Cleanser',set()),
+            (5,'Loreal Hyaluro Expert Serum 30ml.',"L'Oreal",'Serum',{'hyaluronic_acid'}),
+            (6,'Hyaluronic Acid Hydrating Serum','Other','Serum',{'hyaluronic_acid'}),
+            (7,'Hyaluronic Acid Moisturizing Cream','Other','Moisturizer',{'hyaluronic_acid'}),
+            (8,'Anua Peach 70% Niacin Serum 30Ml','Anua','Serum',{'niacinamide'}),
+            (9,'Anua Niacinamide 10%+Txa 4% Serum','Anua','Serum',{'niacinamide','tranexamic_acid'}),
+            (10,'Brightening Niacinamide Serum','Other','Serum',{'niacinamide'}),
+            (11,'Brightening Niacinamide Serum','Other','Serum',{'niacinamide'}),
+            (12,'Hydrating Hyaluronic Acid Serum','Alpha','Serum',{'hyaluronic_acid'}),
+            (13,'Pure Hyaluronic Acid Serum','Beta','Serum',{'hyaluronic_acid'}),
+            (14,'Barrier Hyaluronic Acid Serum','Gamma','Serum',{'hyaluronic_acid'}),
+            (15,'Daily Hyaluronic Acid Serum','Delta','Serum',{'hyaluronic_acid'}),
+            (16,'Comfort Hyaluronic Acid Serum','Epsilon','Serum',{'hyaluronic_acid'}),
+        ]
+        rows=[]
+        for cid,title,brand,category,actives in specs:
+            rows.append(dict(id=cid,canonical_product_id=10 if cid==11 else cid,title=title,brand=brand,
+                std_category=category,parsed_ingredients=['water','glycerin'],all_actives=actives,
+                price_low=100,store_count=1,min_price=100,max_price=100,image_url=None,url='',is_skincare=1))
+        self.catalog_patch=patch('services.recommender.get_catalog_df',return_value=pd.DataFrame(rows))
+        self.catalog_patch.start();self.addCleanup(self.catalog_patch.stop)
+        self.encoder_patch=patch('services.recommender.score_cross_encoder',return_value=None)
+        self.encoder_patch.start();self.addCleanup(self.encoder_patch.stop)
 
     def test_water_solvents_filtered_in_non_water_jaccard(self):
         """Ubiquitous water/aqua/eau solvents must not inflate formulation similarity."""
