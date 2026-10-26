@@ -10,7 +10,6 @@ const pct=(v)=>typeof v==='number'?(v*100).toFixed(0)+'%':'Not available';
 
 function EvidencePhoto({url,title}) {
   const [broken,setBroken]=useState(false);
-  useEffect(()=>setBroken(false),[url]);
   return <div className="w-full h-48 sm:h-60 bg-slate-100 flex items-center justify-center overflow-hidden">
     {url&&!broken?<img src={url} alt={title||'Product'} loading="lazy"
       className="h-full max-w-full object-contain" onError={()=>setBroken(true)}/>:
@@ -39,7 +38,7 @@ function ProductEvidence({item,kind,side}) {
         className="inline-flex gap-1.5 text-violet-700 text-xs font-semibold underline underline-offset-4">
         Open original <ExternalLink size={14}/></a>:<span className="text-xs text-amber-700">No verified source link</span>}
     </div>
-    <EvidencePhoto url={item.image} title={item.title}/>
+    <EvidencePhoto key={item.image||"missing"} url={item.image} title={item.title}/>
     <div className="px-5 pb-5 pt-4">
       <p className="text-xs uppercase tracking-wide text-slate-500 font-bold">{item.brand||'Brand unverified'}</p>
       <h3 className="text-lg font-bold leading-snug mt-1 min-h-12">{item.title||'Missing product title'}</h3>
