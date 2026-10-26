@@ -23,7 +23,7 @@ export default function WorkflowWizard({navigate,workflowKind='catalog_build'}) 
   const [runs,setRuns]=useState([]);
   const [run,setRun]=useState(null);
   const [step,setStep]=useState('sources');
-  const [config,setConfig]=useState(defaults);
+  const [config,setConfig]=useState({...defaults,pages:workflowKind==='offer_refresh'?2:0});
   const [sources,setSources]=useState([]);
   const [preview,setPreview]=useState(null);
   const [previewType,setPreviewType]=useState('');
@@ -53,7 +53,7 @@ export default function WorkflowWizard({navigate,workflowKind='catalog_build'}) 
     if(!run)return;
     const stored=run.steps?.find(s=>s.step_key===step);
     const sourceConfig=run.steps?.find(s=>s.step_key==='sources')?.configuration||{};
-    setConfig({...defaults,...sourceConfig,...(stored?.configuration||{})});
+    setConfig({...defaults,pages:workflowKind==='offer_refresh'?2:0,...sourceConfig,...(stored?.configuration||{})});
     setPreview(stored?.status==='previewed'?stored.result:null);
     setPreviewType('');
     setRunningJob(stored?.job_id||'');
@@ -93,10 +93,10 @@ export default function WorkflowWizard({navigate,workflowKind='catalog_build'}) 
       if(step==='sources'){result={selected:config.source_ids,start_page:config.start_page,pages:config.pages};kind='scope';}
       else if(step==='discovery' && workflowKind==='offer_refresh'){
         if(config.source_ids.length!==1)throw Error('Select exactly one Shopify retailer for offer refresh.');
-        result=await post('/admin/workflows/offers/refresh',{
+        result=await post('/admin/v2/offers/start',{
           source_id:config.source_ids[0],start_page:config.start_page,pages:Math.max(1,config.pages||1),
           update_price:config.update_price,update_stock:config.update_stock,dry_run:true
-        });kind='offers';
+        });kind='offers_dry_run_job';
       }
       else if(step==='discovery'){
         if(!config.source_ids.length)throw Error('Choose at least one enabled source first.');
@@ -146,13 +146,13 @@ export default function WorkflowWizard({navigate,workflowKind='catalog_build'}) 
       }
       if(step==='discovery' && workflowKind==='offer_refresh'){
         if(config.source_ids.length!==1)throw Error('Select exactly one retailer.');
-        if(!window.confirm('Update existing prices/stock across '+(config.pages||1)+' source pages? The current API operation is synchronous and cannot be paused.'))return;
-        result=await post('/admin/workflows/offers/refresh',{
+        if(!window.confirm('Update existing prices/stock across '+(config.pages||1)+' source pages? This tracked job can be paused or stopped after a page.'))return;
+        result=await post('/admin/v2/offers/start',{
           source_id:config.source_ids[0],start_page:config.start_page,pages:Math.max(1,config.pages||1),
           update_price:config.update_price,update_stock:config.update_stock,dry_run:false
         });
-        await save('completed',result);
-        setMessage('Offer refresh finished. Review affected offers before another batch.');
+        await save('running',result,result.task_id);
+        setMessage('Offer refresh queued with page checkpoints. Use Job Center to pause, stop or resume.');
         return result;
       }
       if(step==='discovery'){
