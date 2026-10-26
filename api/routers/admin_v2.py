@@ -206,9 +206,10 @@ def save_step(workflow_id: str, step_key: str, req: StepSave):
             (req.status, _json(req.configuration), _json(req.result),
              req.job_id or old["job_id"], now, workflow_id, step_key),
         )
+        workflow_status="completed" if step_key=="quality" and req.status=="completed" else "in_progress"
         conn.execute(
-            "UPDATE admin_v2_workflows SET current_step=?,updated_at=? WHERE id=?",
-            (step_key, now, workflow_id),
+            "UPDATE admin_v2_workflows SET current_step=?,updated_at=?,status=? WHERE id=?",
+            (step_key, now, workflow_status, workflow_id),
         )
         _event(conn, workflow_id, step_key, "saved", {
             "status": req.status, "job_id": req.job_id, "result_keys": list(req.result)
