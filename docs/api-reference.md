@@ -467,3 +467,23 @@ GET `/admin/aggregation/reviews/gemini/requeue/preview` inventories the old iden
 POST `/admin/aggregation/reviews/gemini/requeue` requires a matching preview fingerprint and exact confirmation `RESET IDENTITY GEMINI AND REQUEUE`. The operation claims a maintenance lock, creates a **new full SQLite backup**, then atomically removes old rows from **identity_gemini_queue** (including its prior live response columns) and **identity_gemini_source_cases**, and queues the current source-backed unresolved cases. The resulting backup path and counts are reported. No old responses are replayed; their historical records remain in the backup. Existing rematched products, source observations, review decisions, canonical constraints and INCI queues are not reset.
 
 Running Gemini requires the **separate** existing `POST /admin/aggregation/reviews/gemini/run` with a bounded `limit` and `batch_size`. New source-level cases return model verdicts and optional supported canonical suggestions; the Gemini worker **never auto-links them**. Separately, `POST /admin/aggregation/reviews/gemini/saved/preview` and `/saved/apply` can replay a high-confidence saved `same_product` suggestion without provider calls. Source links are applied **only** if the latest saved observation/canonical snapshot, independent second-retailer marketed title or verified GTIN, independently equivalent brand, full available formulation discriminators, hard identity gates and lack of unresolved rival canonical all agree. `uncertain`, `different_product`, lower-confidence, stale, or conflicting cases are not linked. Preview reports `source_verdicts_seen`, `source_verdicts_eligible`, `source_matches_linked` and reasons blocked. This never publishes ingredients, changes prices or merges canonical IDs.
+
+
+### admin v2 router (operational metadata, job inspection)
+
+Source: [`api/routers/admin_v2.py`](../api/routers/admin_v2.py). These endpoints do **not** replace the existing product identity/INCI validation and ingestion endpoints. Workflow steps only store operator configuration, results and job associations; they do not by themselves approve or mutate any catalog product.
+
+| Method | Path | Behavior | Permission |
+|---|---|---|---|
+| GET | `/admin/v2/operations` | Saved workflows, active durable tasks and process-local INCI worker summaries | `read` |
+| GET | `/admin/v2/workflows` | List last 100 saved wizard workflows | `read` |
+| POST | `/admin/v2/workflows` | Create persisted draft with kind `catalog_build`, `offer_refresh` or `catalog_repair` | `operations` |
+| GET | `/admin/v2/workflows/{workflow_id}` | Read saved configuration and each step's result/job reference | `read` |
+| PUT | `/admin/v2/workflows/{workflow_id}/steps/{step_key}` | Save operational step checkpoint and optional existing task ID; never changes catalog entities | `operations` / `identity` where required by path |
+| GET | `/admin/v2/workflows/{workflow_id}/events` | Read step history, configuration-save events | `read` |
+| GET | `/admin/v2/jobs` | List durable pipeline tasks and current process-memory INCI workers | `read` |
+| GET | `/admin/v2/jobs/{job_id}` | Get full task progress, subtasks and logs, or current INCI worker state | `read` |
+| POST | `/admin/v2/jobs/{job_id}/control` | Route `pause`, `resume`, or `stop` ONLY to supported backend control implementations; unsupported actions return HTTP 409 | `operations` |
+
+**Known limitations during migration:** `/admin/queues/*` and `/admin/waterfall/batch/*` still use in-process threads. Those statuses will not survive a backend restart. Generic `pipeline_tasks` cancellation marks the row cancelled before worker exit; the V2 response therefore warns that operator must verify worker termination. Existing `/admin/workflows/offers/refresh` is synchronous, bounded, and does not support pause/resume. No UI may promise otherwise. Full transaction-safe workflow gating, worker leases, durable pause/resume, idempotent job resume and per-item retry remain in the Admin 2.0 implementation RFC.
+
