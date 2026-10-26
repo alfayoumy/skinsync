@@ -92,10 +92,10 @@ def start(source_id,start_page,pages,update_price,update_stock,dry_run):
         ensure(conn)
         conn.execute("""INSERT INTO admin_v2_offer_jobs
             (task_id,source_id,start_page,total_pages,next_page,update_price,
-             update_stock,dry_run,updated_at)
-            VALUES(?,?,?,?,?,?,?,?,?)""",
+             update_stock,dry_run,lease_expires_at,updated_at)
+            VALUES(?,?,?,?,?,?,?,?,?,?)""",
             (task_id,source_id,start_page,pages,start_page,int(update_price),
-             int(update_stock),int(dry_run),now()))
+             int(update_stock),int(dry_run),deadline(),now()))
         conn.commit()
         return {"task_id":task_id,"status":"queued","source_id":source_id,
                 "pages":pages,"dry_run":dry_run,"message":"Offer refresh queued. Checkpoint is saved after every completed page."}
@@ -243,6 +243,13 @@ def command(task_id,action):
             conn.execute("UPDATE admin_v2_offer_jobs SET desired_action='stop',updated_at=? WHERE task_id=?",(now(),task_id))
             outcome="stop_requested"
         elif action=="resume" and (state in ("paused","failed") or lease_expired):
+            other=conn.execute("""SELECT task_id FROM admin_v2_offer_jobs
+                WHERE task_id!=? AND worker_state IN ('queued','running','paused','stopping')
+                  AND (owner_token IS NULL OR lease_expires_at IS NULL OR lease_expires_at>?)
+                LIMIT 1""",(task_id,now())).fetchone()
+            if other:
+                conn.rollback()
+                raise HTTPException(409,"Another offer refresh is active: "+other["task_id"])
             conn.execute("""UPDATE admin_v2_offer_jobs SET desired_action='run',
                 worker_state='queued',owner_token=NULL,lease_expires_at=NULL,updated_at=?
                 WHERE task_id=?""",(now(),task_id))
