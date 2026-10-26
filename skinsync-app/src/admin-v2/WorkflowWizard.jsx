@@ -198,8 +198,13 @@ export default function WorkflowWizard({navigate,workflowKind='catalog_build'}) 
     await act(async()=>{
       if(!preview)throw Error('Preview the current source evidence before recording a review checkpoint.');
       if(!window.confirm('Continue with eligible verified products while unresolved identity/INCI cases remain held? This does not approve unverified data.'))return;
-      await save('needs_review',{reviewed_at:new Date().toISOString(),evidence:preview||{}});
-      setMessage('Review checkpoint saved. Individual unresolved products remain held.');
+      await save(step==='quality'?'completed':'needs_review',{
+        reviewed_at:new Date().toISOString(),
+        evidence:preview||{},
+        publication_performed:false,
+        unresolved_held:true
+      });
+      setMessage(step==='quality'?'Quality review recorded. This does not publish or approve unverified products.':'Review checkpoint saved. Individual unresolved products remain held.');
     });
   }
   const entry=run?.steps?.find(s=>s.step_key===step);
