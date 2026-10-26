@@ -56,6 +56,12 @@ def _schema(conn):
             PRIMARY KEY(workflow_id, step_key),
             FOREIGN KEY(workflow_id) REFERENCES admin_v2_workflows(id)
         );
+        CREATE TABLE IF NOT EXISTS admin_v2_batch_presets(
+            id TEXT PRIMARY KEY, name TEXT NOT NULL,
+            operation TEXT NOT NULL, limit_items INTEGER NOT NULL,
+            batch_size INTEGER NOT NULL, created_at TEXT NOT NULL,
+            updated_at TEXT NOT NULL
+        );
         CREATE TABLE IF NOT EXISTS admin_v2_events(
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             workflow_id TEXT NOT NULL, step_key TEXT,
@@ -237,6 +243,58 @@ def workflow_events(workflow_id: str):
         conn.close()
 
 
+
+
+class BatchPreset(BaseModel):
+    name: str = Field(min_length=1,max_length=100)
+    operation: Literal["identity","jev","gemini","saved","waterfall"]
+    limit: int = Field(ge=1,le=20000)
+    batch_size: int = Field(default=10,ge=1,le=20)
+
+
+@router.get("/batch-presets")
+def batch_presets():
+    conn=get_connection()
+    try:
+        _schema(conn)
+        return {"presets":[dict(r) for r in conn.execute(
+            "SELECT * FROM admin_v2_batch_presets ORDER BY updated_at DESC LIMIT 100"
+        )]}
+    finally:
+        conn.close()
+
+
+@router.post("/batch-presets")
+def save_batch_preset(req: BatchPreset):
+    conn=get_connection()
+    try:
+        _schema(conn)
+        preset_id="preset_"+uuid.uuid4().hex[:12]
+        timestamp=_utc()
+        conn.execute("""INSERT INTO admin_v2_batch_presets
+            (id,name,operation,limit_items,batch_size,created_at,updated_at)
+            VALUES(?,?,?,?,?,?,?)""",
+            (preset_id,req.name,req.operation,req.limit,req.batch_size,timestamp,timestamp))
+        conn.commit()
+        return {"id":preset_id,"name":req.name,"operation":req.operation,
+                "limit_items":req.limit,"batch_size":req.batch_size}
+    finally:
+        conn.close()
+
+
+@router.delete("/batch-presets/{preset_id}")
+def delete_batch_preset(preset_id: str):
+    conn=get_connection()
+    try:
+        _schema(conn)
+        res=conn.execute("DELETE FROM admin_v2_batch_presets WHERE id=?",(preset_id,))
+        if not res.rowcount:
+            conn.rollback()
+            raise HTTPException(404,"Preset not found.")
+        conn.commit()
+        return {"deleted":True,"id":preset_id}
+    finally:
+        conn.close()
 
 class OfferJobStart(BaseModel):
     source_id: str
