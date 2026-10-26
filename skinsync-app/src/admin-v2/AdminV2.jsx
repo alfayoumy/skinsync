@@ -88,12 +88,13 @@ export default function AdminV2({onBackToApp}) {
     if(to==='catalog')setLegacy(true);
     else setLegacy(false);
     setRoute(to); setMenuOpen(false);
-    window.location.hash='admin-v2/'+to;
+    window.history.pushState(null, '', '#admin-v2/'+to);
   }
   useEffect(()=>{
     const listen=()=>setRoute(initialRoute());
     window.addEventListener('hashchange',listen);
-    return ()=>window.removeEventListener('hashchange',listen);
+    window.addEventListener('popstate',listen);
+    return ()=>{window.removeEventListener('hashchange',listen);window.removeEventListener('popstate',listen);};
   },[]);
   const selected= NAV.find(n=>n.id===route)||NAV[0];
   return <div className="min-h-screen bg-slate-50 text-slate-900 flex">
