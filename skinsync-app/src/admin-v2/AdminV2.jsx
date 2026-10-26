@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Home, Workflow, Activity, Cpu, ClipboardList, Database,
-  Tag, ShieldAlert, PanelLeftClose, ArrowLeft, Menu, RefreshCw } from 'lucide-react';
+  Tag, ShieldAlert, Wrench, ArrowLeft, Menu, RefreshCw } from 'lucide-react';
 import { request, formatNumber } from './api';
 import WorkflowWizard from './WorkflowWizard';
 import AiOps from './AiOps';
@@ -12,6 +12,7 @@ import CatalogWorkflowsPanel from '../CatalogWorkflowsPanel';
 const NAV = [
   {id:'home', name:'Operations Home', icon:Home},
   {id:'wizard', name:'Catalog Wizard', icon:Workflow},
+  {id:'repair', name:'Repair Existing Catalog', icon:Wrench},
   {id:'jobs', name:'Job Center', icon:Activity},
   {id:'ai', name:'AI & API Operations', icon:Cpu},
   {id:'reviews', name:'Review Workbench', icon:ClipboardList},
@@ -122,6 +123,7 @@ export default function AdminV2({onBackToApp}) {
       <main className="p-4 md:p-7 max-w-[1500px] mx-auto">
         {route==='home' && <OperationsHome navigate={navigate}/>}
         {route==='wizard' && <WorkflowWizard navigate={navigate}/>}
+        {route==='repair' && <WorkflowWizard navigate={navigate} workflowKind="catalog_repair"/>}
         {route==='jobs' && <JobCenter/>}
         {route==='ai' && <AiOps tab={aiTab} onTabChange={setAiTab} navigate={navigate}/>}
         {route==='reviews' && <AggregationReviewPanel mode="reviews" onClose={()=>navigate('home')}/>}
