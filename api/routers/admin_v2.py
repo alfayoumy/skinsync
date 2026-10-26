@@ -8,7 +8,7 @@ import uuid
 from datetime import datetime, timezone
 from typing import Any, Literal
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, BackgroundTasks
 from pydantic import BaseModel, Field
 
 from pipeline.db_manager import get_connection
@@ -214,6 +214,25 @@ def workflow_events(workflow_id: str):
         conn.close()
 
 
+
+class OfferJobStart(BaseModel):
+    source_id: str
+    start_page: int = Field(default=1, ge=1)
+    pages: int = Field(default=2, ge=1, le=10000)
+    update_price: bool = True
+    update_stock: bool = True
+    dry_run: bool = True
+
+
+@router.post("/offers/start")
+def start_offer_job(req: OfferJobStart, background_tasks: BackgroundTasks):
+    from pipeline.v2_offer_jobs import start, worker
+    result = start(req.source_id, req.start_page, req.pages,
+                   req.update_price, req.update_stock, req.dry_run)
+    background_tasks.add_task(worker, result["task_id"])
+    return result
+
+
 @router.get("/jobs")
 def all_jobs(limit: int = 100):
     """Durable pipeline tasks plus explicitly labelled process-local workers."""
@@ -226,6 +245,21 @@ def all_jobs(limit: int = 100):
         entry["controls"] = ["stop"] if entry["status"] in ("running", "pending") and entry["task_type"] in (
             "catalog_discovery", "product_identity_gemini", "apply_saved_gemini", "saved_observation_identity_rematch"
         ) else []
+        if entry["task_type"] == "v2_offer_refresh":
+            from pipeline.v2_offer_jobs import state as offer_state
+            offer = offer_state(entry["task_id"])
+            if offer:
+                entry["offer_job"] = offer
+                entry["status"] = offer["effective_state"]
+                entry["current_stage"] = "Next offer page " + str(offer["next_page"])
+                if entry["status"] == "running":
+                    entry["controls"] = ["pause", "stop"]
+                elif entry["status"] == "paused":
+                    entry["controls"] = ["resume", "stop"]
+                elif entry["status"] in ("interrupted", "failed"):
+                    entry["controls"] = ["resume"]
+                elif entry["status"] == "queued":
+                    entry["controls"] = ["stop"]
         items.append(entry)
     from pipeline.queue_runner import master_queue_manager
     from routers.admin import _waterfall_batch_runner
@@ -265,6 +299,12 @@ def all_jobs(limit: int = 100):
 def job_detail(job_id: str):
     task = get_task_details(job_id)
     if task:
+        if task["task_type"] == "v2_offer_refresh":
+            from pipeline.v2_offer_jobs import state as offer_state
+            offer = offer_state(job_id)
+            if offer:
+                task["metadata"] = {**(task.get("metadata") or {}), "offer_job": offer}
+                task["status"] = offer["effective_state"]
         return {"kind": "pipeline", "job": task}
     from pipeline.queue_runner import master_queue_manager
     from routers.admin import _waterfall_batch_runner
@@ -283,7 +323,7 @@ class JobCommand(BaseModel):
 
 
 @router.post("/jobs/{job_id}/control")
-def job_control(job_id: str, cmd: JobCommand):
+def job_control(job_id: str, cmd: JobCommand, background_tasks: BackgroundTasks):
     """Routes only controls actually supported by the underlying worker."""
     from pipeline.queue_runner import master_queue_manager
     from routers.admin import _waterfall_batch_runner
@@ -300,6 +340,12 @@ def job_control(job_id: str, cmd: JobCommand):
     task = get_task_details(job_id, include_logs=False, include_subtasks=False)
     if not task:
         raise HTTPException(404, "Job not found.")
+    if task["task_type"] == "v2_offer_refresh":
+        from pipeline.v2_offer_jobs import command, worker
+        result = command(job_id, cmd.action)
+        if cmd.action == "resume" and result and result["requested"]:
+            background_tasks.add_task(worker, job_id)
+        return result
     if cmd.action != "stop":
         raise HTTPException(409, "This worker does not support pause/resume. Stop and use its checkpoint to restart.")
     from pipeline.task_tracker import cancel_task
@@ -332,7 +378,7 @@ def operations_overview():
     finally:
         conn.close()
     tasks = list_tasks(limit=50)
-    active = [t for t in tasks if t["status"] in ("running", "pending")]
+    active = [t for t in tasks if t["status"] in ("running", "pending", "paused")]
     return {
         "workflows": drafts, "active_pipeline_jobs": active,
         "recent_jobs": tasks[:8],
