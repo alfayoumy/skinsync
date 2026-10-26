@@ -481,9 +481,12 @@ Source: [`api/routers/admin_v2.py`](../api/routers/admin_v2.py). These endpoints
 | GET | `/admin/v2/workflows/{workflow_id}` | Read saved configuration and each step's result/job reference | `read` |
 | PUT | `/admin/v2/workflows/{workflow_id}/steps/{step_key}` | Save operational step checkpoint and optional existing task ID; never changes catalog entities | `operations` / `identity` where required by path |
 | GET | `/admin/v2/workflows/{workflow_id}/events` | Read step history, configuration-save events | `read` |
+| POST | `/admin/v2/offers/start` | Start tracked existing-offer-only refresh with one-page commits, checkpoints and supported pause/stop/resume | `operations` |
 | GET | `/admin/v2/jobs` | List durable pipeline tasks and current process-memory INCI workers | `read` |
 | GET | `/admin/v2/jobs/{job_id}` | Get full task progress, subtasks and logs, or current INCI worker state | `read` |
 | POST | `/admin/v2/jobs/{job_id}/control` | Route `pause`, `resume`, or `stop` ONLY to supported backend control implementations; unsupported actions return HTTP 409 | `operations` |
 
 **Known limitations during migration:** `/admin/queues/*` and `/admin/waterfall/batch/*` still use in-process threads. Those statuses will not survive a backend restart. Generic `pipeline_tasks` cancellation marks the row cancelled before worker exit; the V2 response therefore warns that operator must verify worker termination. Existing `/admin/workflows/offers/refresh` is synchronous, bounded, and does not support pause/resume. No UI may promise otherwise. Full transaction-safe workflow gating, worker leases, durable pause/resume, idempotent job resume and per-item retry remain in the Admin 2.0 implementation RFC.
 
+
+**New tracked offer refresh:** `POST /admin/v2/offers/start` requires `source_id`, positive `start_page`, finite `pages` (1–10000), `update_price`, `update_stock`, and `dry_run`. It creates a `v2_offer_refresh` job. Each page invokes the existing offer-only identity/SKU/GTIN checks, commits (or rolls back a dry-run), and then records `next_page`. `POST /admin/v2/jobs/{job_id}/control` supports pause/stop requests at page boundaries and explicit resume after pause, failure or expired lease. On an abrupt crash between catalog commit and checkpoint update, the current page may be repeated; existing-offer updates are idempotent and never import new products or publish INCI. The implementation uses a bounded lease on a FastAPI background worker, not a distributed queue; recovered tasks require explicit operator resume after a process restart.
