@@ -43,6 +43,8 @@ export default function AiOps({tab='providers',onTabChange,navigate}) {
   const [waterfall,setWaterfall]=useState(null);
   const [research,setResearch]=useState(null);
   const [researchConnection,setResearchConnection]=useState(null);
+  const [batchPresets,setBatchPresets]=useState({presets:[]});
+  const [presetId,setPresetId]=useState('');
   const [error,setError]=useState('');
   const [message,setMessage]=useState('');
   const [busy,setBusy]=useState(false);
@@ -52,9 +54,9 @@ export default function AiOps({tab='providers',onTabChange,navigate}) {
   const [preview,setPreview]=useState(null);
   const [savedPreview,setSavedPreview]=useState(null);
   async function refresh() {
-    const paths=['/admin/apis/status','/admin/queues/status','/admin/aggregation/reviews/gemini/queue','/admin/waterfall/batch/status','/admin/inci-research/queue?limit=1','/admin/inci-research/connection'];
+    const paths=['/admin/apis/status','/admin/queues/status','/admin/aggregation/reviews/gemini/queue','/admin/waterfall/batch/status','/admin/inci-research/queue?limit=1','/admin/inci-research/connection','/admin/v2/batch-presets'];
     const results=await Promise.allSettled(paths.map(p=>request(p)));
-    const setters=[setApis,setQueues,setIdentity,setWaterfall,setResearch,setResearchConnection];
+    const setters=[setApis,setQueues,setIdentity,setWaterfall,setResearch,setResearchConnection,setBatchPresets];
     results.forEach((r,i)=>{if(r.status==='fulfilled')setters[i](r.value);});
     const failed=results.map((r,i)=>r.status==='rejected'?paths[i]+': '+r.reason.message:null).filter(Boolean);
     setError(failed.join(' | '));
@@ -102,6 +104,27 @@ export default function AiOps({tab='providers',onTabChange,navigate}) {
     if(batchKind==='waterfall'){path='/admin/waterfall/batch/start';payload={scope:'unmatched_only',limit:Number(limit),langsearch_enabled:true,queue_jev:false,queue_gemini:false,queue_inci_research:false,max_workers:2,dry_run:true};}
     const r=await perform(()=>post(path,payload),'Execution started. Track its task in Job Center.');
     if(r){setPreview(null);setSavedPreview(null);}
+  }
+  async function savePreset() {
+    const name=window.prompt('Name this batch preset (saved server-side; no job will start):');
+    if(!name?.trim())return;
+    await perform(()=>post('/admin/v2/batch-presets',{
+      name:name.trim(),operation:batchKind,limit:Number(limit),batch_size:Number(batchSize)
+    }),'Batch preset saved.');
+  }
+  async function deletePreset() {
+    if(!presetId)return;
+    if(!window.confirm('Delete this saved batch preset? Active jobs are unaffected.'))return;
+    await perform(()=>request('/admin/v2/batch-presets/'+encodeURIComponent(presetId),{method:'DELETE'}),'Batch preset deleted.');
+    setPresetId('');
+  }
+  function loadPreset(id) {
+    setPresetId(id);
+    const entry=(batchPresets.presets||[]).find(p=>p.id===id);
+    if(entry){
+      setBatchKind(entry.operation);setLimit(entry.limit_items);setBatchSize(entry.batch_size);
+      setPreview(null);setSavedPreview(null);
+    }
   }
   async function quotaAction(name) {
     const text=name==='reset'?'RESET LOCAL LANGSEARCH COUNTER':'MARK LANGSEARCH EXHAUSTED';
@@ -168,6 +191,16 @@ export default function AiOps({tab='providers',onTabChange,navigate}) {
       <div className="flex justify-between flex-wrap gap-2"><div><h3 className="text-lg font-bold">Start a controlled batch</h3>
         <p className="text-sm text-slate-500">Select a queue, inspect eligibility, then explicitly authorize execution.</p></div>
         <button className={BTN} onClick={()=>navigate('jobs')}>Job history →</button></div>
+      <div className="mt-5 p-3 bg-slate-50 rounded-xl flex flex-wrap gap-3 items-end">
+        <label className="text-sm min-w-[220px] flex-1">Saved batch presets
+          <select className={INPUT+' mt-1'} value={presetId} onChange={e=>loadPreset(e.target.value)}>
+            <option value="">Select saved preset</option>{(batchPresets.presets||[]).map(p=>
+              <option key={p.id} value={p.id}>{p.name} · {p.operation} · {p.limit_items} items</option>)}
+          </select>
+        </label>
+        <button className={BTN} disabled={busy} onClick={savePreset}>Save as preset</button>
+        <button className={BTN} disabled={busy||!presetId} onClick={deletePreset}>Delete preset</button>
+      </div>
       <div className="grid md:grid-cols-3 gap-4 mt-5">
         <label className="text-sm font-medium">Operation<select className={INPUT+' mt-1'} value={batchKind} onChange={e=>{setBatchKind(e.target.value);setPreview(null);setSavedPreview(null);}}>
           {Object.entries(kindLabels).map(([key,name])=><option key={key} value={key}>{name}</option>)}</select></label>
