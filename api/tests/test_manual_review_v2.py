@@ -117,6 +117,40 @@ class ManualReviewV2Tests(unittest.TestCase):
         self.assertGreater(len(row['review_notes']),8)
         self.assertEqual(self.current('identity')['items'],[])
 
+
+    def test_identity_match_records_reviewed_link_without_canonical_merge(self):
+        pair=self.current('identity')['items'][0]
+        result=self.client.post(f"/admin/v2/manual-reviews/identity/{self.rid}",json={
+            'action':'match','fingerprint':pair['fingerprint']})
+        self.assertEqual(result.status_code,200,result.text)
+        self.assertEqual(result.json()['reviewer'],'test-admin')
+        conn=self.db()
+        link=conn.execute("""SELECT status,reviewed_by FROM product_identity_links
+            WHERE source_id='reviewstore' AND source_product_id='r-2'
+              AND canonical_product_id=?""",(self.cid,)).fetchone()
+        self.assertIsNotNone(link)
+        self.assertEqual(link['status'],'accepted')
+        self.assertEqual(link['reviewed_by'],'test-admin')
+        self.assertEqual(conn.execute("SELECT COUNT(*) FROM canonical_products").fetchone()[0],1)
+        self.assertIsNone(conn.execute("SELECT ingredients_raw FROM canonical_products WHERE id=?",(self.cid,)).fetchone()[0])
+
+    def test_identical_pair_becomes_no_match_only_after_guarded_vote(self):
+        pair=self.current('identity')['items'][0]
+        conn=self.db()
+        conn.execute("UPDATE canonical_products SET brand='Different Brand' WHERE id=?",(self.cid,))
+        conn.commit()
+        stale=self.client.post(f"/admin/v2/manual-reviews/identity/{self.rid}",json={
+            'action':'match','fingerprint':pair['fingerprint']})
+        self.assertEqual(stale.status_code,409)
+        latest=self.current('identity')['items'][0]
+        self.assertTrue(latest['match_blockers'])
+        blocked=self.client.post(f"/admin/v2/manual-reviews/identity/{self.rid}",json={
+            'action':'match','fingerprint':latest['fingerprint']})
+        self.assertEqual(blocked.status_code,409)
+        rejected=self.client.post(f"/admin/v2/manual-reviews/identity/{self.rid}",json={
+            'action':'no_match','fingerprint':latest['fingerprint']})
+        self.assertEqual(rejected.status_code,200,rejected.text)
+
     def test_inci_no_match_rejects_only_candidate_and_stale_vote_fails(self):
         pair=self.current('inci')['items'][0]
         self.assertEqual(pair['left']['canonical_id'],self.cid)
