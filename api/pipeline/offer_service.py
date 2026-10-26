@@ -1,5 +1,6 @@
 """Trade-item offers: packaging and price are separate from marketed formulation."""
 import re
+from pipeline.identity_scope import identity_link_product_id
 from pipeline.canonical_identity_resolver import valid_gtin
 
 
@@ -33,6 +34,7 @@ def upsert_offer(conn,source,observation,variant,canonical_id,observation_id,leg
     validated_compare_price=money(variant.compare_at_price)
     package=package_details(observation.raw_title,variant.title,validated_price)
     fields=dict(source_id=source['id'],source_product_id=observation.source_product_id,source_variant_id=variant.source_variant_id,
+        identity_link_product_id=identity_link_product_id(observation.source_product_id,variant.attributes),
         canonical_product_id=canonical_id,legacy_product_id=legacy_product_id,observation_id=observation_id,
         product_url=observation.source_url,title=observation.raw_title,sku=variant.sku,gtin=valid_gtin(variant.gtin),price=validated_price,
         currency=variant.currency,compare_at_price=validated_compare_price,is_available=int(variant.available),
@@ -42,7 +44,7 @@ def upsert_offer(conn,source,observation,variant,canonical_id,observation_id,leg
     if fields_filter is not None:
         scopes={'price':{'price','compare_at_price','unit_price','unit_measure'},'stock':{'is_available'},
                 'image':{'image_url'},'title':{'title','pack_count','unit_size','unit_size_unit','total_quantity','normalized_size_ml','normalized_size_g'}}
-        mutable={'canonical_product_id','legacy_product_id','observation_id','sku','gtin'} | set().union(*(scopes.get(k,set()) for k in fields_filter))
+        mutable={'canonical_product_id','legacy_product_id','observation_id','identity_link_product_id','sku','gtin'} | set().union(*(scopes.get(k,set()) for k in fields_filter))
     updates=','.join(f'{k}=excluded.{k}' for k in columns if k in mutable)
     conn.execute(f'''INSERT INTO product_offers({','.join(columns)}) VALUES ({','.join('?' for _ in columns)})
         ON CONFLICT(source_id,source_product_id,source_variant_id) DO UPDATE SET {updates},updated_at=CURRENT_TIMESTAMP''',list(fields.values()))

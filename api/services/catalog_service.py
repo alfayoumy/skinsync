@@ -7,6 +7,7 @@ import os
 import re
 import json
 import sqlite3
+import threading
 import pandas as pd
 from typing import Dict, Set, List, Tuple, Optional, Any
 
@@ -113,18 +114,39 @@ def extract_actives_from_title(title: Optional[str]) -> Set[str]:
 
 # Global in-memory cache
 df_cache: Optional[pd.DataFrame] = None
+_catalog_revision = None
+_catalog_lock = threading.RLock()
+
+
+def _read_catalog_revision(conn=None):
+    owned=conn is None
+    if owned:
+        if not os.path.exists(DB_PATH):return None
+        conn=sqlite3.connect('file:'+str(DB_PATH)+'?mode=ro',uri=True)
+    try:
+        try:row=conn.execute('SELECT revision FROM catalog_revision WHERE singleton=1').fetchone()
+        except sqlite3.OperationalError as error:
+            if 'no such table' in str(error):return None
+            raise
+        return row[0] if row else None
+    finally:
+        if owned:conn.close()
 
 def get_catalog_df() -> pd.DataFrame:
     """Returns the in-memory pandas DataFrame cache of products."""
     global df_cache
-    if df_cache is None:
-        load_catalog_from_db()
-    return df_cache
+    with _catalog_lock:
+        revision=_read_catalog_revision()
+        if df_cache is None or (revision is not None and revision!=_catalog_revision):
+            load_catalog_from_db()
+        return df_cache
 
 def set_catalog_df(df: pd.DataFrame):
     """Sets the in-memory catalog DataFrame."""
-    global df_cache
-    df_cache = df
+    global df_cache,_catalog_revision
+    with _catalog_lock:
+        df_cache = df
+        _catalog_revision=_read_catalog_revision()
 
 def get_synonyms() -> Dict[str, str]:
     """Returns the active ingredient synonym mappings."""
@@ -137,11 +159,17 @@ def set_synonyms(synonyms: Dict[str, str]):
     SYNONYMS = synonyms
 
 def load_catalog_from_db():
+    with _catalog_lock:
+        return _load_catalog_from_db()
+
+
+def _load_catalog_from_db():
     """
     Reloads all products and synonyms from SQLite into the in-memory cache,
     pre-calculating parsed ingredients, actives, and title actives.
     """
-    global df_cache, SYNONYMS
+    global df_cache, SYNONYMS,_catalog_revision
+    loaded_revision=None
     SYNONYMS = load_synonyms_from_db()
 
     if not os.path.exists(DB_PATH):
@@ -151,51 +179,43 @@ def load_catalog_from_db():
         df_cache['std_category'] = df_cache.get('std_category', 'Other')
     else:
         conn = sqlite3.connect(DB_PATH)
+        conn.execute('BEGIN')
+        loaded_revision=_read_catalog_revision(conn)
         columns = {row[1] for row in conn.execute('PRAGMA table_info(canonical_products)')}
         visibility = ' AND c.catalog_visible = 1' if 'catalog_visible' in columns else ''
         # Authoritative Canonical Index: Exactly ONE record per unique product formulation.
         # Retailer listings are store offers and are NOT duplicated in search or recommendation indices.
+        from pipeline.offer_trust import VERIFIED_OFFERS_CTE
         df_cache = pd.read_sql_query(f"""
-        SELECT c.id,
-               c.id as canonical_product_id,
-               c.canonical_title as title,
-               c.brand,
-               c.category as std_category,
-               c.min_price as price_low,
-               c.max_price as price_high,
-               COALESCE(c.primary_image_url, (SELECT p.image_url FROM products p WHERE p.canonical_product_id = c.id AND p.image_url IS NOT NULL LIMIT 1)) as image_url,
-               COALESCE((SELECT p.product_url FROM products p WHERE p.canonical_product_id = c.id AND p.product_url IS NOT NULL LIMIT 1), '') as url,
-               COALESCE((SELECT p.store_id FROM products p WHERE p.canonical_product_id = c.id AND p.store_id IS NOT NULL LIMIT 1), 'canonical') as store_id,
-               COALESCE((SELECT MAX(p.is_available) FROM products p WHERE p.canonical_product_id = c.id), 0) as is_available,
-               c.ingredients_raw as ingredients,
-               c.ingredients_parsed,
-               c.actives,
-               c.ingredient_source,
-               c.gate4_jev_status,
-               c.gate4_gemini_status,
-               c.gate4_cross_status,
-               COALESCE(c.store_count, 1) as store_count,
-               c.min_price,
-               c.max_price,
-               c.is_skincare
-        FROM canonical_products c
-        WHERE c.is_skincare = 1 {visibility};
-        """, conn)
-        has_offers = conn.execute("SELECT 1 FROM sqlite_master WHERE type='table' AND name='product_offers'").fetchone()
-        if has_offers:
-            variants = {r[0]: r[1:] for r in conn.execute("""SELECT canonical_product_id,MAX(is_available),MIN(product_url),MIN(source_id) FROM (
-                SELECT o.canonical_product_id,o.is_available,o.product_url,o.source_id FROM product_offers o JOIN sources s ON s.id=o.source_id
-                WHERE s.provides_prices=1 AND (s.wave<=1 OR s.publish_enabled=1)
-                UNION ALL SELECT p.canonical_product_id,p.is_available,p.product_url,p.store_id FROM products p
-                WHERE NOT EXISTS(SELECT 1 FROM product_offers o JOIN sources s ON s.id=o.source_id
-                    WHERE o.legacy_product_id=p.id AND s.provides_prices=1 AND (s.wave<=1 OR s.publish_enabled=1)))
-                GROUP BY canonical_product_id""")}
-            for idx, row in df_cache.iterrows():
-                extra = variants.get(row['canonical_product_id'])
-                if extra:
-                    df_cache.at[idx,'is_available'] = extra[0]
-                    if not row['url']: df_cache.at[idx,'url'] = extra[1]
-                    if row['store_id']=='canonical': df_cache.at[idx,'store_id'] = extra[2]
+        WITH {VERIFIED_OFFERS_CTE}, ranked AS (
+            SELECT *,MAX(CASE WHEN is_available=1 AND price>0 THEN 1 ELSE 0 END)
+                OVER(PARTITION BY canonical_product_id) AS has_stock,
+                ROW_NUMBER() OVER(PARTITION BY canonical_product_id ORDER BY
+                    is_available DESC,CASE WHEN price>0 THEN 0 ELSE 1 END,price,source_id,offer_key) AS display_rank
+            FROM verified_offers
+        ), offer_summary AS (
+            SELECT canonical_product_id,MAX(is_available) AS available,
+                COUNT(DISTINCT source_id) AS store_count,
+                MIN(CASE WHEN price>0 AND (has_stock=0 OR is_available=1) THEN price END) AS min_price,
+                MAX(CASE WHEN price>0 AND (has_stock=0 OR is_available=1) THEN price END) AS max_price,
+                MAX(CASE WHEN display_rank=1 THEN product_url END) AS product_url,
+                MAX(CASE WHEN display_rank=1 THEN source_id END) AS source_id,
+                MAX(CASE WHEN display_rank=1 THEN image_url END) AS image_url
+            FROM ranked GROUP BY canonical_product_id
+        )
+        SELECT c.id,c.id AS canonical_product_id,c.canonical_title AS title,c.brand,
+               c.category AS std_category,
+               COALESCE(o.min_price,0) AS price_low,COALESCE(o.max_price,0) AS price_high,
+               COALESCE(c.primary_image_url,o.image_url) AS image_url,
+               COALESCE(o.product_url,'') AS url,COALESCE(o.source_id,'canonical') AS store_id,
+               COALESCE(o.available,0) AS is_available,
+               c.ingredients_raw AS ingredients,c.ingredients_parsed,c.actives,c.ingredient_source,
+               c.gate4_jev_status,c.gate4_gemini_status,c.gate4_cross_status,
+               COALESCE(o.store_count,0) AS store_count,
+               COALESCE(o.min_price,0) AS min_price,COALESCE(o.max_price,0) AS max_price,c.is_skincare
+        FROM canonical_products c LEFT JOIN offer_summary o ON o.canonical_product_id=c.id
+        WHERE c.is_skincare=1 {visibility};
+        """,conn)
         conn.close()
 
     df_cache['title'] = df_cache['title'].fillna('').astype(str).str.strip()
@@ -210,6 +230,7 @@ def load_catalog_from_db():
     df_cache['actives'] = [p[1] for p in parsed_data]
     df_cache['title_actives'] = df_cache['title'].apply(extract_actives_from_title)
     df_cache['all_actives'] = [a.union(ta) for a, ta in zip(df_cache['actives'], df_cache['title_actives'])]
+    _catalog_revision=loaded_revision
     logger.info(f"Loaded {len(df_cache)} products from SQLite database into real-time memory index.")
 
 # Initialize in-memory cache upon module import

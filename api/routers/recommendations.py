@@ -58,6 +58,7 @@ def health_check():
         "status": "active",
         "database": "Production SQLite WAL",
         "products_indexed": len(df),
+        "products_with_ingredients": int(df['ingredients'].fillna('').astype(str).str.strip().ne('').sum()),
         "ai_engine": "Jev 1.13 Free (OpenCode Zen) + Cosmetic Formulation Bioequivalence"
     }
 

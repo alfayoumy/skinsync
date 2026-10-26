@@ -13,6 +13,7 @@ import uuid
 from datetime import datetime, timezone
 
 CATALOG_TABLES = (
+    'identity_gemini_pair_results','identity_gemini_legacy_history',
     'inci_research_queue', 'inci_research_runs',
     'identity_gemini_source_cases', 'identity_gemini_requeue_history',
     'identity_gemini_queue', 'product_review_queue',

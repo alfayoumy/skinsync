@@ -2,6 +2,7 @@
 import json
 import sqlite3
 import unittest
+from dataclasses import replace
 
 from pipeline.db_manager import init_db
 from pipeline.source_registry import get_source
@@ -113,7 +114,8 @@ class AutoCreateUnmatchedCanonicals(unittest.TestCase):
         self.assertEqual(self.conn.execute('SELECT COUNT(*) FROM canonical_products').fetchone()[0],0)
 
     def test_category_uncertainty_does_not_block_canonical_creation(self):
-        sample=self.obs(934570,title='Novalab Mystery Balm 30ml')
+        sample=replace(self.obs(934570,title='Novalab Mystery Original 30ml'),raw_category='Skin Care',
+                       description='An everyday cosmetic with a light texture.')
         # This title does not imply a specific approved skincare category;
         # its separate taxonomy uncertainty must remain visible.
         classification=classify_product_attributes(sample.raw_title,sample.raw_brand,

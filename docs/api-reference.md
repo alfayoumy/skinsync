@@ -74,10 +74,10 @@ POST /admin/aggregation/reviews/gemini/run
 Authorization: Bearer IDENTITY_ADMIN_TOKEN
 Content-Type: application/json
 
-{"limit":500,"batch_size":10}
+{"limit":500,"batch_size":1}
 ```
 
-Poll `GET /admin/aggregation/reviews/gemini/jobs/{task_id}`, and cancel with `POST /admin/aggregation/reviews/gemini/jobs/{task_id}/cancel`. Batches contain 1–20 cases per provider request (the UI offers 5/10/20). **This is separate from the INCI Gemini queue**.
+Poll `GET /admin/aggregation/reviews/gemini/jobs/{task_id}`, and cancel with `POST /admin/aggregation/reviews/gemini/jobs/{task_id}/cancel`. Every provider request contains **exactly two products in one pair**. `batch_size` must be 1; other values return 422. `limit` caps actual pair requests, not review cases. Four candidates require four separate requests; completed pairs are saved for resume. **This is separate from the INCI Gemini queue**.
 
 ### 5. Replay **saved** Gemini decisions (zero model calls)
 
@@ -157,6 +157,7 @@ Source: [`api/routers/aggregation.py`](../api/routers/aggregation.py).
 
 | Method | Path | Handler | Permission |
 |---|---|---|---|
+| GET | `/admin/aggregation/health` | Live identity/INCI coverage, pending reviews by kind, source publication settings and saved Gemini outcomes; no model calls or writes | `read` |
 | GET | `/admin/aggregation/sources` | [`sources()`](../api/routers/aggregation.py#L81) | `read` |
 | PATCH | `/admin/aggregation/sources/{source_id}` | [`enable_collection()`](../api/routers/aggregation.py#L87) | `collection` |
 | POST | `/admin/aggregation/sources/{source_id}/ingest` | [`ingest()`](../api/routers/aggregation.py#L96) | `collection` |
@@ -339,6 +340,8 @@ The selective preview chooses the latest multi-source discovery, checks that it 
 
 Unlike the identity matching Gemini queue or the Tier 7 SkinSAFE verification queue, this workflow **researches a missing ingredient declaration**. It runs only after the standard waterfall has failed to publish a verified formula and the operator selected `queue_inci_research=true` on `POST /admin/waterfall/batch/start` or `POST /admin/waterfall/resolve`. The waterfall queues cases only: no research model calls run during matching.
 
+Exact current identity-verified retailer pages can use deterministic detail extraction before Gemini. Such cases retain the page/hash, report method known_retailer_detail and no model name/confidence, and still require explicit review. Approval rechecks source association and observation currency. Generic model-research evidence uses research-prefixed record IDs rather than legacy product IDs.
+
 | Method | Endpoint | Capability | Meaning |
 |---|---|---|---|
 | GET | `/admin/inci-research/connection` | `read` | Whether DonSeTch executable and Gemini key are configured; never exposes key |
@@ -350,7 +353,7 @@ Unlike the identity matching Gemini queue or the Tier 7 SkinSAFE verification qu
 | POST | `/admin/inci-research/runs/{run_id}/cancel` | `formula` | Ask to stop between products |
 | POST | `/admin/inci-research/queue/{canonical_id}/review` | `formula_correction` and `formula` | Explicit approve/reject with rationale and publication gates |
 
-Example run request: `{"limit":10,"max_pages":3,"min_confidence":0.85}`. Only registered HTTPS retailer/manufacturer/reference domains are fetched, and the worker makes at most `max_pages` fetches per product. `min_confidence` is a **review-priority threshold**, not an auto-publication threshold. Scores combine model-reported confidence, exact product identity overlap and registered-source assessment. They are not calibrated correctness probabilities.
+Example run request: `{"limit":10,"max_pages":3,"min_confidence":0.85}`. Only registered HTTPS retailer/manufacturer/reference domains are fetched, and the worker makes at most `max_pages` fetches per product. `min_confidence` is a **review-priority threshold**, not an auto-publication threshold. Model-assisted scores combine model-reported confidence, product identity overlap and registered-source assessment. Literal retailer extraction has no model confidence and is identified separately. All scores are uncalibrated review rankings, not correctness probabilities.
 
 Results with a complete INCI string literally present in the source page and passing deterministic product-variant and tokenizer gates go to `needs_review` and `inci_audit_evidence` as **unverified evidence**, never to published product ingredients. Reviewers must open the original URL, verify the formulation/market and provide an explanation. An explicit market-compatibility acknowledgement is needed for non-Egypt/MENA sources. Corrections to an existing approved formula require an explicitly opted-in correction and elevated permission.
 
@@ -466,4 +469,4 @@ GET `/admin/aggregation/reviews/gemini/requeue/preview` inventories the old iden
 
 POST `/admin/aggregation/reviews/gemini/requeue` requires a matching preview fingerprint and exact confirmation `RESET IDENTITY GEMINI AND REQUEUE`. The operation claims a maintenance lock, creates a **new full SQLite backup**, then atomically removes old rows from **identity_gemini_queue** (including its prior live response columns) and **identity_gemini_source_cases**, and queues the current source-backed unresolved cases. The resulting backup path and counts are reported. No old responses are replayed; their historical records remain in the backup. Existing rematched products, source observations, review decisions, canonical constraints and INCI queues are not reset.
 
-Running Gemini requires the **separate** existing `POST /admin/aggregation/reviews/gemini/run` with a bounded `limit` and `batch_size`. New source-level cases return model verdicts and optional supported canonical suggestions; the Gemini worker **never auto-links them**. Separately, `POST /admin/aggregation/reviews/gemini/saved/preview` and `/saved/apply` can replay a high-confidence saved `same_product` suggestion without provider calls. Source links are applied **only** if the latest saved observation/canonical snapshot, independent second-retailer marketed title or verified GTIN, independently equivalent brand, full available formulation discriminators, hard identity gates and lack of unresolved rival canonical all agree. `uncertain`, `different_product`, lower-confidence, stale, or conflicting cases are not linked. Preview reports `source_verdicts_seen`, `source_verdicts_eligible`, `source_matches_linked` and reasons blocked. This never publishes ingredients, changes prices or merges canonical IDs.
+Running Gemini uses `POST /admin/aggregation/reviews/gemini/run` with bounded `limit` and `batch_size`. The worker and saved replay apply the same semantic source policy. `POST /admin/aggregation/reviews/gemini/saved/preview` and `/saved/apply` replay decisions without provider calls: a confident `same_product` links the selected supplied canonical and its source offers; a confident `different_product` rejects the supplied candidates and retains a distinct provisional product where supported. Missing metadata, differing wording and a missing second retailer are not independent rejection reasons. Actual variant contradictions, changed reviewed evidence, incompatible prior decisions and unscoped variant comparisons remain protected. `uncertain` and below-threshold results stay unresolved. Preview reports eligibility before application, `source_matches_linked`, `source_comparisons_rejected`, `new_canonical_products`, and complete `blocked_reasons`. It evaluates the whole batch in order and rolls back the entire preview. Existing offer prices and stock are preserved; new offers use retained source evidence. Ingredient publication and canonical merges are separate.

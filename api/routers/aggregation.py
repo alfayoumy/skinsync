@@ -9,6 +9,12 @@ from security.admin import reviewer_name
 router=APIRouter(prefix='/admin/aggregation',tags=['Source aggregation'])
 
 
+@router.get('/health')
+def health():
+    from pipeline.catalog_health import catalog_health
+    return operation(catalog_health)
+
+
 class IngestRequest(BaseModel):
     payload: Any
     url: Optional[str]=None
@@ -228,7 +234,7 @@ class GeminiEnqueueRequest(BaseModel):
 
 class GeminiRunRequest(BaseModel):
     limit:int=Field(default=500,ge=1,le=20000)
-    batch_size:int=Field(default=10,ge=1,le=20)
+    batch_size:Literal[1]=1
 
 
 @router.get('/reviews/gemini/queue')
@@ -317,10 +323,11 @@ def gemini_identity_run(request:GeminiRunRequest,background_tasks:BackgroundTask
     if active:raise HTTPException(status_code=409,detail='A Gemini product-review job is already running.')
     task_id=create_task('product_identity_gemini',target_source='review_queue',
         params={'limit':request.limit,'batch_size':request.batch_size},
-        total_items=min(ready,request.limit),auto_start=True)
+        total_items=request.limit,auto_start=True)
     background_tasks.add_task(run_identity_gemini_queue,task_id,request.limit,request.batch_size)
     return {'task_id':task_id,'status':'running','queued':ready,
-        'message':'Gemini will evaluate several product-review cases per API call. Only guarded high-confidence matches are auto-resolved.'}
+        'products_per_request':2,'maximum_pair_requests':request.limit,
+        'message':'Every API request compares exactly two products. Completed pairs are saved and reused on resume.'}
 
 
 @router.get('/reviews/gemini/jobs/{task_id}')
@@ -462,10 +469,10 @@ def gemini_identity_results(
         filter_sql=' WHERE '+' AND '.join(where)
         total=conn.execute('SELECT COUNT(*)'+joins+filter_sql,args).fetchone()[0]
         order=order_fields[sort_by]+' '+sort_order.upper()+', r.id DESC'
-        sql="""SELECT r.id review_id,r.kind,r.status review_status,
+        sql="""SELECT r.id review_id,r.kind,r.status review_status,r.source_id,r.source_product_id,
             r.canonical_product_id,r.details,r.decision,r.review_notes,
             q.status outcome,q.verdict,q.confidence,q.model_name,
-            q.explanation,q.attempts,q.queued_at,q.updated_at,
+            q.explanation,q.attempts,q.queued_at,q.updated_at,q.comparison_mode,
             q.evidence_hash queued_evidence_hash,r.evidence_hash current_evidence_hash,
             s.payload_json source_candidate_payload,s.suggested_canonical_id
             """+joins+filter_sql+' ORDER BY '+order+' LIMIT ? OFFSET ?'
@@ -477,6 +484,19 @@ def gemini_identity_results(
             try:decision=json.loads(data['decision']) if data['decision'] else None
             except (ValueError,TypeError):decision=None
             data['decision']=decision
+            data['historical_group_results']=[]
+            for history in conn.execute('SELECT queue_json,archived_at FROM identity_gemini_legacy_history WHERE review_id=? ORDER BY id DESC',(data['review_id'],)):
+                old=json.loads(history['queue_json'])
+                data['historical_group_results'].append({k:old.get(k) for k in ('verdict','confidence','explanation','model_name','updated_at')})
+            data['pair_results']=[]
+            for pair in conn.execute('''SELECT pair_key,products_json,canonical_candidate_id,verdict,confidence,explanation,model_name
+                FROM identity_gemini_pair_results WHERE review_id=? AND evidence_hash=? ORDER BY pair_key''',
+                (data['review_id'],data['current_evidence_hash'])):
+                item=dict(pair);item['products']=json.loads(item.pop('products_json'))
+                link=conn.execute('SELECT status FROM product_identity_links WHERE source_id=? AND source_product_id=? AND canonical_product_id=?',
+                    (data['source_id'],data['source_product_id'],item['canonical_candidate_id'])).fetchone()
+                item['application_action']=link['status'] if link and link['status'] in ('accepted','rejected') else None
+                data['pair_results'].append(item)
             data['title']=details.get('title') or details.get('original_title') or (
                 'Canonical #'+str(data['canonical_product_id']))
             data['brand']=details.get('brand')

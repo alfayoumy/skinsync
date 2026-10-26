@@ -46,9 +46,11 @@ def save_observation(conn,observation,identity,classification):
 
 def process_source_observation(conn,observation,dry_run=False,legacy_product_id=None,
                                offer_fields=None,existing_observation_id=None,
-                               replay_saved_projection=False):
+                               replay_saved_projection=False,replay_variant_ids=None):
     from pipeline.catalog_reset import guard_catalog_writes
     guard_catalog_writes(conn)
+    if replay_variant_ids is not None and (existing_observation_id is None or not replay_saved_projection):
+        raise ValueError('A variant-scoped replay requires an existing saved observation.')
     source=get_source(conn,observation.source_id)
     if source['source_type']!=observation.source_type or not url_matches_source(source,observation.source_url):
         raise ValueError('Observation source type or URL does not match the registered source.')
@@ -94,7 +96,17 @@ def process_source_observation(conn,observation,dry_run=False,legacy_product_id=
                     'SELECT source_variant_id FROM source_product_variants WHERE observation_id=?',
                     (existing_observation_id,))}
                 actual={str(v.source_variant_id) for v in observation.variants}
-                if expected!=actual or observation.ingredient_text is not None:
+                valid_variants=expected==actual
+                if replay_variant_ids is not None:
+                    declared={str(v) for v in replay_variant_ids}
+                    valid_variants=bool(actual) and actual==declared and actual<=expected
+                    saved={str(r['source_variant_id']):json.loads(r['attributes']) for r in conn.execute(
+                        'SELECT source_variant_id,attributes FROM source_product_variants WHERE observation_id=?',(existing_observation_id,))}
+                    for variant in observation.variants:
+                        value=saved.get(str(variant.source_variant_id),{})
+                        value['source_variant_id']=str(variant.source_variant_id)
+                        if asdict(variant)!=value:valid_variants=False
+                if not valid_variants or observation.ingredient_text is not None:
                     raise ValueError('Saved rematch must not change variants or reuse old INCI as new evidence.')
             oid=existing_observation_id
         reviewed=conn.execute("SELECT details,decision FROM product_review_queue WHERE source_id=? AND source_product_id=? AND kind='category' AND status='confirmed'",(source['id'],observation.source_product_id)).fetchone()
@@ -125,10 +137,12 @@ def process_source_observation(conn,observation,dry_run=False,legacy_product_id=
             # Uncertain *category* is not an uncertain product match. Keep
             # the new distinct product and its retailer offers, with a separate
             # category review; only explicit non-skincare exclusions are skipped.
-            category_needs_review = (
-                classification.classification_status=='review'
-                or classification.primary_category=='Set')
-            if classification.classification_status=='excluded' and not category_needs_review:
+            category_needs_review = classification.classification_status=='review'
+            # A clearly identified bundle is a known category, not a mandatory
+            # human taxonomy decision. Retain its offers for price tracking but
+            # keep it outside single-formula skincare recommendations.
+            if (classification.classification_status=='excluded'
+                    and classification.primary_category!='Set'):
                 results.append({'status':'excluded','observation_id':oid});continue
             if decision.status=='ambiguous':
                 from pipeline.weak_identity_triage import is_weak_identity_suggestion

@@ -14,6 +14,8 @@ logger = get_logger("skincare_engine.price_service")
 from collections import defaultdict
 
 
+from pipeline.offer_trust import VERIFIED_LEGACY_OFFER, VERIFIED_VARIANT_OFFER, VERIFIED_OFFERS_CTE
+
 def get_canonical_price_comparison(canonical_id: int, conn=None) -> Optional[Dict[str, Any]]:
     """
     Returns full multi-store price comparison and store offers for a given canonical product ID.
@@ -52,14 +54,14 @@ def get_canonical_price_comparison(canonical_id: int, conn=None) -> Optional[Dic
 
         # Fetch all retailer store listings (offers) for this canonical product
         # Zero ingredient queries from products table
-        cur.execute("""
+        cur.execute(f"""
         SELECT p.id as product_id, p.store_id, s.name as store_name, p.title as store_title,
                p.price, p.compare_at_price, p.is_available, p.product_url, p.image_url,
                p.size_raw, p.size_value, p.size_unit, p.normalized_size_ml, p.normalized_size_g,
                p.unit_price, p.unit_measure
         FROM products p
         LEFT JOIN stores s ON s.id = p.store_id
-        WHERE p.canonical_product_id = ?
+        WHERE p.canonical_product_id = ? AND {VERIFIED_LEGACY_OFFER}
         ORDER BY p.price ASC;
         """, (canonical_id,))
         listings = [dict(r) for r in cur.fetchall()]
@@ -68,7 +70,7 @@ def get_canonical_price_comparison(canonical_id: int, conn=None) -> Optional[Dic
             item['offer_namespace'] = 'legacy'
             item['offer_id'] = item['product_id']
         if has_variants:
-            variant_rows = [dict(r) for r in conn.execute("""SELECT o.id as offer_id,'variant' as offer_namespace,
+            variant_rows = [dict(r) for r in conn.execute(f"""SELECT o.id as offer_id,'variant' as offer_namespace,
                 o.legacy_product_id as product_id,o.source_id as store_id,s.name as store_name,o.title as store_title,
                 o.price,o.compare_at_price,o.is_available,o.product_url,o.image_url,o.source_product_id,o.source_variant_id,
                 o.sku,o.gtin,o.pack_count,o.unit_size,o.unit_size_unit,o.total_quantity,
@@ -76,7 +78,7 @@ def get_canonical_price_comparison(canonical_id: int, conn=None) -> Optional[Dic
                      ELSE printf('%g %s',o.unit_size,o.unit_size_unit) END as size_raw,
                 o.unit_size as size_value,o.unit_size_unit as size_unit,o.normalized_size_ml,o.normalized_size_g,o.unit_price,o.unit_measure
                 FROM product_offers o JOIN sources s ON s.id=o.source_id
-                WHERE o.canonical_product_id=? AND s.provides_prices=1 AND (s.wave<=1 OR s.publish_enabled=1) AND o.currency='EGP'""", (canonical_id,))]
+                WHERE o.canonical_product_id=? AND s.provides_prices=1 AND (s.wave<=1 OR s.publish_enabled=1) AND o.currency='EGP' AND {VERIFIED_VARIANT_OFFER}""", (canonical_id,))]
             represented = {r['product_id'] for r in variant_rows if r['product_id'] is not None}
             listings = [r for r in listings if r['product_id'] not in represented] + variant_rows
             listings.sort(key=lambda r:r['price'])
@@ -91,8 +93,8 @@ def get_canonical_price_comparison(canonical_id: int, conn=None) -> Optional[Dic
         best_deal = active_offers[0] if active_offers else (listings[0] if listings else None)
         prices = [o["price"] for o in active_offers]
 
-        min_price = min(prices) if prices else canonical["min_price"]
-        max_price = max(prices) if prices else canonical["max_price"]
+        min_price = min(prices) if prices else 0.0
+        max_price = max(prices) if prices else 0.0
         price_diff = round(max(0.0, max_price - min_price), 2)
         savings_pct = round((price_diff / max_price * 100.0), 1) if max_price > 0 else 0.0
 
@@ -200,9 +202,11 @@ def get_product_price_comparison(product_id: int, conn=None) -> Optional[Dict[st
     try:
         cur = conn.cursor()
         # 1. Check if product_id is an offer listing in products
-        cur.execute("SELECT canonical_product_id FROM products WHERE id = ?;", (product_id,))
+        cur.execute(f"SELECT p.canonical_product_id, {VERIFIED_LEGACY_OFFER} AS verified FROM products p WHERE p.id = ?;", (product_id,))
         row = cur.fetchone()
 
+        if row and not row["verified"]:
+            return None
         if row and row["canonical_product_id"]:
             canonical_id = row["canonical_product_id"]
             comparison = get_canonical_price_comparison(canonical_id, conn=conn)
@@ -234,18 +238,26 @@ def get_price_arbitrage_deals(limit: int = 20, min_savings_egp: float = 20.0, co
         cur = conn.cursor()
         columns = {r[1] for r in conn.execute('PRAGMA table_info(canonical_products)')}
         visibility = 'AND catalog_visible=1' if 'catalog_visible' in columns else ''
+        # Recompute from verified associations; cached canonical aggregates may
+        # still include a rejected or historical retailer pointer.
         cur.execute(f"""
-        SELECT id, canonical_title, brand, category, min_price, max_price,
-               ROUND(max_price - min_price, 2) as diff,
-               ROUND((max_price - min_price) / max_price * 100.0, 1) as savings_pct,
-               store_count, primary_image_url
-        FROM canonical_products
-        WHERE store_count > 1
-          AND is_skincare = 1 {visibility}
-          AND min_price > 0
-          AND (max_price - min_price) >= ?
-        ORDER BY diff DESC
-        LIMIT ?;
+        WITH {VERIFIED_OFFERS_CTE}, stock AS (
+            SELECT *,MAX(CASE WHEN is_available=1 AND price>0 THEN 1 ELSE 0 END)
+                OVER(PARTITION BY canonical_product_id) AS has_stock FROM verified_offers
+        ), prices AS (
+            SELECT canonical_product_id,MIN(price) min_price,MAX(price) max_price,
+                COUNT(DISTINCT source_id) store_count FROM stock
+            WHERE price>0 AND (has_stock=0 OR is_available=1)
+            GROUP BY canonical_product_id
+        )
+        SELECT c.id,c.canonical_title,c.brand,c.category,p.min_price,p.max_price,
+               ROUND(p.max_price-p.min_price,2) diff,
+               ROUND((p.max_price-p.min_price)/p.max_price*100.0,1) savings_pct,
+               p.store_count,c.primary_image_url
+        FROM canonical_products c JOIN prices p ON p.canonical_product_id=c.id
+        WHERE p.store_count>1 AND c.is_skincare=1 {visibility}
+          AND (p.max_price-p.min_price)>=?
+        ORDER BY diff DESC,c.id LIMIT ?
         """, (min_savings_egp, limit))
 
         results = []

@@ -9,6 +9,7 @@ Integration and Unit Tests for Specialized API Operations:
 from admin_test_support import authenticate
 
 import unittest
+from unittest.mock import patch
 import os
 import sys
 import json
@@ -41,7 +42,8 @@ class TestApiOperations(unittest.TestCase):
     # =========================================================================
     # 1. CATALOG / STORE REFRESH TESTS
     # =========================================================================
-    def test_products_refresh_background(self):
+    @patch("routers.catalog._run_refresh_catalog_task")
+    def test_products_refresh_background(self, worker):
         payload = {
             "store_id": "bashrety",
             "fields": ["price", "stock"],
@@ -50,17 +52,20 @@ class TestApiOperations(unittest.TestCase):
         }
         resp = self.client.post("/products/refresh", json=payload)
         self.assertEqual(resp.status_code, 200)
+        worker.assert_called_once()
         data = resp.json()
         self.assertEqual(data["status"], "accepted")
         self.assertIn("dispatched to background worker", data["message"])
 
-    def test_store_refresh_endpoint(self):
+    @patch("routers.catalog._run_refresh_catalog_task")
+    def test_store_refresh_endpoint(self, worker):
         resp = self.client.post("/stores/sourcebeauty/refresh", json={
             "fields": ["image"],
             "max_pages": 1,
             "background": True
         })
         self.assertEqual(resp.status_code, 200)
+        worker.assert_called_once()
         data = resp.json()
         self.assertEqual(data["status"], "accepted")
         self.assertIn("sourcebeauty", data["message"])

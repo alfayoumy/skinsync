@@ -106,7 +106,6 @@ const AdminObservatory = ({ onBackToApp }) => {
   const [queueActionLoading, setQueueActionLoading] = useState(null);
   const [jevLimit, setJevLimit] = useState(50);
   const [geminiLimit, setGeminiLimit] = useState(50);
-  const [geminiBatchSize, setGeminiBatchSize] = useState(10);
   const [geminiAllPending, setGeminiAllPending] = useState(false);
   const [activeQueueTab, setActiveQueueTab] = useState('both'); // 'both', 'jev', 'gemini'
   const queueTerminalRef = useRef(null);
@@ -319,7 +318,7 @@ const AdminObservatory = ({ onBackToApp }) => {
       const body = {
         worker,
         limit: worker === 'jev' ? (jevLimit ? parseInt(jevLimit) : null) : (worker === 'gemini' ? (geminiLimit ? parseInt(geminiLimit) : null) : (jevLimit ? parseInt(jevLimit) : null)),
-        batch_size: parseInt(geminiBatchSize) || 10,
+        batch_size: 1,
         all_pending: geminiAllPending
       };
       const res = await apiFetch('http://127.0.0.1:8000/admin/queues/start', {
@@ -1261,17 +1260,17 @@ const AdminObservatory = ({ onBackToApp }) => {
         {overview && (
           <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-3">
             <div className="bg-white p-4 rounded-2xl border border-emerald-300 shadow-sm bg-gradient-to-b from-emerald-50/40 to-white">
-              <div className="text-[10px] font-bold text-emerald-700 uppercase tracking-wider mb-1">Active Skincare (Phase 1)</div>
+              <div className="text-[10px] font-bold text-emerald-700 uppercase tracking-wider mb-1">Visible skincare</div>
               <div className="text-xl font-black text-emerald-700">
-                {overview.catalog_vitals.active_skincare_products ? overview.catalog_vitals.active_skincare_products.toLocaleString() : '7,413'}
+                {(overview.catalog_vitals.active_skincare_products??0).toLocaleString()}
               </div>
               <div className="text-[10px] text-emerald-600 mt-1 font-semibold">Active in App</div>
             </div>
 
             <div className="bg-white p-4 rounded-2xl border border-amber-200 shadow-sm bg-gradient-to-b from-amber-50/30 to-white">
-              <div className="text-[10px] font-bold text-amber-700 uppercase tracking-wider mb-1">Suppressed (Phase 2)</div>
+              <div className="text-[10px] font-bold text-amber-700 uppercase tracking-wider mb-1">Other product types</div>
               <div className="text-xl font-black text-amber-800">
-                {overview.catalog_vitals.suppressed_non_skincare ? overview.catalog_vitals.suppressed_non_skincare.toLocaleString() : '15,355'}
+                {(overview.catalog_vitals.suppressed_non_skincare??0).toLocaleString()}
               </div>
               <div className="text-[10px] text-amber-700 mt-1">Deos, perfumes, hair</div>
             </div>
@@ -1281,7 +1280,7 @@ const AdminObservatory = ({ onBackToApp }) => {
               <div className="text-xl font-black text-gray-900">
                 {overview.catalog_vitals.total_store_listings.toLocaleString()}
               </div>
-              <div className="text-[10px] text-gray-500 mt-1">Across 6 retailers</div>
+              <div className="text-[10px] text-gray-500 mt-1">Across {overview.stores.length} retailers</div>
             </div>
 
             <div className="bg-white p-4 rounded-2xl border border-gray-200 shadow-sm">
@@ -1289,41 +1288,41 @@ const AdminObservatory = ({ onBackToApp }) => {
               <div className="text-xl font-black text-purple-700">
                 {overview.catalog_vitals.canonical_entities.toLocaleString()}
               </div>
-              <div className="text-[10px] text-gray-500 mt-1">Unified clusters</div>
+              <div className="text-[10px] text-gray-500 mt-1">Excludes merged records</div>
             </div>
 
             <div className="bg-white p-4 rounded-2xl border border-gray-200 shadow-sm">
-              <div className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Multi-Store Deals</div>
+              <div className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Multi-store products</div>
               <div className="text-xl font-black text-emerald-600">
                 {overview.catalog_vitals.multi_store_clusters.toLocaleString()}
               </div>
-              <div className="text-[10px] text-emerald-700 mt-1 font-semibold">Price arbitrage</div>
+              <div className="text-[10px] text-emerald-700 mt-1 font-semibold">Listed at 2+ retailers</div>
             </div>
 
             <div className="bg-white p-4 rounded-2xl border border-gray-200 shadow-sm">
-              <div className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Full Ingredients</div>
+              <div className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Published skincare INCI</div>
               <div className="text-xl font-black text-blue-600">
                 {overview.catalog_vitals.products_with_ingredients.toLocaleString()}
               </div>
               <div className="text-[10px] text-gray-500 mt-1">
-                {overview.catalog_vitals.coverage_percent}% coverage
+                {overview.catalog_vitals.coverage_percent}% of {(overview.catalog_vitals.skincare_canonical_products??0).toLocaleString()} skincare canonicals
               </div>
             </div>
 
             <div className="bg-white p-4 rounded-2xl border border-gray-200 shadow-sm">
-              <div className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">INCI Reference</div>
+              <div className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">INCI reference entries</div>
               <div className="text-xl font-black text-indigo-600">
-                {overview.catalog_vitals.inci_matched_products.toLocaleString()}
+                {(overview.catalog_vitals.inci_reference_products??0).toLocaleString()}
               </div>
-              <div className="text-[10px] text-gray-500 mt-1">SkinSafe DB</div>
+              <div className="text-[10px] text-gray-500 mt-1">{(overview.catalog_vitals.skinsafe_reference_products??0).toLocaleString()} SkinSAFE entries</div>
             </div>
 
             <div className="bg-white p-4 rounded-2xl border border-gray-200 shadow-sm">
-              <div className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">AI Verified</div>
+              <div className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Verified identities</div>
               <div className="text-xl font-black text-pink-600">
-                {overview.catalog_vitals.ai_verified_products.toLocaleString()}
+                {(overview.catalog_vitals.verified_identities??0).toLocaleString()}
               </div>
-              <div className="text-[10px] text-gray-500 mt-1">Cross-Encoder/LLM</div>
+              <div className="text-[10px] text-gray-500 mt-1">Product identity checks</div>
             </div>
           </div>
         )}
@@ -2215,7 +2214,7 @@ const AdminObservatory = ({ onBackToApp }) => {
                       {/* Detected Actives */}
                       <div>
                         <div className="font-bold text-gray-700 mb-2 uppercase text-[10px] tracking-wider">
-                          Clinical Key Active Compounds
+                          Actives in the published ingredients
                         </div>
                         <div className="flex flex-wrap gap-2">
                           {telemetry.ingredients_forensics.actives.length > 0 ? (
@@ -2233,7 +2232,7 @@ const AdminObservatory = ({ onBackToApp }) => {
                       {/* Parsed Tokens */}
                       <div>
                         <div className="font-bold text-gray-700 mb-2 uppercase text-[10px] tracking-wider">
-                          Parsed & Normalized Ingredient Order (FDA Concentration Weighting)
+                          Parsed ingredients in source order
                         </div>
                         {telemetry.ingredients_forensics.ingredients_parsed.length > 0 ? (
                           <div className="p-4 bg-gray-50 rounded-xl border border-gray-200 max-h-60 overflow-y-auto">
@@ -2241,7 +2240,6 @@ const AdminObservatory = ({ onBackToApp }) => {
                               {telemetry.ingredients_forensics.ingredients_parsed.map((token, i) => (
                                 <li key={i} className="pl-1">
                                   <span className="text-gray-900 font-semibold">{token}</span>
-                                  {i < 5 && <span className="text-[10px] text-amber-600 font-bold ml-2">Zone 1 (&gt;1%)</span>}
                                 </li>
                               ))}
                             </ol>
@@ -2256,12 +2254,16 @@ const AdminObservatory = ({ onBackToApp }) => {
                       {/* Raw Scraped Ingredients */}
                       <div>
                         <div className="font-bold text-gray-700 mb-2 uppercase text-[10px] tracking-wider">
-                          Raw Scraped Text (Pre-Normalization)
+                          Published ingredient declaration
                         </div>
                         <div className="p-3 bg-gray-100 rounded-lg text-[11px] font-mono text-gray-800 break-words max-h-28 overflow-y-auto">
-                          {telemetry.ingredients_forensics.ingredients_raw || 'No raw ingredients text recorded.'}
+                          {telemetry.ingredients_forensics.ingredients_raw || 'No verified formula has been published for this listing.'}
                         </div>
                       </div>
+                      {telemetry.ingredients_forensics.listing_ingredients_raw && <div>
+                        <div className="font-bold text-gray-700 mb-2 uppercase text-[10px] tracking-wider">Original retailer ingredient field</div>
+                        <div className="p-3 bg-gray-50 rounded-lg text-xs break-words">{telemetry.ingredients_forensics.listing_ingredients_raw}</div>
+                      </div>}
                     </div>
                   )}
 
@@ -2807,6 +2809,9 @@ const AdminObservatory = ({ onBackToApp }) => {
                               <h4 className="font-extrabold text-sm text-gray-900">
                                 {telemetry.cross_store_linking.canonical_entity.canonical_title}
                               </h4>
+                              <p className={`text-xs font-semibold ${telemetry.product.source_association_verified ? 'text-emerald-700' : 'text-amber-800'}`}>
+                                {telemetry.product.source_association_verified ? 'Verified retailer association' : 'Retailer association awaits verification'}
+                              </p>
                               <p className="text-xs text-gray-500">
                                 Normalized Key: <code className="bg-white px-1 rounded border">{telemetry.cross_store_linking.canonical_entity.normalized_key}</code>
                               </p>
@@ -3643,8 +3648,8 @@ const AdminObservatory = ({ onBackToApp }) => {
                         </span>
                       </div>
                       <div className="flex justify-between items-center text-gray-600">
-                        <span className="text-[11px] font-medium">Batch Size:</span>
-                        <span className="font-bold text-gray-800">{apiStatusData?.gemini?.limits?.batch_size || 10} items / call</span>
+                        <span className="text-[11px] font-medium">Request size:</span>
+                        <span className="font-bold text-gray-800">1 pair · 2 products / call</span>
                       </div>
                       <div className="flex justify-between items-center text-gray-600">
                         <span className="text-[11px] font-medium">Pace Delay:</span>
@@ -4752,17 +4757,8 @@ const AdminObservatory = ({ onBackToApp }) => {
                       </div>
 
                       <div className="space-y-1.5">
-                        <label className="text-[11px] font-bold text-gray-600">Batch Size / Call:</label>
-                        <select
-                          disabled={queueStatus?.gemini?.is_running}
-                          value={geminiBatchSize}
-                          onChange={(e) => setGeminiBatchSize(parseInt(e.target.value))}
-                          className="w-full text-xs font-bold border border-gray-200 rounded-xl px-2.5 py-1.5 bg-gray-50 text-gray-800 disabled:opacity-50"
-                        >
-                          <option value="5">5 products / call</option>
-                          <option value="10">10 products / call</option>
-                          <option value="15">15 products / call</option>
-                        </select>
+                        <label className="text-[11px] font-bold text-gray-600">Products per request:</label>
+                        <p className="text-xs font-bold text-gray-800">Fixed: 2 products (one pair)</p>
                       </div>
                     </div>
 

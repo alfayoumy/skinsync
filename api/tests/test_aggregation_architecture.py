@@ -220,10 +220,18 @@ class TestAggregationDatabase(unittest.TestCase):
         cid=self.canonical(raw=RAW)
         process_source_observation(self.conn,self.observation())
         offer_id=self.conn.execute('SELECT id FROM product_offers').fetchone()[0]
+        from pipeline.canonical_identity_resolver import identity_name
+        offer=self.conn.execute('SELECT source_id,title FROM product_offers WHERE id=?',(offer_id,)).fetchone()
+        alias=identity_name(offer['title'],'CeraVe')
+        self.conn.execute("INSERT OR IGNORE INTO canonical_product_aliases(canonical_product_id,alias_type,alias_value,source_id,verified) VALUES (?,'title',?,?,1)",(cid,alias,offer['source_id']))
+        self.conn.execute("INSERT INTO canonical_product_aliases(canonical_product_id,alias_type,alias_value,source_id,verified) VALUES (?,'title','unmoved sibling','feel22',1)",(cid,))
         result=split_canonical(self.conn,cid,[],[offer_id],'CeraVe Night Cream',{'timing':'night'},'reviewer','Distinct night product')
         self.assertIsNone(self.conn.execute('SELECT ingredients_raw FROM canonical_products WHERE id=?',(result['new_canonical_id'],)).fetchone()[0])
+        self.assertEqual(self.conn.execute('SELECT verified FROM canonical_product_aliases WHERE canonical_product_id=? AND source_id=? AND alias_value=?',(cid,offer['source_id'],alias)).fetchone()[0],0)
+        self.assertEqual(self.conn.execute("SELECT verified FROM canonical_product_aliases WHERE alias_value='unmoved sibling'").fetchone()[0],1)
         reverse_identity_operation(self.conn,result['history_id'],'reviewer','Incorrect split')
         self.assertEqual(self.conn.execute('SELECT canonical_product_id FROM product_offers').fetchone()[0],cid)
+        self.assertEqual(self.conn.execute('SELECT verified FROM canonical_product_aliases WHERE canonical_product_id=? AND source_id=? AND alias_value=?',(cid,offer['source_id'],alias)).fetchone()[0],1)
     def test_reviewed_cannot_link_is_remembered(self):
         cid=self.canonical()
         resolver=CanonicalIdentityResolver(self.conn)

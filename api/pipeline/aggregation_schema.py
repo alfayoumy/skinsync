@@ -82,6 +82,7 @@ TABLES = [
  normalized_size_ml REAL,normalized_size_g REAL,unit_price REAL,unit_measure TEXT,
  updated_at TEXT DEFAULT CURRENT_TIMESTAMP,UNIQUE(source_id,source_product_id,source_variant_id))''',
 '''CREATE INDEX IF NOT EXISTS idx_product_offers_canonical ON product_offers(canonical_product_id)''',
+'''CREATE INDEX IF NOT EXISTS idx_product_offers_legacy_source ON product_offers(legacy_product_id,source_id)''',
 '''CREATE INDEX IF NOT EXISTS idx_product_offers_gtin ON product_offers(gtin)''',
 '''CREATE TABLE IF NOT EXISTS formulation_versions(id INTEGER PRIMARY KEY,canonical_product_id INTEGER NOT NULL REFERENCES canonical_products(id),
  formula_version INTEGER NOT NULL,formula_hash TEXT,raw_ingredients TEXT NOT NULL,parsed_tokens TEXT NOT NULL,
@@ -110,16 +111,21 @@ def ensure_identity_gemini_schema(conn):
                 or sql.startswith('CREATE TABLE IF NOT EXISTS identity_gemini_source_cases(')
                 or sql.startswith('CREATE TABLE IF NOT EXISTS identity_gemini_requeue_history(')):
             conn.execute(sql)
+    from pipeline.identity_pairs import ensure_pair_schema
+    ensure_pair_schema(conn)
 
 
 def init_aggregation_schema(conn):
     for sql in TABLES:
         conn.execute(sql)
+    from pipeline.identity_pairs import ensure_pair_schema
+    ensure_pair_schema(conn)
     additions = {
         'canonical_products': [('brand_id','INTEGER REFERENCES brands(id)'),('identity_attributes',"TEXT NOT NULL DEFAULT '{}'"),
             ('identity_status',"TEXT NOT NULL DEFAULT 'legacy'"),('classification',"TEXT NOT NULL DEFAULT '{}'"),
             ('classification_status',"TEXT NOT NULL DEFAULT 'legacy'"),('catalog_visible','INTEGER NOT NULL DEFAULT 1'),
             ('family_name','TEXT'),('market','TEXT'),('formula_region','TEXT'),('formula_revision','TEXT'),('formulation_provenance',"TEXT NOT NULL DEFAULT 'legacy_unverified'")],
+        'product_offers': [('identity_link_product_id','TEXT')],
         'product_identity_links': [('identity_status',"TEXT NOT NULL DEFAULT 'legacy_preserved_unverified'")],
         'products': [('original_title','TEXT'),('original_brand','TEXT'),('original_category','TEXT'),
             ('classification',"TEXT NOT NULL DEFAULT '{}'"),('brand_id','INTEGER REFERENCES brands(id)')],
@@ -132,6 +138,8 @@ def init_aggregation_schema(conn):
         for name, definition in fields:
             if name not in columns:
                 conn.execute(f'ALTER TABLE {table} ADD COLUMN {name} {definition}')
+    from pipeline.identity_scope import backfill_offer_identity_scopes
+    backfill_offer_identity_scopes(conn)
     conn.execute('INSERT OR IGNORE INTO legacy_identity_mapping(product_id,canonical_product_id) SELECT id,canonical_product_id FROM products')
 
     conn.execute('''CREATE TABLE IF NOT EXISTS source_evaluations(id INTEGER PRIMARY KEY,source_id TEXT NOT NULL REFERENCES sources(id),

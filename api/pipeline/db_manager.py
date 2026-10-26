@@ -445,6 +445,8 @@ def init_db(db_path=DB_PATH, seed_defaults: bool = True, conn=None):
     seed_brands(conn)
     register_legacy_brands(conn)
     seed_taxonomy(conn)
+    from pipeline.catalog_revision import ensure_catalog_revision_schema
+    ensure_catalog_revision_schema(conn)
 
     # Indexes for sub-millisecond query performance
     cur.execute("CREATE INDEX IF NOT EXISTS idx_products_category ON products(category);")

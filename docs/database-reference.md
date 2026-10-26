@@ -623,6 +623,16 @@ Source: [`api/pipeline/aggregation_schema.py`](../api/pipeline/aggregation_schem
 | `queued_at` | `TEXT DEFAULT CURRENT_TIMESTAMP` |
 | `updated_at` | `TEXT DEFAULT CURRENT_TIMESTAMP` |
 
+The additive pairwise migration also adds `identity_gemini_queue.comparison_mode`, default `legacy_group`. Newly evaluated outcomes use `pairwise`; unresolved historical group responses are not eligible for saved-decision application.
+
+#### `identity_gemini_pair_results`
+
+Source: `api/pipeline/identity_pairs.py`. Composite key `(review_id,pair_key,evidence_hash)`; `review_id` references `product_review_queue`. `products_json` stores exactly two product identities. The row includes nullable `canonical_candidate_id`, `verdict`, `confidence`, `explanation`, `model_name`, `created_at`, and `updated_at`. A NULL verdict denotes a prepared pair. Completed pair results are independently committed and reused when resuming the same evidence. A source with multiple candidates has multiple rows and **multiple separate provider requests**.
+
+#### `identity_gemini_legacy_history`
+
+Source: `api/pipeline/identity_pairs.py`. Append-only operational archive of unresolved historical group responses: `id`, `review_id`, full `queue_json`, optional full `source_case_json`, `archived_at`. Pair preparation preserves the original verdict, confidence, reason and source candidate snapshot here before refreshing the live queue. Full SQLite backups additionally preserve the pre-migration state. Applied historical decisions are not reverted by pair preparation.
+
 #### `formulation_versions`
 
 Source: [`api/pipeline/aggregation_schema.py`](../api/pipeline/aggregation_schema.py).

@@ -6,23 +6,48 @@ def tables(conn):
     return {r[0] for r in conn.execute("SELECT name FROM sqlite_master WHERE type='table'")}
 
 
-def pending_identity_review(conn, canonical_id):
+def pending_identity_ids(conn):
+    """Canonical disputes block publication; unaccepted retrieval suggestions do not.
+
+    A grounded pending source suggestion cannot supply canonical ingredients:
+    verified_link remains mandatory at publication. It also cannot invalidate
+    a different, already accepted source's product identity merely by appearing
+    in the same fuzzy candidate list.
+    """
+    pending=set()
     present = tables(conn)
     if 'product_review_queue' in present:
-        for row in conn.execute("SELECT canonical_product_id,details FROM product_review_queue WHERE status='pending' AND kind IN ('identity','duplicate')"):
-            if row[0] == canonical_id:
-                return True
+        grounded={'source_product_observations','product_identity_links'}<=present
+        extra=""",o.source_id,o.source_product_id,
+            EXISTS(SELECT 1 FROM product_identity_links l WHERE l.source_id=r.source_id
+                AND l.source_product_id=r.source_product_id AND l.status='accepted')
+            FROM product_review_queue r LEFT JOIN source_product_observations o
+                ON o.id=json_extract(r.details,'$.observation_id')""" if grounded else ',NULL,NULL,0 FROM product_review_queue r'
+        for row in conn.execute("SELECT r.canonical_product_id,r.details,r.kind,r.source_id,r.source_product_id"+extra+
+                                " WHERE r.status='pending' AND r.kind IN ('identity','duplicate')"):
+            if row[0] is not None:pending.add(row[0])
             details = json.loads(row[1])
-            if canonical_id in details.get('canonical_ids', []):
-                return True
+            pending.update(x for x in details.get('canonical_ids',[]) if type(x) is int)
             decision = details.get('identity') or details.get('decision') or {}
-            if any(c.get('canonical_product_id') == canonical_id for c in decision.get('candidates', [])):
-                return True
+            candidates=[c for c in decision.get('candidates',[]) if isinstance(c,dict)]
+            suggestion=(row[0] is None and row[2]=='identity' and row[3]==row[5]
+                and row[6] is not None and (str(row[4])==str(row[6]) or str(row[4]).startswith(str(row[6])+':'))
+                and not row[7] and decision.get('method')=='review_required'
+                and not any(c.get(k) for c in candidates for k in ('durable_link','reviewed_link','strong_identifier')))
+            if not suggestion:
+                pending.update(c['canonical_product_id'] for c in candidates if type(c.get('canonical_product_id')) is int)
+            # A review of an accepted source association always disputes its
+            # current canonical, even if the proposed replacement differs.
+            if grounded and row[7]:
+                pending.update(r[0] for r in conn.execute("SELECT canonical_product_id FROM product_identity_links WHERE source_id=? AND source_product_id=? AND status='accepted'",(row[3],row[4])))
     if 'canonical_identity_reviews' in present:
         for row in conn.execute("SELECT canonical_ids FROM canonical_identity_reviews WHERE status='pending'"):
-            if canonical_id in json.loads(row[0]):
-                return True
-    return False
+            pending.update(x for x in json.loads(row[0]) if type(x) is int)
+    return pending
+
+
+def pending_identity_review(conn,canonical_id):
+    return canonical_id in pending_identity_ids(conn)
 
 
 def verified_link(conn, source_id, source_product_id, canonical_id):

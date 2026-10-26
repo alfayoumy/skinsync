@@ -66,6 +66,14 @@ class TestWorkerSeparation(unittest.TestCase):
         self.assertAlmostEqual(results[101][1], 0.95)
         self.assertFalse(results[102][0])
         self.assertAlmostEqual(results[102][1], 0.99)
+        self.assertEqual(mock_urlopen.call_count,2)
+        self.assertEqual(mock_acquire.call_count,2)
+        for call,item,other in zip(mock_urlopen.call_args_list,items,reversed(items)):
+            prompt=json.loads(call.args[0].data)['contents'][0]['parts'][0]['text']
+            self.assertEqual(prompt.count('Product A: '),1)
+            self.assertEqual(prompt.count('Product B: '),1)
+            self.assertIn(item['store_title'],prompt)
+            self.assertNotIn(other['store_title'],prompt)
 
     @patch("pipeline.gemini_worker.verify_batch_with_gemini")
     @patch("pipeline.gemini_worker.get_connection")
@@ -91,7 +99,7 @@ class TestWorkerSeparation(unittest.TestCase):
         self.assertEqual(res["processed"], 2)
         self.assertEqual(res["approved"], 1)
         self.assertEqual(res["rejected"], 1)
-        self.assertEqual(res["api_calls"], 1)
+        self.assertEqual(res["api_calls"], 2)
 
     @patch("pipeline.jev_worker.verify_match_with_jev")
     @patch("pipeline.jev_worker.get_connection")

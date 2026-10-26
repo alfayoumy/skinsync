@@ -23,6 +23,19 @@ from pipeline.whitelist_matcher import (
     extract_ingredients_via_whitelist, reload_whitelist_cache
 )
 from pipeline.logging_config import get_logger
+
+# Retailer rows retain their original scrape fields. Published formulas and
+# current categories come from the canonical only through a verified link.
+VERIFIED_LISTING_LINK_SQL="""EXISTS(SELECT 1 FROM product_identity_links il
+    WHERE il.source_id=p.store_id
+    AND il.source_product_id=COALESCE(NULLIF(p.store_product_id,''),CAST(p.id AS TEXT))
+    AND il.canonical_product_id=c.id AND il.status='accepted'
+    AND il.identity_status='identity_verified')"""
+PUBLISHED_LISTING_FORMULA_SQL=f"""({VERIFIED_LISTING_LINK_SQL}) AND c.identity_status='verified'
+    AND c.formulation_published_at IS NOT NULL AND COALESCE(TRIM(c.ingredients_raw),'')!=''"""
+LISTING_CATEGORY_SQL=f"CASE WHEN {VERIFIED_LISTING_LINK_SQL} THEN c.category ELSE p.category END"
+LISTING_SKINCARE_SQL=f"CASE WHEN {VERIFIED_LISTING_LINK_SQL} THEN c.is_skincare ELSE p.is_skincare END"
+LISTING_FORMULA_SOURCE_SQL=f"CASE WHEN {PUBLISHED_LISTING_FORMULA_SQL} THEN c.ingredient_source ELSE NULL END"
 from services.catalog_service import parse_and_clean_ingredients, extract_actives_from_title
 from services.recommender import compute_weighted_jaccard, get_recommendations
 from dermo_data import evaluate_product_dermo
@@ -67,23 +80,26 @@ def get_admin_overview():
         cur.execute("SELECT COUNT(*) FROM products;")
         total_products = cur.fetchone()[0]
 
-        cur.execute("SELECT COUNT(*) FROM canonical_products;")
+        cur.execute("SELECT COUNT(*) FROM canonical_products WHERE identity_status NOT IN ('redirected','reversed_split');")
         total_canonical = cur.fetchone()[0]
 
-        cur.execute("SELECT COUNT(*) FROM canonical_products WHERE store_count > 1;")
+        cur.execute("SELECT COUNT(*) FROM canonical_products WHERE store_count > 1 AND identity_status NOT IN ('redirected','reversed_split');")
         multi_store_clusters = cur.fetchone()[0]
 
-        cur.execute("SELECT COUNT(*) FROM products WHERE ingredients_raw IS NOT NULL AND LENGTH(ingredients_raw) >= 15;")
+        cur.execute("SELECT COUNT(*) FROM canonical_products WHERE is_skincare=1 AND identity_status='verified' AND formulation_published_at IS NOT NULL AND COALESCE(TRIM(ingredients_raw),'')!='';")
         products_with_ingredients = cur.fetchone()[0]
 
-        cur.execute("SELECT COUNT(*) FROM products WHERE is_skincare = 1;")
+        cur.execute("SELECT COUNT(*) FROM canonical_products WHERE is_skincare=1 AND catalog_visible=1 AND identity_status NOT IN ('redirected','reversed_split');")
         active_skincare_count = cur.fetchone()[0]
 
-        cur.execute("SELECT COUNT(*) FROM products WHERE is_skincare = 0;")
+        cur.execute("SELECT COUNT(*) FROM canonical_products WHERE is_skincare=0 AND identity_status NOT IN ('redirected','reversed_split');")
         suppressed_non_skincare_count = cur.fetchone()[0]
 
-        cur.execute("SELECT COUNT(*) FROM products WHERE inci_matched_id IS NOT NULL;")
+        cur.execute("SELECT COUNT(*) FROM canonical_products WHERE inci_matched_id IS NOT NULL AND identity_status NOT IN ('redirected','reversed_split');")
         inci_matched_count = cur.fetchone()[0]
+        reference_counts=cur.execute("SELECT COUNT(*) total,SUM(CASE WHEN lower(source)='skinsafe' THEN 1 ELSE 0 END) skinsafe FROM inci_reference").fetchone()
+        reference_count=reference_counts['total']
+        skinsafe_reference_count=reference_counts['skinsafe'] or 0
 
         cur.execute("""
         SELECT COUNT(*) FROM products 
@@ -92,17 +108,20 @@ def get_admin_overview():
            OR gate4_jev_status = 'passed_jev';
         """)
         ai_verified_count = cur.fetchone()[0]
+        skincare_canonical_count=cur.execute("SELECT COUNT(*) FROM canonical_products WHERE is_skincare=1 AND identity_status NOT IN ('redirected','reversed_split')").fetchone()[0]
+        verified_identities=cur.execute("SELECT COUNT(*) FROM canonical_products WHERE identity_status='verified'").fetchone()[0]
 
         # Store Breakdown
-        cur.execute("""
+        cur.execute(f"""
         SELECT s.id, s.name, s.domain, s.platform, s.is_active, s.last_sync_at,
                COUNT(p.id) as total_products,
-               SUM(CASE WHEN p.is_skincare = 1 THEN 1 ELSE 0 END) as skincare_products,
-               SUM(CASE WHEN p.ingredients_raw IS NOT NULL AND LENGTH(p.ingredients_raw) >= 15 THEN 1 ELSE 0 END) as with_ingredients,
+               SUM(CASE WHEN {LISTING_SKINCARE_SQL}=1 THEN 1 ELSE 0 END) as skincare_products,
+               SUM(CASE WHEN {PUBLISHED_LISTING_FORMULA_SQL} THEN 1 ELSE 0 END) as with_ingredients,
                SUM(CASE WHEN p.canonical_product_id IS NOT NULL THEN 1 ELSE 0 END) as linked_products,
                ROUND(AVG(p.price), 2) as avg_price
         FROM stores s
         LEFT JOIN products p ON p.store_id = s.id
+        LEFT JOIN canonical_products c ON c.id=p.canonical_product_id AND c.identity_status NOT IN ('redirected','reversed_split')
         GROUP BY s.id
         ORDER BY total_products DESC;
         """)
@@ -142,8 +161,12 @@ def get_admin_overview():
                 "suppressed_non_skincare": suppressed_non_skincare_count,
                 "products_with_ingredients": products_with_ingredients,
                 "inci_matched_products": inci_matched_count,
+                "inci_reference_products":reference_count,
+                "skinsafe_reference_products":skinsafe_reference_count,
                 "ai_verified_products": ai_verified_count,
-                "coverage_percent": round((products_with_ingredients / total_products * 100.0), 1) if total_products else 0.0
+                "verified_identities":verified_identities,
+                "skincare_canonical_products":skincare_canonical_count,
+                "coverage_percent": round((products_with_ingredients / skincare_canonical_count * 100.0), 1) if skincare_canonical_count else 0.0
             },
             "stores": stores_breakdown,
             "sources": registry_sources,
@@ -217,12 +240,12 @@ def list_admin_products(
             params.append(brand.strip())
 
         if is_skincare is True:
-            where_clauses.append("p.is_skincare = 1")
+            where_clauses.append(f"({LISTING_SKINCARE_SQL})=1")
         elif is_skincare is False:
-            where_clauses.append("p.is_skincare = 0")
+            where_clauses.append(f"({LISTING_SKINCARE_SQL})=0")
 
         if category:
-            where_clauses.append("p.category = ?")
+            where_clauses.append(f"({LISTING_CATEGORY_SQL}) = ?")
             params.append(category)
 
         if is_available is True:
@@ -231,12 +254,12 @@ def list_admin_products(
             where_clauses.append("p.is_available = 0")
 
         if has_ingredients is True:
-            where_clauses.append("(p.ingredients_raw IS NOT NULL AND LENGTH(p.ingredients_raw) >= 15)")
+            where_clauses.append(f"({PUBLISHED_LISTING_FORMULA_SQL})")
         elif has_ingredients is False:
-            where_clauses.append("(p.ingredients_raw IS NULL OR LENGTH(p.ingredients_raw) < 15)")
+            where_clauses.append(f"NOT COALESCE(({PUBLISHED_LISTING_FORMULA_SQL}),0)")
 
         if ingredient_source:
-            where_clauses.append("p.ingredient_source = ?")
+            where_clauses.append(f"({LISTING_FORMULA_SOURCE_SQL}) = ?")
             params.append(ingredient_source)
 
         if is_multi_store is True:
@@ -279,7 +302,7 @@ def list_admin_products(
         count_sql = f"""
         SELECT COUNT(*)
         FROM products p
-        LEFT JOIN canonical_products c ON c.id = p.canonical_product_id
+        LEFT JOIN canonical_products c ON c.id = p.canonical_product_id AND c.identity_status NOT IN ('redirected','reversed_split')
         {where_sql};
         """
         cur.execute(count_sql, params)
@@ -287,18 +310,21 @@ def list_admin_products(
 
         # Fetch records
         query_sql = f"""
-        SELECT p.id, p.store_id, s.name as store_name, p.title, p.clean_title, p.brand, p.category,
+        SELECT p.id, p.store_id, s.name as store_name, p.title, p.clean_title, p.brand,
+               {LISTING_CATEGORY_SQL} as category,p.category as listing_category,
                p.price, p.compare_at_price, p.is_available, p.image_url, p.product_url,
-               p.ingredient_source, p.ingredient_source_url,
-               CASE WHEN p.ingredients_raw IS NOT NULL AND LENGTH(p.ingredients_raw) >= 15 THEN 1 ELSE 0 END as has_ingredients,
+               {LISTING_FORMULA_SOURCE_SQL} as ingredient_source,
+               CASE WHEN {PUBLISHED_LISTING_FORMULA_SQL} THEN c.ingredient_source_url ELSE NULL END as ingredient_source_url,
+               CASE WHEN {PUBLISHED_LISTING_FORMULA_SQL} THEN 1 ELSE 0 END as has_ingredients,
+               CASE WHEN {VERIFIED_LISTING_LINK_SQL} THEN 1 ELSE 0 END as source_association_verified,
                p.canonical_product_id, c.canonical_title, COALESCE(c.store_count, 1) as store_count,
                c.min_price, c.max_price,
                p.inci_matched_id, p.inci_matched_name, p.inci_hybrid_score, p.inci_cross_score,
                p.gate1_quality_status, p.gate2_safeguard_status, p.gate4_cross_status, p.gate4_gemini_status,
-               p.is_skincare, p.updated_at
+               {LISTING_SKINCARE_SQL} as is_skincare,p.is_skincare as listing_is_skincare,p.updated_at
         FROM products p
         LEFT JOIN stores s ON s.id = p.store_id
-        LEFT JOIN canonical_products c ON c.id = p.canonical_product_id
+        LEFT JOIN canonical_products c ON c.id = p.canonical_product_id AND c.identity_status NOT IN ('redirected','reversed_split')
         {where_sql}
         ORDER BY {sort_col} {order_dir}
         LIMIT ? OFFSET ?;
@@ -349,6 +375,21 @@ def get_product_telemetry_forensics(
             raise HTTPException(status_code=404, detail=f"Product with ID {product_id} not found.")
 
         product = dict(row)
+        listing_ingredients_raw=product.get('ingredients_raw') or ''
+        listing_ingredient_source=product.get('ingredient_source')
+        listing_category=product.get('category')
+        authoritative=conn.execute(f'''SELECT c.* FROM products p JOIN canonical_products c ON c.id=p.canonical_product_id
+            WHERE p.id=? AND c.identity_status NOT IN ('redirected','reversed_split') AND {VERIFIED_LISTING_LINK_SQL}''',(product_id,)).fetchone()
+        association_verified=authoritative is not None
+        has_published_formula=bool(authoritative and authoritative['identity_status']=='verified'
+            and authoritative['formulation_published_at'] and (authoritative['ingredients_raw'] or '').strip())
+        if authoritative:
+            product['category']=authoritative['category'];product['is_skincare']=authoritative['is_skincare']
+        for field in ('ingredients_raw','ingredients_parsed','actives','ingredient_source','ingredient_source_url'):
+            product[field]=authoritative[field] if has_published_formula else None
+        if has_published_formula:
+            product['inci_matched_id']=authoritative['inci_matched_id']
+            product['inci_matched_name']=authoritative['inci_matched_name']
 
         # 2. Parse Ingredients & Actives
         raw_ings = product.get("ingredients_raw") or ""
@@ -368,7 +409,7 @@ def get_product_telemetry_forensics(
             except Exception:
                 pass
         if not actives_list:
-            acts = extract_actives_from_title(product.get("title", ""))
+            acts = set()
             if raw_ings:
                 _, p_acts = parse_and_clean_ingredients(raw_ings)
                 acts = acts.union(p_acts)
@@ -379,8 +420,7 @@ def get_product_telemetry_forensics(
             "current_store_scrape", "store_scrape", "store_description", "v10_curated"
         }
         has_source_ings = bool(
-            raw_ings and len(raw_ings.strip()) >= 15 and 
-            product.get("ingredient_source") in AUTHENTIC_SOURCE_TYPES
+            listing_ingredients_raw.strip() and listing_ingredient_source in AUTHENTIC_SOURCE_TYPES
         )
 
         # 3. Reference INCI Information & Forensic Candidate Resolution
@@ -419,7 +459,7 @@ def get_product_telemetry_forensics(
                 "ingredients_raw": None,
                 "source": "candidate_lookup"
             }
-        else:
+        elif not has_published_formula:
             try:
                 from pipeline.inci_matcher import match_with_inci_db
                 local_m = match_with_inci_db(
@@ -461,7 +501,9 @@ def get_product_telemetry_forensics(
                 logger.warning(f"Live candidate lookup error for product #{product_id}: {e}")
 
         if not decision_summary:
-            if has_source_ings:
+            if has_published_formula:
+                decision_summary='Published canonical formulation'
+            elif has_source_ings:
                 decision_summary = "Source Ingredients Active (Ground Truth Preserved)"
             else:
                 decision_summary = product.get("gate4_gemini_status") or product.get("gate4_cross_status") or "Pending Evaluation"
@@ -592,6 +634,8 @@ def get_product_telemetry_forensics(
                 "clean_title": product.get("clean_title"),
                 "brand": product.get("brand"),
                 "category": product.get("category"),
+                "listing_category":listing_category,
+                "source_association_verified":association_verified,
                 "is_skincare": int(product.get("is_skincare") if product.get("is_skincare") is not None else 0),
                 "canonical_product_id": product.get("canonical_product_id"),
                 "price": product.get("price"),
@@ -606,10 +650,14 @@ def get_product_telemetry_forensics(
                 "updated_at": product.get("updated_at")
             },
             "ingredients_forensics": {
-                "has_ingredients": bool(raw_ings and len(raw_ings) >= 15),
+                "has_ingredients": has_published_formula,
                 "ingredient_source": product.get("ingredient_source") or "none",
                 "ingredient_source_url": product.get("ingredient_source_url"),
                 "ingredients_raw": raw_ings,
+                "listing_ingredients_raw":listing_ingredients_raw,
+                "listing_ingredient_source":listing_ingredient_source,
+                "formulation_scope":"published_canonical" if has_published_formula else "no_verified_formula",
+                "title_actives":sorted(extract_actives_from_title(product.get('title',''))),
                 "parsed_tokens_count": len(parsed_ings),
                 "ingredients_parsed": parsed_ings,
                 "actives": actives_list
@@ -1585,7 +1633,8 @@ def get_all_apis_status_endpoint():
                 "limits": {
                     "max_rpm": getattr(cfg, "GEMINI_MAX_RPM", 15),
                     "max_rpd": getattr(cfg, "GEMINI_MAX_RPD", 1500),
-                    "batch_size": getattr(cfg, "GEMINI_BATCH_SIZE", 10),
+                    "batch_size": 1,
+                    "products_per_request": 2,
                     "pace_delay_seconds": getattr(cfg, "GEMINI_PACE_DELAY_SECONDS", 4.0),
                     "timeout_seconds": getattr(cfg, "GEMINI_TIMEOUT_SECONDS", 35.0)
                 },

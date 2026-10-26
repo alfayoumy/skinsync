@@ -10,6 +10,7 @@ Unit and Integration Tests for Control Tables and Task Tracking System:
 from admin_test_support import authenticate
 
 import unittest
+from unittest.mock import patch
 import os
 import sys
 import json
@@ -258,6 +259,9 @@ class TestControlTables(unittest.TestCase):
 
     def test_api_scraping_checkpoints(self):
         """Tests GET /scraping/checkpoints and GET /scraping/checkpoints/{store_id}."""
+        # The endpoint test must also pass on a freshly rebuilt catalog, where
+        # no historical scrape checkpoint exists and later tests have not run.
+        update_scrape_checkpoint('sourcebeauty',page_scraped=1,status='idle')
         # List all checkpoints
         resp = self.client.get("/scraping/checkpoints")
         self.assertEqual(resp.status_code, 200)
@@ -275,7 +279,8 @@ class TestControlTables(unittest.TestCase):
         resp_unknown = self.client.get("/scraping/checkpoints/nonexistent_store_xyz")
         self.assertEqual(resp_unknown.status_code, 404)
 
-    def test_refresh_dispatch_creates_task(self):
+    @patch("routers.catalog._run_refresh_catalog_task")
+    def test_refresh_dispatch_creates_task(self, worker):
         """Tests that background catalog refresh returns a trackable task_id."""
         resp = self.client.post("/products/refresh", json={
             "store_id": "bashrety",
@@ -284,6 +289,7 @@ class TestControlTables(unittest.TestCase):
             "background": True
         })
         self.assertEqual(resp.status_code, 200)
+        worker.assert_called_once()
         data = resp.json()
         self.assertEqual(data["status"], "accepted")
         self.assertIn("task_id", data)
