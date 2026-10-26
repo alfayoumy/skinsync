@@ -47,6 +47,12 @@ export default function WorkflowWizard({navigate,workflowKind='catalog_build'}) 
       setError('');
     }catch(e){setError(e.message);}
   }
+  useEffect(()=>{
+    if(!run?.id)return;
+    const timer=setInterval(()=>request('/admin/v2/workflows/'+encodeURIComponent(run.id))
+      .then(setRun).catch(()=>{}),4000);
+    return ()=>clearInterval(timer);
+  },[run?.id]);
   useEffect(()=>{loadRuns();request('/admin/aggregation/sources')
     .then(data=>setSources(data.sources||[])).catch(e=>setError(e.message));},[workflowKind]);
   useEffect(()=>{
@@ -190,16 +196,20 @@ export default function WorkflowWizard({navigate,workflowKind='catalog_build'}) 
   }
   async function markReviewed(){
     await act(async()=>{
-      if(!window.confirm('Record that you have reviewed this step? This does not automatically approve any identity or INCI evidence.'))return;
+      if(!preview)throw Error('Preview the current source evidence before recording a review checkpoint.');
+      if(!window.confirm('Continue with eligible verified products while unresolved identity/INCI cases remain held? This does not approve unverified data.'))return;
       await save('needs_review',{reviewed_at:new Date().toISOString(),evidence:preview||{}});
       setMessage('Review checkpoint saved. Individual unresolved products remain held.');
     });
   }
+  const entry=run?.steps?.find(s=>s.step_key===step);
+  const effectiveStatus=entry?.effective_status||entry?.status||'draft';
+  const canAdvance=['completed','completed_with_errors','needs_review'].includes(effectiveStatus);
   async function next(){
+    if(!canAdvance){setError('Finish this operation or record an explicit review checkpoint before advancing. Navigation is available for inspecting future steps.');return;}
     const idx=allSteps.findIndex(s=>s[0]===step);
     if(idx<allSteps.length-1)setStep(allSteps[idx+1][0]);
   }
-  const entry=run?.steps?.find(s=>s.step_key===step);
   const currentIndex=allSteps.findIndex(s=>s[0]===step);
   const setField=(key,value)=>{setConfig(prev=>({...prev,[key]:value}));setPreview(null);};
   return <div className="space-y-5">
@@ -215,7 +225,7 @@ export default function WorkflowWizard({navigate,workflowKind='catalog_build'}) 
     <div className="grid lg:grid-cols-[270px_minmax(0,1fr)] gap-5">
       <nav className={PANEL+' h-fit space-y-1'} aria-label="Wizard steps">
         <p className="text-xs text-slate-500 font-semibold mb-4 break-all">RUN {run.id}</p>
-        {allSteps.map(([key,label],i)=>{const state=run.steps?.find(s=>s.step_key===key)?.status||'draft';
+        {allSteps.map(([key,label],i)=>{const saved=run.steps?.find(s=>s.step_key===key);const state=saved?.effective_status||saved?.status||'draft';
           return <button key={key} onClick={()=>selectStep(key)}
             className={`w-full p-3 text-left rounded-xl flex gap-3 items-start ${step===key?'bg-violet-100 text-violet-900':'hover:bg-slate-50'}`}>
             <span className={`w-7 h-7 rounded-full text-xs flex items-center justify-center shrink-0 ${state==='completed'?'bg-emerald-100':'bg-slate-100'}`}>{state==='completed'?<Check size={15}/>:i+1}</span>
@@ -227,7 +237,7 @@ export default function WorkflowWizard({navigate,workflowKind='catalog_build'}) 
           <div className="flex justify-between flex-wrap items-center mb-2 gap-2">
             <div><span className="text-xs uppercase text-violet-700 font-bold">Step {currentIndex+1} of {allSteps.length}</span>
               <h3 className="text-xl font-bold mt-1">{allSteps[currentIndex]?.[1]}</h3></div>
-            <span className="rounded-lg bg-slate-100 px-3 py-2 text-xs font-semibold">{entry?.status||'draft'}</span>
+            <span className="rounded-lg bg-slate-100 px-3 py-2 text-xs font-semibold">{effectiveStatus}</span>
           </div>
           <p className="text-sm text-slate-500 mb-5">{allSteps[currentIndex]?.[2]}</p>
           {step==='sources' && <div className="space-y-4">
@@ -272,7 +282,7 @@ export default function WorkflowWizard({navigate,workflowKind='catalog_build'}) 
             <button className={BTN} disabled={busy} onClick={previewAction}><Search size={15} className="inline mr-1"/>Preview</button>
             {['sources','discovery','identity','inci'].includes(step)&&<button className={PRIMARY} disabled={busy} onClick={applyAction}>
               <Play size={15} className="inline mr-1"/>{step==='sources'?'Confirm sources':step==='discovery'?'Apply / start':step==='identity'?'Start rematch':'Start INCI run'}</button>}
-            {['classification','inci_review','quality'].includes(step)&&<button className={BTN} disabled={busy} onClick={markReviewed}>Record review checkpoint</button>}
+            {['classification','inci_review','quality','identity','inci'].includes(step)&&<button className={BTN} disabled={busy} onClick={markReviewed}>Record review checkpoint</button>}
           </div>
         </section>
         {error&&<p role="alert" className="rounded-xl border border-red-200 bg-red-50 text-red-700 p-3 text-sm">{error}</p>}
@@ -284,7 +294,7 @@ export default function WorkflowWizard({navigate,workflowKind='catalog_build'}) 
           <p className="text-sm mt-2">The job continues on the backend after you leave this page. Check its current status in Job Center.</p>
           <button className={BTN+' mt-3'} onClick={()=>navigate('jobs')}><ExternalLink size={15} className="inline mr-2"/>Job Center</button></section>}
         <div className="flex justify-between gap-3"><button className={BTN} disabled={currentIndex===0} onClick={()=>selectStep(allSteps[currentIndex-1][0])}><ChevronLeft size={16} className="inline"/> Previous step</button>
-          <button className={BTN} disabled={currentIndex>=allSteps.length-1} onClick={next}>Next step <ChevronRight size={16} className="inline"/></button></div>
+          <button className={BTN} disabled={!canAdvance||currentIndex>=allSteps.length-1} title={!canAdvance?'Complete or review this step first':'Continue'} onClick={next}>Next step <ChevronRight size={16} className="inline"/></button></div>
       </div>
     </div>}
   </div>;
