@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { apiFetch, setAdminToken } from './apiFetch';
-import AdminObservatory from './AdminObservatory';
+import AdminV2 from './admin-v2/AdminV2';
 export default function AdminAccess({ onBackToApp }) {
   const [token, setToken] = useState('');
   const [actor, setActor] = useState(null);
@@ -11,7 +11,7 @@ export default function AdminAccess({ onBackToApp }) {
     window.addEventListener('skinsync-admin-unauthorized', expire);
     return () => { setAdminToken(''); window.removeEventListener('skinsync-admin-unauthorized', expire); };
   }, []);
-  if (actor) return <><div className="p-2 flex justify-end gap-3 text-sm bg-purple-50"><span>Administrator: {actor.name}</span><button onClick={() => { setActor(null); setAdminToken(''); }}>Sign out</button></div><AdminObservatory onBackToApp={onBackToApp} /></>;
+  if (actor) return <><div className="p-2 flex justify-end gap-3 text-sm bg-purple-50"><span>Administrator: {actor.name}</span><button onClick={() => { setActor(null); setAdminToken(''); }}>Sign out</button></div><AdminV2 onBackToApp={onBackToApp} /></>;
   return <main className="max-w-md mx-auto my-16 p-6 bg-white rounded-xl border space-y-4"><h1 className="text-xl font-bold">Administrator access</h1><form className="space-y-4" onSubmit={async e => {
     e.preventDefault(); setBusy(true); setError(''); setAdminToken(token);
     try {

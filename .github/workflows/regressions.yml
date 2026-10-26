@@ -43,4 +43,4 @@ jobs:
           cache-dependency-path: skinsync-app/package-lock.json
       - run: npm ci
       - run: npm run build
-      - run: npx eslint src/AdminAccess.jsx src/apiFetch.js src/AggregationReviewPanel.jsx src/ConnectionTests.jsx src/useConnectionTests.js
+      - run: npx eslint src/AdminAccess.jsx src/apiFetch.js src/AggregationReviewPanel.jsx src/ConnectionTests.jsx src/useConnectionTests.js src/admin-v2/*.jsx src/admin-v2/api.js
