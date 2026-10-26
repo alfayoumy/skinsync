@@ -109,8 +109,8 @@ export default function WorkflowWizard({navigate,workflowKind='catalog_build'}) 
         result=await request('/admin/aggregation/reviews/rematch/preview?limit='+Number(config.limit));kind='rematch';
       }
       else if(step==='classification'){
-        result=await request('/admin/aggregation/reviews?view=all&limit=10');
-        kind='classification';
+        const [audit,reviews]=await Promise.all([request('/admin/workflows/catalog/quality-audit'),request('/admin/aggregation/reviews?view=all&limit=10')]);
+        result={catalog_quality:audit,identity_review_sample:reviews};kind='classification';
       }
       else if(step==='inci'){
         result=await request('/admin/waterfall/batch/eligibility?scope='+encodeURIComponent(config.scope));
@@ -121,11 +121,12 @@ export default function WorkflowWizard({navigate,workflowKind='catalog_build'}) 
         kind='queues';
       }
       else {
-        const [identity,inci]=await Promise.all([
+        const [identity,inci,audit]=await Promise.all([
           request('/admin/aggregation/reviews/gemini/queue'),
-          request('/admin/waterfall/batch/eligibility?scope=unmatched_only')
+          request('/admin/waterfall/batch/eligibility?scope=unmatched_only'),
+          request('/admin/workflows/catalog/quality-audit')
         ]);
-        result={identity_queue:identity,inci_eligibility:inci};
+        result={catalog_quality:audit,identity_queue:identity,inci_eligibility:inci};
         kind='quality';
       }
       setPreview(result);setPreviewType(kind);
