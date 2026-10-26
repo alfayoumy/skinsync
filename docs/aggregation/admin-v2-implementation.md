@@ -49,3 +49,20 @@ Tracked offer refresh jobs store `next_page`, source, applied update dimensions,
 The GitHub Actions `Catalog safety regressions` workflow runs isolated backend unittest regressions, Vite production build, and ESLint on the new Admin V2 components. `api/tests/test_admin_v2.py` validates draft persistence, read-only task history, refusal of unsupported control commands, page-checkpointed offer refreshing, and failure/retry behavior without external API requests.
 
 The feature branch intentionally remains a **draft PR** until operational test evidence covers long-running jobs and deployment migration.
+
+
+## Implemented in PR #18: unified Match Arena (27 October 2026)
+
+The primary `Review Workbench` is now `ManualReviewWorkbench.jsx`, not the two separate large legacy review modals. A dedicated operator may switch **Product identity** / **INCI formulation** and sees a single side-by-side pair with evidence-backed product images and original links, variant/GTIN/SKU/market and source information, proposed full INCI text, provenance and confidence where available. A focused sticky footer exposes exactly three decision controls: **Match**, **No Match**, **Skip**, plus an optional comment. Missing photos and links are explicitly called out rather than invented.
+
+The signed-in reviewer is taken from the server's authenticated actor context on every review action. No user-editable reviewer input is accepted. All choices are checked against a current evidence fingerprint under an SQLite write transaction, with immutable actor/action/comment audit events. Skips are personal; they do not close a pending case. Model suggestions are visible but never treated as proof. Lightweight streak/session points are visual and do not affect decision policy.
+
+**Product identity** quick-review is intentionally restricted to an independently grounded single source listing + one canonical comparator. Match records a reviewed link; No Match records a rejected source/canonical pairing using existing `resolve_review`. Brand, GTIN and explicit identity-attribute conflicts block Match. Multiple plausible canonicals, missing true source evidence and canonical-to-canonical merge cases remain in **Advanced Review Exceptions**. Neither quick decision automatically merges canonical IDs or publishes INCI.
+
+**INCI** quick-review compares canonical identity to retained research evidence; Match delegates to existing `review_case` validation, which checks independently verified identity, unchanged fingerprint, registered source, region, complete ordered INCI and guarded publication. No Match rejects only the proposed evidence; Skip holds the pending case. Out-of-market candidates are blocked from quick Match because market compatibility confirmation cannot be implicit. An actual observed source photo is shown only if linked to the same saved evidence URL; otherwise the UI honestly reports missing imagery.
+
+Endpoints: `GET /admin/v2/manual-reviews?kind=identity|inci` and `POST /admin/v2/manual-reviews/{kind}/{case_id}`, plus `admin_v2_manual_review_events` audit table. Permissions: `read` for listings, `identity` for identity decisions, `formula_correction + formula` for INCI decisions.
+
+**Limitations:** the first 500 pending items are inspected for quick-review eligibility per GET; UI reports a partial scan rather than claiming a complete backlog. Review claiming and complex multi-candidate workflows are deferred. Session points are not persisted. Existing advanced panels remain during migration.
+
+For verification and deployment sequencing, see [Admin V2 next deployment](admin-v2-next-deployment.md). Full architecture scope remains in RFC PR #17.
