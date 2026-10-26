@@ -133,7 +133,7 @@ def create_workflow(req: WorkflowCreate):
             """INSERT INTO admin_v2_workflows
                (id,kind,title,status,current_step,created_at,updated_at)
                VALUES (?,?,?,'draft',?,?,?)""",
-            (workflow_id, req.kind, req.title, "sources" if req.kind == "catalog_build" else "discovery", now, now),
+            (workflow_id, req.kind, req.title, "sources" if req.kind in ("catalog_build", "offer_refresh") else "identity", now, now),
         )
         steps = STEP_KEYS if req.kind == "catalog_build" else (
             ("sources", "discovery", "quality") if req.kind == "offer_refresh"
