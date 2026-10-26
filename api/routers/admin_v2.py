@@ -284,6 +284,24 @@ def all_jobs(limit: int = 100):
                 elif entry["status"] == "queued":
                     entry["controls"] = ["stop"]
         items.append(entry)
+    conn = get_connection()
+    try:
+        if conn.execute("SELECT 1 FROM sqlite_master WHERE type='table' AND name='inci_research_runs'").fetchone():
+            for row in conn.execute("""SELECT id,status,queued_count,processed,succeeded,failed,
+                created_at,completed_at,error_message FROM inci_research_runs
+                ORDER BY created_at DESC LIMIT 50"""):
+                items.append({
+                    "id":row["id"],"task_id":row["id"],
+                    "task_type":"inci_research_mcp","kind":"database",
+                    "durability":"database","status":row["status"],
+                    "processed_items":row["processed"],"total_items":row["queued_count"],
+                    "successful_items":row["succeeded"],"failed_items":row["failed"],
+                    "started_at":row["created_at"],"completed_at":row["completed_at"],
+                    "current_stage":row["error_message"] or "INCI source research",
+                    "controls":["stop"] if row["status"]=="running" else [],
+                })
+    finally:
+        conn.close()
     from pipeline.queue_runner import master_queue_manager
     from routers.admin import _waterfall_batch_runner
     queue = master_queue_manager.get_status()
@@ -338,6 +356,21 @@ def job_detail(job_id: str):
     state = _waterfall_batch_runner.get_status()
     if state.get("task_id") == job_id:
         return {"kind": "process_local", "job": state}
+    conn = get_connection()
+    try:
+        if conn.execute("SELECT 1 FROM sqlite_master WHERE type='table' AND name='inci_research_runs'").fetchone():
+            row=conn.execute("SELECT * FROM inci_research_runs WHERE id=?",(job_id,)).fetchone()
+            if row:
+                data=dict(row)
+                return {"kind":"database","job":{
+                    "task_id":data["id"],"task_type":"inci_research_mcp",
+                    "status":data["status"],"processed_items":data["processed"],
+                    "total_items":data["queued_count"],"successful_items":data["succeeded"],
+                    "failed_items":data["failed"],"started_at":data["created_at"],
+                    "completed_at":data["completed_at"],"error_message":data["error_message"],
+                    "metadata":{"run":data},"logs":[]}}
+    finally:
+        conn.close()
     raise HTTPException(404, "Job not found. Process-local history may be lost after an API restart.")
 
 
@@ -362,7 +395,25 @@ def job_control(job_id: str, cmd: JobCommand, background_tasks: BackgroundTasks)
         return {"requested": _waterfall_batch_runner.cancel(), "action": "stop", "job_id": job_id}
     task = get_task_details(job_id, include_logs=False, include_subtasks=False)
     if not task:
-        raise HTTPException(404, "Job not found.")
+        if cmd.action!="stop":
+            raise HTTPException(409,"INCI research does not support resume or pause; retry individual failed cases.")
+        from pipeline.inci_research import cancel_run
+        conn=get_connection()
+        try:
+            row=conn.execute("""SELECT status FROM inci_research_runs
+                WHERE id=?""",(job_id,)).fetchone() if conn.execute(
+                "SELECT 1 FROM sqlite_master WHERE type='table' AND name='inci_research_runs'"
+            ).fetchone() else None
+            if not row:
+                raise HTTPException(404,"Job not found.")
+            if row["status"]!="running":
+                raise HTTPException(409,"Research run is not running.")
+            result=cancel_run(conn,job_id)
+            conn.commit()
+            return {"requested":True,"action":"stop","job_id":job_id,
+                    "status":"cancel_requested","result":result}
+        finally:
+            conn.close()
     if task["task_type"] == "v2_offer_refresh":
         from pipeline.v2_offer_jobs import command, worker
         result = command(job_id, cmd.action)
