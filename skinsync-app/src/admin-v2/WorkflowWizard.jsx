@@ -12,6 +12,7 @@ const STEPS=[
   ['quality','Quality & finalize','Reconcile coverage and review the exceptions'],
 ];
 const OFFER_STEPS=[STEPS[0],['discovery','Refresh existing offers','Update price and stock without creating products'],STEPS[6]];
+const REPAIR_STEPS=STEPS.slice(2);
 const PANEL='rounded-2xl border border-slate-200 bg-white p-5 shadow-sm';
 const BTN='rounded-lg border border-slate-300 px-3 py-2 text-sm font-semibold hover:bg-slate-50 disabled:opacity-40';
 const PRIMARY='rounded-lg bg-violet-700 hover:bg-violet-800 px-4 py-2 text-sm font-semibold text-white disabled:opacity-40';
@@ -31,7 +32,7 @@ export default function WorkflowWizard({navigate,workflowKind='catalog_build'}) 
   const [error,setError]=useState('');
   const [busy,setBusy]=useState(false);
   const [runningJob,setRunningJob]=useState('');
-  const allSteps=workflowKind==='offer_refresh'?OFFER_STEPS:STEPS;
+  const allSteps=workflowKind==='offer_refresh'?OFFER_STEPS:workflowKind==='catalog_repair'?REPAIR_STEPS:STEPS;
   async function loadRuns() {
     try{
       const data=await request('/admin/v2/workflows');
@@ -42,8 +43,8 @@ export default function WorkflowWizard({navigate,workflowKind='catalog_build'}) 
     try{
       const data=await request('/admin/v2/workflows/'+encodeURIComponent(id));
       setRun(data);
-      const valid=(workflowKind==='offer_refresh'?OFFER_STEPS:STEPS).some(s=>s[0]===data.current_step);
-      setStep(valid?data.current_step:'sources');
+      const valid=allSteps.some(s=>s[0]===data.current_step);
+      setStep(valid?data.current_step:allSteps[0][0]);
       setError('');
     }catch(e){setError(e.message);}
   }
@@ -68,8 +69,8 @@ export default function WorkflowWizard({navigate,workflowKind='catalog_build'}) 
   async function createRun() {
     setBusy(true);
     try{
-      const data=await post('/admin/v2/workflows',{kind:workflowKind,title:workflowKind==='offer_refresh'?'Price & stock refresh':'Catalog build'});
-      setRun(data);setStep('sources');await loadRuns();
+      const data=await post('/admin/v2/workflows',{kind:workflowKind,title:workflowKind==='offer_refresh'?'Price & stock refresh':workflowKind==='catalog_repair'?'Catalog repair':'Catalog build'});
+      setRun(data);setStep(allSteps[0][0]);await loadRuns();
     }catch(e){setError(e.message);}finally{setBusy(false);}
   }
   async function save(state='draft',result={},jobId=null) {
@@ -219,7 +220,7 @@ export default function WorkflowWizard({navigate,workflowKind='catalog_build'}) 
   const setField=(key,value)=>{setConfig(prev=>({...prev,[key]:value}));setPreview(null);};
   return <div className="space-y-5">
     <div className="flex flex-wrap items-center justify-between gap-3">
-      <div><h2 className="text-2xl font-bold">{workflowKind==='offer_refresh'?'Prices & Stock Wizard':'Catalog Build Wizard'}</h2>
+      <div><h2 className="text-2xl font-bold">{workflowKind==='offer_refresh'?'Prices & Stock Wizard':workflowKind==='catalog_repair'?'Catalog Repair Wizard':'Catalog Build Wizard'}</h2>
         <p className="text-sm text-slate-500">Persisted step settings, live jobs, independent review gates and explicit operator decisions.</p></div>
       <div className="flex gap-2"><select aria-label="Select saved workflow" className={INPUT} value={run?.id||''} onChange={e=>loadRun(e.target.value)}>
         <option value="">Select a saved workflow</option>{runs.map(r=><option key={r.id} value={r.id}>{r.title} · {r.id.slice(-6)}</option>)}</select>
