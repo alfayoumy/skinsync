@@ -175,6 +175,8 @@ export default function ManualReviewWorkbench({actor}) {
             <p className="text-xs text-violet-800 mt-1">{kind==='identity'?'Are these the same exact product and variant?':'Does this source show the exact complete formulation for this product and market?'}</p></div>
           <ArrowLeftRight className="text-violet-600 shrink-0" size={24}/>
         </div>
+        {kind==='identity'&&current.match_blockers?.length>0&&<p className="rounded-xl bg-amber-50 border border-amber-200 p-4 text-sm text-amber-900 flex gap-2">
+          <ShieldAlert className="shrink-0" size={18}/>Match blocked: {current.match_blockers.join(' · ')}. No Match and Skip remain available.</p>}
         {kind==='inci'&&current.requires_market_confirmation&&<p className="rounded-xl bg-amber-50 border border-amber-200 p-4 text-sm text-amber-900 flex gap-2">
           <ShieldAlert className="shrink-0" size={18}/>Market compatibility is not established. A quick Match is blocked; specialist review must explicitly validate regional equivalence.</p>}
         <div className="grid md:grid-cols-2 gap-4">
@@ -194,7 +196,7 @@ export default function ManualReviewWorkbench({actor}) {
               placeholder="Reason, observed differences, or evidence gaps (optional)"/>
           </label>
           <div className="grid grid-cols-3 gap-2 sm:gap-3">
-            <button type="button" disabled={busy||current.requires_market_confirmation&&kind==='inci'}
+            <button type="button" disabled={busy||(current.requires_market_confirmation&&kind==='inci')||(kind==='identity'&&current.match_blockers?.length>0)}
               onClick={()=>choose('match')} className="rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white py-4 font-extrabold text-sm sm:text-base disabled:opacity-40 flex items-center justify-center gap-2">
               <Check size={20}/>Match</button>
             <button type="button" disabled={busy} onClick={()=>choose('no_match')}
