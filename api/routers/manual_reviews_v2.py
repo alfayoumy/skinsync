@@ -59,6 +59,12 @@ def _schema(conn):
     )""")
     conn.execute("""CREATE INDEX IF NOT EXISTS idx_v2_manual_review_events_actor
         ON admin_v2_manual_review_events(reviewer,queue_kind,case_id,action)""")
+    conn.execute("""CREATE TRIGGER IF NOT EXISTS admin_v2_review_events_no_update
+        BEFORE UPDATE ON admin_v2_manual_review_events
+        BEGIN SELECT RAISE(ABORT,'Review events are immutable'); END""")
+    conn.execute("""CREATE TRIGGER IF NOT EXISTS admin_v2_review_events_no_delete
+        BEFORE DELETE ON admin_v2_manual_review_events
+        BEGIN SELECT RAISE(ABORT,'Review events are immutable'); END""")
     conn.commit()
 
 
