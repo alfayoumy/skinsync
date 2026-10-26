@@ -20,31 +20,27 @@ ACCEPTED_SOURCES = {
 
 
 def pending_identity_ids(conn):
-    pending = set()
-    tables = {r[0] for r in conn.execute("SELECT name FROM sqlite_master WHERE type='table'")}
-    if 'product_review_queue' in tables:
-        for row in conn.execute("""SELECT canonical_product_id,details
-            FROM product_review_queue WHERE status='pending' AND kind IN ('identity','duplicate')"""):
-            if row[0] is not None:
-                pending.add(row[0])
-            details = json.loads(row[1] or '{}')
-            pending.update(x for x in details.get('canonical_ids', []) if isinstance(x,int))
-            decision = details.get('identity') or details.get('decision') or {}
-            pending.update(x.get('canonical_product_id') for x in decision.get('candidates', [])
-                           if isinstance(x,dict) and isinstance(x.get('canonical_product_id'),int))
-    if 'canonical_identity_reviews' in tables:
-        for row in conn.execute("SELECT canonical_ids FROM canonical_identity_reviews WHERE status='pending'"):
-            pending.update(x for x in json.loads(row[0]) if isinstance(x,int))
-    return pending
+    from pipeline.identity_trust import pending_identity_ids as disputed_ids
+    return disputed_ids(conn)
 
 
 def eligible_waterfall(conn, revalidate_all=False, limit=None):
     """Return a reproducible preflight and the eligible canonical IDs; never mutate."""
     rows=[dict(r) for r in conn.execute("""SELECT id,identity_status,ingredients_raw,ingredient_source
         FROM canonical_products WHERE is_skincare=1 ORDER BY id""")]
-    scoped=[r for r in rows if revalidate_all or
+    # Dynamic retailer/research source names are accepted only when the exact
+    # current declaration has a successful publication audit. A source prefix
+    # alone is not proof of publication or provenance.
+    published=set()
+    if conn.execute("SELECT 1 FROM sqlite_master WHERE type='table' AND name='inci_audit_evidence'").fetchone():
+        published={r[0] for r in conn.execute("""SELECT DISTINCT c.id FROM canonical_products c
+            JOIN inci_audit_evidence e ON e.canonical_product_id=c.id
+            AND e.source_name=c.ingredient_source AND e.raw_ingredients_found=c.ingredients_raw
+            WHERE e.decision='approved_authoritative' AND e.completeness='full'
+            AND COALESCE(TRIM(c.ingredients_raw),'')!=''""")}
+    scoped=[r for r in rows if revalidate_all or (r['id'] not in published and (
             not r['ingredients_raw'] or not str(r['ingredients_raw']).strip() or
-            not r['ingredient_source'] or r['ingredient_source'] not in ACCEPTED_SOURCES]
+            not r['ingredient_source'] or r['ingredient_source'] not in ACCEPTED_SOURCES))]
     pending=pending_identity_ids(conn)
     verified=[r for r in scoped if r['identity_status']=='verified']
     ready=[r['id'] for r in verified if r['id'] not in pending]

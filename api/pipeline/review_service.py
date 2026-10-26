@@ -1,7 +1,7 @@
 """Audited identity/category decisions, reversible merge/split, and redirects."""
 import json
 from dataclasses import replace
-from pipeline.canonical_identity_resolver import CanonicalIdentityResolver, compare_attributes, extract_identity
+from pipeline.canonical_identity_resolver import CanonicalIdentityResolver, compare_attributes, extract_identity, identity_name
 from pipeline.offer_service import refresh_offer_aggregates
 from pipeline.taxonomy_service import SKINCARE, classify_product_attributes, reconcile_canonical_classification
 
@@ -51,8 +51,17 @@ def resolve_review(conn,review_id,action,reviewer,reason,canonical_id=None,categ
     elif action=='category':
         if not conn.execute('SELECT 1 FROM product_taxonomy WHERE label=?',(category,)).fetchone():raise ValueError('Unknown taxonomy category.')
         if case['canonical_product_id']:
-            result=classify_product_attributes(details.get('title') or '')
-            result=replace(result,primary_category=category,is_skincare=category in SKINCARE,classification_status='approved',classification_source='manual')
+            canonical=conn.execute('SELECT brand FROM canonical_products WHERE id=?',(case['canonical_product_id'],)).fetchone()
+            result=classify_product_attributes(details.get('title') or '',canonical['brand'] if canonical else details.get('brand',''))
+            eligible=category in SKINCARE
+            area={'Eye Skincare':'eye','Eye Care':'eye','Lip Care':'lip','Body Care':'body'}.get(category,result.application_area)
+            vertical='skincare' if eligible else ('other_beauty' if category in {'Makeup','Fragrance','Hair Care','Deodorant'} else 'non_skincare')
+            result=replace(result,primary_category=category,is_skincare=eligible,
+                vertical=vertical,application_area=area,
+                subcategory=f'{area} {category.lower()}' if eligible else category,
+                usage_type=result.usage_type if eligible else 'not_applicable',
+                classification_status='approved',classification_source='manual',
+                evidence=[*result.evidence,{'source':'explicit_review','category':category,'reviewer':reviewer,'reason':reason}])
             reconcile_canonical_classification(conn,case['canonical_product_id'],result,reviewer)
     elif action=='keep_separate' and len(details.get('canonical_ids',[]))==2:
         pair=sorted(details['canonical_ids'])
@@ -147,6 +156,11 @@ def split_canonical(conn,cid,product_ids,offer_ids,title,attributes,reviewer,rea
     conn.execute('SAVEPOINT identity_split')
     try:
         before=_snapshot(conn,[cid])
+        moved_titles=set()
+        for table,ids in [('products',product_ids),('product_offers',offer_ids)]:
+            for item_id in ids:
+                item=conn.execute(f"SELECT {'store_id' if table=='products' else 'source_id'} source_id,title FROM {table} WHERE id=?",(item_id,)).fetchone()
+                moved_titles.add((item['source_id'],identity_name(item['title'],original['brand'])))
         classification=classify_product_attributes(title,original['brand'])
         identity=extract_identity(title,original['brand'],original.get('market'),attributes)
         new_id=CanonicalIdentityResolver(conn).create_provisional(title,original['brand'],classification,identity,False)
@@ -160,6 +174,13 @@ def split_canonical(conn,cid,product_ids,offer_ids,title,attributes,reviewer,rea
             for item_id in ids:
                 source=conn.execute(f"SELECT {'store_id,store_product_id' if table=='products' else 'source_id,source_product_id'} FROM {table} WHERE id=?",(item_id,)).fetchone()
                 conn.execute("UPDATE product_identity_links SET status='pending',method='split_requires_review' WHERE source_id=? AND source_product_id=?",(source[0],str(source[1] or item_id)))
+        # The old entity must not keep a verified title alias for the exact
+        # listing just split out. Keep the row for audit; explicit source-link
+        # review can establish an alias on the new identity afterward.
+        for source_id,alias in moved_titles:
+            conn.execute("""UPDATE canonical_product_aliases SET verified=0
+                WHERE canonical_product_id=? AND source_id=? AND alias_type='title' AND alias_value=?""",
+                (cid,source_id,alias))
         conn.execute("INSERT INTO canonical_identity_constraints(left_id,right_id,relation,reviewed_by,reason) VALUES (?,?,'cannot_link',?,?)",(*sorted([cid,new_id]),reviewer,reason))
         refresh_offer_aggregates(conn,cid);refresh_offer_aggregates(conn,new_id)
         hid=_history(conn,'split',cid,new_id,before,reviewer,reason)

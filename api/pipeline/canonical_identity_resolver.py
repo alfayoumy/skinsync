@@ -4,7 +4,7 @@ import hashlib
 import json
 import re
 from difflib import SequenceMatcher
-from pipeline.brand_registry import resolve_brand, register_observed_brand, brand_key
+from pipeline.brand_registry import resolve_brand, register_observed_brand, brand_key,CURATED_BRANDS
 from pipeline.taxonomy_service import normalize, classify_product_attributes
 from pipeline.identity_gates import validate_identity_gates
 
@@ -23,11 +23,21 @@ def valid_gtin(value):
 
 def identity_name(title, brand):
     text=normalize(PACKAGING.sub(' ',title or ''))
+    # Typography is not a formulation discriminator. Keep meaningful '+' in
+    # product-line names and PA ratings; SPF50 and SPF 50+ share an SPF value.
+    text=re.sub(r'\bspf\s*(\d+)\s*\+?',r'spf \1 ',text)
     resolved=resolve_brand(brand)
     variants=[brand or '']+([resolved['name']] if resolved else [])
+    if resolved:
+        variants+=CURATED_BRANDS.get(resolved['name'],[])
     for value in variants:
         normalized=normalize(value)
-        if normalized: text=re.sub(r'(?<!\w)'+re.escape(normalized)+r'(?!\w)',' ',text)
+        if normalized:
+            # Retailers write "Dr.Althea", "Dr. Althea" and "Dr Althea".
+            # Match complete brand tokens, never a prefix of another brand.
+            parts=re.findall(r'\w+',normalized)
+            pattern=r'[\W_]*'.join(re.escape(p) for p in parts)
+            if pattern:text=re.sub(r'(?<!\w)'+pattern+r'(?!\w)',' ',text)
     text=re.sub(r'\b(?:for )?(?:normal|dry|very dry|oily|combination|sensitive)(?: to (?:normal|dry|very dry|oily|combination|sensitive))? skin\b',' ',text)
     words=[TRANSLATIONS.get(w,w) for w in text.split()]
     # Keep formulation-defining rich/light/pure/intensive adjectives. Only this
@@ -118,6 +128,7 @@ class CanonicalIdentityResolver:
                 known_brand=resolve_brand(known['brand'],self.conn)
                 known_attributes=json.loads(known.get('identity_attributes') or '{}')
                 if not known_attributes.get('name'):known_attributes=extract_identity(known['canonical_title'],known['brand'],known.get('market'))
+                known_attributes['name']=identity_name(known['canonical_title'],known['brand'])
                 comparison=compare_attributes(identity,known_attributes)
                 if not known_brand or known_brand['id']!=resolved['id'] or comparison['conflicts'] or identity['name']!=known_attributes.get('name'):
                     verified_alias=self.conn.execute("SELECT 1 FROM canonical_product_aliases WHERE canonical_product_id=? AND alias_type='title' AND alias_value=? AND verified=1",(known['id'],identity['name'])).fetchone()
@@ -137,6 +148,9 @@ class CanonicalIdentityResolver:
             attributes=json.loads(row.get('identity_attributes') or '{}')
             if not attributes.get('name'):
                 attributes=extract_identity(row['canonical_title'],row['brand'],row.get('market'),attributes)
+            # Stored attributes can predate typography normalization. Compare
+            # both current names under the same policy without rewriting evidence.
+            attributes['name']=identity_name(row['canonical_title'],row['brand'])
             comparison=compare_attributes(identity,attributes)
             compatible,reason=validate_identity_gates(title,row['canonical_title'],resolved['name'],row['brand'])
             # The legacy gate rejects missing eye/lip/SPF attributes. Missing is
@@ -162,6 +176,9 @@ class CanonicalIdentityResolver:
             evaluated.append({'canonical_product_id':cid,'state':state,'conflicts':comparison['conflicts'],
                 'unknown':comparison['unknown'],'exact_name':exact,'verified_name':verified_name,'strong_identifier':bool(strong),
                 'durable_link':cid in existing,'reviewed_link':any(r['canonical_product_id']==cid and r.get('reviewed_by') and r['status']=='accepted' for r in mappings),'similarity':round(max(similarity,overlap),4)})
+        reviewed=[r for r in evaluated if r['reviewed_link'] and r['state']!='conflict']
+        if len(reviewed)==1:
+            return IdentityDecision('matched',reviewed[0]['canonical_product_id'],'reviewed_source_identity',evaluated)
         accepted=[r for r in evaluated if (r['state']=='compatible' or r['state']=='unknown' and r['reviewed_link']) and (r['exact_name'] or r['verified_name'])]
         if len(accepted)==1:
             candidate=accepted[0]

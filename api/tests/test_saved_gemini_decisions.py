@@ -34,7 +34,7 @@ class SavedGeminiDecisionTests(unittest.TestCase):
         rid=queue_review(self.conn,'identity',listings[0][0],str(details['offers'][0]['product_id']),cid,details)
         queue_cases(self.conn,review_ids=[rid],queued_by='test')
         self.conn.execute("""UPDATE identity_gemini_queue
-            SET status='needs_manual',verdict=?,confidence=?,explanation=?,
+            SET status='needs_manual',comparison_mode='pairwise',verdict=?,confidence=?,explanation=?,
                 model_name='test-model' WHERE review_id=?""",
             (verdict,confidence,'Stored Gemini reason | Old 0.97 cutoff rejected result.',rid))
         self.conn.commit()

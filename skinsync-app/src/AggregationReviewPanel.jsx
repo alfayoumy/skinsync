@@ -21,7 +21,8 @@ export default function AggregationReviewPanel({ onClose, initialSourceId = 'sou
   const diagnostics = useConnectionTests();
   const [sampleUrl, setSampleUrl] = useState('');
   const [sources, setSources] = useState([]), [reviews, setReviews] = useState([]), [total, setTotal] = useState(0);
-  const [offset, setOffset] = useState(0), [kind, setKind] = useState(''), [selected, setSelected] = useState(null);
+  const [offset, setOffset] = useState(0), [kind, setKind] = useState('identity'), [selected, setSelected] = useState(null);
+  const [catalogHealth,setCatalogHealth] = useState(null);
   const [sourceId, setSourceId] = useState(initialSourceId), [coverage, setCoverage] = useState(null);
   const [reviewer, setReviewer] = useState(''), [reason, setReason] = useState(''), [action, setAction] = useState('request_evidence');
   const [mergeSurvivor, setMergeSurvivor] = useState('');
@@ -30,7 +31,6 @@ export default function AggregationReviewPanel({ onClose, initialSourceId = 'sou
   const [geminiTask,setGeminiTask] = useState(null);
   const [geminiJob,setGeminiJob] = useState(null);
   const [selectedReviewIds,setSelectedReviewIds] = useState([]);
-  const [geminiBatchSize,setGeminiBatchSize] = useState(10);
   const [geminiLimit,setGeminiLimit] = useState(500);
   const [savedDecisionsPreview,setSavedDecisionsPreview] = useState(null);
   const [savedApplyTask,setSavedApplyTask] = useState(null);
@@ -188,10 +188,12 @@ export default function AggregationReviewPanel({ onClose, initialSourceId = 'sou
     }
     setReviewsLoading(true);
     try {
-      const [casesResult,geminiResult]=await Promise.allSettled([
+      const [casesResult,geminiResult,healthResult]=await Promise.allSettled([
         api(`/reviews?status=pending&view=${reviewView}&offset=${offset}&limit=50${kind ? `&kind=${kind}` : ''}`),
-        api('/reviews/gemini/queue')
+        api('/reviews/gemini/queue'),
+        api('/health')
       ]);
+      setCatalogHealth(healthResult.status==='fulfilled' ? healthResult.value : null);
       if (casesResult.status === 'fulfilled') {
         setReviews(casesResult.value.reviews || []);
         setTotal(casesResult.value.total || 0);
@@ -261,7 +263,7 @@ export default function AggregationReviewPanel({ onClose, initialSourceId = 'sou
     });
   }
   async function applySavedDecisions() {
-    if(!window.confirm('Apply stored Gemini decisions without any model calls? Only independently corroborated source matches will be linked; eligible canonical cases may be verified or safely split. Uncertain or conflicting cases stay for review. Preview first to inspect the reasons.'))return;
+    if(!window.confirm('Apply saved Gemini decisions at the selected confidence threshold without new model calls? Same-product decisions link the selected product and its offers. Different-product decisions reject the compared candidates and retain a distinct product. Uncertain results, actual contradictions and changed evidence remain for review.'))return;
     await perform(async()=>{
       const started=await api('/reviews/gemini/saved/apply',{
         method:'POST',body:JSON.stringify({
@@ -298,10 +300,10 @@ export default function AggregationReviewPanel({ onClose, initialSourceId = 'sou
   async function startGemini() {
     await perform(async()=>{
       const res=await api('/reviews/gemini/run',{method:'POST',body:JSON.stringify({
-        limit:Number(geminiLimit),batch_size:Number(geminiBatchSize)
+        limit:Number(geminiLimit),batch_size:1
       })});
       setGeminiTask(res.task_id);setGeminiJob({status:'running',processed_items:0,total_items:res.queued});
-      setMessage('Gemini identity review started. Several cases share one request.');
+      setMessage('Pairwise identity matching started. Every request compares exactly two products; completed pairs are saved for resume.');
     });
   }
   async function stopGemini() {
@@ -331,6 +333,17 @@ export default function AggregationReviewPanel({ onClose, initialSourceId = 'sou
         <button type="button" className="ml-3 underline font-semibold" onClick={()=>refresh().catch(e=>setError(e.message))}>Retry Gemini status</button>
       </div>}
       {message && <p role="status" className="bg-green-50 text-green-800 p-3 rounded-lg">{message}</p>}
+      {mode==='reviews' && catalogHealth && <section aria-label="Live catalog health" className="bg-white border rounded-xl p-4 space-y-3">
+        <h3 className="font-semibold">Live catalog health</h3>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-sm">
+          <div><strong className="block text-xl">{catalogHealth.verified_identities.toLocaleString()} / {(catalogHealth.active_canonical_products??catalogHealth.canonical_products).toLocaleString()}</strong>Verified identities</div>
+          <div><strong className="block text-xl">{(catalogHealth.published_skincare_inci??catalogHealth.published_inci).toLocaleString()} / {(catalogHealth.active_skincare_products??catalogHealth.canonical_products).toLocaleString()}</strong>Published skincare ingredient lists</div>
+          <button className="text-left underline" onClick={()=>{setKind('identity');setOffset(0);setSelected(null);}}><strong className="block text-xl">{catalogHealth.pending_identity_reviews.toLocaleString()}</strong>Identity reviews</button>
+          <button className="text-left underline" onClick={()=>{setKind('category');setOffset(0);setSelected(null);}}><strong className="block text-xl">{catalogHealth.pending_category_reviews.toLocaleString()}</strong>Category reviews</button>
+        </div>
+        <p className="text-xs text-gray-600">Saved retailer products with ingredient evidence: {catalogHealth.observed_products_with_inci.toLocaleString()}. Identity approval and ingredient publication are separate steps.</p>
+        {catalogHealth.sources.length>0 && catalogHealth.sources.every(s=>!s.publish_enabled) && <p className="text-sm text-amber-900 bg-amber-50 rounded p-2">Automatic source publication is disabled for every enabled source. Collected ingredients stay as evidence until approved; running Gemini product matching does not publish them.</p>}
+      </section>}
       {mode === 'sources' && <>
       <section aria-label="Registered sources" className="bg-white border rounded-xl p-4 space-y-3">
         <div className="flex flex-wrap items-center justify-between gap-2">
@@ -373,7 +386,7 @@ export default function AggregationReviewPanel({ onClose, initialSourceId = 'sou
       {mode === 'reviews' && <section className="rounded-xl border bg-white p-4 space-y-3">
         <div className="flex flex-wrap items-center justify-between gap-2">
           <div><h3 className="font-semibold">Gemini product matching</h3>
-            <p className="text-xs text-gray-600">Gemini checks multiple retailer product identities in a single call. Clear matches are approved only when independent variant, brand and INCI checks also pass. All other cases stay available for a person.</p></div>
+            <p className="text-xs text-gray-600">Every Gemini request compares exactly two products. A source with several candidates gets one separate request per candidate. Pair verdicts are saved individually and combined locally. Ingredient publication is separate.</p></div>
           <span className="text-xs font-semibold text-purple-800">{queueStatus?.pending_identity_cases??'—'} unresolved identity/duplicate cases</span>
         </div>
         <div className="rounded-lg border border-purple-200 p-3 space-y-2 text-xs">
@@ -422,12 +435,8 @@ export default function AggregationReviewPanel({ onClose, initialSourceId = 'sou
             className="rounded-lg border px-3 py-2 text-sm font-semibold disabled:opacity-50">
             Send selected ({selectedReviewIds.length})
           </button>
-          <label className="text-xs font-semibold">Cases per Gemini call
-            <select value={geminiBatchSize} onChange={e=>setGeminiBatchSize(Number(e.target.value))} className="border rounded p-2 ml-2">
-              {[5,10,20].map(n=><option key={n} value={n}>{n}</option>)}
-            </select>
-          </label>
-          <label className="text-xs font-semibold">Cases per run
+          <p className="text-xs font-semibold">Fixed: 2 products per request</p>
+          <label className="text-xs font-semibold">Maximum pair requests per run
             <input type="number" min="1" max="20000" value={geminiLimit} onChange={e=>setGeminiLimit(e.target.value)}
               className="border rounded p-2 ml-2 w-24"/>
           </label>
@@ -435,11 +444,12 @@ export default function AggregationReviewPanel({ onClose, initialSourceId = 'sou
             onClick={startGemini} className="rounded-lg border border-purple-600 bg-purple-50 text-purple-800 px-3 py-2 font-semibold text-sm disabled:opacity-50">
             Run Gemini matching
           </button>
-          {geminiTask&&<button type="button" onClick={stopGemini} className="rounded-lg border border-red-300 text-red-700 px-3 py-2 text-sm font-semibold">Stop after current batch</button>}
+          {geminiTask&&<button type="button" onClick={stopGemini} className="rounded-lg border border-red-300 text-red-700 px-3 py-2 text-sm font-semibold">Stop after current pair</button>}
         </div>
         {geminiJob&&<p role="status" className="text-xs text-gray-700">
-          Job: {geminiJob.status} · {geminiJob.processed_items||0} evaluated ·
+          Job: {geminiJob.status} · {geminiJob.metadata?.api_calls??geminiJob.processed_items??0} pair requests ·
           {geminiJob.metadata?.stats?.auto_resolved||0} automatically approved ·
+          {' '}{geminiJob.metadata?.stats?.pair_rejections||0} pair mismatches rejected ·
           {geminiJob.metadata?.stats?.needs_manual||0} awaiting human decision ·
           {geminiJob.metadata?.api_calls||0} API calls
           {geminiJob.error_message&&<span className="text-red-700"> · {geminiJob.error_message}</span>}
@@ -449,7 +459,7 @@ export default function AggregationReviewPanel({ onClose, initialSourceId = 'sou
       {mode === 'reviews' && <section className="rounded-xl border border-purple-200 bg-purple-50 p-4 space-y-3">
         <div>
           <h3 className="font-bold text-gray-900">Apply Gemini decisions already saved</h3>
-          <p className="text-sm text-gray-700 mt-1">Recheck stored Gemini verdicts without API calls. Guarded source-to-canonical links require independent retailer corroboration, verified brand and formulation compatibility, and no plausible competing canonical. Existing canonical cases may be verified or safely split. Uncertain verdicts and unsafe matches stay for review.</p>
+          <p className="text-sm text-gray-700 mt-1">Apply saved Gemini decisions at your confidence threshold without API calls. Same-product decisions link the selected product and its offers; different-product decisions reject the compared candidates and retain a distinct product. Different wording, missing metadata and a missing second retailer do not block a decision. Actual variant contradictions, changed evidence and prior explicit decisions remain for review.</p>
         </div>
         <div className="flex flex-wrap gap-3 items-end">
           <label className="text-xs font-semibold">Minimum Gemini confidence
@@ -477,8 +487,10 @@ export default function AggregationReviewPanel({ onClose, initialSourceId = 'sou
         {savedDecisionsPreview&&<div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs" role="status">
           {[
             ['Stored cases checked',savedDecisionsPreview.stored_decisions_checked],
-            ['Would verify matches',savedDecisionsPreview.automatically_verified],
+            ['Would apply decisions',(savedDecisionsPreview.automatically_verified??0)+(savedDecisionsPreview.source_matches_linked??0)+(savedDecisionsPreview.source_comparisons_rejected??0)+(savedDecisionsPreview.automatically_split??0)],
+            ['Would verify existing clusters',savedDecisionsPreview.automatically_verified],
             ['Would link source products',savedDecisionsPreview.source_matches_linked??0],
+            ['Would reject candidate matches',savedDecisionsPreview.source_comparisons_rejected??0],
             ['Would split mixed cases',savedDecisionsPreview.automatically_split],
             ['New canonical products',savedDecisionsPreview.new_canonical_products??0],
             ['Still need review after checks',savedDecisionsPreview.still_needs_review]
@@ -486,15 +498,19 @@ export default function AggregationReviewPanel({ onClose, initialSourceId = 'sou
         </div>}
         {savedDecisionsPreview&&<p className="text-xs text-gray-700 bg-white border rounded-lg p-3" role="status">
           {savedDecisionsPreview.source_verdicts_seen??0} saved source-level Gemini results pending review ·
-          {savedDecisionsPreview.source_verdicts_eligible??0} have a proposed canonical and meet the selected model-confidence threshold ·
-          {savedDecisionsPreview.source_verdicts_not_eligible??0} remain ineligible (e.g. uncertain, different product, missing canonical, or low confidence).
+          {savedDecisionsPreview.source_verdicts_eligible??0} have an actionable same-product or different-product verdict at this confidence threshold ·
+          {savedDecisionsPreview.source_verdicts_not_eligible??0} lack an actionable verdict (uncertain, missing selected product, or below threshold).
           {savedDecisionsPreview.stored_decisions_checked===0&&<strong className="block mt-1 text-amber-800">
             Nothing can be applied at this confidence threshold. Running Apply would make no changes. “Need a person” does not mean there is an approvable saved decision.
           </strong>}
           {savedDecisionsPreview.source_verdicts_eligible>0&&<span className="block mt-1">
-            Matching the confidence threshold only enters guarded validation; not every proposed match will pass the independent product-identity checks.
+            Gemini resolves semantic naming differences and selects among the supplied candidates. Any remaining blocked cases include the specific contradiction or evidence change below.
           </span>}
         </p>}
+        {savedDecisionsPreview?.blocked_reasons?.length>0&&<div className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-xs">
+          <p className="font-semibold">Reasons the remaining decisions cannot be applied</p>
+          {savedDecisionsPreview.blocked_reasons.map(item=><p key={item.reason}>{item.count} × {item.reason}</p>)}
+        </div>}
         {savedDecisionsPreview?.sample_results?.length>0&&<details className="bg-white border rounded-lg p-3">
           <summary className="font-semibold text-xs cursor-pointer">Example application decisions and reasons</summary>
           <div className="max-h-56 overflow-auto space-y-1 mt-2 text-xs">
@@ -515,6 +531,7 @@ export default function AggregationReviewPanel({ onClose, initialSourceId = 'sou
           Application {savedApplyJob.status} · {savedApplyJob.processed_items||0}/{savedApplyJob.total_items||0} saved verdicts processed ·
           {savedApplyJob.metadata?.automatically_verified??savedApplyJob.metadata?.stats?.verified??0} verified ·
           {savedApplyJob.metadata?.automatically_split??savedApplyJob.metadata?.stats?.split??0} split cases ·
+          {' '}{savedApplyJob.metadata?.source_comparisons_rejected??savedApplyJob.metadata?.stats?.source_rejected??0} rejected comparisons ·
           {savedApplyJob.metadata?.new_canonical_products??savedApplyJob.metadata?.stats?.new_canonical_products??0} new canonicals ·
           {savedApplyJob.metadata?.still_needs_review??savedApplyJob.metadata?.stats?.manual??0} held for review ·
           <strong> 0 Gemini calls</strong>

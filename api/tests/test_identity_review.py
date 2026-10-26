@@ -11,6 +11,36 @@ from pipeline.product_linker import link_catalog_products
 
 
 class TestCanonicalIdentityReview(unittest.TestCase):
+    def test_brand_gate_uses_curated_aliases_without_fuzzy_prefix_approval(self):
+        from pipeline.identity_gates import validate_identity_gates
+        for a,b in [('PURITO Seoul','PURITO'),('Dermacy Labs','Dermacy'),('ISIS Pharma','ISISPHARMA')]:
+            self.assertTrue(validate_identity_gates('Hydrating Cream','Hydrating Cream',a,b)[0])
+        self.assertFalse(validate_identity_gates('Hydrating Cream','Hydrating Cream','Brand','BrandX')[0])
+        self.assertFalse(validate_identity_gates('Hydrating Cream','Hydrating Cream','Dermacy','Different Labs')[0])
+        self.assertFalse(validate_identity_gates('Hydrating Cream','Hydrating Cream','علامة','أخرى')[0])
+        self.assertFalse(validate_identity_gates('Sunscreen SPF30','Sunscreen SPF50','PURITO Seoul','PURITO')[0])
+
+    def test_declared_anatomy_and_sun_functions_do_not_depend_on_spacing(self):
+        from pipeline.identity_gates import validate_identity_gates
+        for a,b in [('Cotton Soft Sun Stick SPF50+','Cotton Soft Sun Stick'),
+                    ('Quick Sunstick Protection Bar SPF50+','Quick Sunstick Protection Bar'),
+                    ('Photoderm Xdefense SPF50+','Photoderm Xdefense'),
+                    ('PDRN Booster Shot','PDRN Booster Shot Face & Eye Moisturizer'),
+                    ('Extreme Shine Lip Gloss 11','Extreme Shine Lipgloss 11')]:
+            with self.subTest(a=a,b=b):self.assertTrue(validate_identity_gates(a,b,'Brand','Brand')[0])
+        self.assertFalse(validate_identity_gates('Eye Contour Cream','Face Cream')[0])
+        self.assertFalse(validate_identity_gates('Lip Balm','Face Balm')[0])
+        self.assertFalse(validate_identity_gates('Sun Stick SPF30','Sun Stick SPF50')[0])
+
+    def test_tocobo_airy_and_soft_remain_distinct_after_sun_function_normalization(self):
+        from pipeline.identity_gates import validate_identity_gates
+        for a,b in [('Cotton Soft Sun Stick SPF50+','Cotton Airy Sun Stick'),
+                    ('Cotton Airy Sun Stick','Cotton Soft Sun Stick SPF50+')]:
+            compatible,reason=validate_identity_gates(a,b,'Tocobo','TOCOBO')
+            self.assertFalse(compatible)
+            self.assertIn('Formulation line conflict',reason)
+        self.assertTrue(validate_identity_gates('Cotton Soft Sun Stick SPF50+','Cotton Soft Sun Stick','Tocobo','TOCOBO')[0])
+
     def setUp(self):
         self.conn = sqlite3.connect(':memory:')
         self.conn.row_factory = sqlite3.Row
@@ -35,6 +65,21 @@ class TestCanonicalIdentityReview(unittest.TestCase):
     def link(self):
         self.conn.commit()
         return link_catalog_products(conn=self.conn)
+
+    def test_category_review_replaces_related_skincare_metadata(self):
+        from pipeline.aggregation_service import queue_review
+        from pipeline.review_service import resolve_review
+        self.canonical(100,title='Essence Soft Touch Bouncy Glow')
+        self.conn.execute("UPDATE canonical_products SET brand='Essence',category='Toner',is_skincare=1 WHERE id=100")
+        rid=queue_review(self.conn,'category',None,None,100,{'title':'Essence Soft Touch Bouncy Glow'})
+        resolve_review(self.conn,rid,'category','catalog_repair_agent','Manufacturer identifies this product as a highlighter.',category='Makeup')
+        row=self.conn.execute('SELECT category,is_skincare,classification FROM canonical_products WHERE id=100').fetchone()
+        cls=json.loads(row['classification'])
+        self.assertEqual(row['category'],'Makeup');self.assertFalse(row['is_skincare'])
+        self.assertEqual(cls['vertical'],'other_beauty');self.assertEqual(cls['subcategory'],'Makeup')
+        self.assertEqual(cls['usage_type'],'not_applicable')
+        self.assertEqual(cls['evidence'][-1]['reviewer'],'catalog_repair_agent')
+
 
     def test_retitle_reuses_durable_canonical_and_formula(self):
         self.canonical(100,key='old-derived-key',raw='Water, Glycerin, Panthenol, Phenoxyethanol')

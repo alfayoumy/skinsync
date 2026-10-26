@@ -58,6 +58,25 @@ def _profile(conn, candidate):
     }
 
 
+def _scoped_payload(payload,source_product_id):
+    """Give Gemini the actual reviewed shade/formulation, not every sibling."""
+    scoped=json.loads(_json(payload))
+    base=scoped['source']['source_product_id']
+    attrs={}
+    if source_product_id!=base:
+        matching=[]
+        for variant in scoped['source'].get('variants') or []:
+            value=variant.get('attributes') or {}
+            key=base+':'+hashlib.sha256(json.dumps(value,sort_keys=True).encode()).hexdigest()[:16]
+            if value and key==source_product_id:
+                matching.append(variant);attrs=value
+        if not matching:return None
+        scoped['source']['variants']=matching
+        scoped['source']['identity_attributes'].update(attrs)
+    scoped['review_scope']={'source_product_id':source_product_id,'variant_attributes':attrs}
+    return scoped
+
+
 def _fresh_payload(conn, observation_id, reviews, cache):
     """Recompute CURRENT comparisons; do not reuse stale Gemini candidates."""
     conn.execute('SAVEPOINT requeue_readonly_identity')
@@ -136,7 +155,11 @@ def _plan(conn):
         for review in reviews:
             # One pending review is one tracked Gemini decision. Never
             # send completed, reviewed, or evidence-mismatched decisions.
-            proposed.append((review['id'], review['evidence_hash'], _json(payload)))
+            scoped=_scoped_payload(payload,review['source_product_id'])
+            if scoped is None:
+                skipped['unidentified_variant_scope']=skipped.get('unidentified_variant_scope',0)+1
+                continue
+            proposed.append((review['id'], review['evidence_hash'], _json(scoped)))
     return grouped, excluded, proposed, dict(skipped)
 
 
@@ -201,6 +224,7 @@ def reset_and_requeue_identity(conn, fingerprint, confirmation, db_path=None):
             raise ValueError('Identity evidence or worker state changed during backup.')
         grouped, excluded, proposed, skipped = _plan(conn)
         old_count = conn.execute('SELECT COUNT(*) FROM identity_gemini_queue').fetchone()[0]
+        conn.execute('DELETE FROM identity_gemini_pair_results')
         # Only product identity Gemini; legacy INCI/Gate-4 queues are separate.
         conn.execute('DELETE FROM identity_gemini_queue')
         conn.execute('DELETE FROM identity_gemini_source_cases')

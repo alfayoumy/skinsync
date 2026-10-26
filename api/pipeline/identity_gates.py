@@ -72,14 +72,29 @@ def validate_identity_gates(
     # GATE 1: BRAND COMPATIBILITY
     # -------------------------------------------------------------------------
     if brand_a and brand_b:
-        b_clean_a = re.sub(r'[^a-z0-9]', '', strip_accents(str(brand_a)).lower())
-        b_clean_b = re.sub(r'[^a-z0-9]', '', strip_accents(str(brand_b)).lower())
+        from pipeline.brand_registry import resolve_brand
+        # Use explicit curated equivalences, never a fuzzy prefix. The older
+        # gate rejected PURITO Seoul / PURITO while accepting Brand / BrandX.
+        resolved_a=resolve_brand(str(brand_a))
+        resolved_b=resolve_brand(str(brand_b))
+        b_clean_a = re.sub(r'[\W_]', '', strip_accents(resolved_a['name'] if resolved_a else str(brand_a)).casefold())
+        b_clean_b = re.sub(r'[\W_]', '', strip_accents(resolved_b['name'] if resolved_b else str(brand_b)).casefold())
         if b_clean_a and b_clean_b and b_clean_a != b_clean_b:
-            if not (b_clean_a.startswith(b_clean_b) or b_clean_b.startswith(b_clean_a)) or abs(len(b_clean_a) - len(b_clean_b)) > 2:
-                return False, f"Brand conflict: '{brand_a}' != '{brand_b}'"
+            return False, f"Brand conflict: '{brand_a}' != '{brand_b}'"
 
     a = normalize_for_gate(title_a)
     b = normalize_for_gate(title_b)
+
+    # Reviewed manufacturer distinction: Cotton Airy is a different formula
+    # from Cotton Soft, not a translation or packaging alias. See the official
+    # Airy product page and Korean Soft product_no=32 declarations.
+    if brand_a and brand_b and b_clean_a==b_clean_b=='tocobo':
+        soft_a=bool(re.search(r'\bcotton\s+soft\b',a))
+        soft_b=bool(re.search(r'\bcotton\s+soft\b',b))
+        airy_a=bool(re.search(r'\bcotton\s+airy\b',a))
+        airy_b=bool(re.search(r'\bcotton\s+airy\b',b))
+        if (soft_a and airy_b) or (airy_a and soft_b):
+            return False,'Formulation line conflict: TOCOBO Cotton Airy and Cotton Soft are distinct formulas'
 
     # -------------------------------------------------------------------------
     # GATE 2: SUN PROTECTION FACTOR (SPF) & UV RATING
@@ -92,7 +107,7 @@ def validate_identity_gates(
         return False, f"SPF number mismatch: SPF {spf_num_a} != SPF {spf_num_b}"
 
     # SPF vs non-SPF conflict
-    spf_kws = r"\b(spf\s*\d+|spf|sunscreen|sun\s*cream|sun\s*fluid|sun\s*screen|uvmune|pa\+{1,4}|solar)\b"
+    spf_kws = r"\b(spf\s*\d+|spf|sunscreen|sun\s*cream|sun\s*fluid|sun\s*screen|sun\s*stick|photoderm|uvmune|pa\+{1,4}|solar)\b"
     has_spf_a = bool(re.search(spf_kws, a))
     has_spf_b = bool(re.search(spf_kws, b))
     if has_spf_a != has_spf_b:
@@ -120,7 +135,8 @@ def validate_identity_gates(
     has_day_b = bool(re.search(r"\b(day|jour|am|matin)\b", b))
     has_night_a = bool(re.search(r"\b(night|nuit|pm|overnight|sleeping|soir)\b", a))
     has_night_b = bool(re.search(r"\b(night|nuit|pm|overnight|sleeping|soir)\b", b))
-    if (has_day_a and has_night_b) or (has_night_a and has_day_b):
+    if ((has_day_a and not has_night_a and has_night_b and not has_day_b)
+            or (has_night_a and not has_day_a and has_day_b and not has_night_b)):
         return False, "Circadian regimen conflict: Day/AM formulation cannot match Night/PM formulation"
 
     # -------------------------------------------------------------------------
@@ -172,12 +188,15 @@ def validate_identity_gates(
     # Dedicated Eye vs Full Face
     has_eye_a = bool(re.search(r"\b(eye|eyes|yeux|under-eye|eyelid|ocular|regard)\b", a))
     has_eye_b = bool(re.search(r"\b(eye|eyes|yeux|under-eye|eyelid|ocular|regard)\b", b))
+    # A declared face-and-eye product is not dedicated to the eye contour.
+    if re.search(r'\bface\s+(?:and\s+)?eyes?\b|\beyes?\s+(?:and\s+)?face\b',a):has_eye_a=False
+    if re.search(r'\bface\s+(?:and\s+)?eyes?\b|\beyes?\s+(?:and\s+)?face\b',b):has_eye_b=False
     if has_eye_a != has_eye_b:
         return False, "Anatomy conflict: Dedicated Eye contour product cannot match Full Face/Body product"
 
     # Dedicated Lip vs Face
-    has_lip_a = bool(re.search(r"\b(lip|lips|levre|levres)\b", a))
-    has_lip_b = bool(re.search(r"\b(lip|lips|levre|levres)\b", b))
+    has_lip_a = bool(re.search(r"\b(lip|lips|lipgloss|levre|levres)\b", a))
+    has_lip_b = bool(re.search(r"\b(lip|lips|lipgloss|levre|levres)\b", b))
     if has_lip_a != has_lip_b:
         return False, "Anatomy conflict: Dedicated Lip product cannot match Face product"
 

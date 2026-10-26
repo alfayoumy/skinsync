@@ -98,11 +98,11 @@ class GeminiIdentityReviewTests(unittest.TestCase):
              patch('pipeline.product_identity_gemini.update_task_progress'), \
              patch('pipeline.product_identity_gemini.complete_task'), \
              patch('pipeline.product_identity_gemini.fail_task') as fail:
-            result=run_identity_gemini_queue('gemini-test',limit=500,batch_size=10,provider=fake_provider)
+            result=run_identity_gemini_queue('gemini-test',limit=500,batch_size=1,provider=fake_provider)
         fail.assert_not_called()
         self.assertEqual(result['auto_resolved'],1)
-        self.assertEqual(result['api_calls'],1)
-        self.assertEqual(calls,[1])
+        self.assertEqual(result['api_calls'],6)
+        self.assertEqual(calls,[1,1,1,1,1,1])
         self.assertEqual(self.conn.execute('SELECT status FROM product_review_queue WHERE id=?',(self.review_id,)).fetchone()[0],'confirmed')
         self.assertEqual(self.conn.execute('SELECT status FROM identity_gemini_queue WHERE review_id=?',(self.review_id,)).fetchone()[0],'auto_resolved')
         row=self.conn.execute('SELECT identity_status,ingredients_raw FROM canonical_products WHERE id=?',(self.cid,)).fetchone()
@@ -174,7 +174,7 @@ class GeminiIdentityReviewTests(unittest.TestCase):
         self.assertEqual(refreshed['queued_without_comparable_evidence'],0)
         self.assertEqual(refreshed['queued_actionable'],1)
 
-    def test_multiple_cases_are_evaluated_in_one_gemini_request(self):
+    def test_request_budget_is_pairwise_and_never_batches_review_cases(self):
         for i in (2,3):
             details=self.case()['details']
             queue_review(self.conn,'identity','bashrety',str(i),self.cid,details)
@@ -188,10 +188,11 @@ class GeminiIdentityReviewTests(unittest.TestCase):
         with patch('pipeline.product_identity_gemini.get_connection',return_value=proxy), \
              patch('pipeline.product_identity_gemini.update_task_progress'), \
              patch('pipeline.product_identity_gemini.complete_task'):
-            report=run_identity_gemini_queue('gemini-test',limit=3,batch_size=10,provider=provider)
-        self.assertEqual(report['api_calls'],1)
-        self.assertEqual(report['needs_manual'],3)
-        self.assertEqual(calls,[3])
+            report=run_identity_gemini_queue('gemini-test',limit=3,batch_size=1,provider=provider)
+        self.assertEqual(report['api_calls'],3)
+        self.assertEqual(report['processed'],0)
+        self.assertIn('pending_partial_case',report)
+        self.assertEqual(calls,[1,1,1])
 
     def test_abandoned_processing_batch_is_requeued(self):
         queue_cases(self.conn,queued_by='test')

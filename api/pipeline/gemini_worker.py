@@ -67,8 +67,8 @@ def run_gemini_verification_queue(
 
     if limit is None:
         limit = getattr(cfg, "GEMINI_QUEUE_BATCH_SIZE", 50)
-    if batch_size is None or batch_size <= 0:
-        batch_size = getattr(cfg, "GEMINI_BATCH_SIZE", 10)
+    # One retailer/reference identity pair per physical provider request.
+    batch_size = 1
 
     conn = get_connection()
     cur = conn.cursor()
@@ -175,7 +175,7 @@ def run_gemini_verification_queue(
                     "candidate_title": cand_name
                 })
 
-            # 2. Call Gemini 3.5 Flash-Lite batch verification (1 request for the entire batch)
+            # 2. Exactly one two-product comparison per provider request.
             evaluations = verify_batch_with_gemini(batch_items)
             api_calls += 1
 

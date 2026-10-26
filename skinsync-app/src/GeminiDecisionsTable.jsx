@@ -52,7 +52,7 @@ export default function GeminiDecisionsTable({refreshKey}) {
   return <section className="rounded-xl border border-gray-200 bg-white p-4 sm:p-5 space-y-4" aria-label="Gemini decision history">
     <div className="flex flex-wrap items-center justify-between gap-3">
       <div><h3 className="text-lg font-bold text-gray-900">Gemini decisions</h3>
-        <p className="mt-1 text-sm text-gray-600">Browse every saved verdict, including completed cases. Confidence is the model’s assessment of its verdict, not proof that all listings are identical. Filtering and inspection do not call Gemini.</p></div>
+        <p className="mt-1 text-sm text-gray-600">Each new verdict compares exactly two products. Inspect the individual pair results below; review confidence summarizes supporting pairs. Historical group responses remain archived. Filtering and inspection do not call Gemini.</p></div>
       <button type="button" className={button} onClick={()=>setRevision(v=>v+1)} disabled={loading}>Refresh results</button>
     </div>
     <form className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-3" onSubmit={applyFilters}>
@@ -126,8 +126,9 @@ export default function GeminiDecisionsTable({refreshKey}) {
               <td className="p-3 font-semibold">#{row.review_id}</td>
               <td className="p-3 max-w-64"><div className="font-medium text-gray-900">{row.title}</div>
                 <div className="text-xs text-gray-500">{row.brand||'Unverified brand'} · Canonical #{row.canonical_product_id??'—'}</div></td>
-              <td className="p-3">{verdicts[row.verdict]||row.verdict}</td>
-              <td className="p-3 font-bold tabular-nums">{percentage(row.confidence)}</td>
+              <td className="p-3">{row.comparison_mode!=='pairwise'&&row.review_status==='pending'?'Awaiting pair comparisons':verdicts[row.verdict]||row.verdict}
+                <span className="block text-xs text-gray-500">{row.comparison_mode==='pairwise'?'Two-product comparisons':'Historical group result'}</span></td>
+              <td className="p-3 font-bold tabular-nums">{row.comparison_mode!=='pairwise'&&row.review_status==='pending'?'—':percentage(row.confidence)}</td>
               <td className="p-3">{outcomes[row.outcome]||row.outcome}
                 <span className="block text-xs text-gray-500">{row.review_status}</span></td>
               <td className="p-3 text-xs">{row.decision?.action?.replaceAll('_',' ')||'Not applied'}</td>
@@ -138,8 +139,13 @@ export default function GeminiDecisionsTable({refreshKey}) {
             {expanded===row.review_id&&<tr className="bg-purple-50/40"><td colSpan={7} className="p-4">
               <div className="grid md:grid-cols-2 gap-4 text-xs">
                 <div className="space-y-2">
-                  <h4 className="font-bold text-gray-900">Gemini explanation</h4>
+                  <h4 className="font-bold text-gray-900">{row.comparison_mode==='pairwise'?'Pairwise summary':'Historical Gemini explanation'}</h4>
+                  {row.comparison_mode!=='pairwise'&&<p className="rounded border border-amber-200 bg-amber-50 p-2 text-amber-900">Historical group comparison. Its verdict is retained for history; new matching uses separate two-product requests.</p>}
                   <p className="text-gray-800 whitespace-pre-wrap">{row.model_reason||'No explanation saved.'}</p>
+                  {(row.historical_group_results||[]).length>0&&<details className="rounded border bg-white p-2">
+                    <summary>Archived group responses ({row.historical_group_results.length})</summary>
+                    {row.historical_group_results.map((old,index)=><p key={index} className="mt-2">{verdicts[old.verdict]||old.verdict} · {percentage(old.confidence)} · {old.explanation}</p>)}
+                  </details>}
                   {row.application_reason&&<div className="rounded-lg bg-white border p-2 text-gray-700">
                     <strong>SkinSync application check:</strong> {row.application_reason}
                   </div>}
@@ -157,8 +163,17 @@ export default function GeminiDecisionsTable({refreshKey}) {
                       <strong>#{offer.product_id} · {offer.store_id||'Unknown store'}</strong>
                       <span className="block">{offer.title}</span>
                     </li>)}</ul>
-                  {(row.compared_candidates||[]).length>0&&<div className="space-y-2">
-                    <h4 className="font-bold text-gray-900">Current canonical candidates ({row.compared_candidates.length})</h4>
+                  {(row.pair_results||[]).length>0&&<div className="space-y-2">
+                    <h4 className="font-bold text-gray-900">Individual two-product comparisons ({row.pair_results.length})</h4>
+                    {row.pair_results.map(pair=><div key={pair.pair_key} className="bg-white border rounded-lg p-2 space-y-1">
+                      {pair.products.map((product,index)=><p key={index}><strong>Product {index+1}:</strong> {product.title} · {product.brand}</p>)}
+                      <p className="font-semibold">{pair.verdict?verdicts[pair.verdict]:'Waiting for pair comparison'} {pair.confidence==null?'':percentage(pair.confidence)}</p>
+                      {pair.application_action&&<p className="text-purple-800">{pair.application_action==='rejected'?'Mismatch rejected':'Source linked'}</p>}
+                      {pair.explanation&&<p>{pair.explanation}</p>}
+                    </div>)}
+                  </div>}
+                  {!(row.pair_results||[]).length&&(row.compared_candidates||[]).length>0&&<div className="space-y-2">
+                    <h4 className="font-bold text-gray-900">Historical candidate set ({row.compared_candidates.length})</h4>
                     {row.compared_candidates.map(c=><div key={c.canonical_product_id} className="bg-white border rounded-lg p-2 space-y-1">
                       <strong>#{c.canonical_product_id} · {c.title}</strong>
                       <p>Brand: {c.brand} · Variant conflicts: {(c.conflicts||[]).join(', ')||'none'} · Missing attributes: {(c.unknown||[]).join(', ')||'none'}</p>

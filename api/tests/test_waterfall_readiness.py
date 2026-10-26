@@ -42,6 +42,17 @@ class WaterfallReadinessTests(unittest.TestCase):
         self.conn.execute("UPDATE canonical_products SET ingredient_source='store_page_tab' WHERE id=?", (self.cid,))
         self.assertEqual(eligible_waterfall(self.conn)['eligible'], 0)
 
+    def test_dynamic_source_requires_audit_for_the_current_formula(self):
+        raw='Water, Glycerin, Panthenol, Phenoxyethanol'
+        self.conn.execute("UPDATE canonical_products SET identity_status='verified',ingredients_raw=?,ingredient_source='source:retailer' WHERE id=?",(raw,self.cid))
+        self.assertEqual(eligible_waterfall(self.conn)['eligible_ids'],[self.cid])
+        self.conn.execute("""INSERT INTO inci_audit_evidence(canonical_product_id,source_name,
+            raw_ingredients_found,completeness,decision) VALUES(?, 'source:retailer',?,'full','approved_authoritative')""",(self.cid,raw))
+        self.assertEqual(eligible_waterfall(self.conn)['eligible'],0)
+        self.assertEqual(eligible_waterfall(self.conn,True)['eligible_ids'],[self.cid])
+        self.conn.execute("UPDATE canonical_products SET ingredients_raw='Water, Squalane, Glycerin, Phenoxyethanol' WHERE id=?",(self.cid,))
+        self.assertEqual(eligible_waterfall(self.conn)['eligible_ids'],[self.cid])
+
     def test_two_agreeing_stores_can_be_explicitly_certified(self):
         for i,store in enumerate(('store_one','store_two'),1):
             self.conn.execute("INSERT INTO stores(id,name,domain) VALUES (?,?,?)",(store,store,store+'.test'))

@@ -4,7 +4,7 @@
 
 ## What it does
 
-The initial legacy identity matcher flags titles that differ in spelling, accents, translation, packaging volume or marketing phrases. Gemini receives structured batches of those unresolved canonical clusters (all known retailer titles, retailer brands and the canonical title), and produces a verdict for **each review ID**:
+The identity matcher flags unresolved product identities. Gemini receives **exactly two products per API request** and returns a verdict for that pair. A source with multiple candidates generates separate requests. Existing canonical clusters are decomposed into individual product pairs, including listing/listing comparisons so a vague canonical cannot bridge incompatible products:
 
 - `same_product` — listings describe the same manufactured marketed product.
 - `different_product` — listings contain different products or variants.
@@ -16,13 +16,17 @@ Gemini also supplies model-reported confidence and a reason. Its confidence is *
 
 1. Generate real review cases from existing legacy identity conflicts through **Product Matching Reviews → Find legacy products needing review** if needed.
 2. Select individual cases or **Send all unresolved identity cases to Gemini**. `POST /admin/aggregation/reviews/gemini/enqueue` accepts `review_ids` optionally, with a bounded queue cap up to 20,000.
-3. Choose cases per API call (1–20; UI offers 5/10/20) and cases per worker run (default 500). Start `POST /admin/aggregation/reviews/gemini/run`.
+3. Choose the maximum pair requests per run (default 500). Start `POST /admin/aggregation/reviews/gemini/run` with `batch_size=1`. Group batching is rejected. Every request compares two products, and completed pairs are reused when a partially completed review resumes.
 4. Poll `/admin/aggregation/reviews/gemini/jobs/{task_id}`; cancel with `.../cancel`. The worker requeues orphaned interrupted processing items and leaves provider failures retryable.
 5. Open **Gemini Decisions** to review saved results using confidence filtering, verdict/outcome sorting, complete/pending status, and expandable evidence. `GET /admin/aggregation/reviews/gemini/results` is read-only and does not call Gemini.
 
-The queue uses `GEMINI_API_KEY`, `GEMINI_MODEL_NAME`, shared Gemini request limits and `pipeline_tasks` telemetry.
+The queue uses `GEMINI_API_KEY`, `GEMINI_MODEL_NAME`, shared Gemini request limits and `pipeline_tasks` telemetry. Pair results are stored in `identity_gemini_pair_results`; local code combines them into a review outcome. One confident positive pair can identify its canonical; multiple positive canonicals remain a duplicate conflict. A distinct new source product requires every compared candidate pair to be confidently different. No model request asks Gemini to select a winner from a list.
 
 ## When an automatic identity decision is permitted
+
+For **saved-source candidate comparisons**, Gemini selects the semantic match. Confident `same_product` decisions link the selected candidate and source offers; confident `different_product` decisions reject the supplied candidates and retain a distinct source product. The live worker and saved replay share the application policy. Missing metadata, differing retailer wording, or the absence of a second retailer do not by themselves block application. Actual attribute contradictions, stale reviewed evidence, conflicting explicit decisions and unscoped multi-variant cases remain unresolved. See [source application semantics](saved-gemini-decisions.md#retailer-source-comparisons).
+
+The rules below describe verification of an **existing canonical cluster**, rather than linking a new retailer observation:
 
 The default current-code threshold for `same_product` is **0.90**, **subject to all independent checks**:
 
