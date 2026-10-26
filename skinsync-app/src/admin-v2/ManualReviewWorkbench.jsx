@@ -138,8 +138,8 @@ export default function ManualReviewWorkbench({actor}) {
           <div className="flex items-center gap-2 text-amber-600"><Flame size={17}/><strong>{streak}</strong></div>
           <div className="text-xs text-slate-500">Current streak</div></div>
         <div className="rounded-xl bg-white border p-3 min-w-24">
-          <div className="flex items-center gap-2 text-violet-700"><Trophy size={17}/><strong>{totalSession*10}</strong></div>
-          <div className="text-xs text-slate-500">Session points</div></div>
+          <div className="flex items-center gap-2 text-violet-700"><Trophy size={17}/><strong>{(session.match+session.no_match)*10}</strong></div>
+          <div className="text-xs text-slate-500">Completed decision points</div></div>
       </div>
     </header>
     <nav aria-label="Manual review queue" className="flex gap-2 flex-wrap">
