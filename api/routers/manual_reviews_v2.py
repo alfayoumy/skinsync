@@ -81,25 +81,41 @@ def _source_details(conn, case):
     observation_id=details.get("observation_id")
     if type(observation_id) is int:
         obs=conn.execute("""SELECT * FROM source_product_observations
-            WHERE id=? AND source_id=? AND source_product_id=?""",
-            (observation_id,case["source_id"],case["source_product_id"])).fetchone()
+            WHERE id=? AND source_id=?""",
+            (observation_id,case["source_id"])).fetchone()
+        if obs and not (case["source_product_id"]==obs["source_product_id"] or
+            case["source_product_id"].startswith(obs["source_product_id"]+":")):
+            obs=None
     if not obs:
         obs=conn.execute("""SELECT * FROM source_product_observations
             WHERE source_id=? AND source_product_id=?
             ORDER BY id DESC LIMIT 1""",
             (case["source_id"],case["source_product_id"])).fetchone()
+    variant=None
+    if obs and case["source_product_id"]!=obs["source_product_id"]:
+        for row in conn.execute("""SELECT * FROM source_product_variants
+            WHERE observation_id=?""",(obs["id"],)):
+            candidate=_parse(row["attributes"])
+            attributes=candidate.get("attributes",{})
+            token=hashlib.sha256(json.dumps(attributes,sort_keys=True).encode()).hexdigest()[:16]
+            if case["source_product_id"]==obs["source_product_id"]+":"+token:
+                variant=dict(row)
+                variant["identity_attributes"]=attributes
+                break
+        if variant is None:
+            obs=None  # Never show product-level evidence for an unresolved variant suffix.
     product=None
     product_id=details.get("product_id")
     if type(product_id) is int:
         product=conn.execute("""SELECT * FROM products WHERE id=? AND store_id=?""",
                              (product_id,case["source_id"])).fetchone()
     source=conn.execute("SELECT name,market FROM sources WHERE id=?",(case["source_id"],)).fetchone()
-    return details,dict(obs) if obs else None,dict(product) if product else None, dict(source) if source else {}
+    return details,dict(obs) if obs else None,dict(product) if product else None, dict(source) if source else {}, variant
 
 
 def _identity_pair(conn, row):
     case=dict(row)
-    details,obs,product,source=_source_details(conn,case)
+    details,obs,product,source,variant=_source_details(conn,case)
     if not obs and not product:
         return None, "No retained source listing supports this review."
     identity=details.get("identity")
@@ -133,18 +149,19 @@ def _identity_pair(conn, row):
     from pipeline.canonical_identity_resolver import extract_identity
     source_title=(obs or {}).get("raw_title") or (product or {}).get("title") or ""
     source_brand=(obs or {}).get("raw_brand") or (product or {}).get("brand") or ""
-    left_attrs=extract_identity(source_title,source_brand,
+    left_attrs=extract_identity((variant or {}).get('title') or source_title,source_brand,
         (obs or {}).get("market") or source.get("market"),
-        _parse((obs or {}).get("identity_attributes")))
+        {**_parse((obs or {}).get("identity_attributes")),**(variant or {}).get("identity_attributes",{})})
     right_attrs=extract_identity(can["canonical_title"],can["brand"],can.get("market"),
         _parse(can.get("identity_attributes")))
     left={
-        "role":"Retailer listing","title":(obs or {}).get("raw_title") or (product or {}).get("title"),
+        "role":"Retailer listing","title":(variant or {}).get("title") or (obs or {}).get("raw_title") or (product or {}).get("title"),
         "brand":(obs or {}).get("raw_brand") or (product or {}).get("brand"),
         "image":_image_from_json((obs or {}).get("images")) or _safe_link((product or {}).get("image_url")),
         "url":left_link,"retailer":source.get("name") or case["source_id"],
         "market":(obs or {}).get("market") or source.get("market"),
-        "sku":(obs or {}).get("manufacturer_sku"),"gtin":(obs or {}).get("source_gtin"),
+        "sku":(variant or {}).get("sku") or (obs or {}).get("manufacturer_sku"),
+        "gtin":(variant or {}).get("gtin") or (obs or {}).get("source_gtin"),
         "attributes":left_attrs,"ingredients":(obs or {}).get("ingredient_text"),
         "category":(obs or {}).get("raw_category") or (product or {}).get("category"),
     }
@@ -172,6 +189,8 @@ def _identity_pair(conn, row):
     signature={
         "case_id":case["id"],"case_hash":case["evidence_hash"],
         "source_observation_hash":(obs or {}).get("payload_hash"),
+        "variant_id":(variant or {}).get("id"),
+        "variant_attributes":(variant or {}).get("attributes"),
         "source_updated_at":(product or {}).get("updated_at"),
         "canonical":{k:can.get(k) for k in ("id","updated_at","identity_attributes","identity_status",
                                            "brand","canonical_title","formula_hash")},
