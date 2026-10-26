@@ -257,6 +257,7 @@ def _eligible(conn,kind,actor):
     available=[]
     blocked=0
     skipped=0
+    skipped_pairs=[]
     for row in records:
         pair,reason=(_identity_pair(conn,row) if kind=="identity" else _inci_pair(conn,row))
         if not pair:
@@ -268,20 +269,23 @@ def _eligible(conn,kind,actor):
             (actor,kind,pair["id"],pair["fingerprint"])).fetchone()
         if skip:
             skipped+=1
+            skipped_pairs.append(pair)
         else:
             available.append(pair)
-    return available,blocked,skipped
+    return available,blocked,skipped,skipped_pairs
 
 
 @router.get("")
 def list_manual_reviews(kind:Literal["identity","inci"]=Query("identity"),
-                        limit:int=Query(10,ge=1,le=30)):
+                        limit:int=Query(10,ge=1,le=30),
+                        view:Literal["ready","skipped"]=Query("ready")):
     actor=actor_name()
     conn=get_connection()
     try:
         _schema(conn)
-        available,blocked,skipped=_eligible(conn,kind,actor)
-        return {"kind":kind,"reviewer":actor,"items":available[:limit],
+        available,blocked,skipped,skipped_pairs=_eligible(conn,kind,actor)
+        return {"kind":kind,"reviewer":actor,"view":view,
+                "items":(skipped_pairs if view=="skipped" else available)[:limit],
                 "counts":{"ready":len(available),"advanced":blocked,
                           "skipped_by_you":skipped,"scanned":len(available)+blocked+skipped},
                 "scan_limit":500,"partial_scan":len(available)+blocked+skipped>=500}
