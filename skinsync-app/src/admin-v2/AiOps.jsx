@@ -41,6 +41,8 @@ export default function AiOps({tab='providers',onTabChange,navigate}) {
   const [queues,setQueues]=useState(null);
   const [identity,setIdentity]=useState(null);
   const [waterfall,setWaterfall]=useState(null);
+  const [research,setResearch]=useState(null);
+  const [researchConnection,setResearchConnection]=useState(null);
   const [error,setError]=useState('');
   const [message,setMessage]=useState('');
   const [busy,setBusy]=useState(false);
@@ -50,9 +52,9 @@ export default function AiOps({tab='providers',onTabChange,navigate}) {
   const [preview,setPreview]=useState(null);
   const [savedPreview,setSavedPreview]=useState(null);
   async function refresh() {
-    const paths=['/admin/apis/status','/admin/queues/status','/admin/aggregation/reviews/gemini/queue','/admin/waterfall/batch/status'];
+    const paths=['/admin/apis/status','/admin/queues/status','/admin/aggregation/reviews/gemini/queue','/admin/waterfall/batch/status','/admin/inci-research/queue?limit=1','/admin/inci-research/connection'];
     const results=await Promise.allSettled(paths.map(p=>request(p)));
-    const setters=[setApis,setQueues,setIdentity,setWaterfall];
+    const setters=[setApis,setQueues,setIdentity,setWaterfall,setResearch,setResearchConnection];
     results.forEach((r,i)=>{if(r.status==='fulfilled')setters[i](r.value);});
     const failed=results.map((r,i)=>r.status==='rejected'?paths[i]+': '+r.reason.message:null).filter(Boolean);
     setError(failed.join(' | '));
@@ -128,6 +130,9 @@ export default function AiOps({tab='providers',onTabChange,navigate}) {
           <div className="pt-2 border-t"><b>Effective limits</b>{Object.entries(p.limits||{}).filter(([,v])=>!Array.isArray(v)).map(([key,value])=>
             <p key={key} className="mt-2 flex justify-between gap-2"><span className="text-slate-500">{key.replaceAll('_',' ')}</span><span>{String(value)}</span></p>)}</div>
         </div></section>)}</div>
+      <section className={PANEL}><h3 className="font-bold">DonSeTch MCP research adapter</h3>
+        <p className="text-sm mt-2">Installed: <b>{researchConnection?.donsetch_installed?'Yes':'No / unknown'}</b> · Gemini configured: <b>{researchConnection?.gemini_configured?'Yes':'No'}</b> · Model: {researchConnection?.model||'—'}</p>
+        <p className="text-xs text-slate-500 mt-2">Research generates candidate-only evidence. Formulation publication still requires independent proof and review.</p></section>
       <p className="text-xs text-slate-500">Health is based on existing configured state and recorded usage; it is not a live remote-provider uptime test. Provider quotas may differ from local counters.</p>
     </div>}
     {tab==='queues' && <div className="grid gap-4 xl:grid-cols-2">
@@ -152,6 +157,9 @@ export default function AiOps({tab='providers',onTabChange,navigate}) {
       <section className={PANEL}><h3 className="font-bold text-lg">INCI research & human review</h3>
         <p className="text-sm text-slate-600 my-3">LangSearch operates inside the INCI waterfall. It is not a separately stoppable approval queue. Human identity and formulation reviews are managed in Review Workbench.</p>
         <p className="text-sm">Waterfall: <b>{waterfall?.status||'unknown'}</b> · {number(waterfall?.processed_items)} / {number(waterfall?.total_items)} processed</p>
+        <div className="flex gap-2 flex-wrap text-xs mt-3">{Object.entries(research?.counts||{}).map(([k,v])=>
+          <span key={k} className="rounded-md bg-slate-100 p-2">{k}: {number(v)}</span>)}</div>
+        <p className="text-xs text-slate-500 mt-2">DonSeTch MCP installed: {researchConnection?.donsetch_installed?'Yes':'No / unknown'} · Model: {researchConnection?.model||'—'}</p>
         <div className="mt-4 flex gap-2"><button className={BTN} onClick={()=>navigate('wizard')}>Go to INCI step</button>
           <button className={BTN} onClick={()=>navigate('reviews')}>Review cases</button></div>
       </section>
