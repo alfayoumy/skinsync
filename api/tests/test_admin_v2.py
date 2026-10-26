@@ -3,6 +3,7 @@ from admin_test_support import authenticate
 import os
 import sys
 import unittest
+from unittest.mock import patch
 from fastapi.testclient import TestClient
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
@@ -63,6 +64,57 @@ class AdminV2Tests(unittest.TestCase):
             self.assertEqual(stop.status_code,409)
         finally:
             complete_task(task_id)
+
+
+    def test_offer_refresh_records_page_checkpoints_without_external_fetch(self):
+        from pipeline.db_manager import get_connection
+        conn = get_connection()
+        try:
+            row = conn.execute("""SELECT id FROM sources
+                WHERE enabled=1 AND adapter_type='shopify' AND source_type='retailer'
+                ORDER BY id LIMIT 1""").fetchone()
+        finally:
+            conn.close()
+        self.assertIsNotNone(row)
+        with patch("routers.workflows.update_existing_shopify_offers",
+                   return_value={"fetched_product_pages": 1, "offers_updated": 3}):
+            response = self.client.post("/admin/v2/offers/start", json={
+                "source_id": row["id"], "start_page": 1,
+                "pages": 2, "dry_run": True, "update_price": True, "update_stock": True
+            })
+        self.assertEqual(response.status_code, 200, response.text)
+        task_id = response.json()["task_id"]
+        detail = self.client.get(f"/admin/v2/jobs/{task_id}")
+        self.assertEqual(detail.status_code, 200)
+        task = detail.json()["job"]
+        self.assertEqual(task["status"], "completed")
+        self.assertEqual(task["processed_items"], 2)
+        self.assertEqual(task["metadata"]["offer_job"]["next_page"], 3)
+        self.assertEqual(task["metadata"]["offer_job"]["last_result"]["offers_updated"], 3)
+
+    def test_failed_offer_page_can_resume_without_restarting_page_one(self):
+        from pipeline.db_manager import get_connection
+        from pipeline.v2_offer_jobs import start, worker, state, command
+        conn=get_connection()
+        try:
+            row=conn.execute("""SELECT id FROM sources WHERE enabled=1
+                AND adapter_type='shopify' AND source_type='retailer' LIMIT 1""").fetchone()
+        finally:
+            conn.close()
+        self.assertIsNotNone(row)
+        job=start(row["id"],1,2,True,True,True)
+        with patch("routers.workflows.update_existing_shopify_offers",
+                   side_effect=RuntimeError("temporary network failure")):
+            worker(job["task_id"])
+        self.assertEqual(state(job["task_id"])["effective_state"],"failed")
+        self.assertEqual(state(job["task_id"])["next_page"],1)
+        result=command(job["task_id"],"resume")
+        self.assertTrue(result["requested"])
+        with patch("routers.workflows.update_existing_shopify_offers",
+                   return_value={"fetched_product_pages":1,"offers_updated":0}):
+            worker(job["task_id"])
+        self.assertEqual(state(job["task_id"])["effective_state"],"completed")
+        self.assertEqual(state(job["task_id"])["next_page"],3)
 
     def test_operations_overview(self):
         r = self.client.get("/admin/v2/operations")
