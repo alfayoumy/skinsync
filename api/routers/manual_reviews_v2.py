@@ -149,13 +149,17 @@ def _identity_pair(conn, row):
     from pipeline.canonical_identity_resolver import extract_identity
     source_title=(obs or {}).get("raw_title") or (product or {}).get("title") or ""
     source_brand=(obs or {}).get("raw_brand") or (product or {}).get("brand") or ""
-    left_attrs=extract_identity((variant or {}).get('title') or source_title,source_brand,
+    left_attrs=extract_identity(source_title,source_brand,
         (obs or {}).get("market") or source.get("market"),
         {**_parse((obs or {}).get("identity_attributes")),**(variant or {}).get("identity_attributes",{})})
     right_attrs=extract_identity(can["canonical_title"],can["brand"],can.get("market"),
         _parse(can.get("identity_attributes")))
+    variant_title=(variant or {}).get("title") or ""
+    display_title=(source_title+" · "+variant_title if variant_title
+                   and variant_title.casefold() not in source_title.casefold()
+                   else source_title)
     left={
-        "role":"Retailer listing","title":(variant or {}).get("title") or (obs or {}).get("raw_title") or (product or {}).get("title"),
+        "role":"Retailer listing","title":display_title,
         "brand":(obs or {}).get("raw_brand") or (product or {}).get("brand"),
         "image":_image_from_json((obs or {}).get("images")) or _safe_link((product or {}).get("image_url")),
         "url":left_link,"retailer":source.get("name") or case["source_id"],
