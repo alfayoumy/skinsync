@@ -8,6 +8,7 @@ import JobCenter from './JobCenter';
 import AdminObservatory from '../AdminObservatory';
 import AggregationReviewPanel from '../AggregationReviewPanel';
 import InciResearchQueue from '../InciResearchQueue';
+import ManualReviewWorkbench from './ManualReviewWorkbench';
 import CatalogWorkflowsPanel from '../CatalogWorkflowsPanel';
 
 const NAV = [
@@ -17,6 +18,7 @@ const NAV = [
   {id:'jobs', name:'Job Center', icon:Activity},
   {id:'ai', name:'AI & API Operations', icon:Cpu},
   {id:'reviews', name:'Review Workbench', icon:ClipboardList},
+  {id:'advanced-reviews', name:'Advanced Review Exceptions', icon:ShieldAlert},
   {id:'offers', name:'Prices & Stock', icon:Tag},
   {id:'catalog', name:'Catalog Explorer', icon:Database},
   {id:'maintenance', name:'Maintenance & Recovery', icon:ShieldAlert},
@@ -148,7 +150,8 @@ export default function AdminV2({onBackToApp}) {
         {route==='repair' && <WorkflowWizard navigate={navigate} workflowKind="catalog_repair"/>}
         {route==='jobs' && <JobCenter/>}
         {route==='ai' && <AiOps tab={aiTab} onTabChange={setAiTab} navigate={navigate}/>}
-        {route==='reviews' && <ReviewHub/>}
+        {route==='reviews' && <ManualReviewWorkbench/>}
+        {route==='advanced-reviews' && <ReviewHub/>}
         {route==='offers' && <WorkflowWizard navigate={navigate} workflowKind="offer_refresh"/>}
         {route==='catalog' && <div className="space-y-3">
           <div className="rounded-xl bg-white p-3 border text-sm">Existing catalog explorer is retained while the new workflow navigation is rolled out.</div>
