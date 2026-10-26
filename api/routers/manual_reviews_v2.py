@@ -152,6 +152,16 @@ def _identity_pair(conn, row):
         "identity_status":can.get("identity_status"),"canonical_id":cid,
         "price":(offer or {}).get("price"),"currency":(offer or {}).get("currency"),
     }
+    from pipeline.canonical_identity_resolver import compare_attributes
+    conflicts=list(compare_attributes(left_attrs,right_attrs).get("conflicts") or [])
+    if left["brand"] and right["brand"] and left["brand"].strip().casefold()!=right["brand"].strip().casefold():
+        from pipeline.brand_registry import resolve_brand
+        lb=resolve_brand(left["brand"],conn)
+        rb=resolve_brand(right["brand"],conn)
+        if not lb or not rb or lb["id"]!=rb["id"]:
+            conflicts.append("Brand identities disagree.")
+    if left.get("gtin") and right.get("gtin") and left["gtin"]!=right["gtin"]:
+        conflicts.append("GTIN identifiers disagree.")
     # Current evidence, not old Gemini confidence, determines whether the card is actionable.
     signature={
         "case_id":case["id"],"case_hash":case["evidence_hash"],
@@ -165,6 +175,7 @@ def _identity_pair(conn, row):
         "kind":"identity","id":case["id"],"canonical_id":cid,
         "left":left,"right":right,
         "notes":details.get("reason_code") or details.get("reason") or case["kind"],
+        "match_blockers":conflicts,
         "model": {"verdict":case.get("verdict"),"confidence":case.get("confidence"),
                   "explanation":case.get("explanation")},
         "fingerprint":hashlib.sha256(json.dumps(signature,sort_keys=True,default=str).encode()).hexdigest()
@@ -197,7 +208,7 @@ def _inci_pair(conn,row):
     }
     right={
         "role":"Proposed source INCI","title":q.get("source_title") or can["canonical_title"],
-        "brand":can["brand"],"image":_safe_link(offer.get("image_url")) or _safe_link(can.get("primary_image_url")),
+        "brand":can["brand"],"image":None,  # No verified image from the proposal source.
         "url":_safe_link(q.get("source_url")),"retailer":source.get("name") or q.get("source_domain"),
         "market":source.get("market"),"attributes":_parse(q.get("source_metadata")),
         "ingredients":q.get("ingredients_raw"),"ingredient_tokens":_parse(q.get("ingredients_tokens"),[]),
@@ -312,6 +323,8 @@ def decide_manual_review(kind:Literal["identity","inci"],case_id:int,body:Decisi
         if body.action=="skip":
             result={"action":"skip","status":"skipped_for_reviewer","no_catalog_mutation":True}
         elif kind=="identity":
+            if body.action=="match" and item["match_blockers"]:
+                raise HTTPException(409,"Conflicting variant evidence prevents Match: "+", ".join(map(str,item["match_blockers"])))
             reason=notes or ("Reviewed side by side: retailer and canonical identity match."
                              if body.action=="match" else
                              "Reviewed side by side: retailer and canonical identities differ.")
