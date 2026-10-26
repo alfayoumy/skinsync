@@ -164,3 +164,40 @@ Create `skinsync-app/src/admin-v2/`:
 The old screens may be retired only when the operator can start a saved workflow, leave the browser, locate every live/paused/interrupted job across worker types, inspect progress and last checkpoint, pause/stop/resume supported long operations, retry failed units without redoing successful work, explicitly preview and apply each stage, understand quarantined exceptions, audit exact catalog changes and finish a verified INCI-aware build with no loss of existing safety constraints.
 
 **Do not claim completion merely because a wizard stepper and buttons render.** Backend controls and persistence must be tested under real interruption and restart.
+
+
+## 12. AI & API Operations — first-class administration (revision 26 October 2026)
+
+The initial UX proposal underrepresented existing provider operations. **AI & API Operations** is now a dedicated top-level section, separate from Job Center, Review Workbench and Maintenance, but interconnected with the wizard at Identity (step 3), INCI research (step 5) and INCI queues (step 6).
+
+### Four screens
+
+1. **Providers & health:** Jev 1.13, Gemini, LangSearch and discovered research/MCP adapters; configured health, stale telemetry warnings, model, rate limit, daily quota and next reset. Gemini identity and INCI share a provider budget, not approval rules. Provide direct links to queue and job details. Display secret presence/status only, never raw keys. The existing `GET /admin/apis/status` and `GET /admin/langsearch/quota-status` are starting read adapters, not sufficient live job state.
+2. **Queues:** Product identity Gemini, INCI Jev, INCI Gemini, ingredient research/ LangSearch request backlogs, plus human identity and human INCI review (the latter are NOT runnable API workers). Queues show eligible/pending/processing/held/error counts, queued-since age, queue selection and independent pause/resume/stop semantics. The existing `/admin/queues/*` manages Jev/INCI Gemini; `/admin/aggregation/reviews/gemini/*` independently manages identity Gemini. Preserve exact separation. Reviews are handled in Review Workbench; a model verdict cannot automatically approve identity or publish ingredients.
+3. **Batch manager:** Select exact queue and scope; use saved-queue fingerprint + eligibility count and active blockers; set max items, per-call batch size when provider supports it, max requests, quota/cost ceiling, concurrency/backoff and dry-run. Preview must distinguish zero-charge saved-response replay from fresh billable calls. An approved batch creates a durable worker job; its checkpoint, request/response audit and per-item failure/retry policy are visible in Job Center. Stop/pause must acknowledge worker exit/unit boundary and persist the last request response to avoid replay billing.
+4. **Settings & limits:** Read-only effective runtime config vs audited operator overrides, with provider-side hard limits always distinguished from local safety caps; model choices, identity threshold, INCI confidence/quality policy, batch sizes, rate limits, timeouts, backoff, provider handoff, enable/disable, credential status and quota reset workflow. Save config revisions; running jobs retain the exact settings snapshot with which they started. Do not imply an admin button actually changes `.env` or a provider's external quota unless wired and verified.
+
+### Actual baseline settings from current `pipeline/config.py`
+
+- Gemini: `GEMINI_MODEL_NAME` default `gemini-3.5-flash-lite`, `GEMINI_MAX_RPM=15`, `GEMINI_MAX_RPD=1500`, `GEMINI_BATCH_SIZE=10`, `GEMINI_TIMEOUT_SECONDS=35`.
+- Jev: `JEV_MODEL_NAME` default `jev-1.13-free`, `JEV_REQUEST_INTERVAL_SECONDS=2`, `JEV_RATE_LIMIT_BACKOFF_SECONDS=10`, `JEV_TIMEOUT_SECONDS=8`.
+- LangSearch: `LANGSEARCH_DAILY_TOKEN_LIMIT=10000000`, `LANGSEARCH_MAX_RPS=5`, `LANGSEARCH_ROLLING_TPM_LIMIT=1000000`, `LANGSEARCH_TIMEOUT_SECONDS=15`. Code exposes manual quota-exhaust and reset; these are *local tracking controls*, not evidence that the provider increased its allowance.
+- Guarded saved identity-Gemini auto-apply is conventionally reviewed at confidence `>=0.90` and **never** bypasses deterministic brand / variant / current-evidence checks. Keep identity and INCI thresholds independent.
+
+### Navigation and contract
+
+`Admin → AI & API Operations → [Providers & health | Queues | Batch manager | Settings & limits]`.
+
+Proposed `/admin/v2/providers/*`, `/admin/v2/queues/*`, `/admin/v2/api-batches/*`, `/admin/v2/provider-settings/*` facade routes link to the existing routers and durable job layer. Provider requests, queue items, individual batch jobs and completed/applied decisions are distinct entities. Batch starting is never identical to batch completion. All changes (especially quota resets and policy updates) require explicit audit and a revisioned configuration snapshot.
+
+### UX completion tests
+
+- See both Gemini identity and Gemini INCI queue depths but a single accurate shared provider quota.
+- Run / pause / resume a bounded Jev or Gemini batch, navigate elsewhere, and restore status without restarting or duplicate API calls.
+- Search LangSearch request jobs and source evidence without presenting search snippets as authoritative full INCI.
+- Preview and apply saved Gemini verdicts with zero external calls; keep rejected or stale decisions held for human review.
+- Inspect configured limits and show exact effective settings used per historical job; do not reveal API keys.
+- Quota-exhaust/reset requires explicit reason and audit; provider-side usage must never be inferred solely from local counter reset.
+- Link a wizard step to its specific queue and originating batch/job, not a second independent execution record.
+
+**Prototype:** `skinsync_admin_v2_1_ai_operations_wireframes.html` (conversation attachment, illustrative and not connected to the backend).
