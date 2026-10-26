@@ -481,6 +481,9 @@ Source: [`api/routers/admin_v2.py`](../api/routers/admin_v2.py). These endpoints
 | GET | `/admin/v2/workflows/{workflow_id}` | Read saved configuration and each step's result/job reference | `read` |
 | PUT | `/admin/v2/workflows/{workflow_id}/steps/{step_key}` | Save operational step checkpoint and optional existing task ID; never changes catalog entities | `operations` / `identity` where required by path |
 | GET | `/admin/v2/workflows/{workflow_id}/events` | Read step history, configuration-save events | `read` |
+| GET | `/admin/v2/batch-presets` | List saved batch configuration presets (no execution) | `read` |
+| POST | `/admin/v2/batch-presets` | Save a preset with operation, item limit and batch size | `operations` |
+| DELETE | `/admin/v2/batch-presets/{preset_id}` | Delete a saved preset without affecting jobs | `operations` |
 | POST | `/admin/v2/offers/start` | Start tracked existing-offer-only refresh with one-page commits, checkpoints and supported pause/stop/resume | `operations` |
 | GET | `/admin/v2/jobs` | List durable pipeline tasks and current process-memory INCI workers | `read` |
 | GET | `/admin/v2/jobs/{job_id}` | Get full task progress, subtasks and logs, or current INCI worker state | `read` |
