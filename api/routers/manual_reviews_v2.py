@@ -130,8 +130,14 @@ def _identity_pair(conn, row):
     left_link=_safe_link((obs or {}).get("source_url") or (product or {}).get("product_url"))
     if not left_link or not right_link:
         return None,"Comparison requires valid source links for both products."
-    left_attrs=_parse((obs or {}).get("identity_attributes"))
-    right_attrs=_parse(can.get("identity_attributes"))
+    from pipeline.canonical_identity_resolver import extract_identity
+    source_title=(obs or {}).get("raw_title") or (product or {}).get("title") or ""
+    source_brand=(obs or {}).get("raw_brand") or (product or {}).get("brand") or ""
+    left_attrs=extract_identity(source_title,source_brand,
+        (obs or {}).get("market") or source.get("market"),
+        _parse((obs or {}).get("identity_attributes")))
+    right_attrs=extract_identity(can["canonical_title"],can["brand"],can.get("market"),
+        _parse(can.get("identity_attributes")))
     left={
         "role":"Retailer listing","title":(obs or {}).get("raw_title") or (product or {}).get("title"),
         "brand":(obs or {}).get("raw_brand") or (product or {}).get("brand"),
