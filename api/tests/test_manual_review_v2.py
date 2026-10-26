@@ -121,6 +121,35 @@ class ManualReviewV2Tests(unittest.TestCase):
         self.assertEqual(self.current('identity')['items'],[])
 
 
+
+    def test_hash_suffixed_variant_displays_its_own_attributes(self):
+        import hashlib
+        variant_attrs={'size':'50ml'}
+        token=hashlib.sha256(json.dumps(variant_attrs,sort_keys=True).encode()).hexdigest()[:16]
+        conn=self.db()
+        conn.execute("""INSERT INTO source_product_observations
+            (source_id,source_product_id,source_url,raw_title,raw_brand,images,
+             observed_at,payload_hash,raw_payload,identity_attributes,classification)
+            VALUES('reviewstore','r-2','https://reviewstore.example/other',
+                'Demo Hydrating Cream','Demo','["https://reviewstore.example/source.jpg"]',
+                '2026-10-27T00:00:00Z','obs-hash','{}','{}','{}')""")
+        oid=conn.execute("SELECT id FROM source_product_observations WHERE payload_hash='obs-hash'").fetchone()[0]
+        conn.execute("""INSERT INTO source_product_variants
+            (observation_id,source_variant_id,sku,gtin,title,attributes)
+            VALUES(?, 'variant-50','DEMO-SKU-50',NULL,'50 ml',?)""",
+            (oid,json.dumps({'attributes':variant_attrs})))
+        conn.execute("""UPDATE product_review_queue SET
+            source_product_id=?,details=?,evidence_hash='variant-evidence'
+            WHERE id=?""",(f'r-2:{token}',json.dumps({
+                'observation_id':oid,'identity':{'candidates':[{'canonical_product_id':self.cid}]}
+            }),self.rid))
+        conn.commit()
+        pair=self.current('identity')['items'][0]
+        self.assertEqual(pair['left']['sku'],'DEMO-SKU-50')
+        self.assertEqual(pair['left']['image'],'https://reviewstore.example/source.jpg')
+        self.assertIn('50 ml',pair['left']['title'])
+        self.assertIn('50ml',str(pair['left']['attributes']))
+
     def test_identity_match_records_reviewed_link_without_canonical_merge(self):
         pair=self.current('identity')['items'][0]
         result=self.client.post(f"/admin/v2/manual-reviews/identity/{self.rid}",json={
