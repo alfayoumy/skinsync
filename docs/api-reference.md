@@ -493,3 +493,16 @@ Source: [`api/routers/admin_v2.py`](../api/routers/admin_v2.py). These endpoints
 
 
 **New tracked offer refresh:** `POST /admin/v2/offers/start` requires `source_id`, positive `start_page`, finite `pages` (1–10000), `update_price`, `update_stock`, and `dry_run`. It creates a `v2_offer_refresh` job. Each page invokes the existing offer-only identity/SKU/GTIN checks, commits (or rolls back a dry-run), and then records `next_page`. `POST /admin/v2/jobs/{job_id}/control` supports pause/stop requests at page boundaries and explicit resume after pause, failure or expired lease. On an abrupt crash between catalog commit and checkpoint update, the current page may be repeated; existing-offer updates are idempotent and never import new products or publish INCI. The implementation uses a bounded lease on a FastAPI background worker, not a distributed queue; recovered tasks require explicit operator resume after a process restart.
+
+
+### Admin V2 centralized manual review
+
+Source: [`api/routers/manual_reviews_v2.py`](../api/routers/manual_reviews_v2.py).
+
+| Method | Path | Permission | Semantics |
+|---|---|---|---|
+| GET | `/admin/v2/manual-reviews` | `read` | Get actor-specific evidence-backed `identity` or `inci` comparison cards, incomplete/multi-candidate exceptions excluded from one-click review |
+| POST | `/admin/v2/manual-reviews/{kind}/{case_id}` | `identity` for identity, `formula_correction` + `formula` for INCI | Authenticated actor's `match`, `no_match` or `skip` plus optional `comment`, guarded by current comparison fingerprint and existing domain rules |
+
+The reviewer identity comes exclusively from the signed-in actor context, never from client input. Skips are personal and do not resolve a case or alter canonical product data. Match on INCI is actual guarded formulation publication only when all identity, source, evidence completeness and market checks pass; out-of-market approval is intentionally blocked in the quick-review interface. Identity match records a source-to-canonical link; it does not merge two canonicals. The optional `comment` is audited, with a meaningful generated default reason when blank. Every decision is subject to revalidation under a write transaction, and a stale fingerprint gets HTTP 409.
+
