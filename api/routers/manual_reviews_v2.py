@@ -115,6 +115,8 @@ def _source_details(conn, case):
 
 def _identity_pair(conn, row):
     case=dict(row)
+    if not case.get("source_product_id"):
+        return None,"Missing stable source product identifier."
     details,obs,product,source,variant=_source_details(conn,case)
     if not obs and not product:
         return None, "No retained source listing supports this review."
@@ -193,6 +195,7 @@ def _identity_pair(conn, row):
     signature={
         "case_id":case["id"],"case_hash":case["evidence_hash"],
         "source_observation_hash":(obs or {}).get("payload_hash"),
+        "source_market":source.get("market"),
         "variant_id":(variant or {}).get("id"),
         "variant_attributes":(variant or {}).get("attributes"),
         "source_updated_at":(product or {}).get("updated_at"),
@@ -256,6 +259,8 @@ def _inci_pair(conn,row):
         "status":q["status"],"updated_at":q["updated_at"],"evidence_hash":q.get("evidence_hash"),
         "canonical_updated":can.get("updated_at"),"canonical_status":can.get("identity_status"),
         "canonical_formula":can.get("ingredients_raw"),"canonical_version":can.get("formula_revision"),
+        "source_market":source.get("market"),"source_domain":q.get("source_domain"),
+        "source_url":q.get("source_url"),
     }
     return {"kind":"inci","id":q["canonical_product_id"],"canonical_id":q["canonical_product_id"],
             "left":left,"right":right,"notes":"A complete, exact-market, source-backed formulation is required.",
