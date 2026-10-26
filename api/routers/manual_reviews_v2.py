@@ -197,6 +197,10 @@ def _inci_pair(conn,row):
         WHERE lower(domain)=? OR lower(domain)=?""",
         (q["source_domain"],(q["source_domain"] or "").removeprefix("www."))).fetchone()
     source=dict(source) if source else {}
+    source_observation=conn.execute("""SELECT images FROM source_product_observations
+        WHERE source_url=? ORDER BY id DESC LIMIT 1""",
+        (q.get("source_url"),)).fetchone() if q.get("source_url") else None
+    source_photo=_image_from_json(source_observation["images"]) if source_observation else None
     left={
         "role":"Canonical product","title":can["canonical_title"],"brand":can["brand"],
         "image":_safe_link(can.get("primary_image_url")) or _safe_link(offer.get("image_url")),
@@ -208,7 +212,7 @@ def _inci_pair(conn,row):
     }
     right={
         "role":"Proposed source INCI","title":q.get("source_title") or can["canonical_title"],
-        "brand":can["brand"],"image":None,  # No verified image from the proposal source.
+        "brand":can["brand"],"image":source_photo,  # Only the exact source URL's observed image.
         "url":_safe_link(q.get("source_url")),"retailer":source.get("name") or q.get("source_domain"),
         "market":source.get("market"),"attributes":_parse(q.get("source_metadata")),
         "ingredients":q.get("ingredients_raw"),"ingredient_tokens":_parse(q.get("ingredients_tokens"),[]),
