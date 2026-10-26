@@ -48,7 +48,7 @@ class IngredientSection:
 
 FULL = ["what's in it",'what’s in it','ingredients','full ingredients','full ingredients list','list of ingredients','inci','المكونات','قائمة المكونات كاملة','قائمة المكونات الكاملة','جميع المكونات']
 PARTIAL = ['key ingredients','key active ingredients','active ingredients','main ingredients','مكونات فعالة','المكونات الرئيسية','المكونات الفعالة']
-STOPS = re.compile(r'^(?:how to use|directions|disclaimer|warnings?|benefits|free from|additional information|reviews?|customer reviews|shipping|description|features|product details|about the brand|please be aware|please refer|for the most|for refilled|ingredients are subject|قد يعجبك|المنتجات التي|احصلي على|طريقة الاستخدام)\b',re.I)
+STOPS = re.compile(r'^(?:(?:brand|size|returns)\s*:|(?:how to use|directions|disclaimer|warnings?|benefits|free from|additional information|reviews?|customer reviews|shipping|delivery information|payment options|description|features|product details|about the brand|please be aware|please refer|for the most|for refilled|ingredients are subject|قد يعجبك|المنتجات التي|احصلي على|طريقة الاستخدام)\b)',re.I)
 
 
 def extract_sections(html,rules=None,product_title=''):

@@ -22,7 +22,7 @@ def resolve_source_formulations(conn,canonical_id,publish=False):
         from pipeline.identity_trust import verified_link
         source_obs=conn.execute('SELECT source_id,source_product_id FROM source_product_observations WHERE id=?',(item['observation_id'],)).fetchone()
         if reason is None and (not source_obs or not verified_link(conn,source_obs[0],flags.get('identity_link_product_id') or source_obs[1],canonical_id)):reason='identity_unverified'
-        elif reason is None and (item['completeness']!='full' or not item['order_verified'] or validation.is_truncated):reason='incomplete_or_unordered'
+        elif reason is None and (item['completeness']!='full' or not item['order_verified'] or validation.completeness!='full' or validation.is_truncated):reason='incomplete_or_unordered'
         elif reason is None and not flags.get('identity_resolved'):reason='identity_unresolved'
         elif reason is None and item['source_type']=='manufacturer' and item['market'] not in ('EG','MENA') and not flags.get('region_compatibility_approved'):
             reason='regional_compatibility_requires_review'

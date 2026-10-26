@@ -1,5 +1,7 @@
 # INCI remediation — current follow-up and archived October 24 baseline
 
+Latest data and implementation checkpoint: [26 October evening recovery](aggregation/catalog-repair-evening-progress-2026-10-26.md).
+
 **Current implementation review: 25 October 2026.** This document preserves the previous October 24 remediation assessment below, but many additional identity and operational changes have landed since it was written.
 
 Current source-of-truth references: [architecture](system_architecture_and_api_documentation.md), [INCI operations and product workflows](workflows-and-operations.md), [API routes](api-reference.md), [database](database-reference.md), [aggregation runbooks](aggregation/README.md).

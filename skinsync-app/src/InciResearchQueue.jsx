@@ -72,8 +72,8 @@ export default function InciResearchQueue({onClose}) {
     <div className="w-full max-w-6xl max-h-[94vh] bg-white rounded-2xl flex flex-col shadow-2xl overflow-hidden">
       <div className="p-4 border-b flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h2 className="text-xl font-black text-gray-900">Gemini + DonSeTch INCI research</h2>
-          <p className="text-xs text-gray-600">Separate from product-identity Gemini. Search and extract source evidence only; every formula requires review and existing publication gates.</p>
+          <h2 className="text-xl font-black text-gray-900">Source-backed INCI research</h2>
+          <p className="text-xs text-gray-600">Separate from product-identity Gemini. Exact verified retailer pages can be extracted without model calls. Other source research may use Gemini; every formula requires review and existing publication gates.</p>
         </div>
         <button type="button" className={button} onClick={onClose}>Close</button>
       </div>
@@ -143,7 +143,7 @@ export default function InciResearchQueue({onClose}) {
               {(data.items||[]).map(item=><tr key={item.canonical_product_id} className="border-t align-top">
                 <td className="p-3 max-w-[250px]"><div className="font-semibold">{item.brand}</div><div>{item.canonical_title}</div><div className="text-xs text-gray-500">Canonical #{item.canonical_product_id}</div></td>
                 <td className="p-3">{item.status.replaceAll('_',' ')}</td>
-                <td className="p-3 font-semibold">{pct(item.confidence)}<div className="text-xs text-gray-500">Model {pct(item.model_confidence)}</div></td>
+                <td className="p-3 font-semibold">{pct(item.confidence)}<div className="text-xs text-gray-500">{item.source_metadata?.method==='known_retailer_detail'?'Retailer extraction · no model':`Model ${pct(item.model_confidence)}`}</div></td>
                 <td className="p-3 text-xs">{item.completeness||'—'}<div>Identity {pct(item.identity_confidence)}</div><div>Source {pct(item.source_confidence)}</div></td>
                 <td className="p-3 max-w-[190px]">{item.source_url?<a href={item.source_url} target="_blank" rel="noopener noreferrer" className="text-purple-700 underline break-all">{item.source_domain||'Source page'}</a>:'—'}</td>
                 <td className="p-3">{item.attempts}</td>

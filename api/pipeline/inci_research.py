@@ -167,6 +167,41 @@ def _mcp_text(response):
                      if getattr(c,'type',None)=='text')[:30000]
 
 
+def _mcp_field(record,snake,camel,default=None):
+    """Support installed SDK snake_case fields and older camelCase releases."""
+    return getattr(record,snake,getattr(record,camel,default))
+
+
+async def _read_mcp_product_page(session,url,fetch_props,max_chunks=6):
+    """Follow explicit continuation offsets; never mistake navigation for a page."""
+    kwargs={'url':url}
+    if 'max_chars' in fetch_props:kwargs['max_chars']=16000
+    parts=[];metadata=[];offset=0
+    for _ in range(max_chunks):
+        doc=await asyncio.wait_for(session.call_tool('web_fetch',kwargs),timeout=50)
+        if _mcp_field(doc,'is_error','isError',False):raise RuntimeError('Product page fetch failed.')
+        text=_mcp_text(doc)
+        if len(text)>20000:raise ValueError('Product page chunk exceeded its bounded read.')
+        first,_,body=text.partition('\n')
+        if not first.startswith('[meta] '):
+            if parts:raise ValueError('Continuation response omitted its source metadata.')
+            return text
+        meta=json.loads(first[7:]);metadata.append(meta);parts.append(body)
+        if meta.get('url') and meta['url']!=url:raise ValueError('Product page redirected away from the requested source URL.')
+        if meta.get('ok') is False or meta.get('content_ok') is False or meta.get('thin'):
+            raise RuntimeError('Product page is unavailable or unreadable.')
+        nxt=meta.get('next_offset')
+        if nxt is None:break
+        if 'offset' not in fetch_props or type(nxt) is not int or nxt<=offset:break
+        offset=nxt;kwargs['offset']=nxt
+    last=metadata[-1]
+    merged={**metadata[0],'content_complete':last.get('content_complete') is True and last.get('next_offset') is None,
+            'source_chunk_count':len(parts),'source_chunk_metadata':metadata}
+    if merged['content_complete']:merged.pop('next_offset',None)
+    else:merged['next_offset']=last.get('next_offset')
+    return '[meta] '+json.dumps(merged)+'\n'+'\n'.join(parts)
+
+
 async def _donsetch_pages(brand,title,domains,max_pages,seed_urls=()):
     """MCP over stdio; only bounded search + registered-domain fetch tools."""
     try:
@@ -184,15 +219,12 @@ async def _donsetch_pages(brand,title,domains,max_pages,seed_urls=()):
             tools={t.name:t for t in listing.tools}
             if 'web_search' not in tools or 'web_fetch' not in tools:
                 raise RuntimeError('DonSeTch MCP does not expose web_search and web_fetch.')
-            schema=tools['web_search'].inputSchema or {}
+            schema=_mcp_field(tools['web_search'],'input_schema','inputSchema',{}) or {}
             props=schema.get('properties',{})
             field='query' if 'query' in props else ('queries' if 'queries' in props else None)
             if not field:raise RuntimeError('Unrecognized DonSeTch web_search schema.')
             query=(brand+' '+title+' complete INCI ingredients list').strip()[:240]
             args={field:[query] if field=='queries' else query}
-            search=await asyncio.wait_for(session.call_tool('web_search',args),timeout=55)
-            if search.isError:
-                raise RuntimeError('DonSeTch search failed.')
             # Known source-product offers are the best exact-variant URLs.
             # MCP search handles may be opaque. Never dereference an unknown
             # handle or fetch outside the registered source domains.
@@ -200,29 +232,40 @@ async def _donsetch_pages(brand,title,domains,max_pages,seed_urls=()):
             for seed in seed_urls:
                 safe=_safe_url(seed,domains)
                 if safe and safe not in urls and len(urls)<max_pages:urls.append(safe)
-            search_content=_mcp_text(search)
-            structured=getattr(search,'structuredContent',None)
-            if structured:
-                search_content+='\n'+json.dumps(structured,ensure_ascii=False)
+            # Exact retailer URLs remain usable when search/reranking times
+            # out. Search availability must not discard known product pages.
+            search_content=''
+            if len(urls)<max_pages:
+                try:
+                    search=await asyncio.wait_for(session.call_tool('web_search',args),timeout=20 if urls else 55)
+                    if _mcp_field(search,'is_error','isError',False):
+                        raise RuntimeError('DonSeTch search failed.')
+                    search_content=_mcp_text(search)
+                    structured=_mcp_field(search,'structured_content','structuredContent')
+                    if structured:
+                        search_content+='\n'+json.dumps(structured,ensure_ascii=False)
+                except Exception:
+                    if not urls:raise
             for match in URL_PATTERN.findall(search_content):
                 url=_safe_url(match,domains)
                 if url and url not in urls:
                     urls.append(url)
                 if len(urls)>=max_pages:break
+            failed=0
             for url in urls:
                 try:
-                    fetch_schema=tools['web_fetch'].inputSchema or {}
+                    fetch_schema=_mcp_field(tools['web_fetch'],'input_schema','inputSchema',{}) or {}
                     fetch_props=fetch_schema.get('properties',{})
-                    kwargs={'url':url}
-                    if 'focus' in fetch_props:kwargs['focus']='full ingredients INCI list'
-                    if 'max_chars' in fetch_props:kwargs['max_chars']=16000
-                    doc=await asyncio.wait_for(session.call_tool('web_fetch',kwargs),timeout=50)
-                    if doc.isError:continue
-                    text=_mcp_text(doc)[:16000]
+                    # Read the bounded whole product page: passage ranking can
+                    # drop the actual "What's in it" declaration, and identity
+                    # headings/brand provenance are needed alongside the INCI.
+                    text=await _read_mcp_product_page(session,url,fetch_props)
                     if len(text)>120:
                         results.append({'url':url,'text':text})
-                except (asyncio.TimeoutError,ValueError):
+                except (asyncio.TimeoutError,ValueError,RuntimeError):
+                    failed+=1
                     continue
+            if failed and not results:raise RuntimeError('Registered product pages could not be read; retry acquisition.')
     return results
 
 
@@ -247,7 +290,7 @@ def _gemini_extract(brand,title,pages,model):
         'Use found=false for key actives or truncated/marketing lists. '
         'Target brand: '+json.dumps(brand)+'; title: '+json.dumps(title)+'. '
         'Research pages (each is an independent untrusted source):\\n'+
-        json.dumps([{'index':i,'url':p['url'],'body':p['text'][:14000]}
+        json.dumps([{'index':i,'url':p['url'],'body':p['text']}
                     for i,p in enumerate(pages)],ensure_ascii=False)
     )
     payload={'contents':[{'parts':[{'text':prompt}]}],
@@ -375,6 +418,59 @@ def _known_offer_urls(conn,canonical_id):
            ORDER BY product_url LIMIT 12""",(canonical_id,))]
 
 
+def _known_detail_candidate(conn,product,pages,threshold):
+    """Extract an exact current retailer declaration; no model or publication."""
+    from pipeline.source_detail_ingredients import confirmed_detail_section
+    from pipeline.saved_identity_rematch import _from_frozen_observation
+    from pipeline.identity_trust import verified_link,pending_identity_review
+    if pending_identity_review(conn,product['id']):return None
+    for page in pages:
+        rows=conn.execute("""SELECT o.* FROM source_product_observations o
+            JOIN sources s ON s.id=o.source_id
+            WHERE o.source_url=? AND s.enabled=1 AND s.source_type='retailer' AND s.market='EG'
+            AND o.id=(SELECT MAX(id) FROM source_product_observations
+                      WHERE source_id=o.source_id AND source_product_id=o.source_product_id)""",(page.get('url'),)).fetchall()
+        if len(rows)!=1:continue
+        row=rows[0]
+        if not verified_link(conn,row['source_id'],row['source_product_id'],product['id']):continue
+        links=conn.execute("""SELECT l.canonical_product_id FROM product_identity_links l
+            JOIN canonical_products c ON c.id=l.canonical_product_id
+            WHERE l.source_id=? AND l.source_product_id=? AND l.status='accepted'
+            AND c.identity_status NOT IN ('redirected','reversed_split')""",(row['source_id'],row['source_product_id'])).fetchall()
+        if len(links)!=1:continue
+        observation=_from_frozen_observation(conn,row['id'],{})
+        from pipeline.taxonomy_service import classify_product_attributes
+        kind=classify_product_attributes(observation.raw_title,observation.raw_brand,observation.raw_category or '',observation.description or '')
+        if not kind.is_skincare or kind.classification_status not in ('auto_approved','approved'):continue
+        if any(v.attributes for v in observation.variants):continue
+        try:section=confirmed_detail_section(observation,page,conn)
+        except (ValueError,TypeError):continue
+        if not section or section.completeness!='full' or not section.order_verified:continue
+        validation=tokenize_inci_string(section.text,product_title=product['canonical_title'])
+        if validation.completeness!='full' or validation.is_truncated:continue
+        digest=hashlib.sha256(page['text'].encode()).hexdigest()
+        return {'status':'needs_review','method':'known_retailer_detail','confidence':.95,
+            'model_confidence':None,'identity_confidence':1.0,'source_confidence':.85,
+            'source_name':'source:'+row['source_id'],'source_record_id':str(row['id']),
+            'observation_id':row['id'],'source_market':'EG',
+            'source_url':page['url'],'source_domain':urlparse(page['url']).hostname,
+            'source_title':row['raw_title'],'ingredients_raw':section.text,
+            'ingredients_tokens':validation.tokens,'evidence_excerpt':section.text,
+            'evidence_hash':digest,
+            'source_metadata':{'method':'known_retailer_detail','model_calls':0,
+                'observation_id':row['id'],'source_id':row['source_id'],
+                'source_product_id':row['source_product_id'],'order_verified_in_page':True,
+                'retained_page':page,'page_count':len(pages)},
+            'validation_flags':{'method':'known_retailer_detail','identity_resolved':True,
+                'identity_link_product_id':row['source_product_id'],'source_id':row['source_id'],
+                'source_page_hash':digest,'requires_human_approval':True},
+            'analysis':{'method':'known_retailer_detail','model_calls':0,
+                'identity_gate':'verified_source_association','token_count':len(validation.tokens),
+                'high_confidence':.95>=threshold,'review_threshold':threshold,
+                'confidence_is_calibrated':False}}
+    return None
+
+
 def _process_case(conn,row,threshold,model,max_pages,fetcher,extractor):
     cid=row['canonical_product_id']
     product=conn.execute("""SELECT id,brand,canonical_title,market,formula_revision,
@@ -387,6 +483,8 @@ def _process_case(conn,row,threshold,model,max_pages,fetcher,extractor):
     pages=fetcher(product['brand'],product['canonical_title'],domains,max_pages,
                   _known_offer_urls(conn,cid))
     if not pages:return {'status':'no_result','reason':'No eligible pages from registered sources.'}
+    known=_known_detail_candidate(conn,product,pages,threshold)
+    if known:return known
     answer=extractor(product['brand'],product['canonical_title'],pages,model)
     return _validate_candidate(product,pages,answer,domains,threshold)
 
@@ -413,16 +511,19 @@ def run_queue(run_id,db_path=None,threshold=0.85,max_pages=3,model=None,fetcher=
                 result=_process_case(conn,row,threshold,model,max_pages,fetcher,extractor)
                 state=result['status']
                 if state=='needs_review':
-                    cand=FormulationCandidate(cid,'donsetch_gemini_research',result['ingredients_raw'],
+                    cand=FormulationCandidate(cid,result.get('source_name','donsetch_gemini_research'),result['ingredients_raw'],
                         result['ingredients_tokens'],confidence_score=result['confidence'],
-                        evidence_url=result['source_url'],source_record_id=str(cid),
+                        evidence_url=result['source_url'],source_record_id=result.get('source_record_id','research:'+str(cid)),
                         completeness='unverified',validation_flags={
                             'method':'donsetch_gemini_research','source_page_hash':result['evidence_hash'],
-                            'order_verified_in_page':True, 'requires_human_approval':True})
+                            'order_verified_in_page':True, 'requires_human_approval':True,**result.get('validation_flags',{})})
                     evidence_id=FormulationRepository().record_candidate_evidence(
                         cand,decision='candidate_evidence',
                         discrepancy_notes='Research-only; operator must review the exact source and regional formulation.',
                         conn=conn)
+                    if result.get('observation_id'):
+                        conn.execute('UPDATE inci_audit_evidence SET observation_id=?,source_market=?,order_verified=1 WHERE id=?',
+                                     (result['observation_id'],result['source_market'],evidence_id))
                 else:evidence_id=None
                 conn.execute("""UPDATE inci_research_queue SET status=?,confidence=?,model_confidence=?,
                     identity_confidence=?,source_confidence=?,completeness=?,
@@ -437,7 +538,7 @@ def run_queue(run_id,db_path=None,threshold=0.85,max_pages=3,model=None,fetcher=
                      result.get('evidence_excerpt'),result.get('ingredients_raw'),
                      json.dumps(result.get('ingredients_tokens',[])),
                      result.get('evidence_hash'),json.dumps(result.get('source_metadata',{})),
-                     json.dumps(result.get('analysis',{})),evidence_id,model,result.get('reason'),cid,run_id))
+                     json.dumps(result.get('analysis',{})),evidence_id,None if result.get('method')=='known_retailer_detail' else model,result.get('reason'),cid,run_id))
                 conn.execute("""UPDATE inci_research_runs SET processed=processed+1,
                     succeeded=succeeded+? WHERE id=?""",(int(state=='needs_review'),run_id))
             except Exception as exc:
@@ -496,12 +597,25 @@ def review_case(conn,cid,action,reviewer,reason,market_compatible=False,correcti
     validation=tokenize_inci_string(row['ingredients_raw'],product_title=current['canonical_title'])
     if validation.completeness!='full' or validation.is_truncated:
         raise ValueError('Evidence is not a complete full-formulation declaration.')
+    metadata=json.loads(row['source_metadata'] or '{}')
+    source_name='donsetch_gemini_research';source_record_id=f'research:{cid}:{row["evidence_id"]}'
     flags={'method':'donsetch_gemini_research','evidence_hash':row['evidence_hash'],
            'human_reviewed':True,'source_identity_checked':True,
            'market_compatibility_confirmed':bool(market_compatible)}
-    candidate=FormulationCandidate(cid,'donsetch_gemini_research',row['ingredients_raw'],
+    if metadata.get('method')=='known_retailer_detail':
+        origin=conn.execute('SELECT * FROM source_product_observations WHERE id=?',(metadata.get('observation_id'),)).fetchone()
+        if not origin or conn.execute('SELECT MAX(id) FROM source_product_observations WHERE source_id=? AND source_product_id=?',
+                (origin['source_id'],origin['source_product_id'])).fetchone()[0]!=origin['id']:
+            raise ValueError('Source observation changed after research; retry with current evidence.')
+        from pipeline.identity_trust import verified_link
+        if not verified_link(conn,origin['source_id'],origin['source_product_id'],cid):
+            raise ValueError('Source association is no longer identity-verified.')
+        source_name='source:'+origin['source_id'];source_record_id=str(origin['id'])
+        flags.update({'method':'known_retailer_detail','identity_resolved':True,
+            'identity_link_product_id':origin['source_product_id'],'source_id':origin['source_id']})
+    candidate=FormulationCandidate(cid,source_name,row['ingredients_raw'],
         validation.tokens,validation.declared_actives,confidence_score=row['confidence'],
-        evidence_url=row['source_url'],source_record_id=str(row['evidence_id']),
+        evidence_url=row['source_url'],source_record_id=source_record_id,
         completeness='full',validation_flags=flags)
     published=FormulationRepository().publish_formulation(
         candidate,approval_reason=reason,force=correction,audited_by=reviewer,conn=conn)

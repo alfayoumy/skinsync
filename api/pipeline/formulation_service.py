@@ -188,6 +188,48 @@ class FormulationRepository:
             if should_close:
                 conn.close()
 
+    def withdraw_formulation(self, canonical_id, reviewer, reason, expected_hash, conn=None):
+        """Withdraw an invalid published declaration, retaining its full audit history."""
+        from pipeline.review_service import require_review
+        from pipeline.catalog_reset import guard_catalog_writes
+        require_review(reviewer,reason)
+        owned=conn is None
+        if owned:conn=get_connection(self.db_path)
+        try:
+            guard_catalog_writes(conn)
+            if not conn.in_transaction:conn.execute('BEGIN')
+            conn.execute('SAVEPOINT formulation_withdrawal')
+            try:
+                row=conn.execute('SELECT * FROM canonical_products WHERE id=?',(canonical_id,)).fetchone()
+                if not row or not row['ingredients_raw']:
+                    raise ValueError('No published formulation to withdraw.')
+                if not expected_hash or row['formula_hash']!=expected_hash:
+                    raise ValueError('Published formulation changed after review.')
+                before=dict(row)
+                candidate=FormulationCandidate(canonical_id,row['ingredient_source'] or 'reviewed_withdrawal',
+                    row['ingredients_raw'],json.loads(row['ingredients_parsed'] or '[]'),
+                    evidence_url=row['ingredient_source_url'],completeness='partial',
+                    validation_flags={'method':'reviewed_withdrawal','previous_canonical':before})
+                eid=self.record_candidate_evidence(candidate,decision='withdrawn_authoritative',
+                    discrepancy_notes=reason,audited_by=reviewer,conn=conn)
+                conn.execute("""UPDATE canonical_products SET ingredients_raw=NULL,ingredients_parsed=NULL,
+                    actives=NULL,ingredient_source=NULL,ingredient_source_url=NULL,formula_hash=NULL,
+                    formula_hash_unordered=NULL,formulation_published_at=NULL,
+                    formulation_approval_reason=?,formulation_provenance='withdrawn',
+                    inci_matched_id=NULL,inci_matched_name=NULL WHERE id=?""",(reason,canonical_id))
+                conn.execute("""INSERT INTO formulation_resolution_queue(canonical_product_id,status) VALUES(?,'review')
+                    ON CONFLICT(canonical_product_id) DO UPDATE SET status='review',updated_at=CURRENT_TIMESTAMP""",(canonical_id,))
+                conn.execute('RELEASE SAVEPOINT formulation_withdrawal')
+                if owned:conn.commit()
+                return {'canonical_product_id':canonical_id,'evidence_id':eid,'withdrawn':True}
+            except Exception:
+                conn.execute('ROLLBACK TO SAVEPOINT formulation_withdrawal')
+                conn.execute('RELEASE SAVEPOINT formulation_withdrawal')
+                if owned:conn.rollback()
+                raise
+        finally:
+            if owned:conn.close()
+
     def publish_formulation(self, candidate, approval_reason, force=False, audited_by="pipeline", conn=None):
         """Publish and audit atomically without committing a caller's transaction."""
         # Legacy CSV ingredients are untrusted even if their syntax looks valid.
@@ -399,7 +441,12 @@ class FormulationRepository:
                     return False
 
             # Qualifying upgrade or new formulation
-            new_version = (curr_version + 1) if curr_raw else 1
+            # Withdrawal clears the current formula, not its version history.
+            # Allocate above all retained versions, including a stale master row.
+            historical_version = conn.execute(
+                'SELECT COALESCE(MAX(formula_version),0) FROM formulation_versions WHERE canonical_product_id=?',
+                (candidate.canonical_product_id,)).fetchone()[0] if has_versions else 0
+            new_version = max(historical_version,curr_version if curr_raw else 0) + 1
 
             cur.execute("""
             UPDATE canonical_products

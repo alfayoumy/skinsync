@@ -166,6 +166,10 @@ def tokenize_inci_string(raw_text: Optional[str], product_title: Optional[str] =
         is_truncated = True
         validation_flags["truncation_pattern"] = "unclosed_parenthesis"
 
+    if re.search(r'(?:^|[,;])\s*(?:caprylyl|caprylic|cetearyl)\s*\.?$',text,re.I):
+        is_truncated=True
+        validation_flags['truncation_pattern']='unfinished_chemical_name'
+
     # 2. Check for marketing callout header
     callout_match = re.search(r'(?i)\b(key|active|hero|main|highlighted)\s+ingredients?\s*[:\-–]', text)
     is_callout_header = bool(callout_match)
@@ -280,6 +284,29 @@ def tokenize_inci_string(raw_text: Optional[str], product_title: Optional[str] =
         elif len(tokens) <= 2:
             completeness = "partial"
             validation_flags["partial_reason"] = "short_callout_under_3_tokens"
+
+    # A benefits summary or broken extraction is not a chemically identified
+    # full declaration, even when it contains enough carrier ingredients.
+    vague=re.search(r'\b(?:multivitamin\s+liposomal|vitamin\s+[ce]\s+liposom(?:al|e)|hyloronic\s+acid\s+liposomal)\b',raw_text,re.I)
+    broken=re.search(r'(?:^|[,;])\s*(?:gum|caprylic/capric|triglyceride|swertia)\s*(?:[,;]|$)',raw_text,re.I)
+    if vague or broken or re.search(r'\bshare\s*:\s*$',raw_text,re.I):
+        completeness='partial'
+        validation_flags['partial_reason']='non_specific_or_contaminated_declaration'
+
+    # A dual-zone product has separate component formulas. Concatenating the
+    # blue T-zone and white U-zone declarations would invent one ordered INCI.
+    zones=set(re.findall(r'(?:^|[\n|])\s*([tu])[ -]?zone\s+(?:cream|gel)\b',raw_text,re.I))
+    if len({zone.lower() for zone in zones})>1:
+        completeness='partial'
+        validation_flags['partial_reason']='multiple_component_formulas'
+
+    # Drug labels can list inactive ingredients separately. A long carrier list
+    # is still incomplete if the product's explicitly named drug active is absent.
+    if product_title and re.search(r'\bbenzoyl\s+peroxide\b',product_title,re.I) and not any(
+            re.search(r'\bbenzoyl\s+peroxide\b',t,re.I) for t in tokens):
+        completeness='partial'
+        validation_flags['partial_reason']='missing_named_drug_active'
+        validation_flags['missing_named_active']='benzoyl peroxide'
 
     return InciValidationResult(
         raw_text=raw_text,
