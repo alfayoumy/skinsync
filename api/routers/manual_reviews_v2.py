@@ -373,18 +373,20 @@ def decide_manual_review(kind:Literal["identity","inci"],case_id:int,body:Decisi
         elif kind=="identity":
             if body.action=="match" and item["match_blockers"]:
                 raise HTTPException(409,"Conflicting variant evidence prevents Match: "+", ".join(map(str,item["match_blockers"])))
-            reason=notes or ("Reviewed side by side: retailer and canonical identity match."
-                             if body.action=="match" else
-                             "Reviewed side by side: retailer and canonical identities differ.")
+            reason=("Reviewed side by side: retailer and canonical identity match."
+                    if body.action=="match" else
+                    "Reviewed side by side: retailer and canonical identities differ.")
+            if notes: reason+=" Comment: "+notes
             result=resolve_review(conn,case_id,
                 "link" if body.action=="match" else "cannot_link",
                 reviewer,reason,item["canonical_id"])
         else:
             if body.action=="match" and item["requires_market_confirmation"]:
                 raise HTTPException(409,"Out-of-market INCI needs explicit market verification in advanced review; no implicit override.")
-            reason=notes or ("Reviewed complete regional source INCI against the verified canonical product."
-                             if body.action=="match" else
-                             "Reviewed proposed source INCI; evidence does not match this formulation.")
+            reason=("Reviewed complete regional source INCI against the verified canonical product."
+                    if body.action=="match" else
+                    "Reviewed proposed source INCI; evidence does not match this formulation.")
+            if notes: reason+=" Comment: "+notes
             result=review_inci(conn,case_id,
                 "approve" if body.action=="match" else "reject",
                 reviewer,reason,market_compatible=False,correction=False)
