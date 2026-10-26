@@ -183,6 +183,19 @@ class ManualReviewV2Tests(unittest.TestCase):
             'action':'no_match','fingerprint':latest['fingerprint']})
         self.assertEqual(rejected.status_code,200,rejected.text)
 
+    def test_short_optional_comment_is_accepted_and_recorded(self):
+        pair=self.current('inci')['items'][0]
+        response=self.client.post(f"/admin/v2/manual-reviews/inci/{self.cid}",json={
+            'action':'no_match','fingerprint':pair['fingerprint'],'comment':'No'})
+        self.assertEqual(response.status_code,200,response.text)
+        conn=self.db()
+        self.assertIn('Comment: No',conn.execute(
+            "SELECT review_reason FROM inci_research_queue WHERE canonical_product_id=?",
+            (self.cid,)).fetchone()[0])
+        self.assertEqual(conn.execute(
+            "SELECT comment FROM admin_v2_manual_review_events WHERE queue_kind='inci'"
+        ).fetchone()[0],'No')
+
     def test_inci_no_match_rejects_only_candidate_and_stale_vote_fails(self):
         pair=self.current('inci')['items'][0]
         self.assertEqual(pair['left']['canonical_id'],self.cid)
