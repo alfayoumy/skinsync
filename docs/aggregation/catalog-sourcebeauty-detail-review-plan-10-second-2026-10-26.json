@@ -1,0 +1,90 @@
+{
+  "reviewed_page_indices": [
+    20,
+    21,
+    22,
+    23,
+    24,
+    25,
+    26,
+    27,
+    28,
+    29,
+    30,
+    31,
+    32,
+    33
+  ],
+  "decisions": [
+    {
+      "url": "https://sourcebeauty.com/products/axis-y-cera-heart-my-type-duo-cream",
+      "decision": "hold",
+      "reason": "Two separately labelled T-zone/U-zone formulas require component-scoped ownership, not concatenation into one ordered formula."
+    },
+    {
+      "url": "https://sourcebeauty.com/products/the-ordinary-glycolic-acid-7-exfoliating-toner",
+      "decision": "apply_if_fresh_validation_passes",
+      "reason": "Reviewed literal source section; identity and completeness revalidated before publication."
+    },
+    {
+      "url": "https://sourcebeauty.com/products/altesse-soin-cica-repairing-gel-cream",
+      "decision": "hold",
+      "reason": "Apparent highlighted-active list lacks an established complete gel-cream base."
+    },
+    {
+      "url": "https://sourcebeauty.com/products/round-lab-vita-niacinamide-dark-spot-serum",
+      "decision": "apply_if_fresh_validation_passes",
+      "reason": "Reviewed literal source section; identity and completeness revalidated before publication."
+    },
+    {
+      "url": "https://sourcebeauty.com/products/amanda-hydrating-nourishing-night-cream",
+      "decision": "apply_if_fresh_validation_passes",
+      "reason": "Reviewed literal source section; identity and completeness revalidated before publication."
+    },
+    {
+      "url": "https://sourcebeauty.com/products/round-lab-birch-moisturizing-toner-pad",
+      "decision": "hold",
+      "reason": "Rice-focused declaration on a Birch product requires product/formula confirmation."
+    },
+    {
+      "url": "https://sourcebeauty.com/products/elizavecca-milky-piggy-super-elastic-bust-cream",
+      "decision": "hold",
+      "reason": "No usable ingredient heading."
+    },
+    {
+      "url": "https://sourcebeauty.com/products/the-ordinary-soothing-barrier-support-serum",
+      "decision": "apply_if_fresh_validation_passes",
+      "reason": "Reviewed literal source section; identity and completeness revalidated before publication."
+    },
+    {
+      "url": "https://sourcebeauty.com/products/im-from-im-from-rice-cream",
+      "decision": "hold",
+      "reason": "White-willow/BHA text on a Rice Cream is an apparent retailer copy/paste error."
+    },
+    {
+      "url": "https://sourcebeauty.com/products/anua-peach-77-niacin-enriched-cream",
+      "decision": "apply_if_fresh_validation_passes",
+      "reason": "Reviewed literal source section; identity and completeness revalidated before publication."
+    },
+    {
+      "url": "https://sourcebeauty.com/products/numbuzin-no-1-pantothenic-b5-active-soothing-serum",
+      "decision": "apply_if_fresh_validation_passes",
+      "reason": "Reviewed literal source section; identity and completeness revalidated before publication."
+    },
+    {
+      "url": "https://sourcebeauty.com/products/elizavecca-milky-piggy-carbonated-bubble-clay-mask",
+      "decision": "hold",
+      "reason": "Generic raw-material names require confirmation before claiming a full INCI declaration."
+    },
+    {
+      "url": "https://sourcebeauty.com/products/skin1004-hyalu-cica-brightening-toner",
+      "decision": "apply_if_fresh_validation_passes",
+      "reason": "Reviewed literal source section; identity and completeness revalidated before publication."
+    },
+    {
+      "url": "https://sourcebeauty.com/products/eqqualberry-nad-peptide-boosting-toner",
+      "decision": "apply_if_fresh_validation_passes",
+      "reason": "Reviewed literal source section; identity and completeness revalidated before publication."
+    }
+  ]
+}

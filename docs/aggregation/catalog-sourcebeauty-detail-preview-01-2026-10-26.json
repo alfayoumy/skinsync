@@ -1,0 +1,77 @@
+{
+  "applied": false,
+  "backup_path": null,
+  "model_calls": 0,
+  "results": [
+    {
+      "url": "https://sourcebeauty.com/products/essentials-vanilla-sugar-shower-gel",
+      "status": "published",
+      "canonical_id": 63366,
+      "original_observation_id": 21483,
+      "observation_id": 22780,
+      "evidence_id": 944,
+      "ingredient_count": 22
+    },
+    {
+      "url": "https://sourcebeauty.com/products/watermelon-breeze-shower-cream",
+      "status": "published",
+      "canonical_id": 63367,
+      "original_observation_id": 21097,
+      "observation_id": 22781,
+      "evidence_id": 946,
+      "ingredient_count": 22
+    },
+    {
+      "url": "https://sourcebeauty.com/products/soul-more-glossy-lip-balm-cola",
+      "status": "preserved",
+      "reason": "Detail page fetch is incomplete, unavailable or redirected."
+    },
+    {
+      "url": "https://sourcebeauty.com/products/soul-more-lip-oil-cola",
+      "status": "preserved",
+      "reason": "Detail page fetch is incomplete, unavailable or redirected."
+    },
+    {
+      "url": "https://sourcebeauty.com/products/shaan-oily-matte-cream-gel",
+      "status": "preserved",
+      "reason": "Detail page fetch is incomplete, unavailable or redirected."
+    },
+    {
+      "url": "https://sourcebeauty.com/products/soul-more-coffee-coconut-body-butter-whipped",
+      "status": "preserved",
+      "reason": "Detail page fetch is incomplete, unavailable or redirected."
+    },
+    {
+      "url": "https://sourcebeauty.com/products/soul-more-coffee-coconut-hand-cream",
+      "status": "preserved",
+      "reason": "Detail page fetch is incomplete, unavailable or redirected."
+    },
+    {
+      "url": "https://sourcebeauty.com/products/red-forest-body-lotion",
+      "status": "published",
+      "canonical_id": 63412,
+      "original_observation_id": 15991,
+      "observation_id": 22782,
+      "evidence_id": 948,
+      "ingredient_count": 10
+    },
+    {
+      "url": "https://sourcebeauty.com/products/beauty-of-joseon-dynasty-cream",
+      "status": "published",
+      "canonical_id": 63417,
+      "original_observation_id": 21002,
+      "observation_id": 22783,
+      "evidence_id": 950,
+      "ingredient_count": 37
+    },
+    {
+      "url": "https://sourcebeauty.com/products/strawberry-vanilla-shower-cream",
+      "status": "published",
+      "canonical_id": 63425,
+      "original_observation_id": 21096,
+      "observation_id": 22784,
+      "evidence_id": 952,
+      "ingredient_count": 22
+    }
+  ]
+}

@@ -1,0 +1,801 @@
+{
+  "backup_path": "/mnt/windows/Users/AmrAlfayoumy/Downloads/skincare/repo/api/backups/catalog/catalog-20261025T191736Z-96577503.sqlite3",
+  "additional_backup_path": "/mnt/windows/Users/AmrAlfayoumy/Downloads/skincare/repo/api/backups/catalog/catalog-20261025T191910Z-03248fa4.sqlite3",
+  "before": {
+    "canonical_products": 7230,
+    "verified_identities": 515,
+    "published_inci": 51,
+    "observed_products_with_inci": 999,
+    "pending_reviews": {
+      "category": 2246,
+      "identity": 1704
+    },
+    "pending_identity_reviews": 1704,
+    "pending_category_reviews": 2246,
+    "awaiting_evidence": 0,
+    "sources": [
+      {
+        "id": "bashrety",
+        "name": "Bashrety",
+        "enabled": 1,
+        "publish_enabled": 0
+      },
+      {
+        "id": "bloompharmacy",
+        "name": "Bloom Pharmacy",
+        "enabled": 1,
+        "publish_enabled": 0
+      },
+      {
+        "id": "drdawood",
+        "name": "Dr Dawood",
+        "enabled": 1,
+        "publish_enabled": 0
+      },
+      {
+        "id": "feel22",
+        "name": "Feel22 Egypt",
+        "enabled": 1,
+        "publish_enabled": 0
+      },
+      {
+        "id": "rawafrican",
+        "name": "Raw African",
+        "enabled": 1,
+        "publish_enabled": 0
+      },
+      {
+        "id": "sourcebeauty",
+        "name": "Source Beauty",
+        "enabled": 1,
+        "publish_enabled": 0
+      }
+    ],
+    "formula_evidence": [
+      {
+        "completeness": "full",
+        "order_verified": 1,
+        "count": 352
+      },
+      {
+        "completeness": "partial",
+        "order_verified": 0,
+        "count": 48
+      },
+      {
+        "completeness": "unverified",
+        "order_verified": 0,
+        "count": 75
+      },
+      {
+        "completeness": "unverified",
+        "order_verified": 1,
+        "count": 37
+      }
+    ],
+    "gemini_results": [
+      {
+        "status": "auto_resolved",
+        "verdict": "same_product",
+        "count": 18
+      },
+      {
+        "status": "needs_manual",
+        "verdict": "different_product",
+        "count": 331
+      },
+      {
+        "status": "needs_manual",
+        "verdict": "same_product",
+        "count": 787
+      },
+      {
+        "status": "needs_manual",
+        "verdict": "uncertain",
+        "count": 586
+      }
+    ]
+  },
+  "result": {
+    "dry_run": false,
+    "no_gemini_calls": true,
+    "threshold": 0.95,
+    "source_verdicts_seen": 1704,
+    "source_verdicts_eligible": 715,
+    "source_verdicts_not_eligible": 989,
+    "stored_decisions_checked": 715,
+    "automatically_verified": 0,
+    "source_matches_linked": 589,
+    "source_comparisons_rejected": 70,
+    "automatically_split": 0,
+    "new_canonical_products": 68,
+    "still_needs_review": 56,
+    "blocked_reasons": [
+      {
+        "reason": "Source variant identity needs a separate per-variant review.",
+        "count": 43
+      },
+      {
+        "reason": "Application could not be completed: An additional current candidate was not adjudicated by this saved verdict.",
+        "count": 13
+      }
+    ],
+    "sample_results": [
+      {
+        "review_id": 17,
+        "verdict": "different_product",
+        "confidence": 0.95,
+        "action": "source_rejected",
+        "reason": "Applied different-product verdict: rejected compared candidates and retained the distinct source product."
+      },
+      {
+        "review_id": 50,
+        "verdict": "different_product",
+        "confidence": 0.95,
+        "action": "source_rejected",
+        "reason": "Applied different-product verdict: rejected compared candidates and retained the distinct source product."
+      },
+      {
+        "review_id": 52,
+        "verdict": "same_product",
+        "confidence": 0.95,
+        "action": "source_linked",
+        "reason": "Applied Gemini-selected canonical; current source evidence and brand agree, with no explicit variant or prior-decision conflict."
+      },
+      {
+        "review_id": 66,
+        "verdict": "same_product",
+        "confidence": 0.95,
+        "action": "source_linked",
+        "reason": "Applied Gemini-selected canonical; current source evidence and brand agree, with no explicit variant or prior-decision conflict."
+      },
+      {
+        "review_id": 83,
+        "verdict": "same_product",
+        "confidence": 0.95,
+        "action": "source_linked",
+        "reason": "Applied Gemini-selected canonical; current source evidence and brand agree, with no explicit variant or prior-decision conflict."
+      },
+      {
+        "review_id": 89,
+        "verdict": "same_product",
+        "confidence": 0.98,
+        "action": "source_linked",
+        "reason": "Applied Gemini-selected canonical; current source evidence and brand agree, with no explicit variant or prior-decision conflict."
+      },
+      {
+        "review_id": 99,
+        "verdict": "same_product",
+        "confidence": 0.98,
+        "action": "source_linked",
+        "reason": "Applied Gemini-selected canonical; current source evidence and brand agree, with no explicit variant or prior-decision conflict."
+      },
+      {
+        "review_id": 104,
+        "verdict": "different_product",
+        "confidence": 0.99,
+        "action": "source_rejected",
+        "reason": "Applied different-product verdict: rejected compared candidates and retained the distinct source product."
+      },
+      {
+        "review_id": 106,
+        "verdict": "different_product",
+        "confidence": 0.95,
+        "action": "source_rejected",
+        "reason": "Applied different-product verdict: rejected compared candidates and retained the distinct source product."
+      },
+      {
+        "review_id": 248,
+        "verdict": "same_product",
+        "confidence": 0.95,
+        "action": "source_linked",
+        "reason": "Applied Gemini-selected canonical; current source evidence and brand agree, with no explicit variant or prior-decision conflict."
+      },
+      {
+        "review_id": 265,
+        "verdict": "different_product",
+        "confidence": 0.95,
+        "action": "source_rejected",
+        "reason": "Applied different-product verdict: rejected compared candidates and retained the distinct source product."
+      },
+      {
+        "review_id": 269,
+        "verdict": "same_product",
+        "confidence": 0.95,
+        "action": "source_linked",
+        "reason": "Applied Gemini-selected canonical; current source evidence and brand agree, with no explicit variant or prior-decision conflict."
+      },
+      {
+        "review_id": 390,
+        "verdict": "same_product",
+        "confidence": 0.95,
+        "action": "source_linked",
+        "reason": "Applied Gemini-selected canonical; current source evidence and brand agree, with no explicit variant or prior-decision conflict."
+      },
+      {
+        "review_id": 401,
+        "verdict": "same_product",
+        "confidence": 0.95,
+        "action": "source_linked",
+        "reason": "Applied Gemini-selected canonical; current source evidence and brand agree, with no explicit variant or prior-decision conflict."
+      },
+      {
+        "review_id": 436,
+        "verdict": "different_product",
+        "confidence": 0.95,
+        "action": "source_rejected",
+        "reason": "Applied different-product verdict: rejected compared candidates and retained the distinct source product."
+      },
+      {
+        "review_id": 483,
+        "verdict": "different_product",
+        "confidence": 0.95,
+        "action": "source_rejected",
+        "reason": "Applied different-product verdict: rejected compared candidates and retained the distinct source product."
+      },
+      {
+        "review_id": 645,
+        "verdict": "same_product",
+        "confidence": 0.95,
+        "action": "source_linked",
+        "reason": "Applied Gemini-selected canonical; current source evidence and brand agree, with no explicit variant or prior-decision conflict."
+      },
+      {
+        "review_id": 655,
+        "verdict": "same_product",
+        "confidence": 0.98,
+        "action": "source_linked",
+        "reason": "Applied Gemini-selected canonical; current source evidence and brand agree, with no explicit variant or prior-decision conflict."
+      },
+      {
+        "review_id": 670,
+        "verdict": "different_product",
+        "confidence": 0.95,
+        "action": "source_rejected",
+        "reason": "Applied different-product verdict: rejected compared candidates and retained the distinct source product."
+      },
+      {
+        "review_id": 673,
+        "verdict": "same_product",
+        "confidence": 0.95,
+        "action": "source_linked",
+        "reason": "Applied Gemini-selected canonical; current source evidence and brand agree, with no explicit variant or prior-decision conflict."
+      },
+      {
+        "review_id": 692,
+        "verdict": "same_product",
+        "confidence": 0.98,
+        "action": "source_linked",
+        "reason": "Applied Gemini-selected canonical; current source evidence and brand agree, with no explicit variant or prior-decision conflict."
+      },
+      {
+        "review_id": 712,
+        "verdict": "different_product",
+        "confidence": 0.95,
+        "action": "source_rejected",
+        "reason": "Applied different-product verdict: rejected compared candidates and retained the distinct source product."
+      },
+      {
+        "review_id": 713,
+        "verdict": "same_product",
+        "confidence": 0.95,
+        "action": "source_linked",
+        "reason": "Applied Gemini-selected canonical; current source evidence and brand agree, with no explicit variant or prior-decision conflict."
+      },
+      {
+        "review_id": 749,
+        "verdict": "same_product",
+        "confidence": 0.95,
+        "action": "source_linked",
+        "reason": "Applied Gemini-selected canonical; current source evidence and brand agree, with no explicit variant or prior-decision conflict."
+      },
+      {
+        "review_id": 751,
+        "verdict": "same_product",
+        "confidence": 0.95,
+        "action": "source_linked",
+        "reason": "Applied Gemini-selected canonical; current source evidence and brand agree, with no explicit variant or prior-decision conflict."
+      }
+    ],
+    "message": "Saved decisions were replayed without any additional Gemini requests.",
+    "case_checks_including_rechecks": 776
+  },
+  "after": {
+    "canonical_products": 7298,
+    "verified_identities": 515,
+    "published_inci": 51,
+    "observed_products_with_inci": 999,
+    "pending_reviews": {
+      "category": 2246,
+      "identity": 1045
+    },
+    "pending_identity_reviews": 1045,
+    "pending_category_reviews": 2246,
+    "awaiting_evidence": 0,
+    "sources": [
+      {
+        "id": "bashrety",
+        "name": "Bashrety",
+        "enabled": 1,
+        "publish_enabled": 0
+      },
+      {
+        "id": "bloompharmacy",
+        "name": "Bloom Pharmacy",
+        "enabled": 1,
+        "publish_enabled": 0
+      },
+      {
+        "id": "drdawood",
+        "name": "Dr Dawood",
+        "enabled": 1,
+        "publish_enabled": 0
+      },
+      {
+        "id": "feel22",
+        "name": "Feel22 Egypt",
+        "enabled": 1,
+        "publish_enabled": 0
+      },
+      {
+        "id": "rawafrican",
+        "name": "Raw African",
+        "enabled": 1,
+        "publish_enabled": 0
+      },
+      {
+        "id": "sourcebeauty",
+        "name": "Source Beauty",
+        "enabled": 1,
+        "publish_enabled": 0
+      }
+    ],
+    "formula_evidence": [
+      {
+        "completeness": "full",
+        "order_verified": 1,
+        "count": 352
+      },
+      {
+        "completeness": "partial",
+        "order_verified": 0,
+        "count": 48
+      },
+      {
+        "completeness": "unverified",
+        "order_verified": 0,
+        "count": 75
+      },
+      {
+        "completeness": "unverified",
+        "order_verified": 1,
+        "count": 37
+      }
+    ],
+    "gemini_results": [
+      {
+        "status": "auto_resolved",
+        "verdict": "different_product",
+        "count": 70
+      },
+      {
+        "status": "auto_resolved",
+        "verdict": "same_product",
+        "count": 607
+      },
+      {
+        "status": "needs_manual",
+        "verdict": "different_product",
+        "count": 261
+      },
+      {
+        "status": "needs_manual",
+        "verdict": "same_product",
+        "count": 198
+      },
+      {
+        "status": "needs_manual",
+        "verdict": "uncertain",
+        "count": 586
+      }
+    ]
+  },
+  "validation": {
+    "existing_offer_prices_or_stock_changed": 0,
+    "existing_formulations_changed": 0,
+    "sqlite_quick_check": "ok",
+    "foreign_key_errors": 0
+  },
+  "runs": [
+    {
+      "dry_run": false,
+      "no_gemini_calls": true,
+      "threshold": 0.95,
+      "source_verdicts_seen": 1704,
+      "source_verdicts_eligible": 715,
+      "source_verdicts_not_eligible": 989,
+      "stored_decisions_checked": 715,
+      "automatically_verified": 0,
+      "source_matches_linked": 584,
+      "source_comparisons_rejected": 70,
+      "automatically_split": 0,
+      "new_canonical_products": 68,
+      "still_needs_review": 61,
+      "blocked_reasons": [
+        {
+          "reason": "Source variant identity needs a separate per-variant review.",
+          "count": 43
+        },
+        {
+          "reason": "Application could not be completed: An additional current candidate was not adjudicated by this saved verdict.",
+          "count": 13
+        },
+        {
+          "reason": "Product attributes conflict: function (source: Moisturizer; selected product: Body Care)",
+          "count": 3
+        },
+        {
+          "reason": "Product attributes conflict: function (source: Body Care; selected product: Moisturizer)",
+          "count": 2
+        }
+      ],
+      "sample_results": [
+        {
+          "review_id": 17,
+          "verdict": "different_product",
+          "confidence": 0.95,
+          "action": "source_rejected",
+          "reason": "Applied different-product verdict: rejected compared candidates and retained the distinct source product."
+        },
+        {
+          "review_id": 50,
+          "verdict": "different_product",
+          "confidence": 0.95,
+          "action": "source_rejected",
+          "reason": "Applied different-product verdict: rejected compared candidates and retained the distinct source product."
+        },
+        {
+          "review_id": 52,
+          "verdict": "same_product",
+          "confidence": 0.95,
+          "action": "source_linked",
+          "reason": "Applied Gemini-selected canonical; current source evidence and brand agree, with no explicit variant or prior-decision conflict."
+        },
+        {
+          "review_id": 66,
+          "verdict": "same_product",
+          "confidence": 0.95,
+          "action": "source_linked",
+          "reason": "Applied Gemini-selected canonical; current source evidence and brand agree, with no explicit variant or prior-decision conflict."
+        },
+        {
+          "review_id": 83,
+          "verdict": "same_product",
+          "confidence": 0.95,
+          "action": "source_linked",
+          "reason": "Applied Gemini-selected canonical; current source evidence and brand agree, with no explicit variant or prior-decision conflict."
+        },
+        {
+          "review_id": 89,
+          "verdict": "same_product",
+          "confidence": 0.98,
+          "action": "source_linked",
+          "reason": "Applied Gemini-selected canonical; current source evidence and brand agree, with no explicit variant or prior-decision conflict."
+        },
+        {
+          "review_id": 99,
+          "verdict": "same_product",
+          "confidence": 0.98,
+          "action": "source_linked",
+          "reason": "Applied Gemini-selected canonical; current source evidence and brand agree, with no explicit variant or prior-decision conflict."
+        },
+        {
+          "review_id": 104,
+          "verdict": "different_product",
+          "confidence": 0.99,
+          "action": "source_rejected",
+          "reason": "Applied different-product verdict: rejected compared candidates and retained the distinct source product."
+        },
+        {
+          "review_id": 106,
+          "verdict": "different_product",
+          "confidence": 0.95,
+          "action": "source_rejected",
+          "reason": "Applied different-product verdict: rejected compared candidates and retained the distinct source product."
+        },
+        {
+          "review_id": 248,
+          "verdict": "same_product",
+          "confidence": 0.95,
+          "action": "source_linked",
+          "reason": "Applied Gemini-selected canonical; current source evidence and brand agree, with no explicit variant or prior-decision conflict."
+        },
+        {
+          "review_id": 265,
+          "verdict": "different_product",
+          "confidence": 0.95,
+          "action": "source_rejected",
+          "reason": "Applied different-product verdict: rejected compared candidates and retained the distinct source product."
+        },
+        {
+          "review_id": 269,
+          "verdict": "same_product",
+          "confidence": 0.95,
+          "action": "source_linked",
+          "reason": "Applied Gemini-selected canonical; current source evidence and brand agree, with no explicit variant or prior-decision conflict."
+        },
+        {
+          "review_id": 390,
+          "verdict": "same_product",
+          "confidence": 0.95,
+          "action": "source_linked",
+          "reason": "Applied Gemini-selected canonical; current source evidence and brand agree, with no explicit variant or prior-decision conflict."
+        },
+        {
+          "review_id": 401,
+          "verdict": "same_product",
+          "confidence": 0.95,
+          "action": "source_linked",
+          "reason": "Applied Gemini-selected canonical; current source evidence and brand agree, with no explicit variant or prior-decision conflict."
+        },
+        {
+          "review_id": 436,
+          "verdict": "different_product",
+          "confidence": 0.95,
+          "action": "source_rejected",
+          "reason": "Applied different-product verdict: rejected compared candidates and retained the distinct source product."
+        },
+        {
+          "review_id": 483,
+          "verdict": "different_product",
+          "confidence": 0.95,
+          "action": "source_rejected",
+          "reason": "Applied different-product verdict: rejected compared candidates and retained the distinct source product."
+        },
+        {
+          "review_id": 645,
+          "verdict": "same_product",
+          "confidence": 0.95,
+          "action": "source_linked",
+          "reason": "Applied Gemini-selected canonical; current source evidence and brand agree, with no explicit variant or prior-decision conflict."
+        },
+        {
+          "review_id": 655,
+          "verdict": "same_product",
+          "confidence": 0.98,
+          "action": "source_linked",
+          "reason": "Applied Gemini-selected canonical; current source evidence and brand agree, with no explicit variant or prior-decision conflict."
+        },
+        {
+          "review_id": 670,
+          "verdict": "different_product",
+          "confidence": 0.95,
+          "action": "source_rejected",
+          "reason": "Applied different-product verdict: rejected compared candidates and retained the distinct source product."
+        },
+        {
+          "review_id": 673,
+          "verdict": "same_product",
+          "confidence": 0.95,
+          "action": "source_linked",
+          "reason": "Applied Gemini-selected canonical; current source evidence and brand agree, with no explicit variant or prior-decision conflict."
+        },
+        {
+          "review_id": 692,
+          "verdict": "same_product",
+          "confidence": 0.98,
+          "action": "source_linked",
+          "reason": "Applied Gemini-selected canonical; current source evidence and brand agree, with no explicit variant or prior-decision conflict."
+        },
+        {
+          "review_id": 712,
+          "verdict": "different_product",
+          "confidence": 0.95,
+          "action": "source_rejected",
+          "reason": "Applied different-product verdict: rejected compared candidates and retained the distinct source product."
+        },
+        {
+          "review_id": 713,
+          "verdict": "same_product",
+          "confidence": 0.95,
+          "action": "source_linked",
+          "reason": "Applied Gemini-selected canonical; current source evidence and brand agree, with no explicit variant or prior-decision conflict."
+        },
+        {
+          "review_id": 749,
+          "verdict": "same_product",
+          "confidence": 0.95,
+          "action": "source_linked",
+          "reason": "Applied Gemini-selected canonical; current source evidence and brand agree, with no explicit variant or prior-decision conflict."
+        },
+        {
+          "review_id": 751,
+          "verdict": "same_product",
+          "confidence": 0.95,
+          "action": "source_linked",
+          "reason": "Applied Gemini-selected canonical; current source evidence and brand agree, with no explicit variant or prior-decision conflict."
+        }
+      ],
+      "message": "Saved decisions were replayed without any additional Gemini requests."
+    },
+    {
+      "dry_run": false,
+      "no_gemini_calls": true,
+      "threshold": 0.95,
+      "source_verdicts_seen": 1050,
+      "source_verdicts_eligible": 61,
+      "source_verdicts_not_eligible": 989,
+      "stored_decisions_checked": 61,
+      "automatically_verified": 0,
+      "source_matches_linked": 5,
+      "source_comparisons_rejected": 0,
+      "automatically_split": 0,
+      "new_canonical_products": 0,
+      "still_needs_review": 56,
+      "blocked_reasons": [
+        {
+          "reason": "Source variant identity needs a separate per-variant review.",
+          "count": 43
+        },
+        {
+          "reason": "Application could not be completed: An additional current candidate was not adjudicated by this saved verdict.",
+          "count": 13
+        }
+      ],
+      "sample_results": [
+        {
+          "review_id": 863,
+          "action": "manual",
+          "reason": "Automated checks could not safely apply this decision: An additional current candidate was not adjudicated by this saved verdict."
+        },
+        {
+          "review_id": 885,
+          "action": "manual",
+          "reason": "Automated checks could not safely apply this decision: An additional current candidate was not adjudicated by this saved verdict."
+        },
+        {
+          "review_id": 1043,
+          "action": "manual",
+          "reason": "Automated checks could not safely apply this decision: An additional current candidate was not adjudicated by this saved verdict."
+        },
+        {
+          "review_id": 1071,
+          "action": "manual",
+          "reason": "Automated checks could not safely apply this decision: An additional current candidate was not adjudicated by this saved verdict."
+        },
+        {
+          "review_id": 1285,
+          "action": "manual",
+          "reason": "Automated checks could not safely apply this decision: An additional current candidate was not adjudicated by this saved verdict."
+        },
+        {
+          "review_id": 1840,
+          "action": "manual",
+          "reason": "Automated checks could not safely apply this decision: An additional current candidate was not adjudicated by this saved verdict."
+        },
+        {
+          "review_id": 2512,
+          "action": "manual",
+          "reason": "Automated checks could not safely apply this decision: An additional current candidate was not adjudicated by this saved verdict."
+        },
+        {
+          "review_id": 2570,
+          "action": "manual",
+          "reason": "Automated checks could not safely apply this decision: An additional current candidate was not adjudicated by this saved verdict."
+        },
+        {
+          "review_id": 2571,
+          "action": "manual",
+          "reason": "Automated checks could not safely apply this decision: An additional current candidate was not adjudicated by this saved verdict."
+        },
+        {
+          "review_id": 2572,
+          "action": "manual",
+          "reason": "Automated checks could not safely apply this decision: An additional current candidate was not adjudicated by this saved verdict."
+        },
+        {
+          "review_id": 2836,
+          "action": "manual",
+          "reason": "Automated checks could not safely apply this decision: An additional current candidate was not adjudicated by this saved verdict."
+        },
+        {
+          "review_id": 3185,
+          "verdict": "same_product",
+          "confidence": 0.95,
+          "action": "source_linked",
+          "reason": "Applied Gemini-selected canonical; current source evidence and brand agree, with no explicit variant or prior-decision conflict."
+        },
+        {
+          "review_id": 3236,
+          "verdict": "same_product",
+          "confidence": 0.95,
+          "action": "source_linked",
+          "reason": "Applied Gemini-selected canonical; current source evidence and brand agree, with no explicit variant or prior-decision conflict."
+        },
+        {
+          "review_id": 3937,
+          "action": "manual",
+          "reason": "Automated checks could not safely apply this decision: An additional current candidate was not adjudicated by this saved verdict."
+        },
+        {
+          "review_id": 4006,
+          "verdict": "same_product",
+          "confidence": 0.95,
+          "action": "manual",
+          "reason": "Source variant identity needs a separate per-variant review."
+        },
+        {
+          "review_id": 4007,
+          "verdict": "same_product",
+          "confidence": 0.95,
+          "action": "manual",
+          "reason": "Source variant identity needs a separate per-variant review."
+        },
+        {
+          "review_id": 4065,
+          "verdict": "same_product",
+          "confidence": 0.98,
+          "action": "manual",
+          "reason": "Source variant identity needs a separate per-variant review."
+        },
+        {
+          "review_id": 4066,
+          "verdict": "same_product",
+          "confidence": 0.98,
+          "action": "manual",
+          "reason": "Source variant identity needs a separate per-variant review."
+        },
+        {
+          "review_id": 4067,
+          "verdict": "same_product",
+          "confidence": 0.98,
+          "action": "manual",
+          "reason": "Source variant identity needs a separate per-variant review."
+        },
+        {
+          "review_id": 4503,
+          "verdict": "same_product",
+          "confidence": 0.95,
+          "action": "manual",
+          "reason": "Source variant identity needs a separate per-variant review."
+        },
+        {
+          "review_id": 4504,
+          "verdict": "same_product",
+          "confidence": 0.95,
+          "action": "manual",
+          "reason": "Source variant identity needs a separate per-variant review."
+        },
+        {
+          "review_id": 4505,
+          "verdict": "same_product",
+          "confidence": 0.95,
+          "action": "manual",
+          "reason": "Source variant identity needs a separate per-variant review."
+        },
+        {
+          "review_id": 4506,
+          "verdict": "same_product",
+          "confidence": 0.95,
+          "action": "manual",
+          "reason": "Source variant identity needs a separate per-variant review."
+        },
+        {
+          "review_id": 4507,
+          "verdict": "same_product",
+          "confidence": 0.95,
+          "action": "manual",
+          "reason": "Source variant identity needs a separate per-variant review."
+        },
+        {
+          "review_id": 4508,
+          "verdict": "same_product",
+          "confidence": 0.95,
+          "action": "manual",
+          "reason": "Source variant identity needs a separate per-variant review."
+        }
+      ],
+      "message": "Saved decisions were replayed without any additional Gemini requests."
+    }
+  ]
+}

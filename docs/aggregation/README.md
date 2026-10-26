@@ -1,6 +1,10 @@
 # Product identity and multi-source aggregation
 
+For the complete recovery history, current counts, known failures and prioritized next actions, see the [catalog repair handoff — 26 October 2026](catalog-repair-handoff-2026-10-26.md).
+
 **Current implementation guide — 25 October 2026.** This replaces the older patch-status narrative. For every endpoint see [HTTP API reference](../api-reference.md); for all tables see [database reference](../database-reference.md); for end-to-end operations see [workflows runbook](../workflows-and-operations.md).
+
+Latest recovery checkpoint: [26 October evening follow-up](catalog-repair-evening-progress-2026-10-26.md).
 
 ## Scope
 
@@ -34,7 +38,7 @@ Canonical IDs are durable, and distinct from `products.id` (legacy source row) o
 
 Legacy exact identity check (`/admin/workflows/products/verify-existing`) previews all eligible historical canonicals and applies bounded batches; cases it cannot safely verify can be persisted through `/admin/workflows/products/prepare-reviews`. Human review is reserved for unresolved structural conflicts rather than every accent/marketing naming difference.
 
-The identity Gemini worker sends multiple cases per provider call and stores verdict, score and reason in `identity_gemini_queue`; model confidence **≥0.90** is only a gate, not proof. Guarded same-product outcomes can verify identities, and explicit variant partitions can be split by replaying saved verdicts. Ambiguous cases stay for manual review. The [Gemini review guide](gemini-product-identity-review.md) and [saved-decision replay](saved-gemini-decisions.md) detail the rules.
+The identity Gemini worker sends exactly **two products per API request**, saves each pair in `identity_gemini_pair_results`, and combines those verdicts locally into `identity_gemini_queue`. Multi-candidate selection and multi-case provider batches are prohibited; `batch_size=1` is mandatory. The request limit counts pair requests, and paid completed comparisons are reused on resume. Model confidence **≥0.90** is an application gate. Same-product outcomes can verify identities, and explicit variant partitions can be safely split. The [Gemini review guide](gemini-product-identity-review.md) and [saved-decision replay](saved-gemini-decisions.md) detail the rules.
 
 ## INCI provenance
 

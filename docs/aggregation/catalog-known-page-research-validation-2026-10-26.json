@@ -1,0 +1,12 @@
+{
+  "isolated_snapshot": true,
+  "production_modified": false,
+  "canonical_id": 65382,
+  "source_url": "https://sourcebeauty.com/products/anua-pdrn-hyaluronic-acid-capsule-100-serum",
+  "source_page_sha256": "6c70c9734077983df1265218d87e9b9df367a3433ab1c0b79384ea2af72fba18",
+  "status": "needs_review",
+  "model_calls": 0,
+  "published": false,
+  "evidence_id_in_snapshot": 1185,
+  "method": "known_retailer_detail"
+}

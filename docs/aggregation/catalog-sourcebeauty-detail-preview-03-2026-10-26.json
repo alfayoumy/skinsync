@@ -1,0 +1,93 @@
+{
+  "applied": false,
+  "backup_path": null,
+  "model_calls": 0,
+  "results": [
+    {
+      "url": "https://sourcebeauty.com/products/soul-more-glossy-lip-balm-cola",
+      "status": "published",
+      "canonical_id": 63394,
+      "original_observation_id": 15722,
+      "observation_id": 22791,
+      "evidence_id": 964,
+      "ingredient_count": 10
+    },
+    {
+      "url": "https://sourcebeauty.com/products/soul-more-lip-oil-cola",
+      "status": "published",
+      "canonical_id": 63395,
+      "original_observation_id": 15721,
+      "observation_id": 22792,
+      "evidence_id": 966,
+      "ingredient_count": 9
+    },
+    {
+      "url": "https://sourcebeauty.com/products/shaan-oily-matte-cream-gel",
+      "status": "evidence_only",
+      "canonical_id": 63400,
+      "original_observation_id": 17410,
+      "observation_id": 22793,
+      "evidence_id": 968,
+      "ingredient_count": 7
+    },
+    {
+      "url": "https://sourcebeauty.com/products/soul-more-coffee-coconut-body-butter-whipped",
+      "status": "evidence_only",
+      "canonical_id": 63407,
+      "original_observation_id": 18795,
+      "observation_id": 22794,
+      "evidence_id": 969,
+      "ingredient_count": 6
+    },
+    {
+      "url": "https://sourcebeauty.com/products/soul-more-coffee-coconut-hand-cream",
+      "status": "preserved",
+      "reason": "Incomplete page cannot establish that no ingredient declaration exists."
+    },
+    {
+      "url": "https://sourcebeauty.com/products/richie-honeymoon-night-cream",
+      "status": "evidence_only",
+      "canonical_id": 63507,
+      "original_observation_id": 15240,
+      "observation_id": 22795,
+      "evidence_id": 970,
+      "ingredient_count": 5
+    },
+    {
+      "url": "https://sourcebeauty.com/products/moist-1-cica-cream",
+      "status": "evidence_only",
+      "canonical_id": 63510,
+      "original_observation_id": 19440,
+      "observation_id": 22796,
+      "evidence_id": 971,
+      "ingredient_count": 5
+    },
+    {
+      "url": "https://sourcebeauty.com/products/moist-1-cream-with-urea",
+      "status": "evidence_only",
+      "canonical_id": 63513,
+      "original_observation_id": 19443,
+      "observation_id": 22797,
+      "evidence_id": 972,
+      "ingredient_count": 6
+    },
+    {
+      "url": "https://sourcebeauty.com/products/starville-niacinamide-serum",
+      "status": "published",
+      "canonical_id": 63569,
+      "original_observation_id": 17405,
+      "observation_id": 22798,
+      "evidence_id": 973,
+      "ingredient_count": 18
+    },
+    {
+      "url": "https://sourcebeauty.com/products/hyaluronic-acid-serum",
+      "status": "evidence_only",
+      "canonical_id": 63576,
+      "original_observation_id": 21759,
+      "observation_id": 22799,
+      "evidence_id": 975,
+      "ingredient_count": 14
+    }
+  ]
+}

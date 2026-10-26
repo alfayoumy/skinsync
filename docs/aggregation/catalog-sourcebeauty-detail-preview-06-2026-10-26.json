@@ -1,0 +1,266 @@
+{
+  "applied": false,
+  "backup_path": null,
+  "model_calls": 0,
+  "results": [
+    {
+      "url": "https://sourcebeauty.com/products/bg-skin-emollient-cream",
+      "status": "evidence_only",
+      "canonical_id": 64570,
+      "original_observation_id": 18783,
+      "observation_id": 22857,
+      "evidence_id": 1061,
+      "ingredient_count": 11
+    },
+    {
+      "url": "https://sourcebeauty.com/products/glamy-lab-hydra-intense-cream",
+      "status": "published",
+      "canonical_id": 64612,
+      "original_observation_id": 17378,
+      "observation_id": 22858,
+      "evidence_id": 1062,
+      "ingredient_count": 27
+    },
+    {
+      "url": "https://sourcebeauty.com/products/dr-melaxin-eyephalt-retinol-eyebag-cream",
+      "status": "evidence_only",
+      "canonical_id": 64636,
+      "original_observation_id": 16923,
+      "observation_id": 22859,
+      "evidence_id": 1064,
+      "ingredient_count": 3
+    },
+    {
+      "url": "https://sourcebeauty.com/products/bobana-body-wash-tropical-fruits-scent",
+      "status": "preserved",
+      "reason": "Incomplete page cannot establish that no ingredient declaration exists."
+    },
+    {
+      "url": "https://sourcebeauty.com/products/bobana-body-wash-wild-roses",
+      "status": "preserved",
+      "reason": "Incomplete page cannot establish that no ingredient declaration exists."
+    },
+    {
+      "url": "https://sourcebeauty.com/products/skin-purifying-charcoal-vitamin-e-sheet-mask",
+      "status": "evidence_only",
+      "canonical_id": 64675,
+      "original_observation_id": 21254,
+      "observation_id": 22860,
+      "evidence_id": 1065,
+      "ingredient_count": 7
+    },
+    {
+      "url": "https://sourcebeauty.com/products/bobana-tropical-fruits-body-lotion",
+      "status": "published",
+      "canonical_id": 64676,
+      "original_observation_id": 21252,
+      "observation_id": 22861,
+      "evidence_id": 1066,
+      "ingredient_count": 11
+    },
+    {
+      "url": "https://sourcebeauty.com/products/bobana-wild-roses-scent-body-lotion",
+      "status": "published",
+      "canonical_id": 64677,
+      "original_observation_id": 21253,
+      "observation_id": 22862,
+      "evidence_id": 1068,
+      "ingredient_count": 11
+    },
+    {
+      "url": "https://sourcebeauty.com/products/bobana-coconut-milk-body-lotion",
+      "status": "published",
+      "canonical_id": 64678,
+      "original_observation_id": 21278,
+      "observation_id": 22863,
+      "evidence_id": 1070,
+      "ingredient_count": 11
+    },
+    {
+      "url": "https://sourcebeauty.com/products/bobana-coconut-milk-hand-cream",
+      "status": "published",
+      "canonical_id": 64679,
+      "original_observation_id": 21277,
+      "observation_id": 22864,
+      "evidence_id": 1072,
+      "ingredient_count": 9
+    },
+    {
+      "url": "https://sourcebeauty.com/products/bobana-tropical-fruits-hand-cream",
+      "status": "published",
+      "canonical_id": 64680,
+      "original_observation_id": 21250,
+      "observation_id": 22865,
+      "evidence_id": 1074,
+      "ingredient_count": 8
+    },
+    {
+      "url": "https://sourcebeauty.com/products/bobana-wild-roses-scent-hand-cream",
+      "status": "published",
+      "canonical_id": 64681,
+      "original_observation_id": 21251,
+      "observation_id": 22866,
+      "evidence_id": 1076,
+      "ingredient_count": 8
+    },
+    {
+      "url": "https://sourcebeauty.com/products/vitamin-c-face-wash",
+      "status": "published",
+      "canonical_id": 64682,
+      "original_observation_id": 21294,
+      "observation_id": 22867,
+      "evidence_id": 1078,
+      "ingredient_count": 9
+    },
+    {
+      "url": "https://sourcebeauty.com/products/morning-star-hyaluronic-gel-cleanser",
+      "status": "no_full_declaration",
+      "canonical_id": 64686,
+      "observation_id": 18168
+    },
+    {
+      "url": "https://sourcebeauty.com/products/isntree-gim-pdrn-hydro-bouncy-ampoule",
+      "status": "published",
+      "canonical_id": 64728,
+      "original_observation_id": 17187,
+      "observation_id": 22868,
+      "evidence_id": 1080,
+      "ingredient_count": 45
+    },
+    {
+      "url": "https://sourcebeauty.com/products/medicube-zero-foam-cleanser",
+      "status": "published",
+      "canonical_id": 64734,
+      "original_observation_id": 19384,
+      "observation_id": 22869,
+      "evidence_id": 1082,
+      "ingredient_count": 39
+    },
+    {
+      "url": "https://sourcebeauty.com/products/skinify-clean-ascorbic-acid-facial-cleanser-dull-uneven-skin",
+      "status": "published",
+      "canonical_id": 64742,
+      "original_observation_id": 18509,
+      "observation_id": 22870,
+      "evidence_id": 1084,
+      "ingredient_count": 21
+    },
+    {
+      "url": "https://sourcebeauty.com/products/skinify-clear-salicylic-acid-bha-2-exfoliator-solution",
+      "status": "published",
+      "canonical_id": 64743,
+      "original_observation_id": 18453,
+      "observation_id": 22871,
+      "evidence_id": 1086,
+      "ingredient_count": 9
+    },
+    {
+      "url": "https://sourcebeauty.com/products/skinify-glow-multi-vitamins-ascorbic-acid-antioxidant-face-cream-dull-uneven-skin-tone",
+      "status": "published",
+      "canonical_id": 64745,
+      "original_observation_id": 18492,
+      "observation_id": 22872,
+      "evidence_id": 1088,
+      "ingredient_count": 22
+    },
+    {
+      "url": "https://sourcebeauty.com/products/skinify-hydrate-hyaluronic-acid-nmf-face-cream",
+      "status": "published",
+      "canonical_id": 64746,
+      "original_observation_id": 18491,
+      "observation_id": 22873,
+      "evidence_id": 1090,
+      "ingredient_count": 17
+    },
+    {
+      "url": "https://sourcebeauty.com/products/skinify-plump-hyaluronic-acid-2-b5-face-serum",
+      "status": "published",
+      "canonical_id": 64749,
+      "original_observation_id": 17943,
+      "observation_id": 22874,
+      "evidence_id": 1092,
+      "ingredient_count": 9
+    },
+    {
+      "url": "https://sourcebeauty.com/products/anua-hydrating-barrier-serum",
+      "status": "published",
+      "canonical_id": 64799,
+      "original_observation_id": 20458,
+      "observation_id": 22875,
+      "evidence_id": 1094,
+      "ingredient_count": 43
+    },
+    {
+      "url": "https://sourcebeauty.com/products/purifying-toner",
+      "status": "evidence_only",
+      "canonical_id": 64815,
+      "original_observation_id": 20955,
+      "observation_id": 22876,
+      "evidence_id": 1096,
+      "ingredient_count": 12
+    },
+    {
+      "url": "https://sourcebeauty.com/products/kolagra-sun-screen-gel-cream-tinted",
+      "status": "evidence_only",
+      "canonical_id": 64816,
+      "original_observation_id": 18279,
+      "observation_id": 22877,
+      "evidence_id": 1097,
+      "ingredient_count": 6
+    },
+    {
+      "url": "https://sourcebeauty.com/products/arencia-pore-melt-mochi-cleansing-oil",
+      "status": "published",
+      "canonical_id": 64818,
+      "original_observation_id": 16916,
+      "observation_id": 22878,
+      "evidence_id": 1098,
+      "ingredient_count": 30
+    },
+    {
+      "url": "https://sourcebeauty.com/products/snow-white-milky-lotion",
+      "status": "evidence_only",
+      "canonical_id": 64832,
+      "original_observation_id": 21020,
+      "observation_id": 22879,
+      "evidence_id": 1100,
+      "ingredient_count": 4
+    },
+    {
+      "url": "https://sourcebeauty.com/products/hepta-panthenol-face-cream",
+      "status": "evidence_only",
+      "canonical_id": 64882,
+      "original_observation_id": 15731,
+      "observation_id": 22880,
+      "evidence_id": 1101,
+      "ingredient_count": 7
+    },
+    {
+      "url": "https://sourcebeauty.com/products/ninetimes-facial-wash-pump-oily-skin-facial-wash",
+      "status": "evidence_only",
+      "canonical_id": 64925,
+      "original_observation_id": 20630,
+      "observation_id": 22881,
+      "evidence_id": 1102,
+      "ingredient_count": 5
+    },
+    {
+      "url": "https://sourcebeauty.com/products/some-by-mi-galactomyces-glutathione-glow-milky-toner",
+      "status": "evidence_only",
+      "canonical_id": 64981,
+      "original_observation_id": 20098,
+      "observation_id": 22882,
+      "evidence_id": 1103,
+      "ingredient_count": 6
+    },
+    {
+      "url": "https://sourcebeauty.com/products/cosrx-the-niacinamide-15-serum",
+      "status": "published",
+      "canonical_id": 65021,
+      "original_observation_id": 19501,
+      "observation_id": 22883,
+      "evidence_id": 1104,
+      "ingredient_count": 14
+    }
+  ]
+}

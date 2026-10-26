@@ -1,0 +1,152 @@
+{
+  "applied": true,
+  "backup_path": "/mnt/windows/Users/AmrAlfayoumy/Downloads/skincare/repo/api/backups/catalog/catalog-20261026T210505Z-af272795.sqlite3",
+  "model_calls": 0,
+  "preview_scope": null,
+  "results": [
+    {
+      "url": "https://sourcebeauty.com/products/axis-ybiome-resetting-moringa-cleansing-oil",
+      "status": "evidence_only",
+      "canonical_id": 66322,
+      "original_observation_id": 15782,
+      "observation_id": 23011,
+      "evidence_id": 1302,
+      "ingredient_count": 1
+    },
+    {
+      "url": "https://sourcebeauty.com/products/mixsoon-soondy-centella-asiatica-essence",
+      "status": "evidence_only",
+      "canonical_id": 66324,
+      "original_observation_id": 19521,
+      "observation_id": 23012,
+      "evidence_id": 1303,
+      "ingredient_count": 3
+    },
+    {
+      "url": "https://sourcebeauty.com/products/altesse-soin-cica-mild-foaming-cleanser",
+      "status": "evidence_only",
+      "canonical_id": 66352,
+      "original_observation_id": 21397,
+      "observation_id": 23013,
+      "evidence_id": 1304,
+      "ingredient_count": 7
+    },
+    {
+      "url": "https://sourcebeauty.com/products/altesse-soin-cica-regenerating-serum",
+      "status": "evidence_only",
+      "canonical_id": 66353,
+      "original_observation_id": 21398,
+      "observation_id": 23014,
+      "evidence_id": 1305,
+      "ingredient_count": 6
+    },
+    {
+      "url": "https://sourcebeauty.com/products/klairs-rich-moist-soothing-cream",
+      "status": "evidence_only",
+      "canonical_id": 66370,
+      "original_observation_id": 17984,
+      "observation_id": 23015,
+      "evidence_id": 1306,
+      "ingredient_count": 3
+    },
+    {
+      "url": "https://sourcebeauty.com/products/celimax-the-real-noni-acne-bubble-cleanser",
+      "status": "published",
+      "canonical_id": 66384,
+      "original_observation_id": 15637,
+      "observation_id": 23016,
+      "evidence_id": 1307,
+      "ingredient_count": 43
+    },
+    {
+      "url": "https://sourcebeauty.com/products/loreal-paris-glycolic-bright-glowing-night-cream",
+      "status": "published",
+      "canonical_id": 66399,
+      "original_observation_id": 19060,
+      "observation_id": 23017,
+      "evidence_id": 1309,
+      "ingredient_count": 39
+    },
+    {
+      "url": "https://sourcebeauty.com/products/axis-y-biome-double-defense-sunscreen",
+      "status": "published",
+      "canonical_id": 66400,
+      "original_observation_id": 20192,
+      "observation_id": 23018,
+      "evidence_id": 1311,
+      "ingredient_count": 45
+    },
+    {
+      "url": "https://sourcebeauty.com/products/mixsoon-bean-toner",
+      "status": "published",
+      "canonical_id": 66401,
+      "original_observation_id": 19524,
+      "observation_id": 23019,
+      "evidence_id": 1313,
+      "ingredient_count": 18
+    },
+    {
+      "url": "https://sourcebeauty.com/products/klairs-all-day-airy-mineral-sunscreen-spf50",
+      "status": "published",
+      "canonical_id": 66406,
+      "original_observation_id": 17983,
+      "observation_id": 23020,
+      "evidence_id": 1315,
+      "ingredient_count": 33
+    },
+    {
+      "url": "https://sourcebeauty.com/products/mixsoon-bifida-ferment-essence",
+      "status": "evidence_only",
+      "canonical_id": 66447,
+      "original_observation_id": 19523,
+      "observation_id": 23021,
+      "evidence_id": 1317,
+      "ingredient_count": 4
+    },
+    {
+      "url": "https://sourcebeauty.com/products/cosrx-refresh-aha-bha-vitamin-c-daily-toner_1",
+      "status": "published",
+      "canonical_id": 66476,
+      "original_observation_id": 20465,
+      "observation_id": 23022,
+      "evidence_id": 1318,
+      "ingredient_count": 16
+    },
+    {
+      "url": "https://sourcebeauty.com/products/cosrx-low-ph-niacinamide-micellar-cleansing-water",
+      "status": "published",
+      "canonical_id": 66503,
+      "original_observation_id": 20887,
+      "observation_id": 23023,
+      "evidence_id": 1320,
+      "ingredient_count": 16
+    },
+    {
+      "url": "https://sourcebeauty.com/products/garnier-fast-bright-vitamin-c-booster-serum",
+      "status": "published",
+      "canonical_id": 66538,
+      "original_observation_id": 17189,
+      "observation_id": 23024,
+      "evidence_id": 1322,
+      "ingredient_count": 36
+    },
+    {
+      "url": "https://sourcebeauty.com/products/isis-uveblock-spf50-hydra-lotion",
+      "status": "published",
+      "canonical_id": 66631,
+      "original_observation_id": 15506,
+      "observation_id": 23025,
+      "evidence_id": 1324,
+      "ingredient_count": 25
+    },
+    {
+      "url": "https://sourcebeauty.com/products/eucerin-derm-purifyer-correcting-cleanser",
+      "status": "published",
+      "canonical_id": 69236,
+      "original_observation_id": 15329,
+      "observation_id": 23026,
+      "evidence_id": 1326,
+      "ingredient_count": 15
+    }
+  ]
+}

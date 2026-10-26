@@ -1,0 +1,100 @@
+{
+  "source_id": "sourcebeauty",
+  "model_calls": 0,
+  "read_only": true,
+  "selected": 10,
+  "results": [
+    {
+      "canonical_id": 63394,
+      "observation_id": 15722,
+      "raw_title": "Glossy Lip Balm - Cola",
+      "raw_brand": "Soul & More",
+      "source_url": "https://sourcebeauty.com/products/soul-more-glossy-lip-balm-cola",
+      "status": "fetched",
+      "pages": 1
+    },
+    {
+      "canonical_id": 63395,
+      "observation_id": 15721,
+      "raw_title": "Lip Oil - Cola",
+      "raw_brand": "Soul & More",
+      "source_url": "https://sourcebeauty.com/products/soul-more-lip-oil-cola",
+      "status": "fetched",
+      "pages": 1
+    },
+    {
+      "canonical_id": 63400,
+      "observation_id": 17410,
+      "raw_title": "Oily Matte Cream-Gel",
+      "raw_brand": "Shaan",
+      "source_url": "https://sourcebeauty.com/products/shaan-oily-matte-cream-gel",
+      "status": "fetched",
+      "pages": 1
+    },
+    {
+      "canonical_id": 63407,
+      "observation_id": 18795,
+      "raw_title": "Coffee & Coconut Body Butter",
+      "raw_brand": "Soul & More",
+      "source_url": "https://sourcebeauty.com/products/soul-more-coffee-coconut-body-butter-whipped",
+      "status": "fetched",
+      "pages": 1
+    },
+    {
+      "canonical_id": 63409,
+      "observation_id": 17165,
+      "raw_title": "Coffee & Coconut Hand Cream",
+      "raw_brand": "Soul & More",
+      "source_url": "https://sourcebeauty.com/products/soul-more-coffee-coconut-hand-cream",
+      "status": "fetched",
+      "pages": 1
+    },
+    {
+      "canonical_id": 63507,
+      "observation_id": 15240,
+      "raw_title": "Honeymoon Night Cream",
+      "raw_brand": "Richie",
+      "source_url": "https://sourcebeauty.com/products/richie-honeymoon-night-cream",
+      "status": "fetched",
+      "pages": 1
+    },
+    {
+      "canonical_id": 63510,
+      "observation_id": 19440,
+      "raw_title": "Cica Cream",
+      "raw_brand": "Moist-1",
+      "source_url": "https://sourcebeauty.com/products/moist-1-cica-cream",
+      "status": "fetched",
+      "pages": 1
+    },
+    {
+      "canonical_id": 63513,
+      "observation_id": 19443,
+      "raw_title": "Cream with Urea",
+      "raw_brand": "Moist-1",
+      "source_url": "https://sourcebeauty.com/products/moist-1-cream-with-urea",
+      "status": "fetched",
+      "pages": 1
+    },
+    {
+      "canonical_id": 63569,
+      "observation_id": 17405,
+      "raw_title": "Niacinamide Serum",
+      "raw_brand": "Starville",
+      "source_url": "https://sourcebeauty.com/products/starville-niacinamide-serum",
+      "status": "fetched",
+      "pages": 1
+    },
+    {
+      "canonical_id": 63576,
+      "observation_id": 21759,
+      "raw_title": "Hyaluronic Acid Serum",
+      "raw_brand": "Starville",
+      "source_url": "https://sourcebeauty.com/products/hyaluronic-acid-serum",
+      "status": "fetched",
+      "pages": 1
+    }
+  ],
+  "last_canonical_id": 63576,
+  "more_candidates_in_selection": true
+}

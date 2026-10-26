@@ -1,0 +1,34 @@
+{
+  "applied": false,
+  "backup_path": null,
+  "model_calls": 0,
+  "results": [
+    {
+      "url": "https://sourcebeauty.com/products/eucerin-hyal-flr-night-cream",
+      "status": "published",
+      "canonical_id": 63269,
+      "original_observation_id": 15326,
+      "observation_id": 22777,
+      "evidence_id": 938,
+      "ingredient_count": 24
+    },
+    {
+      "url": "https://sourcebeauty.com/products/isis-teen-derm-k-concentrate",
+      "status": "published",
+      "canonical_id": 63298,
+      "original_observation_id": 15500,
+      "observation_id": 22778,
+      "evidence_id": 940,
+      "ingredient_count": 34
+    },
+    {
+      "url": "https://sourcebeauty.com/products/medicube-pdrn-lip-sleeping-mask",
+      "status": "published",
+      "canonical_id": 63380,
+      "original_observation_id": 20052,
+      "observation_id": 22779,
+      "evidence_id": 942,
+      "ingredient_count": 42
+    }
+  ]
+}

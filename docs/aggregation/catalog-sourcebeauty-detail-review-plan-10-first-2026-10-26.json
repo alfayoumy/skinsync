@@ -1,0 +1,113 @@
+{
+  "source_pages": "data/catalog-repair/sourcebeauty-pages-10-2026-10-26.json",
+  "reviewed_pages": 21,
+  "selected_pages": 13,
+  "selected_sha256": "4b60a85a52e53489dcb9e29861bacebe3bb5bc1ef677a59e80163738356ddc0c",
+  "decisions": [
+    {
+      "url": "https://sourcebeauty.com/products/cosrx-galactomyces-95-tone-balancing-essence",
+      "decision": "apply_if_fresh_validation_passes",
+      "reason": "Reviewed literal ingredient section; publisher must revalidate source identity and completeness."
+    },
+    {
+      "url": "https://sourcebeauty.com/products/mr-beard-fresh-power-shower-gel",
+      "decision": "apply_if_fresh_validation_passes",
+      "reason": "Reviewed literal ingredient section; publisher must revalidate source identity and completeness."
+    },
+    {
+      "url": "https://sourcebeauty.com/products/mr-beard-cleansing-face-wash",
+      "decision": "apply_if_fresh_validation_passes",
+      "reason": "Reviewed literal ingredient section; publisher must revalidate source identity and completeness."
+    },
+    {
+      "url": "https://sourcebeauty.com/products/mr-beard-ocean-drift-shower-gel",
+      "decision": "apply_if_fresh_validation_passes",
+      "reason": "Reviewed literal ingredient section; publisher must revalidate source identity and completeness."
+    },
+    {
+      "url": "https://sourcebeauty.com/products/round-lab-mugwort-calming-cream",
+      "decision": "apply_if_fresh_validation_passes",
+      "reason": "Reviewed literal ingredient section; publisher must revalidate source identity and completeness."
+    },
+    {
+      "url": "https://sourcebeauty.com/products/torridensolid-in-ceramide-lip-essence",
+      "decision": "hold",
+      "reason": "No usable product ingredient section or heading validation did not pass."
+    },
+    {
+      "url": "https://sourcebeauty.com/products/telofill-booster-serum",
+      "decision": "apply_if_fresh_validation_passes",
+      "reason": "Reviewed literal ingredient section; publisher must revalidate source identity and completeness."
+    },
+    {
+      "url": "https://sourcebeauty.com/products/telofill-milk-honey-body-wash",
+      "decision": "hold",
+      "reason": "Trade-name mixture and water-last body-wash declaration: order/completeness requires manufacturer confirmation."
+    },
+    {
+      "url": "https://sourcebeauty.com/products/telofill-glowing-serum",
+      "decision": "hold",
+      "reason": "Complex mixture declaration requires ordered manufacturer confirmation."
+    },
+    {
+      "url": "https://sourcebeauty.com/products/some-by-mi-super-matcha-pore-tightening-serum",
+      "decision": "hold",
+      "reason": "Malformed chemical fragments including Adenosine EDTA, Pinus Extract Palus and Glycer Hexyl Ginnamal."
+    },
+    {
+      "url": "https://sourcebeauty.com/products/medicube-age-r-glutathione-glow-cream-50ml",
+      "decision": "apply_if_fresh_validation_passes",
+      "reason": "Reviewed literal ingredient section; publisher must revalidate source identity and completeness."
+    },
+    {
+      "url": "https://sourcebeauty.com/products/isntree-hyaluronic-acid-lowph-cleansing-foam",
+      "decision": "hold",
+      "reason": "No usable product ingredient section or heading validation did not pass."
+    },
+    {
+      "url": "https://sourcebeauty.com/products/drakon-face-whitening-cream",
+      "decision": "hold",
+      "reason": "Malformed chemical fragments, unbalanced parentheses and broken numbered names."
+    },
+    {
+      "url": "https://sourcebeauty.com/products/parkville-antioxidant-facial-cleanser",
+      "decision": "apply_if_fresh_validation_passes",
+      "reason": "Reviewed literal ingredient section; publisher must revalidate source identity and completeness."
+    },
+    {
+      "url": "https://sourcebeauty.com/products/acne-prone-skin-facial-cleanser",
+      "decision": "hold",
+      "reason": "Trailing comma and incomplete cleanser formula."
+    },
+    {
+      "url": "https://sourcebeauty.com/products/eqqualberry-swimming-pool-ampoule",
+      "decision": "apply_if_fresh_validation_passes",
+      "reason": "Reviewed literal ingredient section; publisher must revalidate source identity and completeness."
+    },
+    {
+      "url": "https://sourcebeauty.com/products/medicube-super-cica-deep-cleansing-balm-100ml",
+      "decision": "apply_if_fresh_validation_passes",
+      "reason": "Reviewed literal ingredient section; publisher must revalidate source identity and completeness."
+    },
+    {
+      "url": "https://sourcebeauty.com/products/medicube-triple-collagen-toner",
+      "decision": "apply_if_fresh_validation_passes",
+      "reason": "Reviewed literal ingredient section; publisher must revalidate source identity and completeness."
+    },
+    {
+      "url": "https://sourcebeauty.com/products/medicube-kojic-acid-turmeric-toning-cleanser",
+      "decision": "apply_if_fresh_validation_passes",
+      "reason": "Reviewed literal ingredient section; publisher must revalidate source identity and completeness."
+    },
+    {
+      "url": "https://sourcebeauty.com/products/medicube-hyaluronic-acid-capsule-cream",
+      "decision": "apply_if_fresh_validation_passes",
+      "reason": "Reviewed literal ingredient section; publisher must revalidate source identity and completeness."
+    },
+    {
+      "url": "https://sourcebeauty.com/products/axis-y-cera-heart-my-type-duo-cream",
+      "decision": "hold",
+      "reason": "No usable product ingredient section or heading validation did not pass."
+    }
+  ]
+}

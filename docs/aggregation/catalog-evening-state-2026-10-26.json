@@ -1,0 +1,168 @@
+{
+  "canonical_products": 7421,
+  "active_canonical_products": 7415,
+  "active_skincare_products": 5771,
+  "verified_identities": 696,
+  "published_inci": 176,
+  "published_skincare_inci": 172,
+  "observed_products_with_inci": 1205,
+  "pending_reviews": {
+    "category": 835,
+    "formulation": 16,
+    "identity": 863
+  },
+  "pending_identity_reviews": 863,
+  "pending_category_reviews": 835,
+  "awaiting_evidence": 0,
+  "sources": [
+    {
+      "id": "bashrety",
+      "name": "Bashrety",
+      "enabled": 1,
+      "publish_enabled": 0
+    },
+    {
+      "id": "bloompharmacy",
+      "name": "Bloom Pharmacy",
+      "enabled": 1,
+      "publish_enabled": 0
+    },
+    {
+      "id": "drdawood",
+      "name": "Dr Dawood",
+      "enabled": 1,
+      "publish_enabled": 0
+    },
+    {
+      "id": "feel22",
+      "name": "Feel22 Egypt",
+      "enabled": 1,
+      "publish_enabled": 0
+    },
+    {
+      "id": "rawafrican",
+      "name": "Raw African",
+      "enabled": 1,
+      "publish_enabled": 0
+    },
+    {
+      "id": "sourcebeauty",
+      "name": "Source Beauty",
+      "enabled": 1,
+      "publish_enabled": 0
+    }
+  ],
+  "formula_evidence": [
+    {
+      "completeness": "full",
+      "order_verified": 1,
+      "count": 454
+    },
+    {
+      "completeness": "partial",
+      "order_verified": 0,
+      "count": 142
+    },
+    {
+      "completeness": "unverified",
+      "order_verified": 0,
+      "count": 86
+    },
+    {
+      "completeness": "unverified",
+      "order_verified": 1,
+      "count": 37
+    }
+  ],
+  "gemini_results": [
+    {
+      "status": "auto_resolved",
+      "verdict": "different_product",
+      "count": 199
+    },
+    {
+      "status": "auto_resolved",
+      "verdict": "same_product",
+      "count": 660
+    },
+    {
+      "status": "needs_manual",
+      "verdict": null,
+      "count": 2
+    },
+    {
+      "status": "needs_manual",
+      "verdict": "different_product",
+      "count": 20
+    },
+    {
+      "status": "needs_manual",
+      "verdict": "same_product",
+      "count": 1
+    },
+    {
+      "status": "needs_manual",
+      "verdict": "uncertain",
+      "count": 78
+    },
+    {
+      "status": "queued",
+      "verdict": "different_product",
+      "count": 147
+    },
+    {
+      "status": "queued",
+      "verdict": "same_product",
+      "count": 156
+    },
+    {
+      "status": "queued",
+      "verdict": "uncertain",
+      "count": 459
+    }
+  ],
+  "snapshot_at_utc": "2026-10-26T20:10:58.665317+00:00",
+  "snapshot_at_cairo": "2026-10-26T23:10:58.665528+03:00",
+  "snapshot_mode": "consistent SQLite read transaction",
+  "visible_skincare_products": 4163,
+  "integrity_check": "ok",
+  "foreign_key_violations": 0,
+  "pair_payload_violations": 0,
+  "pair_results": [
+    {
+      "verdict": "prepared",
+      "count": 3574
+    },
+    {
+      "verdict": "different_product",
+      "count": 728
+    },
+    {
+      "verdict": "same_product",
+      "count": 81
+    },
+    {
+      "verdict": "uncertain",
+      "count": 17
+    }
+  ],
+  "current_declaration_quality_findings": [],
+  "running_task_count": 0,
+  "processing_pair_review_count": 0,
+  "pair_job": {
+    "task_id": "task_20261026_192131_3b9d81c0",
+    "status": "failed",
+    "processed_items": 497,
+    "total_items": 500,
+    "metadata": {
+      "stats": {
+        "pair_rejections": 390,
+        "auto_resolved": 110,
+        "needs_manual": 66
+      },
+      "api_calls": 499,
+      "products_per_request": 2
+    },
+    "error_message": "Gemini returned HTTP 429 (daily provider quota); unfinished pairs remain queued. Completed pair results and applied decisions were preserved."
+  }
+}

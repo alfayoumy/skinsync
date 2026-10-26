@@ -1,0 +1,22 @@
+{
+  "applied": true,
+  "backup_path": "/mnt/windows/Users/AmrAlfayoumy/Downloads/skincare/repo/api/backups/catalog/catalog-20261026T211442Z-c76f5739.sqlite3",
+  "model_calls": 0,
+  "preview_scope": null,
+  "results": [
+    {
+      "url": "https://sourcebeauty.com/products/arencia-pdrn-booster-shot",
+      "status": "published",
+      "canonical_id": 69353,
+      "original_observation_id": 15680,
+      "observation_id": 23035,
+      "evidence_id": 1338,
+      "ingredient_count": 54
+    },
+    {
+      "url": "https://sourcebeauty.com/products/cerave-foaming-cleanser",
+      "status": "preserved",
+      "reason": "Partial page does not contain a closed literal ingredient declaration."
+    }
+  ]
+}

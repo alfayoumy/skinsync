@@ -1,0 +1,323 @@
+{
+  "backup_path": null,
+  "before": {
+    "canonical_products": 7348,
+    "verified_identities": 515,
+    "published_inci": 51,
+    "observed_products_with_inci": 999,
+    "pending_reviews": {
+      "category": 1376,
+      "identity": 973
+    },
+    "pending_identity_reviews": 973,
+    "pending_category_reviews": 1376,
+    "awaiting_evidence": 0,
+    "sources": [
+      {
+        "id": "bashrety",
+        "name": "Bashrety",
+        "enabled": 1,
+        "publish_enabled": 0
+      },
+      {
+        "id": "bloompharmacy",
+        "name": "Bloom Pharmacy",
+        "enabled": 1,
+        "publish_enabled": 0
+      },
+      {
+        "id": "drdawood",
+        "name": "Dr Dawood",
+        "enabled": 1,
+        "publish_enabled": 0
+      },
+      {
+        "id": "feel22",
+        "name": "Feel22 Egypt",
+        "enabled": 1,
+        "publish_enabled": 0
+      },
+      {
+        "id": "rawafrican",
+        "name": "Raw African",
+        "enabled": 1,
+        "publish_enabled": 0
+      },
+      {
+        "id": "sourcebeauty",
+        "name": "Source Beauty",
+        "enabled": 1,
+        "publish_enabled": 0
+      }
+    ],
+    "formula_evidence": [
+      {
+        "completeness": "full",
+        "order_verified": 1,
+        "count": 352
+      },
+      {
+        "completeness": "partial",
+        "order_verified": 0,
+        "count": 48
+      },
+      {
+        "completeness": "unverified",
+        "order_verified": 0,
+        "count": 75
+      },
+      {
+        "completeness": "unverified",
+        "order_verified": 1,
+        "count": 37
+      }
+    ],
+    "gemini_results": [
+      {
+        "status": "auto_resolved",
+        "verdict": "different_product",
+        "count": 123
+      },
+      {
+        "status": "auto_resolved",
+        "verdict": "same_product",
+        "count": 626
+      },
+      {
+        "status": "needs_manual",
+        "verdict": "different_product",
+        "count": 7
+      },
+      {
+        "status": "needs_manual",
+        "verdict": "same_product",
+        "count": 1
+      },
+      {
+        "status": "needs_manual",
+        "verdict": "uncertain",
+        "count": 25
+      },
+      {
+        "status": "queued",
+        "verdict": "different_product",
+        "count": 218
+      },
+      {
+        "status": "queued",
+        "verdict": "same_product",
+        "count": 187
+      },
+      {
+        "status": "queued",
+        "verdict": "uncertain",
+        "count": 535
+      }
+    ]
+  },
+  "result": {
+    "dry_run": true,
+    "categories": {
+      "uncertain_preserved": 1282,
+      "superseded_evidence_preserved": 76,
+      "cluster_conflict_preserved": 18
+    },
+    "saved_matching": {
+      "dry_run": false,
+      "no_gemini_calls": true,
+      "threshold": 0.9,
+      "source_verdicts_seen": 33,
+      "source_verdicts_eligible": 8,
+      "source_verdicts_not_eligible": 25,
+      "stored_decisions_checked": 8,
+      "automatically_verified": 0,
+      "source_matches_linked": 0,
+      "source_comparisons_rejected": 0,
+      "automatically_split": 0,
+      "new_canonical_products": 0,
+      "still_needs_review": 8,
+      "blocked_reasons": [
+        {
+          "reason": "Application could not be completed: Another possible match appeared after this Gemini comparison; creating another product would need a new comparison.",
+          "count": 7
+        },
+        {
+          "reason": "Product attributes conflict: vehicle (source: cream; selected product: gel)",
+          "count": 1
+        }
+      ],
+      "sample_results": [
+        {
+          "review_id": 16,
+          "action": "manual",
+          "reason": "Automated checks could not safely apply this decision: Another possible match appeared after this Gemini comparison; creating another product would need a new comparison."
+        },
+        {
+          "review_id": 20,
+          "action": "manual",
+          "reason": "Automated checks could not safely apply this decision: Another possible match appeared after this Gemini comparison; creating another product would need a new comparison."
+        },
+        {
+          "review_id": 402,
+          "verdict": "same_product",
+          "confidence": 0.9,
+          "action": "manual",
+          "reason": "Product attributes conflict: vehicle (source: cream; selected product: gel)"
+        },
+        {
+          "review_id": 885,
+          "action": "manual",
+          "reason": "Automated checks could not safely apply this decision: Another possible match appeared after this Gemini comparison; creating another product would need a new comparison."
+        },
+        {
+          "review_id": 954,
+          "action": "manual",
+          "reason": "Automated checks could not safely apply this decision: Another possible match appeared after this Gemini comparison; creating another product would need a new comparison."
+        },
+        {
+          "review_id": 955,
+          "action": "manual",
+          "reason": "Automated checks could not safely apply this decision: Another possible match appeared after this Gemini comparison; creating another product would need a new comparison."
+        },
+        {
+          "review_id": 1071,
+          "action": "manual",
+          "reason": "Automated checks could not safely apply this decision: Another possible match appeared after this Gemini comparison; creating another product would need a new comparison."
+        },
+        {
+          "review_id": 1109,
+          "action": "manual",
+          "reason": "Automated checks could not safely apply this decision: Another possible match appeared after this Gemini comparison; creating another product would need a new comparison."
+        }
+      ],
+      "message": "Saved decisions were replayed without any additional Gemini requests."
+    },
+    "identities": {
+      "needs_independent_retailer": 5129,
+      "pending_identity_conflict": 234,
+      "verified": 54,
+      "listing_or_variant_conflict": 257,
+      "brand_or_duplicate_conflict": 62
+    },
+    "formulations": {
+      "no_eligible_evidence": 505,
+      "published": 8
+    },
+    "model_calls": 0
+  },
+  "after": {
+    "canonical_products": 7348,
+    "verified_identities": 515,
+    "published_inci": 51,
+    "observed_products_with_inci": 999,
+    "pending_reviews": {
+      "category": 1376,
+      "identity": 973
+    },
+    "pending_identity_reviews": 973,
+    "pending_category_reviews": 1376,
+    "awaiting_evidence": 0,
+    "sources": [
+      {
+        "id": "bashrety",
+        "name": "Bashrety",
+        "enabled": 1,
+        "publish_enabled": 0
+      },
+      {
+        "id": "bloompharmacy",
+        "name": "Bloom Pharmacy",
+        "enabled": 1,
+        "publish_enabled": 0
+      },
+      {
+        "id": "drdawood",
+        "name": "Dr Dawood",
+        "enabled": 1,
+        "publish_enabled": 0
+      },
+      {
+        "id": "feel22",
+        "name": "Feel22 Egypt",
+        "enabled": 1,
+        "publish_enabled": 0
+      },
+      {
+        "id": "rawafrican",
+        "name": "Raw African",
+        "enabled": 1,
+        "publish_enabled": 0
+      },
+      {
+        "id": "sourcebeauty",
+        "name": "Source Beauty",
+        "enabled": 1,
+        "publish_enabled": 0
+      }
+    ],
+    "formula_evidence": [
+      {
+        "completeness": "full",
+        "order_verified": 1,
+        "count": 352
+      },
+      {
+        "completeness": "partial",
+        "order_verified": 0,
+        "count": 48
+      },
+      {
+        "completeness": "unverified",
+        "order_verified": 0,
+        "count": 75
+      },
+      {
+        "completeness": "unverified",
+        "order_verified": 1,
+        "count": 37
+      }
+    ],
+    "gemini_results": [
+      {
+        "status": "auto_resolved",
+        "verdict": "different_product",
+        "count": 123
+      },
+      {
+        "status": "auto_resolved",
+        "verdict": "same_product",
+        "count": 626
+      },
+      {
+        "status": "needs_manual",
+        "verdict": "different_product",
+        "count": 7
+      },
+      {
+        "status": "needs_manual",
+        "verdict": "same_product",
+        "count": 1
+      },
+      {
+        "status": "needs_manual",
+        "verdict": "uncertain",
+        "count": 25
+      },
+      {
+        "status": "queued",
+        "verdict": "different_product",
+        "count": 218
+      },
+      {
+        "status": "queued",
+        "verdict": "same_product",
+        "count": 187
+      },
+      {
+        "status": "queued",
+        "verdict": "uncertain",
+        "count": 535
+      }
+    ]
+  }
+}

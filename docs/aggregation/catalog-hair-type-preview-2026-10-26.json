@@ -1,0 +1,2514 @@
+{
+  "applied": false,
+  "backup_path": null,
+  "before": 1111,
+  "after": 1091,
+  "result": {
+    "uncertain_preserved": 1001,
+    "resolved": 20,
+    "superseded_evidence_preserved": 76,
+    "cluster_conflict_preserved": 14
+  },
+  "canonical_projection": {
+    "counts": {
+      "updated": 20,
+      "specific_hair_type_preserved": 237,
+      "uncertain_preserved": 1000,
+      "specific_category_preserved": 1
+    },
+    "changes": [
+      {
+        "canonical_id": 63163,
+        "title": "NUXE REVE DE MIEL Hand & Nail Cream 50 ML",
+        "before": "Moisturizer",
+        "after": "Nail Care",
+        "is_skincare": false,
+        "evidence": [
+          {
+            "source": "title",
+            "match": "\\bnail cream\\b"
+          }
+        ]
+      },
+      {
+        "canonical_id": 63253,
+        "title": "Anivagene Eyelash & Brow Serum",
+        "before": "Serum",
+        "after": "Makeup",
+        "is_skincare": false,
+        "evidence": [
+          {
+            "source": "title",
+            "match": "\\b(?:eyelash(?:es)?|lash (?:and )?brow|browlash|brow serum)\\b"
+          }
+        ]
+      },
+      {
+        "canonical_id": 63332,
+        "title": "NOVOPHANE NAIL CREAM",
+        "before": "Moisturizer",
+        "after": "Nail Care",
+        "is_skincare": false,
+        "evidence": [
+          {
+            "source": "title",
+            "match": "\\bnail cream\\b"
+          }
+        ]
+      },
+      {
+        "canonical_id": 63381,
+        "title": "The Ordinary Multi-Peptide Lash and Brow Serum - 5ml",
+        "before": "Serum",
+        "after": "Makeup",
+        "is_skincare": false,
+        "evidence": [
+          {
+            "source": "title",
+            "match": "\\b(?:eyelash(?:es)?|lash (?:and )?brow|browlash|brow serum)\\b"
+          }
+        ]
+      },
+      {
+        "canonical_id": 63537,
+        "title": "Anivagene Eyelash Serum - 10ml",
+        "before": "Serum",
+        "after": "Makeup",
+        "is_skincare": false,
+        "evidence": [
+          {
+            "source": "title",
+            "match": "\\b(?:eyelash(?:es)?|lash (?:and )?brow|browlash|brow serum)\\b"
+          }
+        ]
+      },
+      {
+        "canonical_id": 63766,
+        "title": "Biobalance Eyelash Growth Serum - 6ml",
+        "before": "Serum",
+        "after": "Makeup",
+        "is_skincare": false,
+        "evidence": [
+          {
+            "source": "title",
+            "match": "\\b(?:eyelash(?:es)?|lash (?:and )?brow|browlash|brow serum)\\b"
+          }
+        ]
+      },
+      {
+        "canonical_id": 64382,
+        "title": "Lucky Owl Nappy Rash Cream - 120gm",
+        "before": "Moisturizer",
+        "after": "Body Care",
+        "is_skincare": true,
+        "evidence": [
+          {
+            "source": "title",
+            "category": "Body Care",
+            "match": "nappy rash cream",
+            "weight": 4
+          },
+          {
+            "source": "title",
+            "category": "Moisturizer",
+            "match": "cream",
+            "weight": 4
+          }
+        ]
+      },
+      {
+        "canonical_id": 64534,
+        "title": "Moist-1 Baby Nappy Cream 150Gm",
+        "before": "Moisturizer",
+        "after": "Body Care",
+        "is_skincare": true,
+        "evidence": [
+          {
+            "source": "title",
+            "category": "Body Care",
+            "match": "nappy cream",
+            "weight": 4
+          },
+          {
+            "source": "title",
+            "category": "Moisturizer",
+            "match": "cream",
+            "weight": 4
+          }
+        ]
+      },
+      {
+        "canonical_id": 64550,
+        "title": "Raw African Browlash Serum 5 in 1 Offer (1+1)",
+        "before": "Serum",
+        "after": "Makeup",
+        "is_skincare": false,
+        "evidence": [
+          {
+            "source": "title",
+            "match": "\\b(?:eyelash(?:es)?|lash (?:and )?brow|browlash|brow serum)\\b"
+          }
+        ]
+      },
+      {
+        "canonical_id": 64793,
+        "title": "DERMACY Hand & Nail Cream 40ml",
+        "before": "Moisturizer",
+        "after": "Nail Care",
+        "is_skincare": false,
+        "evidence": [
+          {
+            "source": "title",
+            "match": "\\bnail cream\\b"
+          }
+        ]
+      },
+      {
+        "canonical_id": 65393,
+        "title": "Jamira Eye Lash & Brow Serum 10Ml",
+        "before": "Serum",
+        "after": "Makeup",
+        "is_skincare": false,
+        "evidence": [
+          {
+            "source": "title",
+            "match": "\\b(?:eyelash(?:es)?|lash (?:and )?brow|browlash|brow serum)\\b"
+          }
+        ]
+      },
+      {
+        "canonical_id": 65678,
+        "title": "Premier Soft Hands & Nail Cream 100 Gm",
+        "before": "Moisturizer",
+        "after": "Nail Care",
+        "is_skincare": false,
+        "evidence": [
+          {
+            "source": "title",
+            "match": "\\bnail cream\\b"
+          }
+        ]
+      },
+      {
+        "canonical_id": 65690,
+        "title": "Amanda Milano Hand And Nail Cream 80 Ml",
+        "before": "Moisturizer",
+        "after": "Nail Care",
+        "is_skincare": false,
+        "evidence": [
+          {
+            "source": "title",
+            "match": "\\bnail cream\\b"
+          }
+        ]
+      },
+      {
+        "canonical_id": 65997,
+        "title": "Etude My Eyelash Serum",
+        "before": "Serum",
+        "after": "Makeup",
+        "is_skincare": false,
+        "evidence": [
+          {
+            "source": "title",
+            "match": "\\b(?:eyelash(?:es)?|lash (?:and )?brow|browlash|brow serum)\\b"
+          }
+        ]
+      },
+      {
+        "canonical_id": 66246,
+        "title": "Sanosan Panthenol Nappy Cream",
+        "before": "Moisturizer",
+        "after": "Body Care",
+        "is_skincare": true,
+        "evidence": [
+          {
+            "source": "title",
+            "category": "Body Care",
+            "match": "nappy cream",
+            "weight": 4
+          },
+          {
+            "source": "title",
+            "category": "Moisturizer",
+            "match": "cream",
+            "weight": 4
+          }
+        ]
+      },
+      {
+        "canonical_id": 66561,
+        "title": "Follicle Booster Browlash Serum",
+        "before": "Serum",
+        "after": "Makeup",
+        "is_skincare": false,
+        "evidence": [
+          {
+            "source": "title",
+            "match": "\\b(?:eyelash(?:es)?|lash (?:and )?brow|browlash|brow serum)\\b"
+          }
+        ]
+      },
+      {
+        "canonical_id": 67434,
+        "title": "Collagen Eyelash Serum",
+        "before": "Serum",
+        "after": "Makeup",
+        "is_skincare": false,
+        "evidence": [
+          {
+            "source": "title",
+            "match": "\\b(?:eyelash(?:es)?|lash (?:and )?brow|browlash|brow serum)\\b"
+          }
+        ]
+      },
+      {
+        "canonical_id": 67480,
+        "title": "Naturland Double Effect Lash & Brow Serum",
+        "before": "Serum",
+        "after": "Makeup",
+        "is_skincare": false,
+        "evidence": [
+          {
+            "source": "title",
+            "match": "\\b(?:eyelash(?:es)?|lash (?:and )?brow|browlash|brow serum)\\b"
+          }
+        ]
+      },
+      {
+        "canonical_id": 69889,
+        "title": "Raw African Follicle Booster Browlash Serum 8g",
+        "before": "Serum",
+        "after": "Makeup",
+        "is_skincare": false,
+        "evidence": [
+          {
+            "source": "title",
+            "match": "\\b(?:eyelash(?:es)?|lash (?:and )?brow|browlash|brow serum)\\b"
+          }
+        ]
+      },
+      {
+        "canonical_id": 69918,
+        "title": "Anivagene Eyelash Serum 10ml",
+        "before": "Serum",
+        "after": "Makeup",
+        "is_skincare": false,
+        "evidence": [
+          {
+            "source": "title",
+            "match": "\\b(?:eyelash(?:es)?|lash (?:and )?brow|browlash|brow serum)\\b"
+          }
+        ]
+      }
+    ]
+  },
+  "explicit_hair_types": {
+    "counts": {
+      "updated": 243,
+      "specific_role_conflict_preserved": 2
+    },
+    "changes": [
+      {
+        "canonical_id": 63370,
+        "title": "L'Oreal  Elvive Hyaluron Moisture Plump Serum - 150ml",
+        "before": "Serum",
+        "after": "Hair Care",
+        "observation_ids": [
+          6275
+        ]
+      },
+      {
+        "canonical_id": 63374,
+        "title": "CHI Argan Oil Rejuvenating Masque - 237ml",
+        "before": "Mask",
+        "after": "Hair Care",
+        "observation_ids": [
+          6302
+        ]
+      },
+      {
+        "canonical_id": 63426,
+        "title": "Creme Of Nature Argan Oil From Morocco Intensive Conditioning Treatment - 354ml",
+        "before": "Moisturizer",
+        "after": "Hair Care",
+        "observation_ids": [
+          6468
+        ]
+      },
+      {
+        "canonical_id": 63459,
+        "title": "Cantu Care For Kids Curling Cream - 227mg",
+        "before": "Moisturizer",
+        "after": "Hair Care",
+        "observation_ids": [
+          6609
+        ]
+      },
+      {
+        "canonical_id": 63480,
+        "title": "Locken Pull The Curl Trigger Definition Cream - 200ml",
+        "before": "Moisturizer",
+        "after": "Hair Care",
+        "observation_ids": [
+          6730,
+          15898
+        ]
+      },
+      {
+        "canonical_id": 63486,
+        "title": "Bubblzz Flax Seed Cream Gel - 150ml",
+        "before": "Moisturizer",
+        "after": "Hair Care",
+        "observation_ids": [
+          6756
+        ]
+      },
+      {
+        "canonical_id": 63487,
+        "title": "CHI Deep Brilliance Protein Masque \u2013 237ml",
+        "before": "Mask",
+        "after": "Hair Care",
+        "observation_ids": [
+          6758
+        ]
+      },
+      {
+        "canonical_id": 63488,
+        "title": "CHI Enviro Smoothing Serum - 59ml",
+        "before": "Serum",
+        "after": "Hair Care",
+        "observation_ids": [
+          6761,
+          14676,
+          19366
+        ]
+      },
+      {
+        "canonical_id": 63500,
+        "title": "L'Oreal Studio Line No.6 Out Of Bed Fiber Cream Strong - 150ml",
+        "before": "Moisturizer",
+        "after": "Hair Care",
+        "observation_ids": [
+          6829
+        ]
+      },
+      {
+        "canonical_id": 63508,
+        "title": "OGX Bond Protein Repair Sealing Serum - 50ml",
+        "before": "Serum",
+        "after": "Hair Care",
+        "observation_ids": [
+          6870
+        ]
+      },
+      {
+        "canonical_id": 63511,
+        "title": "Milk Shake Silver Shine Whipped Cream - 200ml",
+        "before": "Moisturizer",
+        "after": "Hair Care",
+        "observation_ids": [
+          6902,
+          15274
+        ]
+      },
+      {
+        "canonical_id": 63547,
+        "title": "GK Global Keratin Serum - 50ml",
+        "before": "Serum",
+        "after": "Hair Care",
+        "observation_ids": [
+          7244
+        ]
+      },
+      {
+        "canonical_id": 63552,
+        "title": "Raw African Follicle Booster Spray - 125ml",
+        "before": "Serum",
+        "after": "Hair Care",
+        "observation_ids": [
+          7286,
+          4129,
+          17649
+        ]
+      },
+      {
+        "canonical_id": 63571,
+        "title": "Capixy Hair Fertlizer Cream - 120ml",
+        "before": "Moisturizer",
+        "after": "Hair Care",
+        "observation_ids": [
+          7366,
+          11371
+        ]
+      },
+      {
+        "canonical_id": 63606,
+        "title": "L\u2019Oreal Professional Pro Longer Cream - 150ml",
+        "before": "Moisturizer",
+        "after": "Hair Care",
+        "observation_ids": [
+          7487
+        ]
+      },
+      {
+        "canonical_id": 63621,
+        "title": "Creme Of Nature Pure Honey Shrinkage Defense Curl Activator - 310ml",
+        "before": "Moisturizer",
+        "after": "Hair Care",
+        "observation_ids": [
+          7521
+        ]
+      },
+      {
+        "canonical_id": 63622,
+        "title": "L'Oreal Professional Liss Unlimited Primrose Oil Serum - 125ml",
+        "before": "Serum",
+        "after": "Hair Care",
+        "observation_ids": [
+          7528
+        ]
+      },
+      {
+        "canonical_id": 63667,
+        "title": "Aroma Argan Oil Serum - 100ml",
+        "before": "Serum",
+        "after": "Hair Care",
+        "observation_ids": [
+          7742
+        ]
+      },
+      {
+        "canonical_id": 63749,
+        "title": "Anivagene Nutri-Serum Hair Nourishing - 125ml",
+        "before": "Serum",
+        "after": "Hair Care",
+        "observation_ids": [
+          8068
+        ]
+      },
+      {
+        "canonical_id": 63797,
+        "title": "Lanalou Lightweight Coconut Breeze Moisturizing Detangler Spray - 250ml",
+        "before": "Moisturizer",
+        "after": "Hair Care",
+        "observation_ids": [
+          8216
+        ]
+      },
+      {
+        "canonical_id": 63826,
+        "title": "Avrelle Coconut and Aloe Vera Anti Heat Serum \u2013 100ml",
+        "before": "Serum",
+        "after": "Hair Care",
+        "observation_ids": [
+          8354
+        ]
+      },
+      {
+        "canonical_id": 63849,
+        "title": "Chi Volume Booster Liquid Spray - 237ml",
+        "before": "Serum",
+        "after": "Hair Care",
+        "observation_ids": [
+          8452
+        ]
+      },
+      {
+        "canonical_id": 63852,
+        "title": "Biosilk Silk Therapy Original Serum",
+        "before": "Serum",
+        "after": "Hair Care",
+        "observation_ids": [
+          8461
+        ]
+      },
+      {
+        "canonical_id": 63904,
+        "title": "Clary Mist SPF 50+ Heat Protection - 120ml",
+        "before": "Sunscreen",
+        "after": "Hair Care",
+        "observation_ids": [
+          8629
+        ]
+      },
+      {
+        "canonical_id": 63946,
+        "title": "Vichy Dercos Aminexil Clinical R.E.G.E.N. Booster - 90ml",
+        "before": "Serum",
+        "after": "Hair Care",
+        "observation_ids": [
+          8784
+        ]
+      },
+      {
+        "canonical_id": 63954,
+        "title": "Creme Of Nature Pure Honey Moisture Whip Twisting Cream - 326gm",
+        "before": "Moisturizer",
+        "after": "Hair Care",
+        "observation_ids": [
+          8837
+        ]
+      },
+      {
+        "canonical_id": 64030,
+        "title": "Revox Plex Bond Smoothing Cream Step 6 - 260ml",
+        "before": "Moisturizer",
+        "after": "Hair Care",
+        "observation_ids": [
+          9098,
+          22735
+        ]
+      },
+      {
+        "canonical_id": 64105,
+        "title": "Natavis Hair Booster Spray - 100ml",
+        "before": "Serum",
+        "after": "Hair Care",
+        "observation_ids": [
+          9330,
+          4080,
+          21110
+        ]
+      },
+      {
+        "canonical_id": 64132,
+        "title": "Avrelle Advanced Formula Build Up Hair Cleanser - 250ml",
+        "before": "Cleanser",
+        "after": "Hair Care",
+        "observation_ids": [
+          9406
+        ]
+      },
+      {
+        "canonical_id": 64137,
+        "title": "Dermactive Baby Hair Detangling Serum - 120ml",
+        "before": "Serum",
+        "after": "Hair Care",
+        "observation_ids": [
+          9413
+        ]
+      },
+      {
+        "canonical_id": 64208,
+        "title": "Bubblzz Kids Curl Activator Cream \u2013 200ml",
+        "before": "Moisturizer",
+        "after": "Hair Care",
+        "observation_ids": [
+          9701
+        ]
+      },
+      {
+        "canonical_id": 64419,
+        "title": "Garnier Color Naturals Creme",
+        "before": "Moisturizer",
+        "after": "Hair Care",
+        "observation_ids": [
+          10595
+        ]
+      },
+      {
+        "canonical_id": 64420,
+        "title": "Garnier Color Naturals Creme",
+        "before": "Moisturizer",
+        "after": "Hair Care",
+        "observation_ids": [
+          10595
+        ]
+      },
+      {
+        "canonical_id": 64421,
+        "title": "Garnier Color Naturals Creme",
+        "before": "Moisturizer",
+        "after": "Hair Care",
+        "observation_ids": [
+          10595
+        ]
+      },
+      {
+        "canonical_id": 64422,
+        "title": "Garnier Color Naturals Creme",
+        "before": "Moisturizer",
+        "after": "Hair Care",
+        "observation_ids": [
+          10595
+        ]
+      },
+      {
+        "canonical_id": 64423,
+        "title": "Garnier Color Naturals Creme",
+        "before": "Moisturizer",
+        "after": "Hair Care",
+        "observation_ids": [
+          10595
+        ]
+      },
+      {
+        "canonical_id": 64424,
+        "title": "Garnier Color Naturals Creme",
+        "before": "Moisturizer",
+        "after": "Hair Care",
+        "observation_ids": [
+          10595
+        ]
+      },
+      {
+        "canonical_id": 64425,
+        "title": "Garnier Color Naturals Creme",
+        "before": "Moisturizer",
+        "after": "Hair Care",
+        "observation_ids": [
+          10595
+        ]
+      },
+      {
+        "canonical_id": 64426,
+        "title": "Garnier Color Naturals Creme",
+        "before": "Moisturizer",
+        "after": "Hair Care",
+        "observation_ids": [
+          10595
+        ]
+      },
+      {
+        "canonical_id": 64427,
+        "title": "Garnier Color Naturals Creme",
+        "before": "Moisturizer",
+        "after": "Hair Care",
+        "observation_ids": [
+          10595
+        ]
+      },
+      {
+        "canonical_id": 64428,
+        "title": "Garnier Color Naturals Creme",
+        "before": "Moisturizer",
+        "after": "Hair Care",
+        "observation_ids": [
+          10595
+        ]
+      },
+      {
+        "canonical_id": 64429,
+        "title": "Garnier Color Naturals Creme",
+        "before": "Moisturizer",
+        "after": "Hair Care",
+        "observation_ids": [
+          10595
+        ]
+      },
+      {
+        "canonical_id": 64430,
+        "title": "Garnier Color Naturals Creme",
+        "before": "Moisturizer",
+        "after": "Hair Care",
+        "observation_ids": [
+          10595
+        ]
+      },
+      {
+        "canonical_id": 64431,
+        "title": "Garnier Color Naturals Creme",
+        "before": "Moisturizer",
+        "after": "Hair Care",
+        "observation_ids": [
+          10595
+        ]
+      },
+      {
+        "canonical_id": 64432,
+        "title": "Garnier Color Naturals Creme",
+        "before": "Moisturizer",
+        "after": "Hair Care",
+        "observation_ids": [
+          10595
+        ]
+      },
+      {
+        "canonical_id": 64433,
+        "title": "Garnier Color Naturals Creme",
+        "before": "Moisturizer",
+        "after": "Hair Care",
+        "observation_ids": [
+          10595
+        ]
+      },
+      {
+        "canonical_id": 64434,
+        "title": "Garnier Color Naturals Creme",
+        "before": "Moisturizer",
+        "after": "Hair Care",
+        "observation_ids": [
+          10595
+        ]
+      },
+      {
+        "canonical_id": 64435,
+        "title": "Garnier Color Naturals Creme",
+        "before": "Moisturizer",
+        "after": "Hair Care",
+        "observation_ids": [
+          10595
+        ]
+      },
+      {
+        "canonical_id": 64436,
+        "title": "Garnier Color Naturals Creme",
+        "before": "Moisturizer",
+        "after": "Hair Care",
+        "observation_ids": [
+          10595
+        ]
+      },
+      {
+        "canonical_id": 64437,
+        "title": "Garnier Color Naturals Creme",
+        "before": "Moisturizer",
+        "after": "Hair Care",
+        "observation_ids": [
+          10595
+        ]
+      },
+      {
+        "canonical_id": 64438,
+        "title": "Garnier Color Naturals Creme",
+        "before": "Moisturizer",
+        "after": "Hair Care",
+        "observation_ids": [
+          10595
+        ]
+      },
+      {
+        "canonical_id": 64439,
+        "title": "Garnier Color Naturals Creme",
+        "before": "Moisturizer",
+        "after": "Hair Care",
+        "observation_ids": [
+          10595
+        ]
+      },
+      {
+        "canonical_id": 64440,
+        "title": "Garnier Color Naturals Creme",
+        "before": "Moisturizer",
+        "after": "Hair Care",
+        "observation_ids": [
+          10595
+        ]
+      },
+      {
+        "canonical_id": 64441,
+        "title": "Garnier Color Naturals Creme",
+        "before": "Moisturizer",
+        "after": "Hair Care",
+        "observation_ids": [
+          10595
+        ]
+      },
+      {
+        "canonical_id": 64442,
+        "title": "Garnier Color Naturals Creme",
+        "before": "Moisturizer",
+        "after": "Hair Care",
+        "observation_ids": [
+          10595
+        ]
+      },
+      {
+        "canonical_id": 64443,
+        "title": "Garnier Color Naturals Creme",
+        "before": "Moisturizer",
+        "after": "Hair Care",
+        "observation_ids": [
+          10595
+        ]
+      },
+      {
+        "canonical_id": 64444,
+        "title": "Garnier Color Naturals Creme",
+        "before": "Moisturizer",
+        "after": "Hair Care",
+        "observation_ids": [
+          10595
+        ]
+      },
+      {
+        "canonical_id": 64445,
+        "title": "Garnier Color Naturals Creme",
+        "before": "Moisturizer",
+        "after": "Hair Care",
+        "observation_ids": [
+          10595
+        ]
+      },
+      {
+        "canonical_id": 64446,
+        "title": "Garnier Color Naturals Creme",
+        "before": "Moisturizer",
+        "after": "Hair Care",
+        "observation_ids": [
+          10595
+        ]
+      },
+      {
+        "canonical_id": 64447,
+        "title": "Garnier Color Naturals Creme",
+        "before": "Moisturizer",
+        "after": "Hair Care",
+        "observation_ids": [
+          10595
+        ]
+      },
+      {
+        "canonical_id": 64448,
+        "title": "L'Oreal Paris Excellence Creme",
+        "before": "Moisturizer",
+        "after": "Hair Care",
+        "observation_ids": [
+          10601
+        ]
+      },
+      {
+        "canonical_id": 64449,
+        "title": "L'Oreal Paris Excellence Creme",
+        "before": "Moisturizer",
+        "after": "Hair Care",
+        "observation_ids": [
+          10601
+        ]
+      },
+      {
+        "canonical_id": 64450,
+        "title": "L'Oreal Paris Excellence Creme",
+        "before": "Moisturizer",
+        "after": "Hair Care",
+        "observation_ids": [
+          10601
+        ]
+      },
+      {
+        "canonical_id": 64451,
+        "title": "L'Oreal Paris Excellence Creme",
+        "before": "Moisturizer",
+        "after": "Hair Care",
+        "observation_ids": [
+          10601
+        ]
+      },
+      {
+        "canonical_id": 64452,
+        "title": "L'Oreal Paris Excellence Creme",
+        "before": "Moisturizer",
+        "after": "Hair Care",
+        "observation_ids": [
+          10601
+        ]
+      },
+      {
+        "canonical_id": 64453,
+        "title": "L'Oreal Paris Excellence Creme",
+        "before": "Moisturizer",
+        "after": "Hair Care",
+        "observation_ids": [
+          10601
+        ]
+      },
+      {
+        "canonical_id": 64454,
+        "title": "L'Oreal Paris Excellence Creme",
+        "before": "Moisturizer",
+        "after": "Hair Care",
+        "observation_ids": [
+          10601
+        ]
+      },
+      {
+        "canonical_id": 64455,
+        "title": "L'Oreal Paris Excellence Creme",
+        "before": "Moisturizer",
+        "after": "Hair Care",
+        "observation_ids": [
+          10601
+        ]
+      },
+      {
+        "canonical_id": 64456,
+        "title": "L'Oreal Paris Excellence Creme",
+        "before": "Moisturizer",
+        "after": "Hair Care",
+        "observation_ids": [
+          10601
+        ]
+      },
+      {
+        "canonical_id": 64457,
+        "title": "L'Oreal Paris Excellence Creme",
+        "before": "Moisturizer",
+        "after": "Hair Care",
+        "observation_ids": [
+          10601
+        ]
+      },
+      {
+        "canonical_id": 64458,
+        "title": "L'Oreal Paris Excellence Creme",
+        "before": "Moisturizer",
+        "after": "Hair Care",
+        "observation_ids": [
+          10601
+        ]
+      },
+      {
+        "canonical_id": 64459,
+        "title": "L'Oreal Paris Excellence Creme",
+        "before": "Moisturizer",
+        "after": "Hair Care",
+        "observation_ids": [
+          10601
+        ]
+      },
+      {
+        "canonical_id": 64460,
+        "title": "L'Oreal Paris Excellence Creme",
+        "before": "Moisturizer",
+        "after": "Hair Care",
+        "observation_ids": [
+          10601
+        ]
+      },
+      {
+        "canonical_id": 64461,
+        "title": "L'Oreal Paris Excellence Creme",
+        "before": "Moisturizer",
+        "after": "Hair Care",
+        "observation_ids": [
+          10601
+        ]
+      },
+      {
+        "canonical_id": 64462,
+        "title": "L'Oreal Paris Excellence Creme",
+        "before": "Moisturizer",
+        "after": "Hair Care",
+        "observation_ids": [
+          10601
+        ]
+      },
+      {
+        "canonical_id": 64463,
+        "title": "L'Oreal Paris Excellence Creme",
+        "before": "Moisturizer",
+        "after": "Hair Care",
+        "observation_ids": [
+          10601
+        ]
+      },
+      {
+        "canonical_id": 64464,
+        "title": "L'Oreal Paris Excellence Creme",
+        "before": "Moisturizer",
+        "after": "Hair Care",
+        "observation_ids": [
+          10601
+        ]
+      },
+      {
+        "canonical_id": 64465,
+        "title": "L'Oreal Paris Excellence Creme",
+        "before": "Moisturizer",
+        "after": "Hair Care",
+        "observation_ids": [
+          10601
+        ]
+      },
+      {
+        "canonical_id": 64466,
+        "title": "L'Oreal Paris Excellence Creme",
+        "before": "Moisturizer",
+        "after": "Hair Care",
+        "observation_ids": [
+          10601
+        ]
+      },
+      {
+        "canonical_id": 64467,
+        "title": "L'Oreal Paris Excellence Creme",
+        "before": "Moisturizer",
+        "after": "Hair Care",
+        "observation_ids": [
+          10601
+        ]
+      },
+      {
+        "canonical_id": 64468,
+        "title": "L'Oreal Paris Excellence Creme",
+        "before": "Moisturizer",
+        "after": "Hair Care",
+        "observation_ids": [
+          10601
+        ]
+      },
+      {
+        "canonical_id": 64469,
+        "title": "L'Oreal Paris Excellence Creme",
+        "before": "Moisturizer",
+        "after": "Hair Care",
+        "observation_ids": [
+          10601
+        ]
+      },
+      {
+        "canonical_id": 64470,
+        "title": "L'Oreal Paris Excellence Creme",
+        "before": "Moisturizer",
+        "after": "Hair Care",
+        "observation_ids": [
+          10601
+        ]
+      },
+      {
+        "canonical_id": 64471,
+        "title": "L'Oreal Paris Excellence Creme",
+        "before": "Moisturizer",
+        "after": "Hair Care",
+        "observation_ids": [
+          10601
+        ]
+      },
+      {
+        "canonical_id": 64472,
+        "title": "L'Oreal Paris Excellence Creme",
+        "before": "Moisturizer",
+        "after": "Hair Care",
+        "observation_ids": [
+          10601
+        ]
+      },
+      {
+        "canonical_id": 64473,
+        "title": "L'Oreal Paris Excellence Creme",
+        "before": "Moisturizer",
+        "after": "Hair Care",
+        "observation_ids": [
+          10601
+        ]
+      },
+      {
+        "canonical_id": 64474,
+        "title": "L'Oreal Paris Casting Creme Gloss",
+        "before": "Moisturizer",
+        "after": "Hair Care",
+        "observation_ids": [
+          10602
+        ]
+      },
+      {
+        "canonical_id": 64475,
+        "title": "L'Oreal Paris Casting Creme Gloss",
+        "before": "Moisturizer",
+        "after": "Hair Care",
+        "observation_ids": [
+          10602
+        ]
+      },
+      {
+        "canonical_id": 64476,
+        "title": "L'Oreal Paris Casting Creme Gloss",
+        "before": "Moisturizer",
+        "after": "Hair Care",
+        "observation_ids": [
+          10602
+        ]
+      },
+      {
+        "canonical_id": 64477,
+        "title": "L'Oreal Paris Casting Creme Gloss",
+        "before": "Moisturizer",
+        "after": "Hair Care",
+        "observation_ids": [
+          10602
+        ]
+      },
+      {
+        "canonical_id": 64478,
+        "title": "L'Oreal Paris Casting Creme Gloss",
+        "before": "Moisturizer",
+        "after": "Hair Care",
+        "observation_ids": [
+          10602
+        ]
+      },
+      {
+        "canonical_id": 64479,
+        "title": "L'Oreal Paris Casting Creme Gloss",
+        "before": "Moisturizer",
+        "after": "Hair Care",
+        "observation_ids": [
+          10602
+        ]
+      },
+      {
+        "canonical_id": 64480,
+        "title": "L'Oreal Paris Casting Creme Gloss",
+        "before": "Moisturizer",
+        "after": "Hair Care",
+        "observation_ids": [
+          10602
+        ]
+      },
+      {
+        "canonical_id": 64481,
+        "title": "L'Oreal Paris Casting Creme Gloss",
+        "before": "Moisturizer",
+        "after": "Hair Care",
+        "observation_ids": [
+          10602
+        ]
+      },
+      {
+        "canonical_id": 64482,
+        "title": "L'Oreal Paris Casting Creme Gloss",
+        "before": "Moisturizer",
+        "after": "Hair Care",
+        "observation_ids": [
+          10602
+        ]
+      },
+      {
+        "canonical_id": 64483,
+        "title": "L'Oreal Paris Casting Creme Gloss",
+        "before": "Moisturizer",
+        "after": "Hair Care",
+        "observation_ids": [
+          10602
+        ]
+      },
+      {
+        "canonical_id": 64484,
+        "title": "L'Oreal Paris Casting Creme Gloss",
+        "before": "Moisturizer",
+        "after": "Hair Care",
+        "observation_ids": [
+          10602
+        ]
+      },
+      {
+        "canonical_id": 64485,
+        "title": "L'Oreal Paris Casting Creme Gloss",
+        "before": "Moisturizer",
+        "after": "Hair Care",
+        "observation_ids": [
+          10602
+        ]
+      },
+      {
+        "canonical_id": 64486,
+        "title": "L'Oreal Paris Casting Creme Gloss",
+        "before": "Moisturizer",
+        "after": "Hair Care",
+        "observation_ids": [
+          10602
+        ]
+      },
+      {
+        "canonical_id": 64487,
+        "title": "L'Oreal Paris Casting Creme Gloss",
+        "before": "Moisturizer",
+        "after": "Hair Care",
+        "observation_ids": [
+          10602
+        ]
+      },
+      {
+        "canonical_id": 64488,
+        "title": "L'Oreal Paris Casting Creme Gloss",
+        "before": "Moisturizer",
+        "after": "Hair Care",
+        "observation_ids": [
+          10602
+        ]
+      },
+      {
+        "canonical_id": 64825,
+        "title": "Hair Act Lotion Spray 120Ml",
+        "before": "Moisturizer",
+        "after": "Hair Care",
+        "observation_ids": [
+          1508
+        ]
+      },
+      {
+        "canonical_id": 64919,
+        "title": "Hair Daily Nourishing Cream For Men",
+        "before": "Moisturizer",
+        "after": "Hair Care",
+        "observation_ids": [
+          1902
+        ]
+      },
+      {
+        "canonical_id": 65202,
+        "title": "Infinity Naturals Smoothing Styling Cream Argan Oil & Sweet Almond Oil",
+        "before": "Moisturizer",
+        "after": "Hair Care",
+        "observation_ids": [
+          3258
+        ]
+      },
+      {
+        "canonical_id": 65267,
+        "title": "Firstvoc Elixir Lotion",
+        "before": "Moisturizer",
+        "after": "Hair Care",
+        "observation_ids": [
+          3853
+        ]
+      },
+      {
+        "canonical_id": 65467,
+        "title": "Every Strand Keratin Serum 177Ml\u200f",
+        "before": "Serum",
+        "after": "Hair Care",
+        "observation_ids": [
+          4436
+        ]
+      },
+      {
+        "canonical_id": 65549,
+        "title": "Hair Daily Beard Serum 30Ml",
+        "before": "Serum",
+        "after": "Hair Care",
+        "observation_ids": [
+          4703
+        ]
+      },
+      {
+        "canonical_id": 65576,
+        "title": "Db Anagenic Pro Lotion 120Ml",
+        "before": "Moisturizer",
+        "after": "Hair Care",
+        "observation_ids": [
+          4789
+        ]
+      },
+      {
+        "canonical_id": 65634,
+        "title": "Palmer'S Cream Hair Silk- 150Gm\u200f",
+        "before": "Moisturizer",
+        "after": "Hair Care",
+        "observation_ids": [
+          5053
+        ]
+      },
+      {
+        "canonical_id": 65635,
+        "title": "Palmer'S Styling Cream- 150Gm",
+        "before": "Moisturizer",
+        "after": "Hair Care",
+        "observation_ids": [
+          5054
+        ]
+      },
+      {
+        "canonical_id": 65636,
+        "title": "Palmer'S Cream Coconut Oil Formula 150Gm",
+        "before": "Moisturizer",
+        "after": "Hair Care",
+        "observation_ids": [
+          5055,
+          5056
+        ]
+      },
+      {
+        "canonical_id": 65679,
+        "title": "Youthair Professional Hair Cr\u00e8me 106 G",
+        "before": "Moisturizer",
+        "after": "Hair Care",
+        "observation_ids": [
+          5260
+        ]
+      },
+      {
+        "canonical_id": 65686,
+        "title": "Eva Hair Clinic Gold Argan Serum With Gold And Argan Oil 90Ml",
+        "before": "Serum",
+        "after": "Hair Care",
+        "observation_ids": [
+          5303
+        ]
+      },
+      {
+        "canonical_id": 65695,
+        "title": "Cantu Shea Butter For Natural Hair Intensive Repair Deep Treatment Masque 50 Gm",
+        "before": "Mask",
+        "after": "Hair Care",
+        "observation_ids": [
+          5331
+        ]
+      },
+      {
+        "canonical_id": 65724,
+        "title": "Every Strand Hair Masque Argan Oil & Macadamia 425 G",
+        "before": "Mask",
+        "after": "Hair Care",
+        "observation_ids": [
+          5528
+        ]
+      },
+      {
+        "canonical_id": 65753,
+        "title": "L\u2019Oreal Excellence Creme 1.0 Black",
+        "before": "Moisturizer",
+        "after": "Hair Care",
+        "observation_ids": [
+          5688
+        ]
+      },
+      {
+        "canonical_id": 65754,
+        "title": "L\u2019Oreal Excellence Creme 7.7 Marron Miel",
+        "before": "Moisturizer",
+        "after": "Hair Care",
+        "observation_ids": [
+          5690
+        ]
+      },
+      {
+        "canonical_id": 65755,
+        "title": "L\u2019Oreal Excellence Creme 9.1 Very Light Ash Blond",
+        "before": "Moisturizer",
+        "after": "Hair Care",
+        "observation_ids": [
+          5691
+        ]
+      },
+      {
+        "canonical_id": 65756,
+        "title": "L\u2019Oreal Excellence Creme 5.3 Light Golden Brown",
+        "before": "Moisturizer",
+        "after": "Hair Care",
+        "observation_ids": [
+          5692
+        ]
+      },
+      {
+        "canonical_id": 65783,
+        "title": "Dercos Denis-Solutions Hair Mass Recreating Concentrate 100Ml",
+        "before": "Serum",
+        "after": "Hair Care",
+        "observation_ids": [
+          5843
+        ]
+      },
+      {
+        "canonical_id": 65787,
+        "title": "Twist And Go Length Intensive Treatment Lotion 125Ml",
+        "before": "Moisturizer",
+        "after": "Hair Care",
+        "observation_ids": [
+          5851
+        ]
+      },
+      {
+        "canonical_id": 65790,
+        "title": "Root To End Hair Repairing Lotion 250Ml.",
+        "before": "Moisturizer",
+        "after": "Hair Care",
+        "observation_ids": [
+          5867
+        ]
+      },
+      {
+        "canonical_id": 65791,
+        "title": "Elone Keratin Cream 2In1 120Ml",
+        "before": "Moisturizer",
+        "after": "Hair Care",
+        "observation_ids": [
+          5872
+        ]
+      },
+      {
+        "canonical_id": 65792,
+        "title": "Nutrex Nourishing Cream 150Ml",
+        "before": "Moisturizer",
+        "after": "Hair Care",
+        "observation_ids": [
+          5874
+        ]
+      },
+      {
+        "canonical_id": 65793,
+        "title": "Strongville Nourishing Cream 120Ml",
+        "before": "Moisturizer",
+        "after": "Hair Care",
+        "observation_ids": [
+          5875
+        ]
+      },
+      {
+        "canonical_id": 65880,
+        "title": "Global Keratin Cream Developer 20 Volume 150ml",
+        "before": "Moisturizer",
+        "after": "Hair Care",
+        "observation_ids": [
+          22440
+        ]
+      },
+      {
+        "canonical_id": 65895,
+        "title": "Cosrx PEPTIDE-132 Ultra Perfect Hair Bonding Oil Serum",
+        "before": "Serum",
+        "after": "Hair Care",
+        "observation_ids": [
+          22617
+        ]
+      },
+      {
+        "canonical_id": 65930,
+        "title": "L'Oreal Paris Elvive Oil Dry Styling Cream with Coconut Oil 300ml",
+        "before": "Moisturizer",
+        "after": "Hair Care",
+        "observation_ids": [
+          11162
+        ]
+      },
+      {
+        "canonical_id": 65959,
+        "title": "L'Oreal Paris Elvive Glycolic Gloss Combing Cream 200ml",
+        "before": "Moisturizer",
+        "after": "Hair Care",
+        "observation_ids": [
+          11395
+        ]
+      },
+      {
+        "canonical_id": 65963,
+        "title": "Cantu Avocado Curl Activator Cream with Avocado Oil & Shea Butter",
+        "before": "Moisturizer",
+        "after": "Hair Care",
+        "observation_ids": [
+          11418
+        ]
+      },
+      {
+        "canonical_id": 66028,
+        "title": "Cosmo Cosmetics Soft & Shine Moisturizing Detangling Spray",
+        "before": "Moisturizer",
+        "after": "Hair Care",
+        "observation_ids": [
+          11897
+        ]
+      },
+      {
+        "canonical_id": 66046,
+        "title": "Cantu Shea Butter for Natural Hair Coconut Curling Cream 709g",
+        "before": "Moisturizer",
+        "after": "Hair Care",
+        "observation_ids": [
+          11981
+        ]
+      },
+      {
+        "canonical_id": 66074,
+        "title": "Karseell Maca Power Essence Oil",
+        "before": "Toner",
+        "after": "Hair Care",
+        "observation_ids": [
+          12251
+        ]
+      },
+      {
+        "canonical_id": 66087,
+        "title": "L'Oreal Paris Elvive Extraordinary Oil Midnight Serum 100ml",
+        "before": "Serum",
+        "after": "Hair Care",
+        "observation_ids": [
+          12262
+        ]
+      },
+      {
+        "canonical_id": 66173,
+        "title": "Ever Pure Teatree Mint Serum 150ml",
+        "before": "Serum",
+        "after": "Hair Care",
+        "observation_ids": [
+          12944
+        ]
+      },
+      {
+        "canonical_id": 66174,
+        "title": "Ever Pure B5 Serum 150ml",
+        "before": "Serum",
+        "after": "Hair Care",
+        "observation_ids": [
+          12945
+        ]
+      },
+      {
+        "canonical_id": 66193,
+        "title": "Global Keratin GKhair Hair Taming Serum",
+        "before": "Serum",
+        "after": "Hair Care",
+        "observation_ids": [
+          13022
+        ]
+      },
+      {
+        "canonical_id": 66222,
+        "title": "Tresemme Expert Selection Youth Boost Styling Lotion 125ml",
+        "before": "Moisturizer",
+        "after": "Hair Care",
+        "observation_ids": [
+          13278
+        ]
+      },
+      {
+        "canonical_id": 66261,
+        "title": "Anivagene U-Hydra Ultra Hydration & Nutrition Cream",
+        "before": "Moisturizer",
+        "after": "Hair Care",
+        "observation_ids": [
+          13532
+        ]
+      },
+      {
+        "canonical_id": 66273,
+        "title": "Anivagene Nutritive Serum 125ml",
+        "before": "Serum",
+        "after": "Hair Care",
+        "observation_ids": [
+          13609
+        ]
+      },
+      {
+        "canonical_id": 66539,
+        "title": "L'Oreal Paris Casting Creme Gloss - No Amonia Hair Coloration - Lasts Up To 28 Shampoos",
+        "before": "Moisturizer",
+        "after": "Hair Care",
+        "observation_ids": [
+          15166
+        ]
+      },
+      {
+        "canonical_id": 66540,
+        "title": "L'Oreal Paris Casting Creme Gloss - No Amonia Hair Coloration - Lasts Up To 28 Shampoos",
+        "before": "Moisturizer",
+        "after": "Hair Care",
+        "observation_ids": [
+          15166
+        ]
+      },
+      {
+        "canonical_id": 66541,
+        "title": "L'Oreal Paris Casting Creme Gloss - No Amonia Hair Coloration - Lasts Up To 28 Shampoos",
+        "before": "Moisturizer",
+        "after": "Hair Care",
+        "observation_ids": [
+          15166
+        ]
+      },
+      {
+        "canonical_id": 66542,
+        "title": "L'Oreal Paris Casting Creme Gloss - No Amonia Hair Coloration - Lasts Up To 28 Shampoos",
+        "before": "Moisturizer",
+        "after": "Hair Care",
+        "observation_ids": [
+          15166
+        ]
+      },
+      {
+        "canonical_id": 66543,
+        "title": "L'Oreal Paris Casting Creme Gloss - No Amonia Hair Coloration - Lasts Up To 28 Shampoos",
+        "before": "Moisturizer",
+        "after": "Hair Care",
+        "observation_ids": [
+          15166
+        ]
+      },
+      {
+        "canonical_id": 66544,
+        "title": "L'Oreal Paris Casting Creme Gloss - No Amonia Hair Coloration - Lasts Up To 28 Shampoos",
+        "before": "Moisturizer",
+        "after": "Hair Care",
+        "observation_ids": [
+          15166
+        ]
+      },
+      {
+        "canonical_id": 66545,
+        "title": "L'Oreal Paris Casting Creme Gloss - No Amonia Hair Coloration - Lasts Up To 28 Shampoos",
+        "before": "Moisturizer",
+        "after": "Hair Care",
+        "observation_ids": [
+          15166
+        ]
+      },
+      {
+        "canonical_id": 66546,
+        "title": "L'Oreal Paris Casting Creme Gloss - No Amonia Hair Coloration - Lasts Up To 28 Shampoos",
+        "before": "Moisturizer",
+        "after": "Hair Care",
+        "observation_ids": [
+          15166
+        ]
+      },
+      {
+        "canonical_id": 66547,
+        "title": "L'Oreal Paris Casting Creme Gloss - No Amonia Hair Coloration - Lasts Up To 28 Shampoos",
+        "before": "Moisturizer",
+        "after": "Hair Care",
+        "observation_ids": [
+          15166
+        ]
+      },
+      {
+        "canonical_id": 66548,
+        "title": "L'Oreal Paris Casting Creme Gloss - No Amonia Hair Coloration - Lasts Up To 28 Shampoos",
+        "before": "Moisturizer",
+        "after": "Hair Care",
+        "observation_ids": [
+          15166
+        ]
+      },
+      {
+        "canonical_id": 66549,
+        "title": "L'Oreal Paris Casting Creme Gloss - No Amonia Hair Coloration - Lasts Up To 28 Shampoos",
+        "before": "Moisturizer",
+        "after": "Hair Care",
+        "observation_ids": [
+          15166
+        ]
+      },
+      {
+        "canonical_id": 66550,
+        "title": "L'Oreal Paris Casting Creme Gloss - No Amonia Hair Coloration - Lasts Up To 28 Shampoos",
+        "before": "Moisturizer",
+        "after": "Hair Care",
+        "observation_ids": [
+          15166
+        ]
+      },
+      {
+        "canonical_id": 66551,
+        "title": "L'Oreal Paris Casting Creme Gloss - No Amonia Hair Coloration - Lasts Up To 28 Shampoos",
+        "before": "Moisturizer",
+        "after": "Hair Care",
+        "observation_ids": [
+          15166
+        ]
+      },
+      {
+        "canonical_id": 66552,
+        "title": "L'Oreal Paris Casting Creme Gloss - No Amonia Hair Coloration - Lasts Up To 28 Shampoos",
+        "before": "Moisturizer",
+        "after": "Hair Care",
+        "observation_ids": [
+          15166
+        ]
+      },
+      {
+        "canonical_id": 66553,
+        "title": "L'Oreal Paris Casting Creme Gloss - No Amonia Hair Coloration - Lasts Up To 28 Shampoos",
+        "before": "Moisturizer",
+        "after": "Hair Care",
+        "observation_ids": [
+          15166
+        ]
+      },
+      {
+        "canonical_id": 66554,
+        "title": "L'Oreal Paris Casting Creme Gloss - No Amonia Hair Coloration - Lasts Up To 28 Shampoos",
+        "before": "Moisturizer",
+        "after": "Hair Care",
+        "observation_ids": [
+          15166
+        ]
+      },
+      {
+        "canonical_id": 66555,
+        "title": "L'Oreal Paris Casting Creme Gloss - No Amonia Hair Coloration - Lasts Up To 28 Shampoos",
+        "before": "Moisturizer",
+        "after": "Hair Care",
+        "observation_ids": [
+          15166
+        ]
+      },
+      {
+        "canonical_id": 66556,
+        "title": "L'Oreal Paris Casting Creme Gloss - No Amonia Hair Coloration - Lasts Up To 28 Shampoos",
+        "before": "Moisturizer",
+        "after": "Hair Care",
+        "observation_ids": [
+          15166
+        ]
+      },
+      {
+        "canonical_id": 66557,
+        "title": "L'Oreal Paris Casting Creme Gloss - No Amonia Hair Coloration - Lasts Up To 28 Shampoos",
+        "before": "Moisturizer",
+        "after": "Hair Care",
+        "observation_ids": [
+          15166
+        ]
+      },
+      {
+        "canonical_id": 66558,
+        "title": "L'Oreal Paris Casting Creme Gloss - No Amonia Hair Coloration - Lasts Up To 28 Shampoos",
+        "before": "Moisturizer",
+        "after": "Hair Care",
+        "observation_ids": [
+          15166
+        ]
+      },
+      {
+        "canonical_id": 66562,
+        "title": "Follicle Booster Ampoules (Intense Rescue Shots)",
+        "before": "Serum",
+        "after": "Hair Care",
+        "observation_ids": [
+          22233,
+          17650
+        ]
+      },
+      {
+        "canonical_id": 66589,
+        "title": "Incredible Serum",
+        "before": "Serum",
+        "after": "Hair Care",
+        "observation_ids": [
+          15261
+        ]
+      },
+      {
+        "canonical_id": 66590,
+        "title": "Moisture & More Whipped Cream",
+        "before": "Moisturizer",
+        "after": "Hair Care",
+        "observation_ids": [
+          15277
+        ]
+      },
+      {
+        "canonical_id": 66591,
+        "title": "Vitamin Moisturizer",
+        "before": "Moisturizer",
+        "after": "Hair Care",
+        "observation_ids": [
+          15312
+        ]
+      },
+      {
+        "canonical_id": 66592,
+        "title": "Absolute Repair Molecular Serum",
+        "before": "Serum",
+        "after": "Hair Care",
+        "observation_ids": [
+          15319
+        ]
+      },
+      {
+        "canonical_id": 66623,
+        "title": "Chroma Filler Serum",
+        "before": "Serum",
+        "after": "Hair Care",
+        "observation_ids": [
+          15456
+        ]
+      },
+      {
+        "canonical_id": 66624,
+        "title": "Genesis Serum",
+        "before": "Serum",
+        "after": "Hair Care",
+        "observation_ids": [
+          15481
+        ]
+      },
+      {
+        "canonical_id": 66625,
+        "title": "Nutritive Lotion Thermique",
+        "before": "Moisturizer",
+        "after": "Hair Care",
+        "observation_ids": [
+          15482
+        ]
+      },
+      {
+        "canonical_id": 66626,
+        "title": "Nutritive Split Ends Serum",
+        "before": "Serum",
+        "after": "Hair Care",
+        "observation_ids": [
+          15487
+        ]
+      },
+      {
+        "canonical_id": 66627,
+        "title": "Nutritive Dry Night Serum",
+        "before": "Serum",
+        "after": "Hair Care",
+        "observation_ids": [
+          15488
+        ]
+      },
+      {
+        "canonical_id": 66628,
+        "title": "Therapist Serum",
+        "before": "Serum",
+        "after": "Hair Care",
+        "observation_ids": [
+          15492
+        ]
+      },
+      {
+        "canonical_id": 66646,
+        "title": "Cer-100 Hair Muscle Essence Oil",
+        "before": "Toner",
+        "after": "Hair Care",
+        "observation_ids": [
+          15649
+        ]
+      },
+      {
+        "canonical_id": 66735,
+        "title": "Soft & Shine Curl Activator Cream",
+        "before": "Moisturizer",
+        "after": "Hair Care",
+        "observation_ids": [
+          16226
+        ]
+      },
+      {
+        "canonical_id": 66837,
+        "title": "Styling Cream Jar",
+        "before": "Moisturizer",
+        "after": "Hair Care",
+        "observation_ids": [
+          17028
+        ]
+      },
+      {
+        "canonical_id": 66841,
+        "title": "Hair Silk Cream Tube",
+        "before": "Moisturizer",
+        "after": "Hair Care",
+        "observation_ids": [
+          17104
+        ]
+      },
+      {
+        "canonical_id": 66844,
+        "title": "Otium Aqua Express Moisturizing Serum",
+        "before": "Serum",
+        "after": "Hair Care",
+        "observation_ids": [
+          17128
+        ]
+      },
+      {
+        "canonical_id": 66856,
+        "title": "Hair Styling Cream",
+        "before": "Moisturizer",
+        "after": "Hair Care",
+        "observation_ids": [
+          17231
+        ]
+      },
+      {
+        "canonical_id": 66903,
+        "title": "Hair Elixir Follicle Booster",
+        "before": "Serum",
+        "after": "Hair Care",
+        "observation_ids": [
+          17547
+        ]
+      },
+      {
+        "canonical_id": 66984,
+        "title": "Casting Creme Gloss Tone on Tone",
+        "before": "Moisturizer",
+        "after": "Hair Care",
+        "observation_ids": [
+          17856
+        ]
+      },
+      {
+        "canonical_id": 66985,
+        "title": "Casting Creme Gloss Tone on Tone",
+        "before": "Moisturizer",
+        "after": "Hair Care",
+        "observation_ids": [
+          17856
+        ]
+      },
+      {
+        "canonical_id": 66986,
+        "title": "Casting Creme Gloss Tone on Tone",
+        "before": "Moisturizer",
+        "after": "Hair Care",
+        "observation_ids": [
+          17856
+        ]
+      },
+      {
+        "canonical_id": 66987,
+        "title": "Casting Creme Gloss Tone on Tone",
+        "before": "Moisturizer",
+        "after": "Hair Care",
+        "observation_ids": [
+          17856
+        ]
+      },
+      {
+        "canonical_id": 66988,
+        "title": "Casting Creme Gloss Tone on Tone",
+        "before": "Moisturizer",
+        "after": "Hair Care",
+        "observation_ids": [
+          17856
+        ]
+      },
+      {
+        "canonical_id": 66989,
+        "title": "Casting Creme Gloss Tone on Tone",
+        "before": "Moisturizer",
+        "after": "Hair Care",
+        "observation_ids": [
+          17856
+        ]
+      },
+      {
+        "canonical_id": 66990,
+        "title": "Casting Creme Gloss Tone on Tone",
+        "before": "Moisturizer",
+        "after": "Hair Care",
+        "observation_ids": [
+          17856
+        ]
+      },
+      {
+        "canonical_id": 66991,
+        "title": "Casting Creme Gloss Tone on Tone",
+        "before": "Moisturizer",
+        "after": "Hair Care",
+        "observation_ids": [
+          17856
+        ]
+      },
+      {
+        "canonical_id": 66992,
+        "title": "Casting Creme Gloss Tone on Tone",
+        "before": "Moisturizer",
+        "after": "Hair Care",
+        "observation_ids": [
+          17856
+        ]
+      },
+      {
+        "canonical_id": 66993,
+        "title": "Casting Creme Gloss Tone on Tone",
+        "before": "Moisturizer",
+        "after": "Hair Care",
+        "observation_ids": [
+          17856
+        ]
+      },
+      {
+        "canonical_id": 66994,
+        "title": "Casting Creme Gloss Tone on Tone",
+        "before": "Moisturizer",
+        "after": "Hair Care",
+        "observation_ids": [
+          17856
+        ]
+      },
+      {
+        "canonical_id": 66995,
+        "title": "Casting Creme Gloss Tone on Tone",
+        "before": "Moisturizer",
+        "after": "Hair Care",
+        "observation_ids": [
+          17856
+        ]
+      },
+      {
+        "canonical_id": 66996,
+        "title": "Casting Creme Gloss Tone on Tone",
+        "before": "Moisturizer",
+        "after": "Hair Care",
+        "observation_ids": [
+          17856
+        ]
+      },
+      {
+        "canonical_id": 66997,
+        "title": "Casting Creme Gloss Tone on Tone",
+        "before": "Moisturizer",
+        "after": "Hair Care",
+        "observation_ids": [
+          17856
+        ]
+      },
+      {
+        "canonical_id": 66998,
+        "title": "Casting Creme Gloss Tone on Tone",
+        "before": "Moisturizer",
+        "after": "Hair Care",
+        "observation_ids": [
+          17856
+        ]
+      },
+      {
+        "canonical_id": 66999,
+        "title": "Casting Creme Gloss Tone on Tone",
+        "before": "Moisturizer",
+        "after": "Hair Care",
+        "observation_ids": [
+          17856
+        ]
+      },
+      {
+        "canonical_id": 67000,
+        "title": "Casting Creme Gloss Tone on Tone",
+        "before": "Moisturizer",
+        "after": "Hair Care",
+        "observation_ids": [
+          17856
+        ]
+      },
+      {
+        "canonical_id": 67001,
+        "title": "Casting Creme Gloss Tone on Tone",
+        "before": "Moisturizer",
+        "after": "Hair Care",
+        "observation_ids": [
+          17856
+        ]
+      },
+      {
+        "canonical_id": 67002,
+        "title": "Casting Creme Gloss Tone on Tone",
+        "before": "Moisturizer",
+        "after": "Hair Care",
+        "observation_ids": [
+          17856
+        ]
+      },
+      {
+        "canonical_id": 67129,
+        "title": "Smoothing Styling Cream Argan Oil & Sweet Almond Oil",
+        "before": "Moisturizer",
+        "after": "Hair Care",
+        "observation_ids": [
+          18530
+        ]
+      },
+      {
+        "canonical_id": 67183,
+        "title": "Excellence Creme 8.1 Light Ash Blonde",
+        "before": "Moisturizer",
+        "after": "Hair Care",
+        "observation_ids": [
+          18923
+        ]
+      },
+      {
+        "canonical_id": 67188,
+        "title": "Agadir Hair Argan Oil Styling Cream",
+        "before": "Moisturizer",
+        "after": "Hair Care",
+        "observation_ids": [
+          18950
+        ]
+      },
+      {
+        "canonical_id": 67218,
+        "title": "Hydra-Nourish Lotion",
+        "before": "Moisturizer",
+        "after": "Hair Care",
+        "observation_ids": [
+          19137
+        ]
+      },
+      {
+        "canonical_id": 67233,
+        "title": "Treato Serum SPF30",
+        "before": "Sunscreen",
+        "after": "Hair Care",
+        "observation_ids": [
+          19210
+        ]
+      },
+      {
+        "canonical_id": 67257,
+        "title": "Deep Soft - Conditioning Cream",
+        "before": "Moisturizer",
+        "after": "Hair Care",
+        "observation_ids": [
+          19351
+        ]
+      },
+      {
+        "canonical_id": 67273,
+        "title": "Hair Styling Cream",
+        "before": "Moisturizer",
+        "after": "Hair Care",
+        "observation_ids": [
+          19466
+        ]
+      },
+      {
+        "canonical_id": 67294,
+        "title": "Aloe Eva Hair Styling Cream With Aloe Vera",
+        "before": "Moisturizer",
+        "after": "Hair Care",
+        "observation_ids": [
+          19561
+        ]
+      },
+      {
+        "canonical_id": 67330,
+        "title": "Styling Cream",
+        "before": "Moisturizer",
+        "after": "Hair Care",
+        "observation_ids": [
+          19676
+        ]
+      },
+      {
+        "canonical_id": 67525,
+        "title": "Keratin Hair Reconstructor Serum",
+        "before": "Serum",
+        "after": "Hair Care",
+        "observation_ids": [
+          20553
+        ]
+      },
+      {
+        "canonical_id": 67526,
+        "title": "Soft & Shine Straight and Shiny Hair Relaxer Cream",
+        "before": "Moisturizer",
+        "after": "Hair Care",
+        "observation_ids": [
+          20554
+        ]
+      },
+      {
+        "canonical_id": 67527,
+        "title": "Soft & Shine Moisturizing Detangling Spray",
+        "before": "Moisturizer",
+        "after": "Hair Care",
+        "observation_ids": [
+          20556
+        ]
+      },
+      {
+        "canonical_id": 67603,
+        "title": "Keratin Serum",
+        "before": "Serum",
+        "after": "Hair Care",
+        "observation_ids": [
+          21066
+        ]
+      },
+      {
+        "canonical_id": 67662,
+        "title": "Hair Repair Serum",
+        "before": "Serum",
+        "after": "Hair Care",
+        "observation_ids": [
+          21440
+        ]
+      },
+      {
+        "canonical_id": 67687,
+        "title": "Hair Styling Serum",
+        "before": "Serum",
+        "after": "Hair Care",
+        "observation_ids": [
+          21607
+        ]
+      },
+      {
+        "canonical_id": 67777,
+        "title": "Sun & Sea Hair Sun Protection Spray SPF 15",
+        "before": "Sunscreen",
+        "after": "Hair Care",
+        "observation_ids": [
+          21990
+        ]
+      },
+      {
+        "canonical_id": 67786,
+        "title": "Dual Action UV Protective Serum",
+        "before": "Serum",
+        "after": "Hair Care",
+        "observation_ids": [
+          22014
+        ]
+      },
+      {
+        "canonical_id": 67926,
+        "title": "Loreal Absolut Repair Molecular Professional Mask - 250ml",
+        "before": "Mask",
+        "after": "Hair Care",
+        "observation_ids": [
+          6404
+        ]
+      },
+      {
+        "canonical_id": 67990,
+        "title": "Olaplex Rich Hydration Mask - 200ml",
+        "before": "Mask",
+        "after": "Hair Care",
+        "observation_ids": [
+          6791
+        ]
+      },
+      {
+        "canonical_id": 68156,
+        "title": "Adams For Men Hair Styling Cream - 100gm",
+        "before": "Moisturizer",
+        "after": "Hair Care",
+        "observation_ids": [
+          7566
+        ]
+      },
+      {
+        "canonical_id": 68412,
+        "title": "Lakme K.Therapy Bio Argan Mask - 250ml",
+        "before": "Mask",
+        "after": "Hair Care",
+        "observation_ids": [
+          9156
+        ]
+      },
+      {
+        "canonical_id": 68928,
+        "title": "Hair Act Care Mask 200Ml",
+        "before": "Mask",
+        "after": "Hair Care",
+        "observation_ids": [
+          1507
+        ]
+      },
+      {
+        "canonical_id": 68929,
+        "title": "Avrelle Strong Hold Flaxseed Hair Styling Gel 250Ml",
+        "before": "Cleanser",
+        "after": "Hair Care",
+        "observation_ids": [
+          1519
+        ]
+      },
+      {
+        "canonical_id": 68944,
+        "title": "Eva Advanced Care Clinic Curls Angle Shea Butter & Linseed 200Gm",
+        "before": "Moisturizer",
+        "after": "Hair Care",
+        "observation_ids": [
+          1712
+        ]
+      },
+      {
+        "canonical_id": 68969,
+        "title": "Cleo Hyaluronic Acid Super Hair Food - 150 Ml",
+        "before": "Moisturizer",
+        "after": "Hair Care",
+        "observation_ids": [
+          2017
+        ]
+      },
+      {
+        "canonical_id": 68982,
+        "title": "Olaplex N\u00b03 Hair Perfector 100Ml",
+        "before": "Cleanser",
+        "after": "Hair Care",
+        "observation_ids": [
+          2119
+        ]
+      },
+      {
+        "canonical_id": 69077,
+        "title": "Infinity Naturals Sleek Look Hair Balm 30Ml",
+        "before": "Moisturizer",
+        "after": "Hair Care",
+        "observation_ids": [
+          3517
+        ]
+      },
+      {
+        "canonical_id": 69085,
+        "title": "Infinity Moroccan Argan Oil Hair Strengthening Mask 330Gm",
+        "before": "Mask",
+        "after": "Hair Care",
+        "observation_ids": [
+          3648
+        ]
+      },
+      {
+        "canonical_id": 69097,
+        "title": "Trytofly Saw Palmetto, Cayenne Solution (50Ml)",
+        "before": "Serum",
+        "after": "Hair Care",
+        "observation_ids": [
+          3730
+        ]
+      },
+      {
+        "canonical_id": 69222,
+        "title": "Cantu Protective Styles Conditioning Detangler 237ml",
+        "before": "Moisturizer",
+        "after": "Hair Care",
+        "observation_ids": [
+          22770
+        ]
+      },
+      {
+        "canonical_id": 69312,
+        "title": "L'Oreal Professional Vitamino Color Spectrum Serum - 50ml",
+        "before": "Serum",
+        "after": "Hair Care",
+        "observation_ids": [
+          8259
+        ]
+      },
+      {
+        "canonical_id": 69334,
+        "title": "Raw African Follicle Booster Ampoules - 8x5ml",
+        "before": "Serum",
+        "after": "Hair Care",
+        "observation_ids": [
+          8669
+        ]
+      },
+      {
+        "canonical_id": 69419,
+        "title": "Lanalou Lightweight Moisturizing Detangler Spray - 250ml",
+        "before": "Moisturizer",
+        "after": "Hair Care",
+        "observation_ids": [
+          10476
+        ]
+      },
+      {
+        "canonical_id": 69438,
+        "title": "Raw African (Raw African Follicle Booster Spray+ Raw African follicle booster Oil)",
+        "before": "Serum",
+        "after": "Hair Care",
+        "observation_ids": [
+          631
+        ]
+      },
+      {
+        "canonical_id": 69703,
+        "title": "Clary Hair Booster Shot 30 Ml",
+        "before": "Serum",
+        "after": "Hair Care",
+        "observation_ids": [
+          4666,
+          17213
+        ]
+      },
+      {
+        "canonical_id": 69779,
+        "title": "L\u2019Oreal Excellence Creme 7 Blond",
+        "before": "Moisturizer",
+        "after": "Hair Care",
+        "observation_ids": [
+          5689
+        ]
+      },
+      {
+        "canonical_id": 69821,
+        "title": "Cantu Shea Butter Moisturizing Curl Activator Cream For Natural Hair 355ml",
+        "before": "Moisturizer",
+        "after": "Hair Care",
+        "observation_ids": [
+          11420
+        ]
+      },
+      {
+        "canonical_id": 69845,
+        "title": "Clary Booster Shot 30ml",
+        "before": "Serum",
+        "after": "Hair Care",
+        "observation_ids": [
+          12077
+        ]
+      },
+      {
+        "canonical_id": 69891,
+        "title": "Raw African Follicle Booster Redensyl Daily Spray",
+        "before": "Serum",
+        "after": "Hair Care",
+        "observation_ids": [
+          22221
+        ]
+      },
+      {
+        "canonical_id": 70072,
+        "title": "Hair Silk Cream Jar",
+        "before": "Moisturizer",
+        "after": "Hair Care",
+        "observation_ids": [
+          17105
+        ]
+      },
+      {
+        "canonical_id": 70073,
+        "title": "Styling Cream Tube",
+        "before": "Moisturizer",
+        "after": "Hair Care",
+        "observation_ids": [
+          17113
+        ]
+      },
+      {
+        "canonical_id": 70108,
+        "title": "Follicle Booster Strandnhnace Serum",
+        "before": "Serum",
+        "after": "Hair Care",
+        "observation_ids": [
+          17722
+        ]
+      },
+      {
+        "canonical_id": 70136,
+        "title": "Build-Up Cleanser",
+        "before": "Cleanser",
+        "after": "Hair Care",
+        "observation_ids": [
+          18298
+        ]
+      },
+      {
+        "canonical_id": 70164,
+        "title": "Excellence Ash Supreme Creme 7.12 Cool Pearl Blonde",
+        "before": "Moisturizer",
+        "after": "Hair Care",
+        "observation_ids": [
+          18926
+        ]
+      },
+      {
+        "canonical_id": 70263,
+        "title": "Soft & Shine Coconut Curling Cream",
+        "before": "Moisturizer",
+        "after": "Hair Care",
+        "observation_ids": [
+          20557
+        ]
+      },
+      {
+        "canonical_id": 70422,
+        "title": "Raw African Follicle Booster Ampule 5Ml",
+        "before": "Serum",
+        "after": "Hair Care",
+        "observation_ids": [
+          3926
+        ]
+      }
+    ]
+  }
+}

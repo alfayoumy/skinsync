@@ -1,0 +1,268 @@
+{
+  "applied": false,
+  "backup_path": null,
+  "model_calls": 0,
+  "results": [
+    {
+      "url": "https://sourcebeauty.com/products/nutshell-pistachio-magnolia-shower-cream",
+      "status": "published",
+      "canonical_id": 64010,
+      "original_observation_id": 21326,
+      "observation_id": 22830,
+      "evidence_id": 1022,
+      "ingredient_count": 27
+    },
+    {
+      "url": "https://sourcebeauty.com/products/medicube-collagen-jelly-cream",
+      "status": "published",
+      "canonical_id": 64027,
+      "original_observation_id": 17327,
+      "observation_id": 22831,
+      "evidence_id": 1024,
+      "ingredient_count": 48
+    },
+    {
+      "url": "https://sourcebeauty.com/products/acne-prone-skin-cream",
+      "status": "evidence_only",
+      "canonical_id": 64031,
+      "original_observation_id": 21762,
+      "observation_id": 22832,
+      "evidence_id": 1026,
+      "ingredient_count": 8
+    },
+    {
+      "url": "https://sourcebeauty.com/products/nutshell-macadamia-rose-water-shower-cream",
+      "status": "published",
+      "canonical_id": 64100,
+      "original_observation_id": 21327,
+      "observation_id": 22833,
+      "evidence_id": 1027,
+      "ingredient_count": 23
+    },
+    {
+      "url": "https://sourcebeauty.com/products/sudocrem-cream-antiseptic-healing-cream",
+      "status": "evidence_only",
+      "canonical_id": 64111,
+      "original_observation_id": 16712,
+      "observation_id": 22834,
+      "evidence_id": 1029,
+      "ingredient_count": 5
+    },
+    {
+      "url": "https://sourcebeauty.com/products/seropipe-extreme-lashes-serum",
+      "status": "evidence_only",
+      "canonical_id": 64128,
+      "original_observation_id": 17214,
+      "observation_id": 22835,
+      "evidence_id": 1030,
+      "ingredient_count": 8
+    },
+    {
+      "url": "https://sourcebeauty.com/products/helmaderm-lip-balm",
+      "status": "evidence_only",
+      "canonical_id": 64150,
+      "original_observation_id": 17745,
+      "observation_id": 22836,
+      "evidence_id": 1031,
+      "ingredient_count": 11
+    },
+    {
+      "url": "https://sourcebeauty.com/products/ready-in-action-anti-aging-serum",
+      "status": "published",
+      "canonical_id": 64166,
+      "original_observation_id": 21898,
+      "observation_id": 22837,
+      "evidence_id": 1032,
+      "ingredient_count": 15
+    },
+    {
+      "url": "https://sourcebeauty.com/products/leaves-nail-treatment-serum",
+      "status": "evidence_only",
+      "canonical_id": 64177,
+      "original_observation_id": 20643,
+      "observation_id": 22838,
+      "evidence_id": 1034,
+      "ingredient_count": 11
+    },
+    {
+      "url": "https://sourcebeauty.com/products/eucerin-pig-perfect-night-cream",
+      "status": "published",
+      "canonical_id": 64183,
+      "original_observation_id": 15332,
+      "observation_id": 22839,
+      "evidence_id": 1035,
+      "ingredient_count": 24
+    },
+    {
+      "url": "https://sourcebeauty.com/products/blumin-kaktus-kaktus-kiss-lip-oil",
+      "status": "no_full_declaration",
+      "canonical_id": 64261,
+      "observation_id": 19487
+    },
+    {
+      "url": "https://sourcebeauty.com/products/blumin-kaktus-cocoa-drip-lip-oil",
+      "status": "no_full_declaration",
+      "canonical_id": 64262,
+      "observation_id": 19489
+    },
+    {
+      "url": "https://sourcebeauty.com/products/blumin-kaktus-honey-haze-lip-oil",
+      "status": "no_full_declaration",
+      "canonical_id": 64263,
+      "observation_id": 19488
+    },
+    {
+      "url": "https://sourcebeauty.com/products/holy-grail-hyaluronic-acid-hydrating-serum",
+      "status": "published",
+      "canonical_id": 64304,
+      "original_observation_id": 21910,
+      "observation_id": 22840,
+      "evidence_id": 1037,
+      "ingredient_count": 12
+    },
+    {
+      "url": "https://sourcebeauty.com/products/milk-shake-sun-more-sunscreen-milk-spf-30",
+      "status": "evidence_only",
+      "canonical_id": 64305,
+      "original_observation_id": 15285,
+      "observation_id": 22841,
+      "evidence_id": 1039,
+      "ingredient_count": 8
+    },
+    {
+      "url": "https://sourcebeauty.com/products/milk-shake-sun-more-sensual-lotion",
+      "status": "evidence_only",
+      "canonical_id": 64306,
+      "original_observation_id": 15281,
+      "observation_id": 22842,
+      "evidence_id": 1040,
+      "ingredient_count": 8
+    },
+    {
+      "url": "https://sourcebeauty.com/products/bobai-tanning-oil",
+      "status": "evidence_only",
+      "canonical_id": 64312,
+      "original_observation_id": 17207,
+      "observation_id": 22843,
+      "evidence_id": 1041,
+      "ingredient_count": 1
+    },
+    {
+      "url": "https://sourcebeauty.com/products/raw-african-nail-lotion-booster",
+      "status": "evidence_only",
+      "canonical_id": 64315,
+      "original_observation_id": 17934,
+      "observation_id": 22844,
+      "evidence_id": 1042,
+      "ingredient_count": 9
+    },
+    {
+      "url": "https://sourcebeauty.com/products/isntree-hyper-retinol-ex-10-serum",
+      "status": "evidence_only",
+      "canonical_id": 64327,
+      "original_observation_id": 19655,
+      "observation_id": 22845,
+      "evidence_id": 1043,
+      "ingredient_count": 7
+    },
+    {
+      "url": "https://sourcebeauty.com/products/mixsoon-bean-essence",
+      "status": "evidence_only",
+      "canonical_id": 64328,
+      "original_observation_id": 19525,
+      "observation_id": 22846,
+      "evidence_id": 1044,
+      "ingredient_count": 7
+    },
+    {
+      "url": "https://sourcebeauty.com/products/jelly-cleanser",
+      "status": "evidence_only",
+      "canonical_id": 64341,
+      "original_observation_id": 17574,
+      "observation_id": 22847,
+      "evidence_id": 1045,
+      "ingredient_count": 3
+    },
+    {
+      "url": "https://sourcebeauty.com/products/favelin-in-the-wilds-body-lotion-1",
+      "status": "published",
+      "canonical_id": 64371,
+      "original_observation_id": 21319,
+      "observation_id": 22848,
+      "evidence_id": 1046,
+      "ingredient_count": 25
+    },
+    {
+      "url": "https://sourcebeauty.com/products/eucerin-hyal-flr-day-cream-spf15",
+      "status": "published",
+      "canonical_id": 64387,
+      "original_observation_id": 15322,
+      "observation_id": 22849,
+      "evidence_id": 1048,
+      "ingredient_count": 30
+    },
+    {
+      "url": "https://sourcebeauty.com/products/bobai-sunscreen-lotion-for-kids-spf30",
+      "status": "evidence_only",
+      "canonical_id": 64399,
+      "original_observation_id": 17404,
+      "observation_id": 22850,
+      "evidence_id": 1050,
+      "ingredient_count": 7
+    },
+    {
+      "url": "https://sourcebeauty.com/products/whitening-cream-1",
+      "status": "evidence_only",
+      "canonical_id": 64400,
+      "original_observation_id": 21758,
+      "observation_id": 22851,
+      "evidence_id": 1051,
+      "ingredient_count": 7
+    },
+    {
+      "url": "https://sourcebeauty.com/products/laroch-posay-hyalu-b5-serum",
+      "status": "published",
+      "canonical_id": 64417,
+      "original_observation_id": 15444,
+      "observation_id": 22852,
+      "evidence_id": 1052,
+      "ingredient_count": 23
+    },
+    {
+      "url": "https://sourcebeauty.com/products/eucerin-derm-purifyer-cleansing-gel",
+      "status": "published",
+      "canonical_id": 64418,
+      "original_observation_id": 15324,
+      "observation_id": 22853,
+      "evidence_id": 1054,
+      "ingredient_count": 8
+    },
+    {
+      "url": "https://sourcebeauty.com/products/nut-botanicals-super-c-brightening-and-moisturizing-face-cream",
+      "status": "published",
+      "canonical_id": 64505,
+      "original_observation_id": 19909,
+      "observation_id": 22854,
+      "evidence_id": 1056,
+      "ingredient_count": 23
+    },
+    {
+      "url": "https://sourcebeauty.com/products/soralone-acne-prone-skin-moisturizer-cream-gel",
+      "status": "evidence_only",
+      "canonical_id": 64549,
+      "original_observation_id": 15525,
+      "observation_id": 22855,
+      "evidence_id": 1058,
+      "ingredient_count": 10
+    },
+    {
+      "url": "https://sourcebeauty.com/products/bg-dry-skin-cleanser",
+      "status": "published",
+      "canonical_id": 64569,
+      "original_observation_id": 18780,
+      "observation_id": 22856,
+      "evidence_id": 1059,
+      "ingredient_count": 18
+    }
+  ]
+}

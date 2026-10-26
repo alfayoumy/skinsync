@@ -1,0 +1,280 @@
+{
+  "source_id": "sourcebeauty",
+  "model_calls": 0,
+  "read_only": true,
+  "selected": 30,
+  "results": [
+    {
+      "canonical_id": 65022,
+      "observation_id": 20467,
+      "raw_title": "Advanced Snail Mucin Gel Cleanser",
+      "raw_brand": "Cosrx",
+      "source_url": "https://sourcebeauty.com/products/cosrx-advanced-snail-mucin-gel-cleanser",
+      "status": "fetched",
+      "pages": 1
+    },
+    {
+      "canonical_id": 65025,
+      "observation_id": 17458,
+      "raw_title": "Saccharomyces Ferment 30% Milky Toner",
+      "raw_brand": "The Ordinary",
+      "source_url": "https://sourcebeauty.com/products/the-ordinary-saccharomyces-ferment-30-milky-toner",
+      "status": "fetched",
+      "pages": 1
+    },
+    {
+      "canonical_id": 65039,
+      "observation_id": 17736,
+      "raw_title": "Helmaderm Hydrating Cream Gel",
+      "raw_brand": "Helmaderm",
+      "source_url": "https://sourcebeauty.com/products/helmaderm-hydrating-cream-gel",
+      "status": "fetched",
+      "pages": 1
+    },
+    {
+      "canonical_id": 65054,
+      "observation_id": 20078,
+      "raw_title": "Heartleaf 77% Soothing Toner",
+      "raw_brand": "Anua",
+      "source_url": "https://sourcebeauty.com/products/anua-heartleaf-77-soothing-toner",
+      "status": "fetched",
+      "pages": 1
+    },
+    {
+      "canonical_id": 65088,
+      "observation_id": 17892,
+      "raw_title": "Hyaluronic Acid Toner",
+      "raw_brand": "Isntree",
+      "source_url": "https://sourcebeauty.com/products/isntree-hyaluronic-acid-toner",
+      "status": "fetched",
+      "pages": 1
+    },
+    {
+      "canonical_id": 65098,
+      "observation_id": 18911,
+      "raw_title": "Vita Waterproof Sun Stick SPF50+",
+      "raw_brand": "TOCOBO",
+      "source_url": "https://sourcebeauty.com/products/tocobo-vita-vita-waterproof-sun-stick-spf50",
+      "status": "fetched",
+      "pages": 1
+    },
+    {
+      "canonical_id": 65100,
+      "observation_id": 19651,
+      "raw_title": "Plum Peptide Booster 2000s",
+      "raw_brand": "Isntree",
+      "source_url": "https://sourcebeauty.com/products/isntree-plum-peptide-booster-2000s",
+      "status": "fetched",
+      "pages": 1
+    },
+    {
+      "canonical_id": 65101,
+      "observation_id": 19656,
+      "raw_title": "Hyper Niacinamide 20 Serum",
+      "raw_brand": "Isntree",
+      "source_url": "https://sourcebeauty.com/products/isntree-hyper-niacinamide-20-serum",
+      "status": "fetched",
+      "pages": 1
+    },
+    {
+      "canonical_id": 65104,
+      "observation_id": 19654,
+      "raw_title": "Hyper Vitamin C 23 Serum",
+      "raw_brand": "Isntree",
+      "source_url": "https://sourcebeauty.com/products/isntree-hyper-vitamin-c-23-serum",
+      "status": "fetched",
+      "pages": 1
+    },
+    {
+      "canonical_id": 65105,
+      "observation_id": 20193,
+      "raw_title": "Artichoke Intensive Skin Barrier Ampoule",
+      "raw_brand": "Axis-Y",
+      "source_url": "https://sourcebeauty.com/products/axis-y-artichoke-intensive-skin-barrier-ampoule",
+      "status": "fetched",
+      "pages": 1
+    },
+    {
+      "canonical_id": 65108,
+      "observation_id": 17406,
+      "raw_title": "Facial Cleanser Hydro",
+      "raw_brand": "Starville",
+      "source_url": "https://sourcebeauty.com/products/starville-facial-cleanser-hydro",
+      "status": "fetched",
+      "pages": 1
+    },
+    {
+      "canonical_id": 65109,
+      "observation_id": 17407,
+      "raw_title": "Collage Serum",
+      "raw_brand": "Starville",
+      "source_url": "https://sourcebeauty.com/products/starville-collage-serum",
+      "status": "fetched",
+      "pages": 1
+    },
+    {
+      "canonical_id": 65110,
+      "observation_id": 17408,
+      "raw_title": "Collage Cream",
+      "raw_brand": "Starville",
+      "source_url": "https://sourcebeauty.com/products/starville-collage-cream",
+      "status": "fetched",
+      "pages": 1
+    },
+    {
+      "canonical_id": 65115,
+      "observation_id": 16978,
+      "raw_title": "Vitamin illuminating Cream",
+      "raw_brand": "EQQUALBERRY",
+      "source_url": "https://sourcebeauty.com/products/eqqualberry-vitamin-illuminating-cream",
+      "status": "fetched",
+      "pages": 1
+    },
+    {
+      "canonical_id": 65121,
+      "observation_id": 19528,
+      "raw_title": "PDRN Pink Hyaluronic Moisturizing Cream",
+      "raw_brand": "medicube",
+      "source_url": "https://sourcebeauty.com/products/medicube-pdrn-pink-hyaluronic-moisturizing-cream",
+      "status": "fetched",
+      "pages": 1
+    },
+    {
+      "canonical_id": 65123,
+      "observation_id": 20035,
+      "raw_title": "Zero Pore Cream 2.0",
+      "raw_brand": "medicube",
+      "source_url": "https://sourcebeauty.com/products/medicube-zero-pore-cream-2-0",
+      "status": "error",
+      "error_type": "ExceptionGroup"
+    },
+    {
+      "canonical_id": 65132,
+      "observation_id": 19518,
+      "raw_title": "No.1 Easy Peasy Cleansing Oil",
+      "raw_brand": "Numbuzin",
+      "source_url": "https://sourcebeauty.com/products/numbuzin-no-1-easy-peasy-cleansing-oil",
+      "status": "fetched",
+      "pages": 1
+    },
+    {
+      "canonical_id": 65133,
+      "observation_id": 19873,
+      "raw_title": "Zero Pore Blackhead Deep Cleansing Oil",
+      "raw_brand": "medicube",
+      "source_url": "https://sourcebeauty.com/products/medicube-zero-pore-blackhead-deep-cleansing-oil",
+      "status": "fetched",
+      "pages": 1
+    },
+    {
+      "canonical_id": 65134,
+      "observation_id": 15695,
+      "raw_title": "Zero-Cast Moisturizing Finish Sunscreen",
+      "raw_brand": "Anua",
+      "source_url": "https://sourcebeauty.com/products/anua-zero-cast-moisturizing-finish-sunscreen",
+      "status": "fetched",
+      "pages": 1
+    },
+    {
+      "canonical_id": 65136,
+      "observation_id": 17483,
+      "raw_title": "Retinol NMN Boosting Serum",
+      "raw_brand": "medicube",
+      "source_url": "https://sourcebeauty.com/products/medicube-retinol-nmn-boosting-serum",
+      "status": "error",
+      "error_type": "ExceptionGroup"
+    },
+    {
+      "canonical_id": 65140,
+      "observation_id": 19493,
+      "raw_title": "Advanced Snail Radiance Dual Essence",
+      "raw_brand": "Cosrx",
+      "source_url": "https://sourcebeauty.com/products/cosrx-advanced-snail-radiance-dual-essence",
+      "status": "fetched",
+      "pages": 1
+    },
+    {
+      "canonical_id": 65146,
+      "observation_id": 20953,
+      "raw_title": "Vitamin C Cleansing Gel",
+      "raw_brand": "Dermatique",
+      "source_url": "https://sourcebeauty.com/products/vitamin-c-cleansing-gel",
+      "status": "fetched",
+      "pages": 1
+    },
+    {
+      "canonical_id": 65164,
+      "observation_id": 17640,
+      "raw_title": "Daily Purifying Treatment Toner",
+      "raw_brand": "Axis-Y",
+      "source_url": "https://sourcebeauty.com/products/axis-y-daily-purifying-treatment-toner",
+      "status": "fetched",
+      "pages": 1
+    },
+    {
+      "canonical_id": 65167,
+      "observation_id": 15638,
+      "raw_title": "The Real Noni Ultimate Eye Cream",
+      "raw_brand": "celimax",
+      "source_url": "https://sourcebeauty.com/products/celimax-real-noni-ultimate-eye-cream",
+      "status": "error",
+      "error_type": "ExceptionGroup"
+    },
+    {
+      "canonical_id": 65171,
+      "observation_id": 20156,
+      "raw_title": "Niacinamide 20% Serum",
+      "raw_brand": "TIRTIR",
+      "source_url": "https://sourcebeauty.com/products/tirtir-niacinamide-20-serum",
+      "status": "fetched",
+      "pages": 1
+    },
+    {
+      "canonical_id": 65183,
+      "observation_id": 16263,
+      "raw_title": "Niacinamide Serum",
+      "raw_brand": "Nano Treat",
+      "source_url": "https://sourcebeauty.com/products/nano-niacinamide-serum",
+      "status": "fetched",
+      "pages": 1
+    },
+    {
+      "canonical_id": 65185,
+      "observation_id": 16855,
+      "raw_title": "Nano Treat Vitamin C Serum",
+      "raw_brand": "Nano Treat",
+      "source_url": "https://sourcebeauty.com/products/nano-vitamin-c-serum",
+      "status": "fetched",
+      "pages": 1
+    },
+    {
+      "canonical_id": 65224,
+      "observation_id": 18754,
+      "raw_title": "Serum Plus",
+      "raw_brand": "BG",
+      "source_url": "https://sourcebeauty.com/products/bg-serum-plus",
+      "status": "error",
+      "error_type": "ExceptionGroup"
+    },
+    {
+      "canonical_id": 65225,
+      "observation_id": 18755,
+      "raw_title": "Argan Oil Serum",
+      "raw_brand": "BG",
+      "source_url": "https://sourcebeauty.com/products/bg-argan-oil-serum",
+      "status": "fetched",
+      "pages": 1
+    },
+    {
+      "canonical_id": 65253,
+      "observation_id": 20064,
+      "raw_title": "Collagen Glow Booster Serum",
+      "raw_brand": "medicube",
+      "source_url": "https://sourcebeauty.com/products/medicube-collagen-glow-booster-serum-15ml",
+      "status": "fetched",
+      "pages": 1
+    }
+  ],
+  "last_canonical_id": 65253,
+  "more_candidates_in_selection": true
+}

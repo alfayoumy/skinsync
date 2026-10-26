@@ -1,0 +1,160 @@
+{
+  "read_only": true,
+  "model_calls": 0,
+  "checked": 607,
+  "conflicts": [
+    {
+      "id": 3180,
+      "source_id": "drdawood",
+      "source_product_id": "10041135661303",
+      "canonical_product_id": 65192,
+      "canonical_title": "Infinity Naturals Foot Scrub Sea Salt Lavender & Peppermint Essential Oils",
+      "brand": "Infinity",
+      "market": "EG",
+      "raw_title": "Infinity Naturals Relaxing Body Scrub Sea Salt & Lavender Essential Oil",
+      "raw_brand": "Infinity",
+      "comparison": {
+        "conflicts": [
+          "function"
+        ],
+        "unknown": [
+          "vehicle"
+        ],
+        "status": "conflict"
+      }
+    },
+    {
+      "id": 3434,
+      "source_id": "drdawood",
+      "source_product_id": "10041064882423",
+      "canonical_product_id": 63607,
+      "canonical_title": "Skin 1004 Madagascar Centella Double Cleansing Duo",
+      "brand": "SKIN1004",
+      "market": "EG",
+      "raw_title": "Skin 1004 - Madagascar Centella Double Cleansing Duo Set\u200f",
+      "raw_brand": "Skin1004",
+      "comparison": {
+        "conflicts": [
+          "function"
+        ],
+        "unknown": [],
+        "status": "conflict"
+      }
+    },
+    {
+      "id": 8427,
+      "source_id": "sourcebeauty",
+      "source_product_id": "9563994063135",
+      "canonical_product_id": 67027,
+      "canonical_title": "Mattifying Fluid SPF 50+",
+      "brand": "Dermatique",
+      "market": "EG",
+      "raw_title": "Mattifying Fluid SPF 50+ Set",
+      "raw_brand": "Dermatique",
+      "comparison": {
+        "conflicts": [
+          "function"
+        ],
+        "unknown": [],
+        "status": "conflict"
+      }
+    },
+    {
+      "id": 13440,
+      "source_id": "drdawood",
+      "source_product_id": "10041102532855",
+      "canonical_product_id": 69549,
+      "canonical_title": "Essence Extreme Shine Volume Lip Gloss 11 Power Of Nude.",
+      "brand": "Essence",
+      "market": "EG",
+      "raw_title": "Essence Extreme Shine Volume Lipgloss 11 Power Of Nude",
+      "raw_brand": "Essence",
+      "comparison": {
+        "conflicts": [
+          "function"
+        ],
+        "unknown": [
+          "application_area"
+        ],
+        "status": "conflict"
+      }
+    },
+    {
+      "id": 13457,
+      "source_id": "drdawood",
+      "source_product_id": "10041064292599",
+      "canonical_product_id": 65811,
+      "canonical_title": "Glysolid Body Musk Lotion 200Ml",
+      "brand": "Glysolid",
+      "market": "EG",
+      "raw_title": "Glysolid Body Lotion Musk 500Ml",
+      "raw_brand": "Glysolid",
+      "comparison": {
+        "conflicts": [
+          "function"
+        ],
+        "unknown": [],
+        "status": "conflict"
+      }
+    },
+    {
+      "id": 13475,
+      "source_id": "drdawood",
+      "source_product_id": "9801054716151",
+      "canonical_product_id": 69743,
+      "canonical_title": "Hepta Panthenol Rich Lotion 250Ml",
+      "brand": "Hepta",
+      "market": "EG",
+      "raw_title": "Hepta Panthenol Rich Body Lotion 100Ml",
+      "raw_brand": "Hepta",
+      "comparison": {
+        "conflicts": [
+          "function"
+        ],
+        "unknown": [
+          "application_area"
+        ],
+        "status": "conflict"
+      }
+    },
+    {
+      "id": 13578,
+      "source_id": "sourcebeauty",
+      "source_product_id": "10198507782431",
+      "canonical_product_id": 69743,
+      "canonical_title": "Hepta Panthenol Rich Lotion 250Ml",
+      "brand": "Hepta",
+      "market": "EG",
+      "raw_title": "Panthenol Rich Body Lotion",
+      "raw_brand": "Hepta",
+      "comparison": {
+        "conflicts": [
+          "function"
+        ],
+        "unknown": [
+          "application_area"
+        ],
+        "status": "conflict"
+      }
+    },
+    {
+      "id": 13738,
+      "source_id": "bloompharmacy",
+      "source_product_id": "9155105685812",
+      "canonical_product_id": 66394,
+      "canonical_title": "Avene Cicalfate Hand Repairing Barrier Cream 100ml",
+      "brand": "Avene",
+      "market": "EG",
+      "raw_title": "Avene Cicalfate Hand Cream - 100ml",
+      "raw_brand": "Avene",
+      "comparison": {
+        "conflicts": [
+          "function"
+        ],
+        "unknown": [],
+        "status": "conflict"
+      }
+    }
+  ],
+  "scope": "Accepted saved-Gemini source links with current observations; title-derived attribute audit, not complete identity proof."
+}

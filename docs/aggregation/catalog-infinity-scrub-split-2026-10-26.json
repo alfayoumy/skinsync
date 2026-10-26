@@ -1,0 +1,11 @@
+{
+  "applied": true,
+  "backup_path": "/mnt/windows/Users/AmrAlfayoumy/Downloads/skincare/repo/api/backups/catalog/catalog-20261026T005907Z-622a1eef.sqlite3",
+  "model_calls": 0,
+  "comparison_product_count": 2,
+  "original_canonical_id": 65192,
+  "history_id": 703,
+  "new_canonical_id": 70501,
+  "publication_history_id": 704,
+  "reason": "Reviewed exactly two retained retailer products: Infinity lavender body scrub (sea salt, lavender and shea butter) and lavender/peppermint foot scrub marketed for rough feet. Separate retailer IDs, distinct marketed roles and ingredient summaries contradict the historical Gemini same-product merge."
+}

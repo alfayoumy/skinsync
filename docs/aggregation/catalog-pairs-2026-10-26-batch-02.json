@@ -1,0 +1,9 @@
+{
+  "task_id": "task_20261025_212525_722d00eb",
+  "result": {
+    "status": "failed",
+    "error": "Gemini returned HTTP 429; unfinished pairs remain queued.",
+    "api_calls": 2,
+    "products_per_request": 2
+  }
+}

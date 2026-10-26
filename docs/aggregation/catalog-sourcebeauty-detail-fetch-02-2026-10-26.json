@@ -1,0 +1,100 @@
+{
+  "source_id": "sourcebeauty",
+  "model_calls": 0,
+  "read_only": true,
+  "selected": 10,
+  "results": [
+    {
+      "canonical_id": 63444,
+      "observation_id": 20065,
+      "raw_title": "Deep Lifting Peptide Eye Cream",
+      "raw_brand": "medicube",
+      "source_url": "https://sourcebeauty.com/products/medicube-anti-aging-eye-contour-with-peptides",
+      "status": "fetched",
+      "pages": 1
+    },
+    {
+      "canonical_id": 63445,
+      "observation_id": 17573,
+      "raw_title": "Moisturizing Rich Cream",
+      "raw_brand": "Skin 101",
+      "source_url": "https://sourcebeauty.com/products/moisturizing-rich-cream",
+      "status": "fetched",
+      "pages": 1
+    },
+    {
+      "canonical_id": 63452,
+      "observation_id": 20194,
+      "raw_title": "Vegan Collagen Eye Serum",
+      "raw_brand": "Axis-Y",
+      "source_url": "https://sourcebeauty.com/products/axis-y-vegan-collagen-eye-serum",
+      "status": "fetched",
+      "pages": 1
+    },
+    {
+      "canonical_id": 63456,
+      "observation_id": 21537,
+      "raw_title": "Vanilla Sugar Body Lotion",
+      "raw_brand": "Essentials",
+      "source_url": "https://sourcebeauty.com/products/essentials-vanilla-sugar-body-lotion",
+      "status": "fetched",
+      "pages": 1
+    },
+    {
+      "canonical_id": 63457,
+      "observation_id": 21535,
+      "raw_title": "Coconut Passion Shower Gel",
+      "raw_brand": "Essentials",
+      "source_url": "https://sourcebeauty.com/products/essentials-coconut-passion-shower-gel",
+      "status": "fetched",
+      "pages": 1
+    },
+    {
+      "canonical_id": 63480,
+      "observation_id": 15898,
+      "raw_title": "Pull The Curl Trigger Definition Cream",
+      "raw_brand": "LOCKEN",
+      "source_url": "https://sourcebeauty.com/products/pull-the-curl-trigger-definition-cream",
+      "status": "fetched",
+      "pages": 1
+    },
+    {
+      "canonical_id": 63507,
+      "observation_id": 15240,
+      "raw_title": "Honeymoon Night Cream",
+      "raw_brand": "Richie",
+      "source_url": "https://sourcebeauty.com/products/richie-honeymoon-night-cream",
+      "status": "fetched",
+      "pages": 1
+    },
+    {
+      "canonical_id": 63510,
+      "observation_id": 19440,
+      "raw_title": "Cica Cream",
+      "raw_brand": "Moist-1",
+      "source_url": "https://sourcebeauty.com/products/moist-1-cica-cream",
+      "status": "fetched",
+      "pages": 1
+    },
+    {
+      "canonical_id": 63513,
+      "observation_id": 19443,
+      "raw_title": "Cream with Urea",
+      "raw_brand": "Moist-1",
+      "source_url": "https://sourcebeauty.com/products/moist-1-cream-with-urea",
+      "status": "fetched",
+      "pages": 1
+    },
+    {
+      "canonical_id": 63515,
+      "observation_id": 21592,
+      "raw_title": "Purifying Foam Cleanser",
+      "raw_brand": "Glamy Lab",
+      "source_url": "https://sourcebeauty.com/products/parkville-purifying-foam-cleanser",
+      "status": "fetched",
+      "pages": 1
+    }
+  ],
+  "last_canonical_id": 63515,
+  "more_candidates_in_selection": true
+}

@@ -1,0 +1,1615 @@
+{
+  "source_id": "sourcebeauty",
+  "model_calls": 0,
+  "read_only": true,
+  "selected": 100,
+  "results": [
+    {
+      "canonical_id": 65948,
+      "observation_id": 19506,
+      "raw_title": "Galactomyces 95 Tone Balancing Essence",
+      "raw_brand": "Cosrx",
+      "source_url": "https://sourcebeauty.com/products/cosrx-galactomyces-95-tone-balancing-essence",
+      "status": "fetched",
+      "pages": 1
+    },
+    {
+      "canonical_id": 65960,
+      "observation_id": 15687,
+      "raw_title": "Fresh Power Shower Gel",
+      "raw_brand": "Mr. Beard",
+      "source_url": "https://sourcebeauty.com/products/mr-beard-fresh-power-shower-gel",
+      "status": "fetched",
+      "pages": 1
+    },
+    {
+      "canonical_id": 65961,
+      "observation_id": 17221,
+      "raw_title": "Cleansing Face Wash",
+      "raw_brand": "Mr. Beard",
+      "source_url": "https://sourcebeauty.com/products/mr-beard-cleansing-face-wash",
+      "status": "fetched",
+      "pages": 1
+    },
+    {
+      "canonical_id": 65962,
+      "observation_id": 15686,
+      "raw_title": "Ocean Drift Shower Gel",
+      "raw_brand": "Mr. Beard",
+      "source_url": "https://sourcebeauty.com/products/mr-beard-ocean-drift-shower-gel",
+      "status": "fetched",
+      "pages": 1
+    },
+    {
+      "canonical_id": 65985,
+      "observation_id": 19625,
+      "raw_title": "Mugwort Calming Cream",
+      "raw_brand": "ROUND LAB",
+      "source_url": "https://sourcebeauty.com/products/round-lab-mugwort-calming-cream",
+      "status": "fetched",
+      "pages": 1
+    },
+    {
+      "canonical_id": 65987,
+      "observation_id": 16773,
+      "raw_title": "Glow Skin Renewal Toner",
+      "raw_brand": "Catrice",
+      "source_url": "https://sourcebeauty.com/products/catrice-glow-skin-renewal-toner",
+      "status": "error",
+      "error_type": "ExceptionGroup"
+    },
+    {
+      "canonical_id": 65988,
+      "observation_id": 20151,
+      "raw_title": "Solid In Ceramide Lip Essence",
+      "raw_brand": "Torriden",
+      "source_url": "https://sourcebeauty.com/products/torridensolid-in-ceramide-lip-essence",
+      "status": "fetched",
+      "pages": 1
+    },
+    {
+      "canonical_id": 65993,
+      "observation_id": 21157,
+      "raw_title": "Booster Serum",
+      "raw_brand": "Telofill",
+      "source_url": "https://sourcebeauty.com/products/telofill-booster-serum",
+      "status": "fetched",
+      "pages": 1
+    },
+    {
+      "canonical_id": 65994,
+      "observation_id": 21143,
+      "raw_title": "Milk & Honey Body Wash",
+      "raw_brand": "Telofill",
+      "source_url": "https://sourcebeauty.com/products/telofill-milk-honey-body-wash",
+      "status": "fetched",
+      "pages": 1
+    },
+    {
+      "canonical_id": 65995,
+      "observation_id": 21150,
+      "raw_title": "Glowing Serum",
+      "raw_brand": "Telofill",
+      "source_url": "https://sourcebeauty.com/products/telofill-glowing-serum",
+      "status": "fetched",
+      "pages": 1
+    },
+    {
+      "canonical_id": 66002,
+      "observation_id": 20088,
+      "raw_title": "Super Matcha Pore Tightening Serum",
+      "raw_brand": "Some By Mi",
+      "source_url": "https://sourcebeauty.com/products/some-by-mi-super-matcha-pore-tightening-serum",
+      "status": "fetched",
+      "pages": 1
+    },
+    {
+      "canonical_id": 66004,
+      "observation_id": 19529,
+      "raw_title": "AGE-R Glutathione Glow Capsule Cream",
+      "raw_brand": "medicube",
+      "source_url": "https://sourcebeauty.com/products/medicube-age-r-glutathione-glow-cream-50ml",
+      "status": "fetched",
+      "pages": 1
+    },
+    {
+      "canonical_id": 66009,
+      "observation_id": 19660,
+      "raw_title": "Hyaluronic Acid Low-pH Cleansing Foam",
+      "raw_brand": "Isntree",
+      "source_url": "https://sourcebeauty.com/products/isntree-hyaluronic-acid-lowph-cleansing-foam",
+      "status": "fetched",
+      "pages": 1
+    },
+    {
+      "canonical_id": 66033,
+      "observation_id": 16058,
+      "raw_title": "Face Whitening Cream",
+      "raw_brand": "Drakon",
+      "source_url": "https://sourcebeauty.com/products/drakon-face-whitening-cream",
+      "status": "fetched",
+      "pages": 1
+    },
+    {
+      "canonical_id": 66057,
+      "observation_id": 21169,
+      "raw_title": "Antioxidant Facial Cleanser",
+      "raw_brand": "Shaan",
+      "source_url": "https://sourcebeauty.com/products/parkville-antioxidant-facial-cleanser",
+      "status": "fetched",
+      "pages": 1
+    },
+    {
+      "canonical_id": 66059,
+      "observation_id": 16581,
+      "raw_title": "Acne Prone Skin Facial Cleanser",
+      "raw_brand": "Starville",
+      "source_url": "https://sourcebeauty.com/products/acne-prone-skin-facial-cleanser",
+      "status": "fetched",
+      "pages": 1
+    },
+    {
+      "canonical_id": 66090,
+      "observation_id": 19535,
+      "raw_title": "Swimming Pool Ampoule",
+      "raw_brand": "EQQUALBERRY",
+      "source_url": "https://sourcebeauty.com/products/eqqualberry-swimming-pool-ampoule",
+      "status": "fetched",
+      "pages": 1
+    },
+    {
+      "canonical_id": 66091,
+      "observation_id": 20041,
+      "raw_title": "Super Cica Deep Cleansing Balm",
+      "raw_brand": "medicube",
+      "source_url": "https://sourcebeauty.com/products/medicube-super-cica-deep-cleansing-balm-100ml",
+      "status": "fetched",
+      "pages": 1
+    },
+    {
+      "canonical_id": 66107,
+      "observation_id": 20038,
+      "raw_title": "Triple Collagen Toner",
+      "raw_brand": "medicube",
+      "source_url": "https://sourcebeauty.com/products/medicube-triple-collagen-toner",
+      "status": "fetched",
+      "pages": 1
+    },
+    {
+      "canonical_id": 66109,
+      "observation_id": 15325,
+      "raw_title": "Hyaluron-Filler Moisture Booster",
+      "raw_brand": "Eucerin",
+      "source_url": "https://sourcebeauty.com/products/eucerin-hyal-flr-moisture-booster",
+      "status": "error",
+      "error_type": "ExceptionGroup"
+    },
+    {
+      "canonical_id": 66112,
+      "observation_id": 16964,
+      "raw_title": "Kojic Acid Turmeric Toning Cleanser",
+      "raw_brand": "medicube",
+      "source_url": "https://sourcebeauty.com/products/medicube-kojic-acid-turmeric-toning-cleanser",
+      "status": "fetched",
+      "pages": 1
+    },
+    {
+      "canonical_id": 66114,
+      "observation_id": 16974,
+      "raw_title": "Hyaluronic Acid Capsule Cream",
+      "raw_brand": "medicube",
+      "source_url": "https://sourcebeauty.com/products/medicube-hyaluronic-acid-capsule-cream",
+      "status": "fetched",
+      "pages": 1
+    },
+    {
+      "canonical_id": 66116,
+      "observation_id": 16975,
+      "raw_title": "NAD+ Peptide Boosting Cream",
+      "raw_brand": "EQQUALBERRY",
+      "source_url": "https://sourcebeauty.com/products/eqqualberry-nad-peptide-boosting-cream",
+      "status": "error",
+      "error_type": "ExceptionGroup"
+    },
+    {
+      "canonical_id": 66130,
+      "observation_id": 20191,
+      "raw_title": "Cera-Heart My Type Duo Cream",
+      "raw_brand": "Axis-Y",
+      "source_url": "https://sourcebeauty.com/products/axis-y-cera-heart-my-type-duo-cream",
+      "status": "fetched",
+      "pages": 1
+    },
+    {
+      "canonical_id": 66151,
+      "observation_id": 17460,
+      "raw_title": "Glycolic Acid 7% Exfoliating Toner",
+      "raw_brand": "The Ordinary",
+      "source_url": "https://sourcebeauty.com/products/the-ordinary-glycolic-acid-7-exfoliating-toner",
+      "status": "fetched",
+      "pages": 1
+    },
+    {
+      "canonical_id": 66157,
+      "observation_id": 21396,
+      "raw_title": "Cica Repairing Gel Cream",
+      "raw_brand": "Altesse Soin",
+      "source_url": "https://sourcebeauty.com/products/altesse-soin-cica-repairing-gel-cream",
+      "status": "fetched",
+      "pages": 1
+    },
+    {
+      "canonical_id": 66161,
+      "observation_id": 19619,
+      "raw_title": "Vita Niacinamide Dark Spot Serum",
+      "raw_brand": "ROUND LAB",
+      "source_url": "https://sourcebeauty.com/products/round-lab-vita-niacinamide-dark-spot-serum",
+      "status": "fetched",
+      "pages": 1
+    },
+    {
+      "canonical_id": 66180,
+      "observation_id": 21619,
+      "raw_title": "Hydrating & Nourishing Night Cream",
+      "raw_brand": "Amanda Milano",
+      "source_url": "https://sourcebeauty.com/products/amanda-hydrating-nourishing-night-cream",
+      "status": "fetched",
+      "pages": 1
+    },
+    {
+      "canonical_id": 66192,
+      "observation_id": 15761,
+      "raw_title": "Birch Moisturizing Toner Pad",
+      "raw_brand": "ROUND LAB",
+      "source_url": "https://sourcebeauty.com/products/round-lab-birch-moisturizing-toner-pad",
+      "status": "fetched",
+      "pages": 1
+    },
+    {
+      "canonical_id": 66195,
+      "observation_id": 15650,
+      "raw_title": "Milky Piggy Super Elastic Bust Cream",
+      "raw_brand": "Elizavecca",
+      "source_url": "https://sourcebeauty.com/products/elizavecca-milky-piggy-super-elastic-bust-cream",
+      "status": "fetched",
+      "pages": 1
+    },
+    {
+      "canonical_id": 66224,
+      "observation_id": 17463,
+      "raw_title": "Soothing & Barrier Support Serum",
+      "raw_brand": "The Ordinary",
+      "source_url": "https://sourcebeauty.com/products/the-ordinary-soothing-barrier-support-serum",
+      "status": "fetched",
+      "pages": 1
+    },
+    {
+      "canonical_id": 66231,
+      "observation_id": 15763,
+      "raw_title": "I'm From Rice Cream",
+      "raw_brand": "I'm From",
+      "source_url": "https://sourcebeauty.com/products/im-from-im-from-rice-cream",
+      "status": "fetched",
+      "pages": 1
+    },
+    {
+      "canonical_id": 66232,
+      "observation_id": 20071,
+      "raw_title": "Peach 77 Niacin Enriched Cream",
+      "raw_brand": "Anua",
+      "source_url": "https://sourcebeauty.com/products/anua-peach-77-niacin-enriched-cream",
+      "status": "fetched",
+      "pages": 1
+    },
+    {
+      "canonical_id": 66233,
+      "observation_id": 16904,
+      "raw_title": "No.1 Pantothenic B5 Active Soothing Serum",
+      "raw_brand": "Numbuzin",
+      "source_url": "https://sourcebeauty.com/products/numbuzin-no-1-pantothenic-b5-active-soothing-serum",
+      "status": "fetched",
+      "pages": 1
+    },
+    {
+      "canonical_id": 66248,
+      "observation_id": 15605,
+      "raw_title": "Milky Piggy Carbonated Bubble Clay Mask",
+      "raw_brand": "Elizavecca",
+      "source_url": "https://sourcebeauty.com/products/elizavecca-milky-piggy-carbonated-bubble-clay-mask",
+      "status": "fetched",
+      "pages": 1
+    },
+    {
+      "canonical_id": 66259,
+      "observation_id": 20259,
+      "raw_title": "Hyalu-Cica Brightening Toner",
+      "raw_brand": "SKIN1004",
+      "source_url": "https://sourcebeauty.com/products/skin1004-hyalu-cica-brightening-toner",
+      "status": "fetched",
+      "pages": 1
+    },
+    {
+      "canonical_id": 66270,
+      "observation_id": 16976,
+      "raw_title": "NAD+ Peptide Boosting Toner",
+      "raw_brand": "EQQUALBERRY",
+      "source_url": "https://sourcebeauty.com/products/eqqualberry-nad-peptide-boosting-toner",
+      "status": "fetched",
+      "pages": 1
+    },
+    {
+      "canonical_id": 66271,
+      "observation_id": 16977,
+      "raw_title": "Aloe PDRN Calming Toner",
+      "raw_brand": "EQQUALBERRY",
+      "source_url": "https://sourcebeauty.com/products/eqqualberry-aloe-pdrn-calming-toner",
+      "status": "fetched",
+      "pages": 1
+    },
+    {
+      "canonical_id": 66272,
+      "observation_id": 16979,
+      "raw_title": "Vitamin illuminating Toner",
+      "raw_brand": "EQQUALBERRY",
+      "source_url": "https://sourcebeauty.com/products/eqqualberry-vitamin-illuminating-toner",
+      "status": "fetched",
+      "pages": 1
+    },
+    {
+      "canonical_id": 66281,
+      "observation_id": 15780,
+      "raw_title": "PDRN Essence 100",
+      "raw_brand": "VT Cosmetics",
+      "source_url": "https://sourcebeauty.com/products/vt-cosmetics-pdrn-essence-100",
+      "status": "fetched",
+      "pages": 1
+    },
+    {
+      "canonical_id": 66301,
+      "observation_id": 19534,
+      "raw_title": "Purple Rice Pore Purifying Pack Cleanser",
+      "raw_brand": "EQQUALBERRY",
+      "source_url": "https://sourcebeauty.com/products/eqqualberry-purple-rice-pore-purifying-pack-cleanser",
+      "status": "fetched",
+      "pages": 1
+    },
+    {
+      "canonical_id": 66305,
+      "observation_id": 16790,
+      "raw_title": "Glow Super Vitamin Serum",
+      "raw_brand": "Catrice",
+      "source_url": "https://sourcebeauty.com/products/catrice-glow-super-vitamin-serum",
+      "status": "fetched",
+      "pages": 1
+    },
+    {
+      "canonical_id": 66322,
+      "observation_id": 15782,
+      "raw_title": "Biome Resetting Moringa Cleansing Oil",
+      "raw_brand": "Axis-Y",
+      "source_url": "https://sourcebeauty.com/products/axis-ybiome-resetting-moringa-cleansing-oil",
+      "status": "fetched",
+      "pages": 1
+    },
+    {
+      "canonical_id": 66324,
+      "observation_id": 19521,
+      "raw_title": "Soondy Centella Asiatica Essence",
+      "raw_brand": "mixsoon",
+      "source_url": "https://sourcebeauty.com/products/mixsoon-soondy-centella-asiatica-essence",
+      "status": "fetched",
+      "pages": 1
+    },
+    {
+      "canonical_id": 66330,
+      "observation_id": 19500,
+      "raw_title": "The Retinol 0.1 Cream",
+      "raw_brand": "Cosrx",
+      "source_url": "https://sourcebeauty.com/products/cosrx-the-retinol-0-1-cream",
+      "status": "error",
+      "error_type": "ExceptionGroup"
+    },
+    {
+      "canonical_id": 66331,
+      "observation_id": 17348,
+      "raw_title": "Sun Care Lip Balm",
+      "raw_brand": "Luna",
+      "source_url": "https://sourcebeauty.com/products/luna-sun-care-lip-balm",
+      "status": "fetched",
+      "pages": 1
+    },
+    {
+      "canonical_id": 66352,
+      "observation_id": 21397,
+      "raw_title": "Cica Mild Foaming Cleanser",
+      "raw_brand": "Altesse Soin",
+      "source_url": "https://sourcebeauty.com/products/altesse-soin-cica-mild-foaming-cleanser",
+      "status": "fetched",
+      "pages": 1
+    },
+    {
+      "canonical_id": 66353,
+      "observation_id": 21398,
+      "raw_title": "Cica Regenerating Serum",
+      "raw_brand": "Altesse Soin",
+      "source_url": "https://sourcebeauty.com/products/altesse-soin-cica-regenerating-serum",
+      "status": "fetched",
+      "pages": 1
+    },
+    {
+      "canonical_id": 66354,
+      "observation_id": 17888,
+      "raw_title": "Centella Cleansing Foam",
+      "raw_brand": "mixsoon",
+      "source_url": "https://sourcebeauty.com/products/mixsoon-centella-cleansing-foam",
+      "status": "fetched",
+      "pages": 1
+    },
+    {
+      "canonical_id": 66370,
+      "observation_id": 17984,
+      "raw_title": "Rich Moist Soothing Cream",
+      "raw_brand": "dear klairs",
+      "source_url": "https://sourcebeauty.com/products/klairs-rich-moist-soothing-cream",
+      "status": "fetched",
+      "pages": 1
+    },
+    {
+      "canonical_id": 66378,
+      "observation_id": 20087,
+      "raw_title": "Propolis B5 Glow Barrier Calming Toner",
+      "raw_brand": "Some By Mi",
+      "source_url": "https://sourcebeauty.com/products/some-by-mi-propolis-b5-glow-barrier-calming-toner",
+      "status": "fetched",
+      "pages": 1
+    },
+    {
+      "canonical_id": 66383,
+      "observation_id": 17889,
+      "raw_title": "Bean Cleansing Oil",
+      "raw_brand": "mixsoon",
+      "source_url": "https://sourcebeauty.com/products/mixsoon-bean-cleansing-oil",
+      "status": "fetched",
+      "pages": 1
+    },
+    {
+      "canonical_id": 66384,
+      "observation_id": 15637,
+      "raw_title": "The Real Noni Acne Bubble Cleanser",
+      "raw_brand": "celimax",
+      "source_url": "https://sourcebeauty.com/products/celimax-the-real-noni-acne-bubble-cleanser",
+      "status": "fetched",
+      "pages": 1
+    },
+    {
+      "canonical_id": 66396,
+      "observation_id": 20463,
+      "raw_title": "PDRN Booster Gel",
+      "raw_brand": "medicube",
+      "source_url": "https://sourcebeauty.com/products/medicube-age-r-pdrn-booster-gel",
+      "status": "fetched",
+      "pages": 1
+    },
+    {
+      "canonical_id": 66399,
+      "observation_id": 19060,
+      "raw_title": "Glycolic Bright Glowing Night Cream",
+      "raw_brand": "L'Oreal Paris",
+      "source_url": "https://sourcebeauty.com/products/loreal-paris-glycolic-bright-glowing-night-cream",
+      "status": "fetched",
+      "pages": 1
+    },
+    {
+      "canonical_id": 66400,
+      "observation_id": 20192,
+      "raw_title": "Biome Double Defense Sunscreen",
+      "raw_brand": "Axis-Y",
+      "source_url": "https://sourcebeauty.com/products/axis-y-biome-double-defense-sunscreen",
+      "status": "fetched",
+      "pages": 1
+    },
+    {
+      "canonical_id": 66401,
+      "observation_id": 19524,
+      "raw_title": "Bean Toner",
+      "raw_brand": "mixsoon",
+      "source_url": "https://sourcebeauty.com/products/mixsoon-bean-toner",
+      "status": "fetched",
+      "pages": 1
+    },
+    {
+      "canonical_id": 66402,
+      "observation_id": 19640,
+      "raw_title": "Freshly Juiced Vitamin Charging Serum",
+      "raw_brand": "dear klairs",
+      "source_url": "https://sourcebeauty.com/products/klairs-freshly-juiced-vitamin-charging-serum",
+      "status": "error",
+      "error_type": "ExceptionGroup"
+    },
+    {
+      "canonical_id": 66406,
+      "observation_id": 17983,
+      "raw_title": "All-day Airy Mineral Sunscreen",
+      "raw_brand": "dear klairs",
+      "source_url": "https://sourcebeauty.com/products/klairs-all-day-airy-mineral-sunscreen-spf50",
+      "status": "fetched",
+      "pages": 1
+    },
+    {
+      "canonical_id": 66413,
+      "observation_id": 21153,
+      "raw_title": "Cica Cream",
+      "raw_brand": "Telofill",
+      "source_url": "https://sourcebeauty.com/products/telofill-cica-cream",
+      "status": "error",
+      "error_type": "ExceptionGroup"
+    },
+    {
+      "canonical_id": 66414,
+      "observation_id": 21574,
+      "raw_title": "Micellar Water",
+      "raw_brand": "Telofill",
+      "source_url": "https://sourcebeauty.com/products/micellar-water-telofill",
+      "status": "fetched",
+      "pages": 1
+    },
+    {
+      "canonical_id": 66415,
+      "observation_id": 21146,
+      "raw_title": "Mica Cleanser",
+      "raw_brand": "Telofill",
+      "source_url": "https://sourcebeauty.com/products/telofill-mica-cleanser",
+      "status": "fetched",
+      "pages": 1
+    },
+    {
+      "canonical_id": 66417,
+      "observation_id": 21312,
+      "raw_title": "Cupcake Glaze Body Lotion",
+      "raw_brand": "Favelin",
+      "source_url": "https://sourcebeauty.com/products/favelin-cupcake-glaze-body-lotion-1",
+      "status": "fetched",
+      "pages": 1
+    },
+    {
+      "canonical_id": 66447,
+      "observation_id": 19523,
+      "raw_title": "Bifida Ferment Essence",
+      "raw_brand": "mixsoon",
+      "source_url": "https://sourcebeauty.com/products/mixsoon-bifida-ferment-essence",
+      "status": "fetched",
+      "pages": 1
+    },
+    {
+      "canonical_id": 66476,
+      "observation_id": 20465,
+      "raw_title": "Refresh ABC Daily Toner (AHA BHA Vitamin C)",
+      "raw_brand": "Cosrx",
+      "source_url": "https://sourcebeauty.com/products/cosrx-refresh-aha-bha-vitamin-c-daily-toner_1",
+      "status": "fetched",
+      "pages": 1
+    },
+    {
+      "canonical_id": 66503,
+      "observation_id": 20887,
+      "raw_title": "Low pH Niacinamide Micellar Cleansing Water",
+      "raw_brand": "Cosrx",
+      "source_url": "https://sourcebeauty.com/products/cosrx-low-ph-niacinamide-micellar-cleansing-water",
+      "status": "fetched",
+      "pages": 1
+    },
+    {
+      "canonical_id": 66538,
+      "observation_id": 17189,
+      "raw_title": "Fast Bright Vitamin C Booster Serum",
+      "raw_brand": "Garnier",
+      "source_url": "https://sourcebeauty.com/products/garnier-fast-bright-vitamin-c-booster-serum",
+      "status": "fetched",
+      "pages": 1
+    },
+    {
+      "canonical_id": 66559,
+      "observation_id": 17788,
+      "raw_title": "African Blossom Body Wash",
+      "raw_brand": "Raw African",
+      "source_url": "https://sourcebeauty.com/products/african-blossom-body-wash",
+      "status": "fetched",
+      "pages": 1
+    },
+    {
+      "canonical_id": 66631,
+      "observation_id": 15506,
+      "raw_title": "Uveblock SPF50+ Hydra Lotion",
+      "raw_brand": "Isis Pharma",
+      "source_url": "https://sourcebeauty.com/products/isis-uveblock-spf50-hydra-lotion",
+      "status": "fetched",
+      "pages": 1
+    },
+    {
+      "canonical_id": 66819,
+      "observation_id": 16934,
+      "raw_title": "Hydrating Body Cream with Avocado & Vitamin E",
+      "raw_brand": "St Ives",
+      "source_url": "https://sourcebeauty.com/products/st-ives-hydrating-body-cream-with-avocado-vitamin-e",
+      "status": "fetched",
+      "pages": 1
+    },
+    {
+      "canonical_id": 69236,
+      "observation_id": 15329,
+      "raw_title": "DermoPure Clinical Correcting Cleanser",
+      "raw_brand": "Eucerin",
+      "source_url": "https://sourcebeauty.com/products/eucerin-derm-purifyer-correcting-cleanser",
+      "status": "fetched",
+      "pages": 1
+    },
+    {
+      "canonical_id": 69253,
+      "observation_id": 21531,
+      "raw_title": "Tropical Shower Gel",
+      "raw_brand": "Essentials",
+      "source_url": "https://sourcebeauty.com/products/essentials-tropical-shower-gel",
+      "status": "fetched",
+      "pages": 1
+    },
+    {
+      "canonical_id": 69257,
+      "observation_id": 17160,
+      "raw_title": "Vanilla Hand Cream",
+      "raw_brand": "Soul & More",
+      "source_url": "https://sourcebeauty.com/products/soul-more-vanilla-hand-cream",
+      "status": "fetched",
+      "pages": 1
+    },
+    {
+      "canonical_id": 69258,
+      "observation_id": 20582,
+      "raw_title": "Destiny Shower Gel",
+      "raw_brand": "Soul & More",
+      "source_url": "https://sourcebeauty.com/products/soul-more-destiny-showergel",
+      "status": "fetched",
+      "pages": 1
+    },
+    {
+      "canonical_id": 69261,
+      "observation_id": 17164,
+      "raw_title": "Strawberry Hand Cream",
+      "raw_brand": "Soul & More",
+      "source_url": "https://sourcebeauty.com/products/soul-more-strawberry-hand-cream",
+      "status": "fetched",
+      "pages": 1
+    },
+    {
+      "canonical_id": 69265,
+      "observation_id": 21045,
+      "raw_title": "Vanilla Sugar Hand Cream",
+      "raw_brand": "Essentials",
+      "source_url": "https://sourcebeauty.com/products/essentials-vanilla-sugar-hand-cream",
+      "status": "error",
+      "error_type": "ExceptionGroup"
+    },
+    {
+      "canonical_id": 69268,
+      "observation_id": 21203,
+      "raw_title": "Glossy Lip Balm - Strawberry",
+      "raw_brand": "Soul & More",
+      "source_url": "https://sourcebeauty.com/products/soul-more-glossy-lip-balm-strawberry",
+      "status": "fetched",
+      "pages": 1
+    },
+    {
+      "canonical_id": 69269,
+      "observation_id": 21817,
+      "raw_title": "Vanilla Wave Body Wash",
+      "raw_brand": "Soul & More",
+      "source_url": "https://sourcebeauty.com/products/vanilla-wave-body-wash",
+      "status": "fetched",
+      "pages": 1
+    },
+    {
+      "canonical_id": 69271,
+      "observation_id": 20314,
+      "raw_title": "Radiant Bright Underarm Silky Touch Spray Serum",
+      "raw_brand": "Beesline",
+      "source_url": "https://sourcebeauty.com/products/beesline-radiant-bright-silky-touch-underarm-serum",
+      "status": "fetched",
+      "pages": 1
+    },
+    {
+      "canonical_id": 69275,
+      "observation_id": 15952,
+      "raw_title": "Coconut Shower Gel",
+      "raw_brand": "Bubblzz",
+      "source_url": "https://sourcebeauty.com/products/bubblzz-coconut-shower-gel",
+      "status": "fetched",
+      "pages": 1
+    },
+    {
+      "canonical_id": 69278,
+      "observation_id": 21318,
+      "raw_title": "In the Wilds Moisturizing Shower Gel",
+      "raw_brand": "Favelin",
+      "source_url": "https://sourcebeauty.com/products/favelin-in-the-wilds-moisturizing-shower-gel-1",
+      "status": "fetched",
+      "pages": 1
+    },
+    {
+      "canonical_id": 69279,
+      "observation_id": 21313,
+      "raw_title": "Violet Twist Moisturizing Shower Gel",
+      "raw_brand": "Favelin",
+      "source_url": "https://sourcebeauty.com/products/favelin-violet-twist-moisturizing-shower-gel-1",
+      "status": "fetched",
+      "pages": 1
+    },
+    {
+      "canonical_id": 69290,
+      "observation_id": 16915,
+      "raw_title": "Vitamin C Booster Shot",
+      "raw_brand": "Arencia",
+      "source_url": "https://sourcebeauty.com/products/arencia-vitamin-c-booster-shot",
+      "status": "fetched",
+      "pages": 1
+    },
+    {
+      "canonical_id": 69296,
+      "observation_id": 15508,
+      "raw_title": "Uveblock SPF 50+ Fluid",
+      "raw_brand": "Isis Pharma",
+      "source_url": "https://sourcebeauty.com/products/isis-uveblock-spf-50-fluid",
+      "status": "fetched",
+      "pages": 1
+    },
+    {
+      "canonical_id": 69297,
+      "observation_id": 20316,
+      "raw_title": "Radiant Bright Underarm Jouri Rose Spray Serum",
+      "raw_brand": "Beesline",
+      "source_url": "https://sourcebeauty.com/products/beesline-radiant-bright-underarm-jouri-rose-serum",
+      "status": "fetched",
+      "pages": 1
+    },
+    {
+      "canonical_id": 69298,
+      "observation_id": 20318,
+      "raw_title": "Radiant Bright Underarm Spray Serum - Delays Shaving",
+      "raw_brand": "Beesline",
+      "source_url": "https://sourcebeauty.com/products/beesline-radiant-bright-underarm-delays-shaving-serum",
+      "status": "fetched",
+      "pages": 1
+    },
+    {
+      "canonical_id": 69310,
+      "observation_id": 21079,
+      "raw_title": "SS07 Dark Tanning Oil",
+      "raw_brand": "Ample Hue",
+      "source_url": "https://sourcebeauty.com/products/dark-tanning-oil",
+      "status": "fetched",
+      "pages": 1
+    },
+    {
+      "canonical_id": 69311,
+      "observation_id": 17377,
+      "raw_title": "Whitening Foam Cleanser",
+      "raw_brand": "Glamy Lab",
+      "source_url": "https://sourcebeauty.com/products/glamy-lab-whitening-foam-cleanser",
+      "status": "fetched",
+      "pages": 1
+    },
+    {
+      "canonical_id": 69320,
+      "observation_id": 15938,
+      "raw_title": "Cupcake Shower Gel",
+      "raw_brand": "Bubblzz",
+      "source_url": "https://sourcebeauty.com/products/bubblegum-shower-gel-copy",
+      "status": "fetched",
+      "pages": 1
+    },
+    {
+      "canonical_id": 69330,
+      "observation_id": 20048,
+      "raw_title": "PDRN Pink Peptide Serum",
+      "raw_brand": "medicube",
+      "source_url": "https://sourcebeauty.com/products/medicube-psrn-pink-peptide-serum-30ml",
+      "status": "fetched",
+      "pages": 1
+    },
+    {
+      "canonical_id": 69338,
+      "observation_id": 21501,
+      "raw_title": "Wild Berries Hand Cream",
+      "raw_brand": "Essentials",
+      "source_url": "https://sourcebeauty.com/products/essentials-wild-berries-hand-cream",
+      "status": "fetched",
+      "pages": 1
+    },
+    {
+      "canonical_id": 69339,
+      "observation_id": 21504,
+      "raw_title": "Tropical Paradise Hand Cream",
+      "raw_brand": "Essentials",
+      "source_url": "https://sourcebeauty.com/products/essentials-tropical-paradise-hand-cream",
+      "status": "fetched",
+      "pages": 1
+    },
+    {
+      "canonical_id": 69353,
+      "observation_id": 15680,
+      "raw_title": "PDRN Booster Shot",
+      "raw_brand": "Arencia",
+      "source_url": "https://sourcebeauty.com/products/arencia-pdrn-booster-shot",
+      "status": "fetched",
+      "pages": 1
+    },
+    {
+      "canonical_id": 69364,
+      "observation_id": 20601,
+      "raw_title": "Sunkissed Honey Body Butter",
+      "raw_brand": "Favelin",
+      "source_url": "https://sourcebeauty.com/products/favelin-sunkissed-honey-body-butter-1",
+      "status": "fetched",
+      "pages": 1
+    },
+    {
+      "canonical_id": 69376,
+      "observation_id": 21816,
+      "raw_title": "Strawberry Body Butter",
+      "raw_brand": "Soul & More",
+      "source_url": "https://sourcebeauty.com/products/strawberry-body-butter-1",
+      "status": "error",
+      "error_type": "ExceptionGroup"
+    },
+    {
+      "canonical_id": 69388,
+      "observation_id": 15397,
+      "raw_title": "Foaming Cleanser",
+      "raw_brand": "Cerave",
+      "source_url": "https://sourcebeauty.com/products/cerave-foaming-cleanser",
+      "status": "fetched",
+      "pages": 1
+    },
+    {
+      "canonical_id": 69412,
+      "observation_id": 20800,
+      "raw_title": "Khaliji Hand Cream",
+      "raw_brand": "MOOD",
+      "source_url": "https://sourcebeauty.com/products/mood-khaliji-hand-cream",
+      "status": "fetched",
+      "pages": 1
+    },
+    {
+      "canonical_id": 69414,
+      "observation_id": 15992,
+      "raw_title": "Delicious Body Lotion",
+      "raw_brand": "Soul & More",
+      "source_url": "https://sourcebeauty.com/products/delicious-body-lotion",
+      "status": "fetched",
+      "pages": 1
+    },
+    {
+      "canonical_id": 69415,
+      "observation_id": 21315,
+      "raw_title": "Violet Twist Body Lotion",
+      "raw_brand": "Favelin",
+      "source_url": "https://sourcebeauty.com/products/favelin-violet-twist-body-lotion-1",
+      "status": "fetched",
+      "pages": 1
+    },
+    {
+      "canonical_id": 69416,
+      "observation_id": 20137,
+      "raw_title": "Mini Lip Therapy - Rosy",
+      "raw_brand": "Vaseline",
+      "source_url": "https://sourcebeauty.com/products/vaseline-lip-therapy-rosy-mini",
+      "status": "fetched",
+      "pages": 1
+    }
+  ],
+  "last_canonical_id": 69416,
+  "more_candidates_in_selection": true,
+  "status": "completed",
+  "selected_products": [
+    {
+      "canonical_id": 65948,
+      "observation_id": 19506,
+      "raw_title": "Galactomyces 95 Tone Balancing Essence",
+      "raw_brand": "Cosrx",
+      "source_url": "https://sourcebeauty.com/products/cosrx-galactomyces-95-tone-balancing-essence"
+    },
+    {
+      "canonical_id": 65960,
+      "observation_id": 15687,
+      "raw_title": "Fresh Power Shower Gel",
+      "raw_brand": "Mr. Beard",
+      "source_url": "https://sourcebeauty.com/products/mr-beard-fresh-power-shower-gel"
+    },
+    {
+      "canonical_id": 65961,
+      "observation_id": 17221,
+      "raw_title": "Cleansing Face Wash",
+      "raw_brand": "Mr. Beard",
+      "source_url": "https://sourcebeauty.com/products/mr-beard-cleansing-face-wash"
+    },
+    {
+      "canonical_id": 65962,
+      "observation_id": 15686,
+      "raw_title": "Ocean Drift Shower Gel",
+      "raw_brand": "Mr. Beard",
+      "source_url": "https://sourcebeauty.com/products/mr-beard-ocean-drift-shower-gel"
+    },
+    {
+      "canonical_id": 65985,
+      "observation_id": 19625,
+      "raw_title": "Mugwort Calming Cream",
+      "raw_brand": "ROUND LAB",
+      "source_url": "https://sourcebeauty.com/products/round-lab-mugwort-calming-cream"
+    },
+    {
+      "canonical_id": 65987,
+      "observation_id": 16773,
+      "raw_title": "Glow Skin Renewal Toner",
+      "raw_brand": "Catrice",
+      "source_url": "https://sourcebeauty.com/products/catrice-glow-skin-renewal-toner"
+    },
+    {
+      "canonical_id": 65988,
+      "observation_id": 20151,
+      "raw_title": "Solid In Ceramide Lip Essence",
+      "raw_brand": "Torriden",
+      "source_url": "https://sourcebeauty.com/products/torridensolid-in-ceramide-lip-essence"
+    },
+    {
+      "canonical_id": 65993,
+      "observation_id": 21157,
+      "raw_title": "Booster Serum",
+      "raw_brand": "Telofill",
+      "source_url": "https://sourcebeauty.com/products/telofill-booster-serum"
+    },
+    {
+      "canonical_id": 65994,
+      "observation_id": 21143,
+      "raw_title": "Milk & Honey Body Wash",
+      "raw_brand": "Telofill",
+      "source_url": "https://sourcebeauty.com/products/telofill-milk-honey-body-wash"
+    },
+    {
+      "canonical_id": 65995,
+      "observation_id": 21150,
+      "raw_title": "Glowing Serum",
+      "raw_brand": "Telofill",
+      "source_url": "https://sourcebeauty.com/products/telofill-glowing-serum"
+    },
+    {
+      "canonical_id": 66002,
+      "observation_id": 20088,
+      "raw_title": "Super Matcha Pore Tightening Serum",
+      "raw_brand": "Some By Mi",
+      "source_url": "https://sourcebeauty.com/products/some-by-mi-super-matcha-pore-tightening-serum"
+    },
+    {
+      "canonical_id": 66004,
+      "observation_id": 19529,
+      "raw_title": "AGE-R Glutathione Glow Capsule Cream",
+      "raw_brand": "medicube",
+      "source_url": "https://sourcebeauty.com/products/medicube-age-r-glutathione-glow-cream-50ml"
+    },
+    {
+      "canonical_id": 66009,
+      "observation_id": 19660,
+      "raw_title": "Hyaluronic Acid Low-pH Cleansing Foam",
+      "raw_brand": "Isntree",
+      "source_url": "https://sourcebeauty.com/products/isntree-hyaluronic-acid-lowph-cleansing-foam"
+    },
+    {
+      "canonical_id": 66033,
+      "observation_id": 16058,
+      "raw_title": "Face Whitening Cream",
+      "raw_brand": "Drakon",
+      "source_url": "https://sourcebeauty.com/products/drakon-face-whitening-cream"
+    },
+    {
+      "canonical_id": 66057,
+      "observation_id": 21169,
+      "raw_title": "Antioxidant Facial Cleanser",
+      "raw_brand": "Shaan",
+      "source_url": "https://sourcebeauty.com/products/parkville-antioxidant-facial-cleanser"
+    },
+    {
+      "canonical_id": 66059,
+      "observation_id": 16581,
+      "raw_title": "Acne Prone Skin Facial Cleanser",
+      "raw_brand": "Starville",
+      "source_url": "https://sourcebeauty.com/products/acne-prone-skin-facial-cleanser"
+    },
+    {
+      "canonical_id": 66090,
+      "observation_id": 19535,
+      "raw_title": "Swimming Pool Ampoule",
+      "raw_brand": "EQQUALBERRY",
+      "source_url": "https://sourcebeauty.com/products/eqqualberry-swimming-pool-ampoule"
+    },
+    {
+      "canonical_id": 66091,
+      "observation_id": 20041,
+      "raw_title": "Super Cica Deep Cleansing Balm",
+      "raw_brand": "medicube",
+      "source_url": "https://sourcebeauty.com/products/medicube-super-cica-deep-cleansing-balm-100ml"
+    },
+    {
+      "canonical_id": 66107,
+      "observation_id": 20038,
+      "raw_title": "Triple Collagen Toner",
+      "raw_brand": "medicube",
+      "source_url": "https://sourcebeauty.com/products/medicube-triple-collagen-toner"
+    },
+    {
+      "canonical_id": 66109,
+      "observation_id": 15325,
+      "raw_title": "Hyaluron-Filler Moisture Booster",
+      "raw_brand": "Eucerin",
+      "source_url": "https://sourcebeauty.com/products/eucerin-hyal-flr-moisture-booster"
+    },
+    {
+      "canonical_id": 66112,
+      "observation_id": 16964,
+      "raw_title": "Kojic Acid Turmeric Toning Cleanser",
+      "raw_brand": "medicube",
+      "source_url": "https://sourcebeauty.com/products/medicube-kojic-acid-turmeric-toning-cleanser"
+    },
+    {
+      "canonical_id": 66114,
+      "observation_id": 16974,
+      "raw_title": "Hyaluronic Acid Capsule Cream",
+      "raw_brand": "medicube",
+      "source_url": "https://sourcebeauty.com/products/medicube-hyaluronic-acid-capsule-cream"
+    },
+    {
+      "canonical_id": 66116,
+      "observation_id": 16975,
+      "raw_title": "NAD+ Peptide Boosting Cream",
+      "raw_brand": "EQQUALBERRY",
+      "source_url": "https://sourcebeauty.com/products/eqqualberry-nad-peptide-boosting-cream"
+    },
+    {
+      "canonical_id": 66130,
+      "observation_id": 20191,
+      "raw_title": "Cera-Heart My Type Duo Cream",
+      "raw_brand": "Axis-Y",
+      "source_url": "https://sourcebeauty.com/products/axis-y-cera-heart-my-type-duo-cream"
+    },
+    {
+      "canonical_id": 66151,
+      "observation_id": 17460,
+      "raw_title": "Glycolic Acid 7% Exfoliating Toner",
+      "raw_brand": "The Ordinary",
+      "source_url": "https://sourcebeauty.com/products/the-ordinary-glycolic-acid-7-exfoliating-toner"
+    },
+    {
+      "canonical_id": 66157,
+      "observation_id": 21396,
+      "raw_title": "Cica Repairing Gel Cream",
+      "raw_brand": "Altesse Soin",
+      "source_url": "https://sourcebeauty.com/products/altesse-soin-cica-repairing-gel-cream"
+    },
+    {
+      "canonical_id": 66161,
+      "observation_id": 19619,
+      "raw_title": "Vita Niacinamide Dark Spot Serum",
+      "raw_brand": "ROUND LAB",
+      "source_url": "https://sourcebeauty.com/products/round-lab-vita-niacinamide-dark-spot-serum"
+    },
+    {
+      "canonical_id": 66180,
+      "observation_id": 21619,
+      "raw_title": "Hydrating & Nourishing Night Cream",
+      "raw_brand": "Amanda Milano",
+      "source_url": "https://sourcebeauty.com/products/amanda-hydrating-nourishing-night-cream"
+    },
+    {
+      "canonical_id": 66192,
+      "observation_id": 15761,
+      "raw_title": "Birch Moisturizing Toner Pad",
+      "raw_brand": "ROUND LAB",
+      "source_url": "https://sourcebeauty.com/products/round-lab-birch-moisturizing-toner-pad"
+    },
+    {
+      "canonical_id": 66195,
+      "observation_id": 15650,
+      "raw_title": "Milky Piggy Super Elastic Bust Cream",
+      "raw_brand": "Elizavecca",
+      "source_url": "https://sourcebeauty.com/products/elizavecca-milky-piggy-super-elastic-bust-cream"
+    },
+    {
+      "canonical_id": 66224,
+      "observation_id": 17463,
+      "raw_title": "Soothing & Barrier Support Serum",
+      "raw_brand": "The Ordinary",
+      "source_url": "https://sourcebeauty.com/products/the-ordinary-soothing-barrier-support-serum"
+    },
+    {
+      "canonical_id": 66231,
+      "observation_id": 15763,
+      "raw_title": "I'm From Rice Cream",
+      "raw_brand": "I'm From",
+      "source_url": "https://sourcebeauty.com/products/im-from-im-from-rice-cream"
+    },
+    {
+      "canonical_id": 66232,
+      "observation_id": 20071,
+      "raw_title": "Peach 77 Niacin Enriched Cream",
+      "raw_brand": "Anua",
+      "source_url": "https://sourcebeauty.com/products/anua-peach-77-niacin-enriched-cream"
+    },
+    {
+      "canonical_id": 66233,
+      "observation_id": 16904,
+      "raw_title": "No.1 Pantothenic B5 Active Soothing Serum",
+      "raw_brand": "Numbuzin",
+      "source_url": "https://sourcebeauty.com/products/numbuzin-no-1-pantothenic-b5-active-soothing-serum"
+    },
+    {
+      "canonical_id": 66248,
+      "observation_id": 15605,
+      "raw_title": "Milky Piggy Carbonated Bubble Clay Mask",
+      "raw_brand": "Elizavecca",
+      "source_url": "https://sourcebeauty.com/products/elizavecca-milky-piggy-carbonated-bubble-clay-mask"
+    },
+    {
+      "canonical_id": 66259,
+      "observation_id": 20259,
+      "raw_title": "Hyalu-Cica Brightening Toner",
+      "raw_brand": "SKIN1004",
+      "source_url": "https://sourcebeauty.com/products/skin1004-hyalu-cica-brightening-toner"
+    },
+    {
+      "canonical_id": 66270,
+      "observation_id": 16976,
+      "raw_title": "NAD+ Peptide Boosting Toner",
+      "raw_brand": "EQQUALBERRY",
+      "source_url": "https://sourcebeauty.com/products/eqqualberry-nad-peptide-boosting-toner"
+    },
+    {
+      "canonical_id": 66271,
+      "observation_id": 16977,
+      "raw_title": "Aloe PDRN Calming Toner",
+      "raw_brand": "EQQUALBERRY",
+      "source_url": "https://sourcebeauty.com/products/eqqualberry-aloe-pdrn-calming-toner"
+    },
+    {
+      "canonical_id": 66272,
+      "observation_id": 16979,
+      "raw_title": "Vitamin illuminating Toner",
+      "raw_brand": "EQQUALBERRY",
+      "source_url": "https://sourcebeauty.com/products/eqqualberry-vitamin-illuminating-toner"
+    },
+    {
+      "canonical_id": 66281,
+      "observation_id": 15780,
+      "raw_title": "PDRN Essence 100",
+      "raw_brand": "VT Cosmetics",
+      "source_url": "https://sourcebeauty.com/products/vt-cosmetics-pdrn-essence-100"
+    },
+    {
+      "canonical_id": 66301,
+      "observation_id": 19534,
+      "raw_title": "Purple Rice Pore Purifying Pack Cleanser",
+      "raw_brand": "EQQUALBERRY",
+      "source_url": "https://sourcebeauty.com/products/eqqualberry-purple-rice-pore-purifying-pack-cleanser"
+    },
+    {
+      "canonical_id": 66305,
+      "observation_id": 16790,
+      "raw_title": "Glow Super Vitamin Serum",
+      "raw_brand": "Catrice",
+      "source_url": "https://sourcebeauty.com/products/catrice-glow-super-vitamin-serum"
+    },
+    {
+      "canonical_id": 66322,
+      "observation_id": 15782,
+      "raw_title": "Biome Resetting Moringa Cleansing Oil",
+      "raw_brand": "Axis-Y",
+      "source_url": "https://sourcebeauty.com/products/axis-ybiome-resetting-moringa-cleansing-oil"
+    },
+    {
+      "canonical_id": 66324,
+      "observation_id": 19521,
+      "raw_title": "Soondy Centella Asiatica Essence",
+      "raw_brand": "mixsoon",
+      "source_url": "https://sourcebeauty.com/products/mixsoon-soondy-centella-asiatica-essence"
+    },
+    {
+      "canonical_id": 66330,
+      "observation_id": 19500,
+      "raw_title": "The Retinol 0.1 Cream",
+      "raw_brand": "Cosrx",
+      "source_url": "https://sourcebeauty.com/products/cosrx-the-retinol-0-1-cream"
+    },
+    {
+      "canonical_id": 66331,
+      "observation_id": 17348,
+      "raw_title": "Sun Care Lip Balm",
+      "raw_brand": "Luna",
+      "source_url": "https://sourcebeauty.com/products/luna-sun-care-lip-balm"
+    },
+    {
+      "canonical_id": 66352,
+      "observation_id": 21397,
+      "raw_title": "Cica Mild Foaming Cleanser",
+      "raw_brand": "Altesse Soin",
+      "source_url": "https://sourcebeauty.com/products/altesse-soin-cica-mild-foaming-cleanser"
+    },
+    {
+      "canonical_id": 66353,
+      "observation_id": 21398,
+      "raw_title": "Cica Regenerating Serum",
+      "raw_brand": "Altesse Soin",
+      "source_url": "https://sourcebeauty.com/products/altesse-soin-cica-regenerating-serum"
+    },
+    {
+      "canonical_id": 66354,
+      "observation_id": 17888,
+      "raw_title": "Centella Cleansing Foam",
+      "raw_brand": "mixsoon",
+      "source_url": "https://sourcebeauty.com/products/mixsoon-centella-cleansing-foam"
+    },
+    {
+      "canonical_id": 66370,
+      "observation_id": 17984,
+      "raw_title": "Rich Moist Soothing Cream",
+      "raw_brand": "dear klairs",
+      "source_url": "https://sourcebeauty.com/products/klairs-rich-moist-soothing-cream"
+    },
+    {
+      "canonical_id": 66378,
+      "observation_id": 20087,
+      "raw_title": "Propolis B5 Glow Barrier Calming Toner",
+      "raw_brand": "Some By Mi",
+      "source_url": "https://sourcebeauty.com/products/some-by-mi-propolis-b5-glow-barrier-calming-toner"
+    },
+    {
+      "canonical_id": 66383,
+      "observation_id": 17889,
+      "raw_title": "Bean Cleansing Oil",
+      "raw_brand": "mixsoon",
+      "source_url": "https://sourcebeauty.com/products/mixsoon-bean-cleansing-oil"
+    },
+    {
+      "canonical_id": 66384,
+      "observation_id": 15637,
+      "raw_title": "The Real Noni Acne Bubble Cleanser",
+      "raw_brand": "celimax",
+      "source_url": "https://sourcebeauty.com/products/celimax-the-real-noni-acne-bubble-cleanser"
+    },
+    {
+      "canonical_id": 66396,
+      "observation_id": 20463,
+      "raw_title": "PDRN Booster Gel",
+      "raw_brand": "medicube",
+      "source_url": "https://sourcebeauty.com/products/medicube-age-r-pdrn-booster-gel"
+    },
+    {
+      "canonical_id": 66399,
+      "observation_id": 19060,
+      "raw_title": "Glycolic Bright Glowing Night Cream",
+      "raw_brand": "L'Oreal Paris",
+      "source_url": "https://sourcebeauty.com/products/loreal-paris-glycolic-bright-glowing-night-cream"
+    },
+    {
+      "canonical_id": 66400,
+      "observation_id": 20192,
+      "raw_title": "Biome Double Defense Sunscreen",
+      "raw_brand": "Axis-Y",
+      "source_url": "https://sourcebeauty.com/products/axis-y-biome-double-defense-sunscreen"
+    },
+    {
+      "canonical_id": 66401,
+      "observation_id": 19524,
+      "raw_title": "Bean Toner",
+      "raw_brand": "mixsoon",
+      "source_url": "https://sourcebeauty.com/products/mixsoon-bean-toner"
+    },
+    {
+      "canonical_id": 66402,
+      "observation_id": 19640,
+      "raw_title": "Freshly Juiced Vitamin Charging Serum",
+      "raw_brand": "dear klairs",
+      "source_url": "https://sourcebeauty.com/products/klairs-freshly-juiced-vitamin-charging-serum"
+    },
+    {
+      "canonical_id": 66406,
+      "observation_id": 17983,
+      "raw_title": "All-day Airy Mineral Sunscreen",
+      "raw_brand": "dear klairs",
+      "source_url": "https://sourcebeauty.com/products/klairs-all-day-airy-mineral-sunscreen-spf50"
+    },
+    {
+      "canonical_id": 66413,
+      "observation_id": 21153,
+      "raw_title": "Cica Cream",
+      "raw_brand": "Telofill",
+      "source_url": "https://sourcebeauty.com/products/telofill-cica-cream"
+    },
+    {
+      "canonical_id": 66414,
+      "observation_id": 21574,
+      "raw_title": "Micellar Water",
+      "raw_brand": "Telofill",
+      "source_url": "https://sourcebeauty.com/products/micellar-water-telofill"
+    },
+    {
+      "canonical_id": 66415,
+      "observation_id": 21146,
+      "raw_title": "Mica Cleanser",
+      "raw_brand": "Telofill",
+      "source_url": "https://sourcebeauty.com/products/telofill-mica-cleanser"
+    },
+    {
+      "canonical_id": 66417,
+      "observation_id": 21312,
+      "raw_title": "Cupcake Glaze Body Lotion",
+      "raw_brand": "Favelin",
+      "source_url": "https://sourcebeauty.com/products/favelin-cupcake-glaze-body-lotion-1"
+    },
+    {
+      "canonical_id": 66447,
+      "observation_id": 19523,
+      "raw_title": "Bifida Ferment Essence",
+      "raw_brand": "mixsoon",
+      "source_url": "https://sourcebeauty.com/products/mixsoon-bifida-ferment-essence"
+    },
+    {
+      "canonical_id": 66476,
+      "observation_id": 20465,
+      "raw_title": "Refresh ABC Daily Toner (AHA BHA Vitamin C)",
+      "raw_brand": "Cosrx",
+      "source_url": "https://sourcebeauty.com/products/cosrx-refresh-aha-bha-vitamin-c-daily-toner_1"
+    },
+    {
+      "canonical_id": 66503,
+      "observation_id": 20887,
+      "raw_title": "Low pH Niacinamide Micellar Cleansing Water",
+      "raw_brand": "Cosrx",
+      "source_url": "https://sourcebeauty.com/products/cosrx-low-ph-niacinamide-micellar-cleansing-water"
+    },
+    {
+      "canonical_id": 66538,
+      "observation_id": 17189,
+      "raw_title": "Fast Bright Vitamin C Booster Serum",
+      "raw_brand": "Garnier",
+      "source_url": "https://sourcebeauty.com/products/garnier-fast-bright-vitamin-c-booster-serum"
+    },
+    {
+      "canonical_id": 66559,
+      "observation_id": 17788,
+      "raw_title": "African Blossom Body Wash",
+      "raw_brand": "Raw African",
+      "source_url": "https://sourcebeauty.com/products/african-blossom-body-wash"
+    },
+    {
+      "canonical_id": 66631,
+      "observation_id": 15506,
+      "raw_title": "Uveblock SPF50+ Hydra Lotion",
+      "raw_brand": "Isis Pharma",
+      "source_url": "https://sourcebeauty.com/products/isis-uveblock-spf50-hydra-lotion"
+    },
+    {
+      "canonical_id": 66819,
+      "observation_id": 16934,
+      "raw_title": "Hydrating Body Cream with Avocado & Vitamin E",
+      "raw_brand": "St Ives",
+      "source_url": "https://sourcebeauty.com/products/st-ives-hydrating-body-cream-with-avocado-vitamin-e"
+    },
+    {
+      "canonical_id": 69236,
+      "observation_id": 15329,
+      "raw_title": "DermoPure Clinical Correcting Cleanser",
+      "raw_brand": "Eucerin",
+      "source_url": "https://sourcebeauty.com/products/eucerin-derm-purifyer-correcting-cleanser"
+    },
+    {
+      "canonical_id": 69253,
+      "observation_id": 21531,
+      "raw_title": "Tropical Shower Gel",
+      "raw_brand": "Essentials",
+      "source_url": "https://sourcebeauty.com/products/essentials-tropical-shower-gel"
+    },
+    {
+      "canonical_id": 69257,
+      "observation_id": 17160,
+      "raw_title": "Vanilla Hand Cream",
+      "raw_brand": "Soul & More",
+      "source_url": "https://sourcebeauty.com/products/soul-more-vanilla-hand-cream"
+    },
+    {
+      "canonical_id": 69258,
+      "observation_id": 20582,
+      "raw_title": "Destiny Shower Gel",
+      "raw_brand": "Soul & More",
+      "source_url": "https://sourcebeauty.com/products/soul-more-destiny-showergel"
+    },
+    {
+      "canonical_id": 69261,
+      "observation_id": 17164,
+      "raw_title": "Strawberry Hand Cream",
+      "raw_brand": "Soul & More",
+      "source_url": "https://sourcebeauty.com/products/soul-more-strawberry-hand-cream"
+    },
+    {
+      "canonical_id": 69265,
+      "observation_id": 21045,
+      "raw_title": "Vanilla Sugar Hand Cream",
+      "raw_brand": "Essentials",
+      "source_url": "https://sourcebeauty.com/products/essentials-vanilla-sugar-hand-cream"
+    },
+    {
+      "canonical_id": 69268,
+      "observation_id": 21203,
+      "raw_title": "Glossy Lip Balm - Strawberry",
+      "raw_brand": "Soul & More",
+      "source_url": "https://sourcebeauty.com/products/soul-more-glossy-lip-balm-strawberry"
+    },
+    {
+      "canonical_id": 69269,
+      "observation_id": 21817,
+      "raw_title": "Vanilla Wave Body Wash",
+      "raw_brand": "Soul & More",
+      "source_url": "https://sourcebeauty.com/products/vanilla-wave-body-wash"
+    },
+    {
+      "canonical_id": 69271,
+      "observation_id": 20314,
+      "raw_title": "Radiant Bright Underarm Silky Touch Spray Serum",
+      "raw_brand": "Beesline",
+      "source_url": "https://sourcebeauty.com/products/beesline-radiant-bright-silky-touch-underarm-serum"
+    },
+    {
+      "canonical_id": 69275,
+      "observation_id": 15952,
+      "raw_title": "Coconut Shower Gel",
+      "raw_brand": "Bubblzz",
+      "source_url": "https://sourcebeauty.com/products/bubblzz-coconut-shower-gel"
+    },
+    {
+      "canonical_id": 69278,
+      "observation_id": 21318,
+      "raw_title": "In the Wilds Moisturizing Shower Gel",
+      "raw_brand": "Favelin",
+      "source_url": "https://sourcebeauty.com/products/favelin-in-the-wilds-moisturizing-shower-gel-1"
+    },
+    {
+      "canonical_id": 69279,
+      "observation_id": 21313,
+      "raw_title": "Violet Twist Moisturizing Shower Gel",
+      "raw_brand": "Favelin",
+      "source_url": "https://sourcebeauty.com/products/favelin-violet-twist-moisturizing-shower-gel-1"
+    },
+    {
+      "canonical_id": 69290,
+      "observation_id": 16915,
+      "raw_title": "Vitamin C Booster Shot",
+      "raw_brand": "Arencia",
+      "source_url": "https://sourcebeauty.com/products/arencia-vitamin-c-booster-shot"
+    },
+    {
+      "canonical_id": 69296,
+      "observation_id": 15508,
+      "raw_title": "Uveblock SPF 50+ Fluid",
+      "raw_brand": "Isis Pharma",
+      "source_url": "https://sourcebeauty.com/products/isis-uveblock-spf-50-fluid"
+    },
+    {
+      "canonical_id": 69297,
+      "observation_id": 20316,
+      "raw_title": "Radiant Bright Underarm Jouri Rose Spray Serum",
+      "raw_brand": "Beesline",
+      "source_url": "https://sourcebeauty.com/products/beesline-radiant-bright-underarm-jouri-rose-serum"
+    },
+    {
+      "canonical_id": 69298,
+      "observation_id": 20318,
+      "raw_title": "Radiant Bright Underarm Spray Serum - Delays Shaving",
+      "raw_brand": "Beesline",
+      "source_url": "https://sourcebeauty.com/products/beesline-radiant-bright-underarm-delays-shaving-serum"
+    },
+    {
+      "canonical_id": 69310,
+      "observation_id": 21079,
+      "raw_title": "SS07 Dark Tanning Oil",
+      "raw_brand": "Ample Hue",
+      "source_url": "https://sourcebeauty.com/products/dark-tanning-oil"
+    },
+    {
+      "canonical_id": 69311,
+      "observation_id": 17377,
+      "raw_title": "Whitening Foam Cleanser",
+      "raw_brand": "Glamy Lab",
+      "source_url": "https://sourcebeauty.com/products/glamy-lab-whitening-foam-cleanser"
+    },
+    {
+      "canonical_id": 69320,
+      "observation_id": 15938,
+      "raw_title": "Cupcake Shower Gel",
+      "raw_brand": "Bubblzz",
+      "source_url": "https://sourcebeauty.com/products/bubblegum-shower-gel-copy"
+    },
+    {
+      "canonical_id": 69330,
+      "observation_id": 20048,
+      "raw_title": "PDRN Pink Peptide Serum",
+      "raw_brand": "medicube",
+      "source_url": "https://sourcebeauty.com/products/medicube-psrn-pink-peptide-serum-30ml"
+    },
+    {
+      "canonical_id": 69338,
+      "observation_id": 21501,
+      "raw_title": "Wild Berries Hand Cream",
+      "raw_brand": "Essentials",
+      "source_url": "https://sourcebeauty.com/products/essentials-wild-berries-hand-cream"
+    },
+    {
+      "canonical_id": 69339,
+      "observation_id": 21504,
+      "raw_title": "Tropical Paradise Hand Cream",
+      "raw_brand": "Essentials",
+      "source_url": "https://sourcebeauty.com/products/essentials-tropical-paradise-hand-cream"
+    },
+    {
+      "canonical_id": 69353,
+      "observation_id": 15680,
+      "raw_title": "PDRN Booster Shot",
+      "raw_brand": "Arencia",
+      "source_url": "https://sourcebeauty.com/products/arencia-pdrn-booster-shot"
+    },
+    {
+      "canonical_id": 69364,
+      "observation_id": 20601,
+      "raw_title": "Sunkissed Honey Body Butter",
+      "raw_brand": "Favelin",
+      "source_url": "https://sourcebeauty.com/products/favelin-sunkissed-honey-body-butter-1"
+    },
+    {
+      "canonical_id": 69376,
+      "observation_id": 21816,
+      "raw_title": "Strawberry Body Butter",
+      "raw_brand": "Soul & More",
+      "source_url": "https://sourcebeauty.com/products/strawberry-body-butter-1"
+    },
+    {
+      "canonical_id": 69388,
+      "observation_id": 15397,
+      "raw_title": "Foaming Cleanser",
+      "raw_brand": "Cerave",
+      "source_url": "https://sourcebeauty.com/products/cerave-foaming-cleanser"
+    },
+    {
+      "canonical_id": 69412,
+      "observation_id": 20800,
+      "raw_title": "Khaliji Hand Cream",
+      "raw_brand": "MOOD",
+      "source_url": "https://sourcebeauty.com/products/mood-khaliji-hand-cream"
+    },
+    {
+      "canonical_id": 69414,
+      "observation_id": 15992,
+      "raw_title": "Delicious Body Lotion",
+      "raw_brand": "Soul & More",
+      "source_url": "https://sourcebeauty.com/products/delicious-body-lotion"
+    },
+    {
+      "canonical_id": 69415,
+      "observation_id": 21315,
+      "raw_title": "Violet Twist Body Lotion",
+      "raw_brand": "Favelin",
+      "source_url": "https://sourcebeauty.com/products/favelin-violet-twist-body-lotion-1"
+    },
+    {
+      "canonical_id": 69416,
+      "observation_id": 20137,
+      "raw_title": "Mini Lip Therapy - Rosy",
+      "raw_brand": "Vaseline",
+      "source_url": "https://sourcebeauty.com/products/vaseline-lip-therapy-rosy-mini"
+    }
+  ],
+  "pages_output": "/mnt/windows/Users/AmrAlfayoumy/Downloads/skincare/repo/data/catalog-repair/sourcebeauty-pages-10-2026-10-26.json",
+  "pages_sha256": "bff03fbd17f931c37078027f08f1e527a00ed51047c05e35a100457d2e7819f5"
+}

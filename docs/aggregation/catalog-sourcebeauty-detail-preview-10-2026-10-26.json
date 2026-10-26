@@ -1,0 +1,178 @@
+{
+  "applied": false,
+  "backup_path": null,
+  "model_calls": 0,
+  "preview_scope": "consistent_isolated_snapshot",
+  "results": [
+    {
+      "url": "https://sourcebeauty.com/products/cosrx-galactomyces-95-tone-balancing-essence",
+      "status": "staged",
+      "canonical_id": 65948,
+      "original_observation_id": 19506,
+      "observation_id": 22984,
+      "evidence_id": 1251,
+      "ingredient_count": 12
+    },
+    {
+      "url": "https://sourcebeauty.com/products/mr-beard-fresh-power-shower-gel",
+      "status": "staged",
+      "canonical_id": 65960,
+      "original_observation_id": 15687,
+      "observation_id": 22985,
+      "evidence_id": 1252,
+      "ingredient_count": 19
+    },
+    {
+      "url": "https://sourcebeauty.com/products/mr-beard-cleansing-face-wash",
+      "status": "evidence_only",
+      "canonical_id": 65961,
+      "original_observation_id": 17221,
+      "observation_id": 22986,
+      "evidence_id": 1253,
+      "ingredient_count": 3
+    },
+    {
+      "url": "https://sourcebeauty.com/products/mr-beard-ocean-drift-shower-gel",
+      "status": "staged",
+      "canonical_id": 65962,
+      "original_observation_id": 15686,
+      "observation_id": 22987,
+      "evidence_id": 1254,
+      "ingredient_count": 19
+    },
+    {
+      "url": "https://sourcebeauty.com/products/round-lab-mugwort-calming-cream",
+      "status": "staged",
+      "canonical_id": 65985,
+      "original_observation_id": 19625,
+      "observation_id": 22988,
+      "evidence_id": 1255,
+      "ingredient_count": 42
+    },
+    {
+      "url": "https://sourcebeauty.com/products/torridensolid-in-ceramide-lip-essence",
+      "status": "no_full_declaration",
+      "canonical_id": 65988,
+      "observation_id": 20151
+    },
+    {
+      "url": "https://sourcebeauty.com/products/telofill-booster-serum",
+      "status": "staged",
+      "canonical_id": 65993,
+      "original_observation_id": 21157,
+      "observation_id": 22989,
+      "evidence_id": 1256,
+      "ingredient_count": 21
+    },
+    {
+      "url": "https://sourcebeauty.com/products/telofill-milk-honey-body-wash",
+      "status": "staged",
+      "canonical_id": 65994,
+      "original_observation_id": 21143,
+      "observation_id": 22990,
+      "evidence_id": 1257,
+      "ingredient_count": 22
+    },
+    {
+      "url": "https://sourcebeauty.com/products/telofill-glowing-serum",
+      "status": "staged",
+      "canonical_id": 65995,
+      "original_observation_id": 21150,
+      "observation_id": 22991,
+      "evidence_id": 1258,
+      "ingredient_count": 19
+    },
+    {
+      "url": "https://sourcebeauty.com/products/some-by-mi-super-matcha-pore-tightening-serum",
+      "status": "staged",
+      "canonical_id": 66002,
+      "original_observation_id": 20088,
+      "observation_id": 22992,
+      "evidence_id": 1259,
+      "ingredient_count": 35
+    },
+    {
+      "url": "https://sourcebeauty.com/products/medicube-age-r-glutathione-glow-cream-50ml",
+      "status": "staged",
+      "canonical_id": 66004,
+      "original_observation_id": 19529,
+      "observation_id": 22993,
+      "evidence_id": 1260,
+      "ingredient_count": 42
+    },
+    {
+      "url": "https://sourcebeauty.com/products/isntree-hyaluronic-acid-lowph-cleansing-foam",
+      "status": "no_full_declaration",
+      "canonical_id": 66009,
+      "observation_id": 19660
+    },
+    {
+      "url": "https://sourcebeauty.com/products/drakon-face-whitening-cream",
+      "status": "evidence_only",
+      "canonical_id": 66033,
+      "original_observation_id": 16058,
+      "observation_id": 22994,
+      "evidence_id": 1261,
+      "ingredient_count": 18
+    },
+    {
+      "url": "https://sourcebeauty.com/products/parkville-antioxidant-facial-cleanser",
+      "status": "evidence_only",
+      "canonical_id": 66057,
+      "original_observation_id": 21169,
+      "observation_id": 22995,
+      "evidence_id": 1262,
+      "ingredient_count": 3
+    },
+    {
+      "url": "https://sourcebeauty.com/products/acne-prone-skin-facial-cleanser",
+      "status": "preserved",
+      "reason": "Partial page does not contain a closed literal ingredient declaration."
+    },
+    {
+      "url": "https://sourcebeauty.com/products/eqqualberry-swimming-pool-ampoule",
+      "status": "staged",
+      "canonical_id": 66090,
+      "original_observation_id": 19535,
+      "observation_id": 22996,
+      "evidence_id": 1263,
+      "ingredient_count": 36
+    },
+    {
+      "url": "https://sourcebeauty.com/products/medicube-super-cica-deep-cleansing-balm-100ml",
+      "status": "staged",
+      "canonical_id": 66091,
+      "original_observation_id": 20041,
+      "observation_id": 22997,
+      "evidence_id": 1264,
+      "ingredient_count": 32
+    },
+    {
+      "url": "https://sourcebeauty.com/products/medicube-triple-collagen-toner",
+      "status": "staged",
+      "canonical_id": 66107,
+      "original_observation_id": 20038,
+      "observation_id": 22998,
+      "evidence_id": 1265,
+      "ingredient_count": 29
+    },
+    {
+      "url": "https://sourcebeauty.com/products/medicube-kojic-acid-turmeric-toning-cleanser",
+      "status": "staged",
+      "canonical_id": 66112,
+      "original_observation_id": 16964,
+      "observation_id": 22999,
+      "evidence_id": 1266,
+      "ingredient_count": 61
+    },
+    {
+      "url": "https://sourcebeauty.com/products/medicube-hyaluronic-acid-capsule-cream",
+      "status": "staged",
+      "canonical_id": 66114,
+      "original_observation_id": 16974,
+      "observation_id": 23000,
+      "evidence_id": 1267,
+      "ingredient_count": 44
+    }
+  ]
+}

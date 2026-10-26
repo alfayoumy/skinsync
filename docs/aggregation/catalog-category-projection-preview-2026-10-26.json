@@ -1,0 +1,2538 @@
+{
+  "applied": false,
+  "backup_path": null,
+  "before": 1448,
+  "after": 1376,
+  "result": {
+    "resolved": 72,
+    "uncertain_preserved": 1282,
+    "superseded_evidence_preserved": 76,
+    "cluster_conflict_preserved": 18
+  },
+  "canonical_projection": {
+    "counts": {
+      "updated": 164,
+      "uncertain_preserved": 1143
+    },
+    "changes": [
+      {
+        "canonical_id": 63206,
+        "title": "Anivagene Serum Fortifying & Energizing for Hair",
+        "before": "Serum",
+        "after": "Hair Care",
+        "is_skincare": false,
+        "evidence": [
+          {
+            "source": "title",
+            "match": "\\b(?:for (?:(?:the|damaged|dry|curly|colored) )?hair|hair transplant|hair (?:fall|loss|growth)|hair ampoules?|hairburst|hairoots|hairvogine)\\b"
+          }
+        ]
+      },
+      {
+        "canonical_id": 63207,
+        "title": "Anivagene Serum Post Hair Transplant",
+        "before": "Serum",
+        "after": "Hair Care",
+        "is_skincare": false,
+        "evidence": [
+          {
+            "source": "title",
+            "match": "\\b(?:for (?:(?:the|damaged|dry|curly|colored) )?hair|hair transplant|hair (?:fall|loss|growth)|hair ampoules?|hairburst|hairoots|hairvogine)\\b"
+          }
+        ]
+      },
+      {
+        "canonical_id": 63224,
+        "title": "TRICHO-ACT Anti-Hair Loss Lotion",
+        "before": "Moisturizer",
+        "after": "Hair Care",
+        "is_skincare": false,
+        "evidence": [
+          {
+            "source": "title",
+            "match": "\\b(?:for (?:(?:the|damaged|dry|curly|colored) )?hair|hair transplant|hair (?:fall|loss|growth)|hair ampoules?|hairburst|hairoots|hairvogine)\\b"
+          }
+        ]
+      },
+      {
+        "canonical_id": 63295,
+        "title": "Organica Anti-Hair Loss Serum Concentrate",
+        "before": "Serum",
+        "after": "Hair Care",
+        "is_skincare": false,
+        "evidence": [
+          {
+            "source": "title",
+            "match": "\\b(?:for (?:(?:the|damaged|dry|curly|colored) )?hair|hair transplant|hair (?:fall|loss|growth)|hair ampoules?|hairburst|hairoots|hairvogine)\\b"
+          }
+        ]
+      },
+      {
+        "canonical_id": 63301,
+        "title": "NOVOPHANE ANTI-HAIR LOSS LOTION",
+        "before": "Moisturizer",
+        "after": "Hair Care",
+        "is_skincare": false,
+        "evidence": [
+          {
+            "source": "title",
+            "match": "\\b(?:for (?:(?:the|damaged|dry|curly|colored) )?hair|hair transplant|hair (?:fall|loss|growth)|hair ampoules?|hairburst|hairoots|hairvogine)\\b"
+          }
+        ]
+      },
+      {
+        "canonical_id": 63319,
+        "title": "Anivagene Lotion Hair Tonic Woman",
+        "before": "Moisturizer",
+        "after": "Hair Care",
+        "is_skincare": false,
+        "evidence": [
+          {
+            "source": "title",
+            "match": "\\b(?:shampoo|conditioner|hair (?:serum|oil|cream|mask|spray|color|tonic|lotion|treatment|mist|gel)|scalp|leave in|kerastase|professionnel|frizz|hairloss|dandruff)\\b"
+          }
+        ]
+      },
+      {
+        "canonical_id": 63337,
+        "title": "CREASTIM ANTI-HAIR LOSS LOTION",
+        "before": "Moisturizer",
+        "after": "Hair Care",
+        "is_skincare": false,
+        "evidence": [
+          {
+            "source": "title",
+            "match": "\\b(?:for (?:(?:the|damaged|dry|curly|colored) )?hair|hair transplant|hair (?:fall|loss|growth)|hair ampoules?|hairburst|hairoots|hairvogine)\\b"
+          }
+        ]
+      },
+      {
+        "canonical_id": 63382,
+        "title": "Essence Care Bears Jelly Grip Extreme Hydrating Primer - 29ml",
+        "before": "Toner",
+        "after": "Makeup",
+        "is_skincare": false,
+        "evidence": [
+          {
+            "source": "title",
+            "match": "\\bprimer\\b"
+          }
+        ]
+      },
+      {
+        "canonical_id": 63415,
+        "title": "Capixy Hair Fertlizer Anti Hair Loss Vials Hair Treatment Ampoule - 70ml",
+        "before": "Serum",
+        "after": "Hair Care",
+        "is_skincare": false,
+        "evidence": [
+          {
+            "source": "title",
+            "match": "\\b(?:shampoo|conditioner|hair (?:serum|oil|cream|mask|spray|color|tonic|lotion|treatment|mist|gel)|scalp|leave in|kerastase|professionnel|frizz|hairloss|dandruff)\\b"
+          }
+        ]
+      },
+      {
+        "canonical_id": 63466,
+        "title": "Arencia Vitamin C Booster Shot Mask - 1 Sheet",
+        "before": "Serum",
+        "after": "Mask",
+        "is_skincare": true,
+        "evidence": [
+          {
+            "source": "title",
+            "category": "Mask",
+            "match": "mask",
+            "weight": 4
+          },
+          {
+            "source": "title",
+            "category": "Serum",
+            "match": "booster",
+            "weight": 4
+          }
+        ]
+      },
+      {
+        "canonical_id": 63484,
+        "title": "Sorciere Hair Grower Hair Lotion - 160ml",
+        "before": "Moisturizer",
+        "after": "Hair Care",
+        "is_skincare": false,
+        "evidence": [
+          {
+            "source": "title",
+            "match": "\\b(?:shampoo|conditioner|hair (?:serum|oil|cream|mask|spray|color|tonic|lotion|treatment|mist|gel)|scalp|leave in|kerastase|professionnel|frizz|hairloss|dandruff)\\b"
+          }
+        ]
+      },
+      {
+        "canonical_id": 63526,
+        "title": "Uriage Hyseac 3-Regul+ Global Anti Blemish Care Cream - 40ml",
+        "before": "Moisturizer",
+        "after": "Treatment",
+        "is_skincare": true,
+        "evidence": [
+          {
+            "source": "title",
+            "category": "Treatment",
+            "match": "anti blemish care",
+            "weight": 4
+          },
+          {
+            "source": "title",
+            "category": "Moisturizer",
+            "match": "cream",
+            "weight": 4
+          }
+        ]
+      },
+      {
+        "canonical_id": 63538,
+        "title": "Anivagene Hair Tonic Lotion  For Men - 125ml",
+        "before": "Moisturizer",
+        "after": "Hair Care",
+        "is_skincare": false,
+        "evidence": [
+          {
+            "source": "title",
+            "match": "\\b(?:shampoo|conditioner|hair (?:serum|oil|cream|mask|spray|color|tonic|lotion|treatment|mist|gel)|scalp|leave in|kerastase|professionnel|frizz|hairloss|dandruff)\\b"
+          }
+        ]
+      },
+      {
+        "canonical_id": 63549,
+        "title": "Purederm Honey Essence Sheet Mask - 1 Sheet",
+        "before": "Toner",
+        "after": "Mask",
+        "is_skincare": true,
+        "evidence": [
+          {
+            "source": "title",
+            "category": "Toner",
+            "match": "essence",
+            "weight": 4
+          },
+          {
+            "source": "title",
+            "category": "Mask",
+            "match": "mask",
+            "weight": 4
+          }
+        ]
+      },
+      {
+        "canonical_id": 63568,
+        "title": "Dermedic Capilarte Hair Growth and Regrowth Treatment Serum - 150ml",
+        "before": "Serum",
+        "after": "Hair Care",
+        "is_skincare": false,
+        "evidence": [
+          {
+            "source": "title",
+            "match": "\\b(?:for (?:(?:the|damaged|dry|curly|colored) )?hair|hair transplant|hair (?:fall|loss|growth)|hair ampoules?|hairburst|hairoots|hairvogine)\\b"
+          }
+        ]
+      },
+      {
+        "canonical_id": 63583,
+        "title": "Medicube Pdrn Pink Peptide Serum Mask - 1 Sheet",
+        "before": "Serum",
+        "after": "Mask",
+        "is_skincare": true,
+        "evidence": [
+          {
+            "source": "title",
+            "category": "Mask",
+            "match": "mask",
+            "weight": 4
+          },
+          {
+            "source": "title",
+            "category": "Serum",
+            "match": "serum",
+            "weight": 4
+          }
+        ]
+      },
+      {
+        "canonical_id": 63590,
+        "title": "Essence Water Dew Serum Blusher - 3.5ml",
+        "before": "Toner",
+        "after": "Makeup",
+        "is_skincare": false,
+        "evidence": [
+          {
+            "source": "title",
+            "match": "\\b(?:mascara|eyeliner|eyeshadow|lipstick|lip (?:cheek )?tint|foundation|concealer|blush\\w*|setting powder|nail polish|lash serum|eyebrow)\\b"
+          }
+        ]
+      },
+      {
+        "canonical_id": 63591,
+        "title": "Essence Water Dew Serum Blusher - 3.5ml",
+        "before": "Toner",
+        "after": "Makeup",
+        "is_skincare": false,
+        "evidence": [
+          {
+            "source": "title",
+            "match": "\\b(?:mascara|eyeliner|eyeshadow|lipstick|lip (?:cheek )?tint|foundation|concealer|blush\\w*|setting powder|nail polish|lash serum|eyebrow)\\b"
+          }
+        ]
+      },
+      {
+        "canonical_id": 63651,
+        "title": "Medicube Hypochlorous Acid Peel Mask - 1 Sheet",
+        "before": "Exfoliator",
+        "after": "Mask",
+        "is_skincare": true,
+        "evidence": [
+          {
+            "source": "title",
+            "category": "Mask",
+            "match": "mask",
+            "weight": 4
+          },
+          {
+            "source": "title",
+            "category": "Exfoliator",
+            "match": "peel",
+            "weight": 4
+          }
+        ]
+      },
+      {
+        "canonical_id": 63682,
+        "title": "Go Natural Creme Brulee EDP For Women - 50ml",
+        "before": "Moisturizer",
+        "after": "Fragrance",
+        "is_skincare": false,
+        "evidence": [
+          {
+            "source": "title",
+            "match": "\\b(?:edp|edt|air freshener|linen spray|wardrobe scented bar)\\b"
+          }
+        ]
+      },
+      {
+        "canonical_id": 63683,
+        "title": "Rimmel Multi-Tasker Better Than Filters Glow Booster & Highlighter & Primer - 30ml",
+        "before": "Serum",
+        "after": "Makeup",
+        "is_skincare": false,
+        "evidence": [
+          {
+            "source": "title",
+            "match": "\\bprimer\\b"
+          }
+        ]
+      },
+      {
+        "canonical_id": 63684,
+        "title": "Rimmel Multi-Tasker Better Than Filters Glow Booster & Highlighter & Primer - 30ml",
+        "before": "Serum",
+        "after": "Makeup",
+        "is_skincare": false,
+        "evidence": [
+          {
+            "source": "title",
+            "match": "\\bprimer\\b"
+          }
+        ]
+      },
+      {
+        "canonical_id": 63685,
+        "title": "Rimmel Multi-Tasker Better Than Filters Glow Booster & Highlighter & Primer - 30ml",
+        "before": "Serum",
+        "after": "Makeup",
+        "is_skincare": false,
+        "evidence": [
+          {
+            "source": "title",
+            "match": "\\bprimer\\b"
+          }
+        ]
+      },
+      {
+        "canonical_id": 63690,
+        "title": "Clary Hair Fall Control Booster Shot - 30ml",
+        "before": "Serum",
+        "after": "Hair Care",
+        "is_skincare": false,
+        "evidence": [
+          {
+            "source": "title",
+            "match": "\\b(?:for (?:(?:the|damaged|dry|curly|colored) )?hair|hair transplant|hair (?:fall|loss|growth)|hair ampoules?|hairburst|hairoots|hairvogine)\\b"
+          }
+        ]
+      },
+      {
+        "canonical_id": 63746,
+        "title": "Dermactive Tricho-Act Anti Hair Loss Concentrate Lotion - 120ml",
+        "before": "Serum",
+        "after": "Hair Care",
+        "is_skincare": false,
+        "evidence": [
+          {
+            "source": "title",
+            "match": "\\b(?:for (?:(?:the|damaged|dry|curly|colored) )?hair|hair transplant|hair (?:fall|loss|growth)|hair ampoules?|hairburst|hairoots|hairvogine)\\b"
+          }
+        ]
+      },
+      {
+        "canonical_id": 63799,
+        "title": "Rays & Rocks After Sun Recovery Body Balm - 100ml",
+        "before": "Tanning",
+        "after": "Body Care",
+        "is_skincare": true,
+        "evidence": [
+          {
+            "source": "title",
+            "category": "Body Care",
+            "match": "body balm",
+            "weight": 4
+          },
+          {
+            "source": "title",
+            "category": "Moisturizer",
+            "match": "balm",
+            "weight": 4
+          },
+          {
+            "source": "title",
+            "category": "Tanning",
+            "match": "after sun",
+            "weight": 4
+          }
+        ]
+      },
+      {
+        "canonical_id": 63923,
+        "title": "Essence What The Fluff Lip Tint - 5.1ml",
+        "before": "Toner",
+        "after": "Makeup",
+        "is_skincare": false,
+        "evidence": [
+          {
+            "source": "title",
+            "match": "\\b(?:mascara|eyeliner|eyeshadow|lipstick|lip (?:cheek )?tint|foundation|concealer|blush\\w*|setting powder|nail polish|lash serum|eyebrow)\\b"
+          }
+        ]
+      },
+      {
+        "canonical_id": 63924,
+        "title": "Essence Disney The Little Mermaid Mattifying Primer - 35gm",
+        "before": "Toner",
+        "after": "Makeup",
+        "is_skincare": false,
+        "evidence": [
+          {
+            "source": "title",
+            "match": "\\bprimer\\b"
+          }
+        ]
+      },
+      {
+        "canonical_id": 64047,
+        "title": "Bourjois Cream Round Tin Blusher - 8.5gm",
+        "before": "Moisturizer",
+        "after": "Makeup",
+        "is_skincare": false,
+        "evidence": [
+          {
+            "source": "title",
+            "match": "\\b(?:mascara|eyeliner|eyeshadow|lipstick|lip (?:cheek )?tint|foundation|concealer|blush\\w*|setting powder|nail polish|lash serum|eyebrow)\\b"
+          }
+        ]
+      },
+      {
+        "canonical_id": 64048,
+        "title": "Bourjois Cream Round Tin Blusher - 8.5gm",
+        "before": "Moisturizer",
+        "after": "Makeup",
+        "is_skincare": false,
+        "evidence": [
+          {
+            "source": "title",
+            "match": "\\b(?:mascara|eyeliner|eyeshadow|lipstick|lip (?:cheek )?tint|foundation|concealer|blush\\w*|setting powder|nail polish|lash serum|eyebrow)\\b"
+          }
+        ]
+      },
+      {
+        "canonical_id": 64049,
+        "title": "Bourjois Cream Round Tin Blusher - 8.5gm",
+        "before": "Moisturizer",
+        "after": "Makeup",
+        "is_skincare": false,
+        "evidence": [
+          {
+            "source": "title",
+            "match": "\\b(?:mascara|eyeliner|eyeshadow|lipstick|lip (?:cheek )?tint|foundation|concealer|blush\\w*|setting powder|nail polish|lash serum|eyebrow)\\b"
+          }
+        ]
+      },
+      {
+        "canonical_id": 64050,
+        "title": "Celimax Pore & Dark Spot Brightening Serum Mask - 1 Sheet",
+        "before": "Serum",
+        "after": "Mask",
+        "is_skincare": true,
+        "evidence": [
+          {
+            "source": "title",
+            "category": "Mask",
+            "match": "mask",
+            "weight": 4
+          },
+          {
+            "source": "title",
+            "category": "Serum",
+            "match": "serum",
+            "weight": 4
+          }
+        ]
+      },
+      {
+        "canonical_id": 64141,
+        "title": "Dove Care & Protect Moisturizing Hand Wash - 500ml",
+        "before": "Moisturizer",
+        "after": "Body Care",
+        "is_skincare": true,
+        "evidence": [
+          {
+            "source": "title",
+            "category": "Body Care",
+            "match": "hand wash",
+            "weight": 4
+          },
+          {
+            "source": "title",
+            "category": "Moisturizer",
+            "match": "moisturizing",
+            "weight": 4
+          }
+        ]
+      },
+      {
+        "canonical_id": 64149,
+        "title": "Luna Lip Moisturizer - 3.5gm",
+        "before": "Moisturizer",
+        "after": "Lip Care",
+        "is_skincare": true,
+        "evidence": [
+          {
+            "source": "title",
+            "category": "Lip Care",
+            "match": "lip moisturizer",
+            "weight": 4
+          },
+          {
+            "source": "title",
+            "category": "Moisturizer",
+            "match": "moisturizer",
+            "weight": 4
+          }
+        ]
+      },
+      {
+        "canonical_id": 64196,
+        "title": "Milk Shake Curl Passion Fluid Hair Gel Cream - 200ml",
+        "before": "Moisturizer",
+        "after": "Hair Care",
+        "is_skincare": false,
+        "evidence": [
+          {
+            "source": "title",
+            "match": "\\b(?:shampoo|conditioner|hair (?:serum|oil|cream|mask|spray|color|tonic|lotion|treatment|mist|gel)|scalp|leave in|kerastase|professionnel|frizz|hairloss|dandruff)\\b"
+          }
+        ]
+      },
+      {
+        "canonical_id": 64219,
+        "title": "The Bathland Rejuvenates & Moisturizes Let\u2019s Go Coconut Hair Mist - 80ml",
+        "before": "Moisturizer",
+        "after": "Hair Care",
+        "is_skincare": false,
+        "evidence": [
+          {
+            "source": "title",
+            "match": "\\b(?:shampoo|conditioner|hair (?:serum|oil|cream|mask|spray|color|tonic|lotion|treatment|mist|gel)|scalp|leave in|kerastase|professionnel|frizz|hairloss|dandruff)\\b"
+          }
+        ]
+      },
+      {
+        "canonical_id": 64290,
+        "title": "Buend Love Is In The Hair Vanilla Cream Hair Mist - 100ml",
+        "before": "Moisturizer",
+        "after": "Hair Care",
+        "is_skincare": false,
+        "evidence": [
+          {
+            "source": "title",
+            "match": "\\b(?:shampoo|conditioner|hair (?:serum|oil|cream|mask|spray|color|tonic|lotion|treatment|mist|gel)|scalp|leave in|kerastase|professionnel|frizz|hairloss|dandruff)\\b"
+          }
+        ]
+      },
+      {
+        "canonical_id": 64317,
+        "title": "Hadwa Coconut oil Moisturizing Shimmering Body Balm - 120ml",
+        "before": "Moisturizer",
+        "after": "Body Care",
+        "is_skincare": true,
+        "evidence": [
+          {
+            "source": "title",
+            "category": "Body Care",
+            "match": "body balm",
+            "weight": 4
+          },
+          {
+            "source": "title",
+            "category": "Moisturizer",
+            "match": "moisturizing",
+            "weight": 4
+          }
+        ]
+      },
+      {
+        "canonical_id": 64345,
+        "title": "Heka Hair Growth Formula Serum \u2013 50ml",
+        "before": "Serum",
+        "after": "Hair Care",
+        "is_skincare": false,
+        "evidence": [
+          {
+            "source": "title",
+            "match": "\\b(?:for (?:(?:the|damaged|dry|curly|colored) )?hair|hair transplant|hair (?:fall|loss|growth)|hair ampoules?|hairburst|hairoots|hairvogine)\\b"
+          }
+        ]
+      },
+      {
+        "canonical_id": 64494,
+        "title": "Bio Hair Lotion Spray 100ml",
+        "before": "Moisturizer",
+        "after": "Hair Care",
+        "is_skincare": false,
+        "evidence": [
+          {
+            "source": "title",
+            "match": "\\b(?:shampoo|conditioner|hair (?:serum|oil|cream|mask|spray|color|tonic|lotion|treatment|mist|gel)|scalp|leave in|kerastase|professionnel|frizz|hairloss|dandruff)\\b"
+          }
+        ]
+      },
+      {
+        "canonical_id": 64519,
+        "title": "Moist-1 Lip Moisturizer (Balm) 15 Gm. 1+1",
+        "before": "Moisturizer",
+        "after": "Lip Care",
+        "is_skincare": true,
+        "evidence": [
+          {
+            "source": "title",
+            "category": "Lip Care",
+            "match": "lip moisturizer",
+            "weight": 4
+          },
+          {
+            "source": "title",
+            "category": "Moisturizer",
+            "match": "moisturizer",
+            "weight": 4
+          }
+        ]
+      },
+      {
+        "canonical_id": 64552,
+        "title": "Charmalure Anti Hair Loss Lotion 120ml",
+        "before": "Moisturizer",
+        "after": "Hair Care",
+        "is_skincare": false,
+        "evidence": [
+          {
+            "source": "title",
+            "match": "\\b(?:for (?:(?:the|damaged|dry|curly|colored) )?hair|hair transplant|hair (?:fall|loss|growth)|hair ampoules?|hairburst|hairoots|hairvogine)\\b"
+          }
+        ]
+      },
+      {
+        "canonical_id": 64600,
+        "title": "HERANORISH ANTI-HAIR LOSS LOTION 120ML",
+        "before": "Moisturizer",
+        "after": "Hair Care",
+        "is_skincare": false,
+        "evidence": [
+          {
+            "source": "title",
+            "match": "\\b(?:for (?:(?:the|damaged|dry|curly|colored) )?hair|hair transplant|hair (?:fall|loss|growth)|hair ampoules?|hairburst|hairoots|hairvogine)\\b"
+          }
+        ]
+      },
+      {
+        "canonical_id": 64693,
+        "title": "All By Mi Pro Hair Mist SPF50 200ml",
+        "before": "Sunscreen",
+        "after": "Hair Care",
+        "is_skincare": false,
+        "evidence": [
+          {
+            "source": "title",
+            "match": "\\b(?:shampoo|conditioner|hair (?:serum|oil|cream|mask|spray|color|tonic|lotion|treatment|mist|gel)|scalp|leave in|kerastase|professionnel|frizz|hairloss|dandruff)\\b"
+          }
+        ]
+      },
+      {
+        "canonical_id": 64756,
+        "title": "Bioxcin Forte Herbal For Intensine Hair Loss Serum 50 Ml",
+        "before": "Serum",
+        "after": "Hair Care",
+        "is_skincare": false,
+        "evidence": [
+          {
+            "source": "title",
+            "match": "\\b(?:for (?:(?:the|damaged|dry|curly|colored) )?hair|hair transplant|hair (?:fall|loss|growth)|hair ampoules?|hairburst|hairoots|hairvogine)\\b"
+          }
+        ]
+      },
+      {
+        "canonical_id": 64765,
+        "title": "Rederma Anti Hair Loss Spray Lotion 100ML",
+        "before": "Moisturizer",
+        "after": "Hair Care",
+        "is_skincare": false,
+        "evidence": [
+          {
+            "source": "title",
+            "match": "\\b(?:for (?:(?:the|damaged|dry|curly|colored) )?hair|hair transplant|hair (?:fall|loss|growth)|hair ampoules?|hairburst|hairoots|hairvogine)\\b"
+          }
+        ]
+      },
+      {
+        "canonical_id": 64766,
+        "title": "Rederma Anti Hair Loss Styling Cream 100ml",
+        "before": "Moisturizer",
+        "after": "Hair Care",
+        "is_skincare": false,
+        "evidence": [
+          {
+            "source": "title",
+            "match": "\\b(?:for (?:(?:the|damaged|dry|curly|colored) )?hair|hair transplant|hair (?:fall|loss|growth)|hair ampoules?|hairburst|hairoots|hairvogine)\\b"
+          }
+        ]
+      },
+      {
+        "canonical_id": 64776,
+        "title": "Essence Glow Like Honey Dewy Primer.",
+        "before": "Toner",
+        "after": "Makeup",
+        "is_skincare": false,
+        "evidence": [
+          {
+            "source": "title",
+            "match": "\\bprimer\\b"
+          }
+        ]
+      },
+      {
+        "canonical_id": 64777,
+        "title": "Essence Wonder Full Primer 5-In-1 10 Light.",
+        "before": "Toner",
+        "after": "Makeup",
+        "is_skincare": false,
+        "evidence": [
+          {
+            "source": "title",
+            "match": "\\bprimer\\b"
+          }
+        ]
+      },
+      {
+        "canonical_id": 64780,
+        "title": "Essence Hydra Kiss Lip Tint 06 Berry Crush.",
+        "before": "Toner",
+        "after": "Makeup",
+        "is_skincare": false,
+        "evidence": [
+          {
+            "source": "title",
+            "match": "\\b(?:mascara|eyeliner|eyeshadow|lipstick|lip (?:cheek )?tint|foundation|concealer|blush\\w*|setting powder|nail polish|lash serum|eyebrow)\\b"
+          }
+        ]
+      },
+      {
+        "canonical_id": 64842,
+        "title": "Eba_Act Hair Lotion 120Ml",
+        "before": "Moisturizer",
+        "after": "Hair Care",
+        "is_skincare": false,
+        "evidence": [
+          {
+            "source": "title",
+            "match": "\\b(?:shampoo|conditioner|hair (?:serum|oil|cream|mask|spray|color|tonic|lotion|treatment|mist|gel)|scalp|leave in|kerastase|professionnel|frizz|hairloss|dandruff)\\b"
+          }
+        ]
+      },
+      {
+        "canonical_id": 64863,
+        "title": "Essence What A Tint! Lip & Cheek Tint 02 Coral Sunset.",
+        "before": "Toner",
+        "after": "Makeup",
+        "is_skincare": false,
+        "evidence": [
+          {
+            "source": "title",
+            "match": "\\b(?:mascara|eyeliner|eyeshadow|lipstick|lip (?:cheek )?tint|foundation|concealer|blush\\w*|setting powder|nail polish|lash serum|eyebrow)\\b"
+          }
+        ]
+      },
+      {
+        "canonical_id": 64951,
+        "title": "Acm Novophane Anti-Hair Loss Lotion 100Ml.",
+        "before": "Moisturizer",
+        "after": "Hair Care",
+        "is_skincare": false,
+        "evidence": [
+          {
+            "source": "title",
+            "match": "\\b(?:for (?:(?:the|damaged|dry|curly|colored) )?hair|hair transplant|hair (?:fall|loss|growth)|hair ampoules?|hairburst|hairoots|hairvogine)\\b"
+          }
+        ]
+      },
+      {
+        "canonical_id": 65001,
+        "title": "Kera Hair Lotion 120Ml",
+        "before": "Moisturizer",
+        "after": "Hair Care",
+        "is_skincare": false,
+        "evidence": [
+          {
+            "source": "title",
+            "match": "\\b(?:shampoo|conditioner|hair (?:serum|oil|cream|mask|spray|color|tonic|lotion|treatment|mist|gel)|scalp|leave in|kerastase|professionnel|frizz|hairloss|dandruff)\\b"
+          }
+        ]
+      },
+      {
+        "canonical_id": 65017,
+        "title": "Some By Mi Yuja Niacin 30 Days Blemish Care Serum Mask",
+        "before": "Serum",
+        "after": "Mask",
+        "is_skincare": true,
+        "evidence": [
+          {
+            "source": "title",
+            "category": "Mask",
+            "match": "mask",
+            "weight": 4
+          },
+          {
+            "source": "title",
+            "category": "Serum",
+            "match": "serum",
+            "weight": 4
+          }
+        ]
+      },
+      {
+        "canonical_id": 65027,
+        "title": "Healthy Max Hair Lotion 120Ml",
+        "before": "Moisturizer",
+        "after": "Hair Care",
+        "is_skincare": false,
+        "evidence": [
+          {
+            "source": "title",
+            "match": "\\b(?:shampoo|conditioner|hair (?:serum|oil|cream|mask|spray|color|tonic|lotion|treatment|mist|gel)|scalp|leave in|kerastase|professionnel|frizz|hairloss|dandruff)\\b"
+          }
+        ]
+      },
+      {
+        "canonical_id": 65063,
+        "title": "Sheglam Love Dive At First Sight Moisturizing Primer.",
+        "before": "Moisturizer",
+        "after": "Makeup",
+        "is_skincare": false,
+        "evidence": [
+          {
+            "source": "title",
+            "match": "\\bprimer\\b"
+          }
+        ]
+      },
+      {
+        "canonical_id": 65172,
+        "title": "Acure Scrub Mask",
+        "before": "Exfoliator",
+        "after": "Mask",
+        "is_skincare": true,
+        "evidence": [
+          {
+            "source": "title",
+            "category": "Mask",
+            "match": "mask",
+            "weight": 4
+          },
+          {
+            "source": "title",
+            "category": "Exfoliator",
+            "match": "scrub",
+            "weight": 4
+          }
+        ]
+      },
+      {
+        "canonical_id": 65212,
+        "title": "Sheglam Peel Talk Lip Tint-Celeb Crush.",
+        "before": "Exfoliator",
+        "after": "Makeup",
+        "is_skincare": false,
+        "evidence": [
+          {
+            "source": "title",
+            "match": "\\b(?:mascara|eyeliner|eyeshadow|lipstick|lip (?:cheek )?tint|foundation|concealer|blush\\w*|setting powder|nail polish|lash serum|eyebrow)\\b"
+          }
+        ]
+      },
+      {
+        "canonical_id": 65215,
+        "title": "Catrice The Smoother Plumping Primer Concentrate -15Ml.",
+        "before": "Serum",
+        "after": "Makeup",
+        "is_skincare": false,
+        "evidence": [
+          {
+            "source": "title",
+            "match": "\\bprimer\\b"
+          }
+        ]
+      },
+      {
+        "canonical_id": 65336,
+        "title": "Vially Hair Lotion 120Ml",
+        "before": "Moisturizer",
+        "after": "Hair Care",
+        "is_skincare": false,
+        "evidence": [
+          {
+            "source": "title",
+            "match": "\\b(?:shampoo|conditioner|hair (?:serum|oil|cream|mask|spray|color|tonic|lotion|treatment|mist|gel)|scalp|leave in|kerastase|professionnel|frizz|hairloss|dandruff)\\b"
+          }
+        ]
+      },
+      {
+        "canonical_id": 65494,
+        "title": "Sun And Sun Hair Mist Spf50+ 125Ml",
+        "before": "Sunscreen",
+        "after": "Hair Care",
+        "is_skincare": false,
+        "evidence": [
+          {
+            "source": "title",
+            "match": "\\b(?:shampoo|conditioner|hair (?:serum|oil|cream|mask|spray|color|tonic|lotion|treatment|mist|gel)|scalp|leave in|kerastase|professionnel|frizz|hairloss|dandruff)\\b"
+          }
+        ]
+      },
+      {
+        "canonical_id": 65497,
+        "title": "Youlicious Anti Hair Loss Tonic Lotion 125Ml",
+        "before": "Moisturizer",
+        "after": "Hair Care",
+        "is_skincare": false,
+        "evidence": [
+          {
+            "source": "title",
+            "match": "\\b(?:for (?:(?:the|damaged|dry|curly|colored) )?hair|hair transplant|hair (?:fall|loss|growth)|hair ampoules?|hairburst|hairoots|hairvogine)\\b"
+          }
+        ]
+      },
+      {
+        "canonical_id": 65528,
+        "title": "Rozalia Hair Lotion",
+        "before": "Moisturizer",
+        "after": "Hair Care",
+        "is_skincare": false,
+        "evidence": [
+          {
+            "source": "title",
+            "match": "\\b(?:shampoo|conditioner|hair (?:serum|oil|cream|mask|spray|color|tonic|lotion|treatment|mist|gel)|scalp|leave in|kerastase|professionnel|frizz|hairloss|dandruff)\\b"
+          }
+        ]
+      },
+      {
+        "canonical_id": 65533,
+        "title": "Hairvogine Lotion Spray 100Ml",
+        "before": "Moisturizer",
+        "after": "Hair Care",
+        "is_skincare": false,
+        "evidence": [
+          {
+            "source": "title",
+            "match": "\\b(?:for (?:(?:the|damaged|dry|curly|colored) )?hair|hair transplant|hair (?:fall|loss|growth)|hair ampoules?|hairburst|hairoots|hairvogine)\\b"
+          }
+        ]
+      },
+      {
+        "canonical_id": 65556,
+        "title": "Top Hair Lotion Plus - Hair Loss Treatment 120Ml",
+        "before": "Moisturizer",
+        "after": "Hair Care",
+        "is_skincare": false,
+        "evidence": [
+          {
+            "source": "title",
+            "match": "\\b(?:shampoo|conditioner|hair (?:serum|oil|cream|mask|spray|color|tonic|lotion|treatment|mist|gel)|scalp|leave in|kerastase|professionnel|frizz|hairloss|dandruff)\\b"
+          }
+        ]
+      },
+      {
+        "canonical_id": 65560,
+        "title": "Nanotreat Hair Lotion Spray 200Ml",
+        "before": "Moisturizer",
+        "after": "Hair Care",
+        "is_skincare": false,
+        "evidence": [
+          {
+            "source": "title",
+            "match": "\\b(?:shampoo|conditioner|hair (?:serum|oil|cream|mask|spray|color|tonic|lotion|treatment|mist|gel)|scalp|leave in|kerastase|professionnel|frizz|hairloss|dandruff)\\b"
+          }
+        ]
+      },
+      {
+        "canonical_id": 65581,
+        "title": "Youlicious Bright & Glow Booster Mask 6In1",
+        "before": "Serum",
+        "after": "Mask",
+        "is_skincare": true,
+        "evidence": [
+          {
+            "source": "title",
+            "category": "Mask",
+            "match": "mask",
+            "weight": 4
+          },
+          {
+            "source": "title",
+            "category": "Serum",
+            "match": "booster",
+            "weight": 4
+          }
+        ]
+      },
+      {
+        "canonical_id": 65593,
+        "title": "D\u00e9piwhite Whitening Peel-Off Mask - 40 Ml",
+        "before": "Exfoliator",
+        "after": "Mask",
+        "is_skincare": true,
+        "evidence": [
+          {
+            "source": "title",
+            "category": "Mask",
+            "match": "mask",
+            "weight": 4
+          },
+          {
+            "source": "title",
+            "category": "Exfoliator",
+            "match": "peel",
+            "weight": 4
+          }
+        ]
+      },
+      {
+        "canonical_id": 65632,
+        "title": "Altressa Lotion Anti Hair Loss 120Ml",
+        "before": "Moisturizer",
+        "after": "Hair Care",
+        "is_skincare": false,
+        "evidence": [
+          {
+            "source": "title",
+            "match": "\\b(?:for (?:(?:the|damaged|dry|curly|colored) )?hair|hair transplant|hair (?:fall|loss|growth)|hair ampoules?|hairburst|hairoots|hairvogine)\\b"
+          }
+        ]
+      },
+      {
+        "canonical_id": 65665,
+        "title": "Vaseline Gluta-Hya Smooth Radiance Serum Burst Body Lotion200Ml",
+        "before": "Serum",
+        "after": "Body Care",
+        "is_skincare": true,
+        "evidence": [
+          {
+            "source": "title",
+            "category": "Body Care",
+            "match": "body lotion",
+            "weight": 4
+          },
+          {
+            "source": "title",
+            "category": "Serum",
+            "match": "serum",
+            "weight": 4
+          },
+          {
+            "source": "title",
+            "category": "Moisturizer",
+            "match": "lotion",
+            "weight": 4
+          }
+        ]
+      },
+      {
+        "canonical_id": 65674,
+        "title": "Premier Hair Loss Lotion (Premdense Spray)100 Ml",
+        "before": "Moisturizer",
+        "after": "Hair Care",
+        "is_skincare": false,
+        "evidence": [
+          {
+            "source": "title",
+            "match": "\\b(?:for (?:(?:the|damaged|dry|curly|colored) )?hair|hair transplant|hair (?:fall|loss|growth)|hair ampoules?|hairburst|hairoots|hairvogine)\\b"
+          }
+        ]
+      },
+      {
+        "canonical_id": 65775,
+        "title": "Hairoots Serum 50Ml",
+        "before": "Serum",
+        "after": "Hair Care",
+        "is_skincare": false,
+        "evidence": [
+          {
+            "source": "title",
+            "match": "\\b(?:for (?:(?:the|damaged|dry|curly|colored) )?hair|hair transplant|hair (?:fall|loss|growth)|hair ampoules?|hairburst|hairoots|hairvogine)\\b"
+          }
+        ]
+      },
+      {
+        "canonical_id": 65776,
+        "title": "Hairoots Hair Lotion Hair Growth Accelerator 75Ml",
+        "before": "Moisturizer",
+        "after": "Hair Care",
+        "is_skincare": false,
+        "evidence": [
+          {
+            "source": "title",
+            "match": "\\b(?:shampoo|conditioner|hair (?:serum|oil|cream|mask|spray|color|tonic|lotion|treatment|mist|gel)|scalp|leave in|kerastase|professionnel|frizz|hairloss|dandruff)\\b"
+          }
+        ]
+      },
+      {
+        "canonical_id": 65777,
+        "title": "Hairoots Cream 100Ml",
+        "before": "Moisturizer",
+        "after": "Hair Care",
+        "is_skincare": false,
+        "evidence": [
+          {
+            "source": "title",
+            "match": "\\b(?:for (?:(?:the|damaged|dry|curly|colored) )?hair|hair transplant|hair (?:fall|loss|growth)|hair ampoules?|hairburst|hairoots|hairvogine)\\b"
+          }
+        ]
+      },
+      {
+        "canonical_id": 65784,
+        "title": "Trix Hair Loss Lotion 120Ml",
+        "before": "Moisturizer",
+        "after": "Hair Care",
+        "is_skincare": false,
+        "evidence": [
+          {
+            "source": "title",
+            "match": "\\b(?:for (?:(?:the|damaged|dry|curly|colored) )?hair|hair transplant|hair (?:fall|loss|growth)|hair ampoules?|hairburst|hairoots|hairvogine)\\b"
+          }
+        ]
+      },
+      {
+        "canonical_id": 65785,
+        "title": "Appe Hair Lotion Anti-Hair Loss 150Ml",
+        "before": "Moisturizer",
+        "after": "Hair Care",
+        "is_skincare": false,
+        "evidence": [
+          {
+            "source": "title",
+            "match": "\\b(?:shampoo|conditioner|hair (?:serum|oil|cream|mask|spray|color|tonic|lotion|treatment|mist|gel)|scalp|leave in|kerastase|professionnel|frizz|hairloss|dandruff)\\b"
+          }
+        ]
+      },
+      {
+        "canonical_id": 65786,
+        "title": "Rosita Hair Lotion 250Ml",
+        "before": "Moisturizer",
+        "after": "Hair Care",
+        "is_skincare": false,
+        "evidence": [
+          {
+            "source": "title",
+            "match": "\\b(?:shampoo|conditioner|hair (?:serum|oil|cream|mask|spray|color|tonic|lotion|treatment|mist|gel)|scalp|leave in|kerastase|professionnel|frizz|hairloss|dandruff)\\b"
+          }
+        ]
+      },
+      {
+        "canonical_id": 65788,
+        "title": "Twist And Go Anti Hair Loss Lotion 100Ml",
+        "before": "Moisturizer",
+        "after": "Hair Care",
+        "is_skincare": false,
+        "evidence": [
+          {
+            "source": "title",
+            "match": "\\b(?:for (?:(?:the|damaged|dry|curly|colored) )?hair|hair transplant|hair (?:fall|loss|growth)|hair ampoules?|hairburst|hairoots|hairvogine)\\b"
+          }
+        ]
+      },
+      {
+        "canonical_id": 65789,
+        "title": "Alejon Hair Lotion Anti-Hair Loss 150Ml",
+        "before": "Moisturizer",
+        "after": "Hair Care",
+        "is_skincare": false,
+        "evidence": [
+          {
+            "source": "title",
+            "match": "\\b(?:shampoo|conditioner|hair (?:serum|oil|cream|mask|spray|color|tonic|lotion|treatment|mist|gel)|scalp|leave in|kerastase|professionnel|frizz|hairloss|dandruff)\\b"
+          }
+        ]
+      },
+      {
+        "canonical_id": 65795,
+        "title": "Nawah Serum Anti-Hair Loss 50Ml",
+        "before": "Serum",
+        "after": "Hair Care",
+        "is_skincare": false,
+        "evidence": [
+          {
+            "source": "title",
+            "match": "\\b(?:for (?:(?:the|damaged|dry|curly|colored) )?hair|hair transplant|hair (?:fall|loss|growth)|hair ampoules?|hairburst|hairoots|hairvogine)\\b"
+          }
+        ]
+      },
+      {
+        "canonical_id": 65936,
+        "title": "Farmstay Real Calamansi Essence Mask",
+        "before": "Toner",
+        "after": "Mask",
+        "is_skincare": true,
+        "evidence": [
+          {
+            "source": "title",
+            "category": "Toner",
+            "match": "essence",
+            "weight": 4
+          },
+          {
+            "source": "title",
+            "category": "Mask",
+            "match": "mask",
+            "weight": 4
+          }
+        ]
+      },
+      {
+        "canonical_id": 65937,
+        "title": "Essence You Better Work Eye Primer",
+        "before": "Toner",
+        "after": "Makeup",
+        "is_skincare": false,
+        "evidence": [
+          {
+            "source": "title",
+            "match": "\\bprimer\\b"
+          }
+        ]
+      },
+      {
+        "canonical_id": 66053,
+        "title": "Clary SPF50 Hair Mist 120ml",
+        "before": "Sunscreen",
+        "after": "Hair Care",
+        "is_skincare": false,
+        "evidence": [
+          {
+            "source": "title",
+            "match": "\\b(?:shampoo|conditioner|hair (?:serum|oil|cream|mask|spray|color|tonic|lotion|treatment|mist|gel)|scalp|leave in|kerastase|professionnel|frizz|hairloss|dandruff)\\b"
+          }
+        ]
+      },
+      {
+        "canonical_id": 66065,
+        "title": "Garnier Fast Bright Instant Bright Tissue Mask With Vitamin C and Milky Essence",
+        "before": "Toner",
+        "after": "Mask",
+        "is_skincare": true,
+        "evidence": [
+          {
+            "source": "title",
+            "category": "Toner",
+            "match": "essence",
+            "weight": 4
+          },
+          {
+            "source": "title",
+            "category": "Mask",
+            "match": "mask",
+            "weight": 4
+          }
+        ]
+      },
+      {
+        "canonical_id": 66102,
+        "title": "Max Factor Miracle Pure Matte Drops Serum Primer",
+        "before": "Serum",
+        "after": "Makeup",
+        "is_skincare": false,
+        "evidence": [
+          {
+            "source": "title",
+            "match": "\\bprimer\\b"
+          }
+        ]
+      },
+      {
+        "canonical_id": 66162,
+        "title": "Rimmel Multi-Tasker Better Than Filters 3 in 1 Primer, Highlighter, Glow booster 30ml",
+        "before": "Serum",
+        "after": "Makeup",
+        "is_skincare": false,
+        "evidence": [
+          {
+            "source": "title",
+            "match": "\\bprimer\\b"
+          }
+        ]
+      },
+      {
+        "canonical_id": 66163,
+        "title": "Rimmel Multi-Tasker Better Than Filters 3 in 1 Primer, Highlighter, Glow booster 30ml",
+        "before": "Serum",
+        "after": "Makeup",
+        "is_skincare": false,
+        "evidence": [
+          {
+            "source": "title",
+            "match": "\\bprimer\\b"
+          }
+        ]
+      },
+      {
+        "canonical_id": 66164,
+        "title": "Rimmel Multi-Tasker Better Than Filters 3 in 1 Primer, Highlighter, Glow booster 30ml",
+        "before": "Serum",
+        "after": "Makeup",
+        "is_skincare": false,
+        "evidence": [
+          {
+            "source": "title",
+            "match": "\\bprimer\\b"
+          }
+        ]
+      },
+      {
+        "canonical_id": 66221,
+        "title": "Cantu Guava & Ginger Baobab Hair Lotion 354ml",
+        "before": "Moisturizer",
+        "after": "Hair Care",
+        "is_skincare": false,
+        "evidence": [
+          {
+            "source": "title",
+            "match": "\\b(?:shampoo|conditioner|hair (?:serum|oil|cream|mask|spray|color|tonic|lotion|treatment|mist|gel)|scalp|leave in|kerastase|professionnel|frizz|hairloss|dandruff)\\b"
+          }
+        ]
+      },
+      {
+        "canonical_id": 66334,
+        "title": "Bobana Moisturizer Whitening Milk Mask 250g",
+        "before": "Moisturizer",
+        "after": "Mask",
+        "is_skincare": true,
+        "evidence": [
+          {
+            "source": "title",
+            "category": "Mask",
+            "match": "mask",
+            "weight": 4
+          },
+          {
+            "source": "title",
+            "category": "Moisturizer",
+            "match": "moisturizer",
+            "weight": 4
+          }
+        ]
+      },
+      {
+        "canonical_id": 66336,
+        "title": "Bobana Peel-off Mask 120g",
+        "before": "Exfoliator",
+        "after": "Mask",
+        "is_skincare": true,
+        "evidence": [
+          {
+            "source": "title",
+            "category": "Mask",
+            "match": "mask",
+            "weight": 4
+          },
+          {
+            "source": "title",
+            "category": "Exfoliator",
+            "match": "peel",
+            "weight": 4
+          }
+        ]
+      },
+      {
+        "canonical_id": 66337,
+        "title": "Bobana Peel-off Mask 120g",
+        "before": "Exfoliator",
+        "after": "Mask",
+        "is_skincare": true,
+        "evidence": [
+          {
+            "source": "title",
+            "category": "Mask",
+            "match": "mask",
+            "weight": 4
+          },
+          {
+            "source": "title",
+            "category": "Exfoliator",
+            "match": "peel",
+            "weight": 4
+          }
+        ]
+      },
+      {
+        "canonical_id": 66338,
+        "title": "Bobana Peel-off Mask 120g",
+        "before": "Exfoliator",
+        "after": "Mask",
+        "is_skincare": true,
+        "evidence": [
+          {
+            "source": "title",
+            "category": "Mask",
+            "match": "mask",
+            "weight": 4
+          },
+          {
+            "source": "title",
+            "category": "Exfoliator",
+            "match": "peel",
+            "weight": 4
+          }
+        ]
+      },
+      {
+        "canonical_id": 66339,
+        "title": "Bobana Peel-off Mask 120g",
+        "before": "Exfoliator",
+        "after": "Mask",
+        "is_skincare": true,
+        "evidence": [
+          {
+            "source": "title",
+            "category": "Mask",
+            "match": "mask",
+            "weight": 4
+          },
+          {
+            "source": "title",
+            "category": "Exfoliator",
+            "match": "peel",
+            "weight": 4
+          }
+        ]
+      },
+      {
+        "canonical_id": 66395,
+        "title": "Uriage Xemose Moisturizing Lips Care",
+        "before": "Moisturizer",
+        "after": "Lip Care",
+        "is_skincare": true,
+        "evidence": [
+          {
+            "source": "title",
+            "category": "Lip Care",
+            "match": "lips care",
+            "weight": 4
+          },
+          {
+            "source": "title",
+            "category": "Moisturizer",
+            "match": "moisturizing",
+            "weight": 4
+          }
+        ]
+      },
+      {
+        "canonical_id": 66515,
+        "title": "St. Ives Gentle Smoothing Oatmeal Scrub & Mask 170 ml",
+        "before": "Exfoliator",
+        "after": "Mask",
+        "is_skincare": true,
+        "evidence": [
+          {
+            "source": "title",
+            "category": "Mask",
+            "match": "mask",
+            "weight": 4
+          },
+          {
+            "source": "title",
+            "category": "Exfoliator",
+            "match": "scrub",
+            "weight": 4
+          }
+        ]
+      },
+      {
+        "canonical_id": 66594,
+        "title": "Nourishing Hair Lotion",
+        "before": "Moisturizer",
+        "after": "Hair Care",
+        "is_skincare": false,
+        "evidence": [
+          {
+            "source": "title",
+            "match": "\\b(?:shampoo|conditioner|hair (?:serum|oil|cream|mask|spray|color|tonic|lotion|treatment|mist|gel)|scalp|leave in|kerastase|professionnel|frizz|hairloss|dandruff)\\b"
+          }
+        ]
+      },
+      {
+        "canonical_id": 66606,
+        "title": "Anti-Hair loss Hair Lotion - 2X Offer",
+        "before": "Moisturizer",
+        "after": "Hair Care",
+        "is_skincare": false,
+        "evidence": [
+          {
+            "source": "title",
+            "match": "\\b(?:shampoo|conditioner|hair (?:serum|oil|cream|mask|spray|color|tonic|lotion|treatment|mist|gel)|scalp|leave in|kerastase|professionnel|frizz|hairloss|dandruff)\\b"
+          }
+        ]
+      },
+      {
+        "canonical_id": 66641,
+        "title": "Scalpy Hair Growth Serum",
+        "before": "Serum",
+        "after": "Hair Care",
+        "is_skincare": false,
+        "evidence": [
+          {
+            "source": "title",
+            "match": "\\b(?:for (?:(?:the|damaged|dry|curly|colored) )?hair|hair transplant|hair (?:fall|loss|growth)|hair ampoules?|hairburst|hairoots|hairvogine)\\b"
+          }
+        ]
+      },
+      {
+        "canonical_id": 66675,
+        "title": "Anti-Hair Loss Scrub",
+        "before": "Exfoliator",
+        "after": "Hair Care",
+        "is_skincare": false,
+        "evidence": [
+          {
+            "source": "title",
+            "match": "\\b(?:for (?:(?:the|damaged|dry|curly|colored) )?hair|hair transplant|hair (?:fall|loss|growth)|hair ampoules?|hairburst|hairoots|hairvogine)\\b"
+          }
+        ]
+      },
+      {
+        "canonical_id": 66720,
+        "title": "Anti-Hair Loss Lotion Spray",
+        "before": "Moisturizer",
+        "after": "Hair Care",
+        "is_skincare": false,
+        "evidence": [
+          {
+            "source": "title",
+            "match": "\\b(?:for (?:(?:the|damaged|dry|curly|colored) )?hair|hair transplant|hair (?:fall|loss|growth)|hair ampoules?|hairburst|hairoots|hairvogine)\\b"
+          }
+        ]
+      },
+      {
+        "canonical_id": 66729,
+        "title": "Caffeinated Lotion for Hair Growth",
+        "before": "Moisturizer",
+        "after": "Hair Care",
+        "is_skincare": false,
+        "evidence": [
+          {
+            "source": "title",
+            "match": "\\b(?:for (?:(?:the|damaged|dry|curly|colored) )?hair|hair transplant|hair (?:fall|loss|growth)|hair ampoules?|hairburst|hairoots|hairvogine)\\b"
+          }
+        ]
+      },
+      {
+        "canonical_id": 66786,
+        "title": "Hair Growth & Thickening Serum",
+        "before": "Serum",
+        "after": "Hair Care",
+        "is_skincare": false,
+        "evidence": [
+          {
+            "source": "title",
+            "match": "\\b(?:for (?:(?:the|damaged|dry|curly|colored) )?hair|hair transplant|hair (?:fall|loss|growth)|hair ampoules?|hairburst|hairoots|hairvogine)\\b"
+          }
+        ]
+      },
+      {
+        "canonical_id": 66789,
+        "title": "Metoblend Hair Loss Lotion",
+        "before": "Moisturizer",
+        "after": "Hair Care",
+        "is_skincare": false,
+        "evidence": [
+          {
+            "source": "title",
+            "match": "\\b(?:for (?:(?:the|damaged|dry|curly|colored) )?hair|hair transplant|hair (?:fall|loss|growth)|hair ampoules?|hairburst|hairoots|hairvogine)\\b"
+          }
+        ]
+      },
+      {
+        "canonical_id": 66807,
+        "title": "Melon Melt Niacinamide Serum Primer",
+        "before": "Serum",
+        "after": "Makeup",
+        "is_skincare": false,
+        "evidence": [
+          {
+            "source": "title",
+            "match": "\\bprimer\\b"
+          }
+        ]
+      },
+      {
+        "canonical_id": 66817,
+        "title": "Overnight Wrapping Peel-Off Mask",
+        "before": "Exfoliator",
+        "after": "Mask",
+        "is_skincare": true,
+        "evidence": [
+          {
+            "source": "title",
+            "category": "Mask",
+            "match": "mask",
+            "weight": 4
+          },
+          {
+            "source": "title",
+            "category": "Exfoliator",
+            "match": "peel",
+            "weight": 4
+          }
+        ]
+      },
+      {
+        "canonical_id": 66842,
+        "title": "Otium Miracle Revive Serum for Hair Ends Reconstruction",
+        "before": "Serum",
+        "after": "Hair Care",
+        "is_skincare": false,
+        "evidence": [
+          {
+            "source": "title",
+            "match": "\\b(?:for (?:(?:the|damaged|dry|curly|colored) )?hair|hair transplant|hair (?:fall|loss|growth)|hair ampoules?|hairburst|hairoots|hairvogine)\\b"
+          }
+        ]
+      },
+      {
+        "canonical_id": 66864,
+        "title": "Strawberry Lip Moisturiser",
+        "before": "Moisturizer",
+        "after": "Lip Care",
+        "is_skincare": true,
+        "evidence": [
+          {
+            "source": "title",
+            "category": "Lip Care",
+            "match": "lip moisturiser",
+            "weight": 4
+          },
+          {
+            "source": "title",
+            "category": "Moisturizer",
+            "match": "moisturiser",
+            "weight": 4
+          }
+        ]
+      },
+      {
+        "canonical_id": 66869,
+        "title": "Hair Tonic Lotion",
+        "before": "Moisturizer",
+        "after": "Hair Care",
+        "is_skincare": false,
+        "evidence": [
+          {
+            "source": "title",
+            "match": "\\b(?:shampoo|conditioner|hair (?:serum|oil|cream|mask|spray|color|tonic|lotion|treatment|mist|gel)|scalp|leave in|kerastase|professionnel|frizz|hairloss|dandruff)\\b"
+          }
+        ]
+      },
+      {
+        "canonical_id": 66902,
+        "title": "Face Hydrator & Primer",
+        "before": "Moisturizer",
+        "after": "Makeup",
+        "is_skincare": false,
+        "evidence": [
+          {
+            "source": "title",
+            "match": "\\bprimer\\b"
+          }
+        ]
+      },
+      {
+        "canonical_id": 67144,
+        "title": "Top Hair Lotion Promo Pack 1+1",
+        "before": "Moisturizer",
+        "after": "Hair Care",
+        "is_skincare": false,
+        "evidence": [
+          {
+            "source": "title",
+            "match": "\\b(?:shampoo|conditioner|hair (?:serum|oil|cream|mask|spray|color|tonic|lotion|treatment|mist|gel)|scalp|leave in|kerastase|professionnel|frizz|hairloss|dandruff)\\b"
+          }
+        ]
+      },
+      {
+        "canonical_id": 67170,
+        "title": "Relat Hair Lotion",
+        "before": "Moisturizer",
+        "after": "Hair Care",
+        "is_skincare": false,
+        "evidence": [
+          {
+            "source": "title",
+            "match": "\\b(?:shampoo|conditioner|hair (?:serum|oil|cream|mask|spray|color|tonic|lotion|treatment|mist|gel)|scalp|leave in|kerastase|professionnel|frizz|hairloss|dandruff)\\b"
+          }
+        ]
+      },
+      {
+        "canonical_id": 67217,
+        "title": "Hair Lotion Spray",
+        "before": "Moisturizer",
+        "after": "Hair Care",
+        "is_skincare": false,
+        "evidence": [
+          {
+            "source": "title",
+            "match": "\\b(?:shampoo|conditioner|hair (?:serum|oil|cream|mask|spray|color|tonic|lotion|treatment|mist|gel)|scalp|leave in|kerastase|professionnel|frizz|hairloss|dandruff)\\b"
+          }
+        ]
+      },
+      {
+        "canonical_id": 67234,
+        "title": "Top Hair Lotion Plus - Hair Loss Treatment",
+        "before": "Moisturizer",
+        "after": "Hair Care",
+        "is_skincare": false,
+        "evidence": [
+          {
+            "source": "title",
+            "match": "\\b(?:shampoo|conditioner|hair (?:serum|oil|cream|mask|spray|color|tonic|lotion|treatment|mist|gel)|scalp|leave in|kerastase|professionnel|frizz|hairloss|dandruff)\\b"
+          }
+        ]
+      },
+      {
+        "canonical_id": 67298,
+        "title": "Forever Long Lengthening & Moisturizing Mask - For Damaged Hair",
+        "before": "Moisturizer",
+        "after": "Hair Care",
+        "is_skincare": false,
+        "evidence": [
+          {
+            "source": "title",
+            "match": "\\b(?:for (?:(?:the|damaged|dry|curly|colored) )?hair|hair transplant|hair (?:fall|loss|growth)|hair ampoules?|hairburst|hairoots|hairvogine)\\b"
+          }
+        ]
+      },
+      {
+        "canonical_id": 67454,
+        "title": "Spots Peel Off Mask + Activating Spray",
+        "before": "Exfoliator",
+        "after": "Mask",
+        "is_skincare": true,
+        "evidence": [
+          {
+            "source": "title",
+            "category": "Mask",
+            "match": "mask",
+            "weight": 4
+          },
+          {
+            "source": "title",
+            "category": "Exfoliator",
+            "match": "peel",
+            "weight": 4
+          }
+        ]
+      },
+      {
+        "canonical_id": 67455,
+        "title": "Intense Stimulant Hair Lotion",
+        "before": "Moisturizer",
+        "after": "Hair Care",
+        "is_skincare": false,
+        "evidence": [
+          {
+            "source": "title",
+            "match": "\\b(?:shampoo|conditioner|hair (?:serum|oil|cream|mask|spray|color|tonic|lotion|treatment|mist|gel)|scalp|leave in|kerastase|professionnel|frizz|hairloss|dandruff)\\b"
+          }
+        ]
+      },
+      {
+        "canonical_id": 67524,
+        "title": "Pomegranate Peel-Off Mask",
+        "before": "Exfoliator",
+        "after": "Mask",
+        "is_skincare": true,
+        "evidence": [
+          {
+            "source": "title",
+            "category": "Mask",
+            "match": "mask",
+            "weight": 4
+          },
+          {
+            "source": "title",
+            "category": "Exfoliator",
+            "match": "peel",
+            "weight": 4
+          }
+        ]
+      },
+      {
+        "canonical_id": 67579,
+        "title": "Hair Lotion",
+        "before": "Moisturizer",
+        "after": "Hair Care",
+        "is_skincare": false,
+        "evidence": [
+          {
+            "source": "title",
+            "match": "\\b(?:shampoo|conditioner|hair (?:serum|oil|cream|mask|spray|color|tonic|lotion|treatment|mist|gel)|scalp|leave in|kerastase|professionnel|frizz|hairloss|dandruff)\\b"
+          }
+        ]
+      },
+      {
+        "canonical_id": 67617,
+        "title": "Spray Hair Loss Lotion",
+        "before": "Moisturizer",
+        "after": "Hair Care",
+        "is_skincare": false,
+        "evidence": [
+          {
+            "source": "title",
+            "match": "\\b(?:for (?:(?:the|damaged|dry|curly|colored) )?hair|hair transplant|hair (?:fall|loss|growth)|hair ampoules?|hairburst|hairoots|hairvogine)\\b"
+          }
+        ]
+      },
+      {
+        "canonical_id": 67719,
+        "title": "Integrado Extra Hair Growth Lotion Vials",
+        "before": "Moisturizer",
+        "after": "Hair Care",
+        "is_skincare": false,
+        "evidence": [
+          {
+            "source": "title",
+            "match": "\\b(?:for (?:(?:the|damaged|dry|curly|colored) )?hair|hair transplant|hair (?:fall|loss|growth)|hair ampoules?|hairburst|hairoots|hairvogine)\\b"
+          }
+        ]
+      },
+      {
+        "canonical_id": 67720,
+        "title": "Integrado Anti-Hair Loss Cream",
+        "before": "Moisturizer",
+        "after": "Hair Care",
+        "is_skincare": false,
+        "evidence": [
+          {
+            "source": "title",
+            "match": "\\b(?:for (?:(?:the|damaged|dry|curly|colored) )?hair|hair transplant|hair (?:fall|loss|growth)|hair ampoules?|hairburst|hairoots|hairvogine)\\b"
+          }
+        ]
+      },
+      {
+        "canonical_id": 68243,
+        "title": "Hadwa Cosmetics All Balm Cherry Strawberry Balm \u2013 200ml",
+        "before": "Body Care",
+        "after": "Moisturizer",
+        "is_skincare": true,
+        "evidence": [
+          {
+            "source": "title",
+            "category": "Moisturizer",
+            "match": "balm",
+            "weight": 4
+          }
+        ]
+      },
+      {
+        "canonical_id": 68393,
+        "title": "Purederm Passion Gel Fruit Lip Mask 15gm - 6 Pcs",
+        "before": "Mask",
+        "after": "Lip Care",
+        "is_skincare": true,
+        "evidence": [
+          {
+            "source": "title",
+            "category": "Lip Care",
+            "match": "lip mask",
+            "weight": 4
+          },
+          {
+            "source": "title",
+            "category": "Mask",
+            "match": "mask",
+            "weight": 4
+          }
+        ]
+      },
+      {
+        "canonical_id": 68405,
+        "title": "Cybele Coconut Oil Lip Mask - 5gm",
+        "before": "Mask",
+        "after": "Lip Care",
+        "is_skincare": true,
+        "evidence": [
+          {
+            "source": "title",
+            "category": "Lip Care",
+            "match": "lip mask",
+            "weight": 4
+          },
+          {
+            "source": "title",
+            "category": "Mask",
+            "match": "mask",
+            "weight": 4
+          }
+        ]
+      },
+      {
+        "canonical_id": 68490,
+        "title": "Dr. Paw Paw Overnight Lip Mask - 10ml",
+        "before": "Mask",
+        "after": "Lip Care",
+        "is_skincare": true,
+        "evidence": [
+          {
+            "source": "title",
+            "category": "Lip Care",
+            "match": "lip mask",
+            "weight": 4
+          },
+          {
+            "source": "title",
+            "category": "Mask",
+            "match": "mask",
+            "weight": 4
+          }
+        ]
+      },
+      {
+        "canonical_id": 69038,
+        "title": "Catrice Midnight Sun Duo Lip Mask C01.",
+        "before": "Mask",
+        "after": "Lip Care",
+        "is_skincare": true,
+        "evidence": [
+          {
+            "source": "title",
+            "category": "Lip Care",
+            "match": "lip mask",
+            "weight": 4
+          },
+          {
+            "source": "title",
+            "category": "Mask",
+            "match": "mask",
+            "weight": 4
+          }
+        ]
+      },
+      {
+        "canonical_id": 69246,
+        "title": "Anivagene Lotion Hair Tonic Man",
+        "before": "Moisturizer",
+        "after": "Hair Care",
+        "is_skincare": false,
+        "evidence": [
+          {
+            "source": "title",
+            "match": "\\b(?:shampoo|conditioner|hair (?:serum|oil|cream|mask|spray|color|tonic|lotion|treatment|mist|gel)|scalp|leave in|kerastase|professionnel|frizz|hairloss|dandruff)\\b"
+          }
+        ]
+      },
+      {
+        "canonical_id": 69248,
+        "title": "NEOPTIDE ANTI-HAIR LOSS LOTION FOR MEN",
+        "before": "Moisturizer",
+        "after": "Hair Care",
+        "is_skincare": false,
+        "evidence": [
+          {
+            "source": "title",
+            "match": "\\b(?:for (?:(?:the|damaged|dry|curly|colored) )?hair|hair transplant|hair (?:fall|loss|growth)|hair ampoules?|hairburst|hairoots|hairvogine)\\b"
+          }
+        ]
+      },
+      {
+        "canonical_id": 69282,
+        "title": "Anivagene Hair Tonic Lotion For Women - 125ml",
+        "before": "Moisturizer",
+        "after": "Hair Care",
+        "is_skincare": false,
+        "evidence": [
+          {
+            "source": "title",
+            "match": "\\b(?:shampoo|conditioner|hair (?:serum|oil|cream|mask|spray|color|tonic|lotion|treatment|mist|gel)|scalp|leave in|kerastase|professionnel|frizz|hairloss|dandruff)\\b"
+          }
+        ]
+      },
+      {
+        "canonical_id": 69303,
+        "title": "Essence Glimmer In A Bubble Lip Mask - 7.5gm",
+        "before": "Toner",
+        "after": "Lip Care",
+        "is_skincare": true,
+        "evidence": [
+          {
+            "source": "title",
+            "category": "Lip Care",
+            "match": "lip mask",
+            "weight": 4
+          },
+          {
+            "source": "title",
+            "category": "Toner",
+            "match": "essence",
+            "weight": 4
+          },
+          {
+            "source": "title",
+            "category": "Mask",
+            "match": "mask",
+            "weight": 4
+          }
+        ]
+      },
+      {
+        "canonical_id": 69340,
+        "title": "Anivagene Post Hair Transplant Serum - 45ml",
+        "before": "Serum",
+        "after": "Hair Care",
+        "is_skincare": false,
+        "evidence": [
+          {
+            "source": "title",
+            "match": "\\b(?:for (?:(?:the|damaged|dry|curly|colored) )?hair|hair transplant|hair (?:fall|loss|growth)|hair ampoules?|hairburst|hairoots|hairvogine)\\b"
+          }
+        ]
+      },
+      {
+        "canonical_id": 69479,
+        "title": "Essence Hydra Kiss Lip Tint 07 Hazelnut Haze.",
+        "before": "Toner",
+        "after": "Makeup",
+        "is_skincare": false,
+        "evidence": [
+          {
+            "source": "title",
+            "match": "\\b(?:mascara|eyeliner|eyeshadow|lipstick|lip (?:cheek )?tint|foundation|concealer|blush\\w*|setting powder|nail polish|lash serum|eyebrow)\\b"
+          }
+        ]
+      },
+      {
+        "canonical_id": 69480,
+        "title": "Essence WHAT A TINT! Lip & Cheek Tint 03.",
+        "before": "Toner",
+        "after": "Makeup",
+        "is_skincare": false,
+        "evidence": [
+          {
+            "source": "title",
+            "match": "\\b(?:mascara|eyeliner|eyeshadow|lipstick|lip (?:cheek )?tint|foundation|concealer|blush\\w*|setting powder|nail polish|lash serum|eyebrow)\\b"
+          }
+        ]
+      },
+      {
+        "canonical_id": 69500,
+        "title": "Essence What The Fluff?! Lip Tint - 01 Candy-Stain.",
+        "before": "Toner",
+        "after": "Makeup",
+        "is_skincare": false,
+        "evidence": [
+          {
+            "source": "title",
+            "match": "\\b(?:mascara|eyeliner|eyeshadow|lipstick|lip (?:cheek )?tint|foundation|concealer|blush\\w*|setting powder|nail polish|lash serum|eyebrow)\\b"
+          }
+        ]
+      },
+      {
+        "canonical_id": 69515,
+        "title": "Catrice Pistachio Cream Delight Lip Mask Parfait.",
+        "before": "Moisturizer",
+        "after": "Lip Care",
+        "is_skincare": true,
+        "evidence": [
+          {
+            "source": "title",
+            "category": "Lip Care",
+            "match": "lip mask",
+            "weight": 4
+          },
+          {
+            "source": "title",
+            "category": "Mask",
+            "match": "mask",
+            "weight": 4
+          },
+          {
+            "source": "title",
+            "category": "Moisturizer",
+            "match": "cream",
+            "weight": 4
+          }
+        ]
+      },
+      {
+        "canonical_id": 69577,
+        "title": "The Ordinary Multi-Peptide Serum For Hair Density - 60Ml",
+        "before": "Serum",
+        "after": "Hair Care",
+        "is_skincare": false,
+        "evidence": [
+          {
+            "source": "title",
+            "match": "\\b(?:for (?:(?:the|damaged|dry|curly|colored) )?hair|hair transplant|hair (?:fall|loss|growth)|hair ampoules?|hairburst|hairoots|hairvogine)\\b"
+          }
+        ]
+      },
+      {
+        "canonical_id": 69581,
+        "title": "Healthy Max Hair Lotion Vial ( 5Vials*10Ml Per )",
+        "before": "Moisturizer",
+        "after": "Hair Care",
+        "is_skincare": false,
+        "evidence": [
+          {
+            "source": "title",
+            "match": "\\b(?:shampoo|conditioner|hair (?:serum|oil|cream|mask|spray|color|tonic|lotion|treatment|mist|gel)|scalp|leave in|kerastase|professionnel|frizz|hairloss|dandruff)\\b"
+          }
+        ]
+      },
+      {
+        "canonical_id": 69596,
+        "title": "Essence What A Tint! Staining Lip & Cheek Tint 20 Grapefruit Bliss.",
+        "before": "Toner",
+        "after": "Makeup",
+        "is_skincare": false,
+        "evidence": [
+          {
+            "source": "title",
+            "match": "\\b(?:mascara|eyeliner|eyeshadow|lipstick|lip (?:cheek )?tint|foundation|concealer|blush\\w*|setting powder|nail polish|lash serum|eyebrow)\\b"
+          }
+        ]
+      },
+      {
+        "canonical_id": 69604,
+        "title": "Sheglam Peel Talk Lip Tint-Tongue Twister.",
+        "before": "Exfoliator",
+        "after": "Makeup",
+        "is_skincare": false,
+        "evidence": [
+          {
+            "source": "title",
+            "match": "\\b(?:mascara|eyeliner|eyeshadow|lipstick|lip (?:cheek )?tint|foundation|concealer|blush\\w*|setting powder|nail polish|lash serum|eyebrow)\\b"
+          }
+        ]
+      },
+      {
+        "canonical_id": 69618,
+        "title": "Essence What A Tint! Staining Lip & Cheek Tint 10 Raspberry Vibes.",
+        "before": "Toner",
+        "after": "Makeup",
+        "is_skincare": false,
+        "evidence": [
+          {
+            "source": "title",
+            "match": "\\b(?:mascara|eyeliner|eyeshadow|lipstick|lip (?:cheek )?tint|foundation|concealer|blush\\w*|setting powder|nail polish|lash serum|eyebrow)\\b"
+          }
+        ]
+      },
+      {
+        "canonical_id": 69640,
+        "title": "Firstvoc Hair Lotion 120Ml",
+        "before": "Moisturizer",
+        "after": "Hair Care",
+        "is_skincare": false,
+        "evidence": [
+          {
+            "source": "title",
+            "match": "\\b(?:shampoo|conditioner|hair (?:serum|oil|cream|mask|spray|color|tonic|lotion|treatment|mist|gel)|scalp|leave in|kerastase|professionnel|frizz|hairloss|dandruff)\\b"
+          }
+        ]
+      },
+      {
+        "canonical_id": 69704,
+        "title": "Clary Hair Mist & Heat Protection Spf50+ 120 Ml",
+        "before": "Sunscreen",
+        "after": "Hair Care",
+        "is_skincare": false,
+        "evidence": [
+          {
+            "source": "title",
+            "match": "\\b(?:shampoo|conditioner|hair (?:serum|oil|cream|mask|spray|color|tonic|lotion|treatment|mist|gel)|scalp|leave in|kerastase|professionnel|frizz|hairloss|dandruff)\\b"
+          }
+        ]
+      },
+      {
+        "canonical_id": 69766,
+        "title": "Sorciere Hair Lotion",
+        "before": "Moisturizer",
+        "after": "Hair Care",
+        "is_skincare": false,
+        "evidence": [
+          {
+            "source": "title",
+            "match": "\\b(?:shampoo|conditioner|hair (?:serum|oil|cream|mask|spray|color|tonic|lotion|treatment|mist|gel)|scalp|leave in|kerastase|professionnel|frizz|hairloss|dandruff)\\b"
+          }
+        ]
+      },
+      {
+        "canonical_id": 69803,
+        "title": "Bionnex Organica Anti-Hair Loss Serum",
+        "before": "Serum",
+        "after": "Hair Care",
+        "is_skincare": false,
+        "evidence": [
+          {
+            "source": "title",
+            "match": "\\b(?:for (?:(?:the|damaged|dry|curly|colored) )?hair|hair transplant|hair (?:fall|loss|growth)|hair ampoules?|hairburst|hairoots|hairvogine)\\b"
+          }
+        ]
+      },
+      {
+        "canonical_id": 69838,
+        "title": "Farmstay Real Lychee Essence Mask",
+        "before": "Toner",
+        "after": "Mask",
+        "is_skincare": true,
+        "evidence": [
+          {
+            "source": "title",
+            "category": "Toner",
+            "match": "essence",
+            "weight": 4
+          },
+          {
+            "source": "title",
+            "category": "Mask",
+            "match": "mask",
+            "weight": 4
+          }
+        ]
+      },
+      {
+        "canonical_id": 69839,
+        "title": "Farmstay Real Aloevera Essence Mask",
+        "before": "Toner",
+        "after": "Mask",
+        "is_skincare": true,
+        "evidence": [
+          {
+            "source": "title",
+            "category": "Toner",
+            "match": "essence",
+            "weight": 4
+          },
+          {
+            "source": "title",
+            "category": "Mask",
+            "match": "mask",
+            "weight": 4
+          }
+        ]
+      },
+      {
+        "canonical_id": 69850,
+        "title": "Capixy Ultimate Hair Treatment Serum",
+        "before": "Serum",
+        "after": "Hair Care",
+        "is_skincare": false,
+        "evidence": [
+          {
+            "source": "title",
+            "match": "\\b(?:shampoo|conditioner|hair (?:serum|oil|cream|mask|spray|color|tonic|lotion|treatment|mist|gel)|scalp|leave in|kerastase|professionnel|frizz|hairloss|dandruff)\\b"
+          }
+        ]
+      },
+      {
+        "canonical_id": 69870,
+        "title": "Sorciere Intensive Care Hair Lotion 160ml",
+        "before": "Moisturizer",
+        "after": "Hair Care",
+        "is_skincare": false,
+        "evidence": [
+          {
+            "source": "title",
+            "match": "\\b(?:shampoo|conditioner|hair (?:serum|oil|cream|mask|spray|color|tonic|lotion|treatment|mist|gel)|scalp|leave in|kerastase|professionnel|frizz|hairloss|dandruff)\\b"
+          }
+        ]
+      },
+      {
+        "canonical_id": 69921,
+        "title": "Hair Act Anti-Hair loss lotion Spray 120ml",
+        "before": "Moisturizer",
+        "after": "Hair Care",
+        "is_skincare": false,
+        "evidence": [
+          {
+            "source": "title",
+            "match": "\\b(?:for (?:(?:the|damaged|dry|curly|colored) )?hair|hair transplant|hair (?:fall|loss|growth)|hair ampoules?|hairburst|hairoots|hairvogine)\\b"
+          }
+        ]
+      },
+      {
+        "canonical_id": 69951,
+        "title": "Anua Peach 70 Niacin Serum Mask 10pcs 25ml",
+        "before": "Serum",
+        "after": "Mask",
+        "is_skincare": true,
+        "evidence": [
+          {
+            "source": "title",
+            "category": "Mask",
+            "match": "mask",
+            "weight": 4
+          },
+          {
+            "source": "title",
+            "category": "Serum",
+            "match": "serum",
+            "weight": 4
+          }
+        ]
+      },
+      {
+        "canonical_id": 70082,
+        "title": "Vanilla Lip Moisturiser",
+        "before": "Moisturizer",
+        "after": "Lip Care",
+        "is_skincare": true,
+        "evidence": [
+          {
+            "source": "title",
+            "category": "Lip Care",
+            "match": "lip moisturiser",
+            "weight": 4
+          },
+          {
+            "source": "title",
+            "category": "Moisturizer",
+            "match": "moisturiser",
+            "weight": 4
+          }
+        ]
+      },
+      {
+        "canonical_id": 70085,
+        "title": "Coconut Lip Moisturiser",
+        "before": "Moisturizer",
+        "after": "Lip Care",
+        "is_skincare": true,
+        "evidence": [
+          {
+            "source": "title",
+            "category": "Lip Care",
+            "match": "lip moisturiser",
+            "weight": 4
+          },
+          {
+            "source": "title",
+            "category": "Moisturizer",
+            "match": "moisturiser",
+            "weight": 4
+          }
+        ]
+      },
+      {
+        "canonical_id": 70221,
+        "title": "Hair Lotion",
+        "before": "Moisturizer",
+        "after": "Hair Care",
+        "is_skincare": false,
+        "evidence": [
+          {
+            "source": "title",
+            "match": "\\b(?:shampoo|conditioner|hair (?:serum|oil|cream|mask|spray|color|tonic|lotion|treatment|mist|gel)|scalp|leave in|kerastase|professionnel|frizz|hairloss|dandruff)\\b"
+          }
+        ]
+      },
+      {
+        "canonical_id": 70234,
+        "title": "Fresh Gentle Smoothing Oatmeal Scrub & Mask",
+        "before": "Exfoliator",
+        "after": "Mask",
+        "is_skincare": true,
+        "evidence": [
+          {
+            "source": "title",
+            "category": "Mask",
+            "match": "mask",
+            "weight": 4
+          },
+          {
+            "source": "title",
+            "category": "Exfoliator",
+            "match": "scrub",
+            "weight": 4
+          }
+        ]
+      },
+      {
+        "canonical_id": 70260,
+        "title": "Papaya Peel-Off Mask",
+        "before": "Exfoliator",
+        "after": "Mask",
+        "is_skincare": true,
+        "evidence": [
+          {
+            "source": "title",
+            "category": "Mask",
+            "match": "mask",
+            "weight": 4
+          },
+          {
+            "source": "title",
+            "category": "Exfoliator",
+            "match": "peel",
+            "weight": 4
+          }
+        ]
+      },
+      {
+        "canonical_id": 70261,
+        "title": "Facial Peel Off Mask - Gold",
+        "before": "Exfoliator",
+        "after": "Mask",
+        "is_skincare": true,
+        "evidence": [
+          {
+            "source": "title",
+            "category": "Mask",
+            "match": "mask",
+            "weight": 4
+          },
+          {
+            "source": "title",
+            "category": "Exfoliator",
+            "match": "peel",
+            "weight": 4
+          }
+        ]
+      },
+      {
+        "canonical_id": 70262,
+        "title": "Facial Peel Off Mask - Charcoal",
+        "before": "Exfoliator",
+        "after": "Mask",
+        "is_skincare": true,
+        "evidence": [
+          {
+            "source": "title",
+            "category": "Mask",
+            "match": "mask",
+            "weight": 4
+          },
+          {
+            "source": "title",
+            "category": "Exfoliator",
+            "match": "peel",
+            "weight": 4
+          }
+        ]
+      },
+      {
+        "canonical_id": 70295,
+        "title": "Hair Lotion 1+1",
+        "before": "Moisturizer",
+        "after": "Hair Care",
+        "is_skincare": false,
+        "evidence": [
+          {
+            "source": "title",
+            "match": "\\b(?:shampoo|conditioner|hair (?:serum|oil|cream|mask|spray|color|tonic|lotion|treatment|mist|gel)|scalp|leave in|kerastase|professionnel|frizz|hairloss|dandruff)\\b"
+          }
+        ]
+      },
+      {
+        "canonical_id": 70326,
+        "title": "Vanilla Cream Hair Mist (Dream Cream)",
+        "before": "Moisturizer",
+        "after": "Hair Care",
+        "is_skincare": false,
+        "evidence": [
+          {
+            "source": "title",
+            "match": "\\b(?:shampoo|conditioner|hair (?:serum|oil|cream|mask|spray|color|tonic|lotion|treatment|mist|gel)|scalp|leave in|kerastase|professionnel|frizz|hairloss|dandruff)\\b"
+          }
+        ]
+      },
+      {
+        "canonical_id": 70333,
+        "title": "Integrado Hairgrowth Hair Lotion",
+        "before": "Moisturizer",
+        "after": "Hair Care",
+        "is_skincare": false,
+        "evidence": [
+          {
+            "source": "title",
+            "match": "\\b(?:shampoo|conditioner|hair (?:serum|oil|cream|mask|spray|color|tonic|lotion|treatment|mist|gel)|scalp|leave in|kerastase|professionnel|frizz|hairloss|dandruff)\\b"
+          }
+        ]
+      },
+      {
+        "canonical_id": 70389,
+        "title": "Purederm Coffee Essence Sheet Mask - 1 Sheet",
+        "before": "Toner",
+        "after": "Mask",
+        "is_skincare": true,
+        "evidence": [
+          {
+            "source": "title",
+            "category": "Toner",
+            "match": "essence",
+            "weight": 4
+          },
+          {
+            "source": "title",
+            "category": "Mask",
+            "match": "mask",
+            "weight": 4
+          }
+        ]
+      },
+      {
+        "canonical_id": 70463,
+        "title": "NEOPTIDE Anti-hair loss lotion for women",
+        "before": "Moisturizer",
+        "after": "Hair Care",
+        "is_skincare": false,
+        "evidence": [
+          {
+            "source": "title",
+            "match": "\\b(?:for (?:(?:the|damaged|dry|curly|colored) )?hair|hair transplant|hair (?:fall|loss|growth)|hair ampoules?|hairburst|hairoots|hairvogine)\\b"
+          }
+        ]
+      }
+    ]
+  }
+}

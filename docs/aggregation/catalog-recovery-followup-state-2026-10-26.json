@@ -1,0 +1,20 @@
+{
+  "captured_at_utc": "2026-10-26T20:58:27.596281+00:00",
+  "scope": "consistent_sqlite_snapshot",
+  "canonical_products": 7421,
+  "active_canonical_products": 7415,
+  "active_skincare_products": 5765,
+  "verified_identities": 696,
+  "published_inci": 199,
+  "published_skincare_inci": 195,
+  "pending_reviews": {
+    "category": 708,
+    "formulation": 16,
+    "identity": 863
+  },
+  "inci_reference_rows": 53017,
+  "integrity_check": "ok",
+  "foreign_key_violations": 0,
+  "processing_reviews": 0,
+  "published_completeness_failures": []
+}

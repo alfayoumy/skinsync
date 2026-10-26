@@ -1,0 +1,10 @@
+{
+  "task_id": "task_20261026_192037_592f80e4",
+  "result": {
+    "status": "completed",
+    "processed": 0,
+    "api_calls": 1,
+    "products_per_request": 2,
+    "pending_partial_case": 1324
+  }
+}

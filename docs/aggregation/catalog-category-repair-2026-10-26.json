@@ -1,0 +1,12 @@
+{
+  "applied": true,
+  "backup_path": "/mnt/windows/Users/AmrAlfayoumy/Downloads/skincare/repo/api/backups/catalog/catalog-20261025T211555Z-4450d41b.sqlite3",
+  "before": 2246,
+  "after": 1448,
+  "result": {
+    "resolved": 798,
+    "uncertain_preserved": 1349,
+    "superseded_evidence_preserved": 76,
+    "cluster_conflict_preserved": 23
+  }
+}

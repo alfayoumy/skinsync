@@ -1,0 +1,280 @@
+{
+  "source_id": "sourcebeauty",
+  "model_calls": 0,
+  "read_only": true,
+  "selected": 30,
+  "results": [
+    {
+      "canonical_id": 63579,
+      "observation_id": 21329,
+      "raw_title": "Macadamia & Rose Water Body Lotion",
+      "raw_brand": "Nutshell",
+      "source_url": "https://sourcebeauty.com/products/nutshell-macadamia-rose-water-body-lotion",
+      "status": "fetched",
+      "pages": 1
+    },
+    {
+      "canonical_id": 63580,
+      "observation_id": 21325,
+      "raw_title": "Shea Butter & Coconut Body Lotion",
+      "raw_brand": "Nutshell",
+      "source_url": "https://sourcebeauty.com/products/nutshell-shea-butter-coconut-body-lotion",
+      "status": "fetched",
+      "pages": 1
+    },
+    {
+      "canonical_id": 63600,
+      "observation_id": 15706,
+      "raw_title": "Retinal Booster Shot",
+      "raw_brand": "Arencia",
+      "source_url": "https://sourcebeauty.com/products/arencia-retinal-booster-shot",
+      "status": "fetched",
+      "pages": 1
+    },
+    {
+      "canonical_id": 63610,
+      "observation_id": 20096,
+      "raw_title": "Retinol Intense Reactivating Serum",
+      "raw_brand": "Some By Mi",
+      "source_url": "https://sourcebeauty.com/products/some-by-mi-retinol-intense-reactivating-serum",
+      "status": "fetched",
+      "pages": 1
+    },
+    {
+      "canonical_id": 63616,
+      "observation_id": 20190,
+      "raw_title": "Dark Spot Correcting Glow Cream",
+      "raw_brand": "Axis-Y",
+      "source_url": "https://sourcebeauty.com/products/axis-y-dark-spot-correcting-glow-cream",
+      "status": "fetched",
+      "pages": 1
+    },
+    {
+      "canonical_id": 63619,
+      "observation_id": 20810,
+      "raw_title": "Tahiti Body Milk",
+      "raw_brand": "MOOD",
+      "source_url": "https://sourcebeauty.com/products/mood-tahiti-body-milk",
+      "status": "fetched",
+      "pages": 1
+    },
+    {
+      "canonical_id": 63633,
+      "observation_id": 17076,
+      "raw_title": "Mint Attack Plumping Lip Oil",
+      "raw_brand": "Soul & More",
+      "source_url": "https://sourcebeauty.com/products/soul-more-mint-attack-plumping-lip-oil",
+      "status": "fetched",
+      "pages": 1
+    },
+    {
+      "canonical_id": 63680,
+      "observation_id": 18490,
+      "raw_title": "Mattify Omega Fatty Acids Face Cream",
+      "raw_brand": "Skinify",
+      "source_url": "https://sourcebeauty.com/products/skinify-mattify-omega-fatty-acids-light-weight-face-cream",
+      "status": "fetched",
+      "pages": 1
+    },
+    {
+      "canonical_id": 63689,
+      "observation_id": 15926,
+      "raw_title": "Cupcake Hand & Body Lotion-(Travel Size)",
+      "raw_brand": "Bubblzz",
+      "source_url": "https://sourcebeauty.com/products/cupcake-hand-body-lotion",
+      "status": "fetched",
+      "pages": 1
+    },
+    {
+      "canonical_id": 63692,
+      "observation_id": 21757,
+      "raw_title": "Vitamin C Serum",
+      "raw_brand": "Starville",
+      "source_url": "https://sourcebeauty.com/products/vitamin-c-serum-1",
+      "status": "fetched",
+      "pages": 1
+    },
+    {
+      "canonical_id": 63693,
+      "observation_id": 21604,
+      "raw_title": "Hand Cream",
+      "raw_brand": "Shaan",
+      "source_url": "https://sourcebeauty.com/products/parkville-hand-cream",
+      "status": "fetched",
+      "pages": 1
+    },
+    {
+      "canonical_id": 63725,
+      "observation_id": 21524,
+      "raw_title": "Hydrating Facial Mist",
+      "raw_brand": "Essentials",
+      "source_url": "https://sourcebeauty.com/products/hydrating-facial-mist",
+      "status": "fetched",
+      "pages": 1
+    },
+    {
+      "canonical_id": 63737,
+      "observation_id": 17376,
+      "raw_title": "Gummy Yummy Body Wash",
+      "raw_brand": "LOOQ",
+      "source_url": "https://sourcebeauty.com/products/looq-gummy-yummy-body-wash",
+      "status": "fetched",
+      "pages": 1
+    },
+    {
+      "canonical_id": 63738,
+      "observation_id": 17375,
+      "raw_title": "Strawberry Fluff Body Wash",
+      "raw_brand": "LOOQ",
+      "source_url": "https://sourcebeauty.com/products/looq-strawberry-fluff-body-wash",
+      "status": "fetched",
+      "pages": 1
+    },
+    {
+      "canonical_id": 63739,
+      "observation_id": 17373,
+      "raw_title": "Velvet Rush Body Wash",
+      "raw_brand": "LOOQ",
+      "source_url": "https://sourcebeauty.com/products/looq-velvet-rush-body-wash",
+      "status": "fetched",
+      "pages": 1
+    },
+    {
+      "canonical_id": 63812,
+      "observation_id": 20468,
+      "raw_title": "Salicylic Acid Daily Gentle Cleanser",
+      "raw_brand": "Cosrx",
+      "source_url": "https://sourcebeauty.com/products/cosrx-salicylic-acid-daily-gentle-cleanser",
+      "status": "fetched",
+      "pages": 1
+    },
+    {
+      "canonical_id": 63872,
+      "observation_id": 15392,
+      "raw_title": "Oil Control Moisturising Gel Cream",
+      "raw_brand": "Cerave",
+      "source_url": "https://sourcebeauty.com/products/cerave-oil-control-moisturising-gel-cream",
+      "status": "fetched",
+      "pages": 1
+    },
+    {
+      "canonical_id": 63890,
+      "observation_id": 15229,
+      "raw_title": "Vitamin C 12% Serum",
+      "raw_brand": "Richie",
+      "source_url": "https://sourcebeauty.com/products/richie-vitamin-c-12-serum",
+      "status": "fetched",
+      "pages": 1
+    },
+    {
+      "canonical_id": 63892,
+      "observation_id": 15230,
+      "raw_title": "Vegan Retinol Serum",
+      "raw_brand": "Richie",
+      "source_url": "https://sourcebeauty.com/products/richie-vegan-retinol-serum",
+      "status": "fetched",
+      "pages": 1
+    },
+    {
+      "canonical_id": 63900,
+      "observation_id": 17409,
+      "raw_title": "Urea 10% Body Moisturizer",
+      "raw_brand": "Shaan",
+      "source_url": "https://sourcebeauty.com/products/shaan-urea-10-body-moisturizer",
+      "status": "fetched",
+      "pages": 1
+    },
+    {
+      "canonical_id": 63903,
+      "observation_id": 16638,
+      "raw_title": "Sunscreen Mist Spray SPF 50+",
+      "raw_brand": "Bobai",
+      "source_url": "https://sourcebeauty.com/products/bobai-sunscreen-mist-spray-spf-50",
+      "status": "fetched",
+      "pages": 1
+    },
+    {
+      "canonical_id": 63910,
+      "observation_id": 20913,
+      "raw_title": "Bright & Glow Cleanser",
+      "raw_brand": "Youlicious",
+      "source_url": "https://sourcebeauty.com/products/bright-glow-cleanser",
+      "status": "fetched",
+      "pages": 1
+    },
+    {
+      "canonical_id": 63915,
+      "observation_id": 17803,
+      "raw_title": "Sun Kiss Deep Tanning Oil",
+      "raw_brand": "Raw African",
+      "source_url": "https://sourcebeauty.com/products/sun-kiss-deep-tanning-oil",
+      "status": "fetched",
+      "pages": 1
+    },
+    {
+      "canonical_id": 63930,
+      "observation_id": 21480,
+      "raw_title": "Lashes Treatment Serum",
+      "raw_brand": "Capixy",
+      "source_url": "https://sourcebeauty.com/products/capixy-lashes-treatment-serum",
+      "status": "fetched",
+      "pages": 1
+    },
+    {
+      "canonical_id": 63942,
+      "observation_id": 21912,
+      "raw_title": "C-Through Vitamin C Serum",
+      "raw_brand": "Godly Pride",
+      "source_url": "https://sourcebeauty.com/products/c-through-vitamin-c-serum",
+      "status": "fetched",
+      "pages": 1
+    },
+    {
+      "canonical_id": 63951,
+      "observation_id": 15282,
+      "raw_title": "Sun & More Sunscreen Invisible Spray SPF 50+",
+      "raw_brand": "Milk Shake",
+      "source_url": "https://sourcebeauty.com/products/milk-shake-sun-more-sunscreen-invisible-spray-spf-50",
+      "status": "fetched",
+      "pages": 1
+    },
+    {
+      "canonical_id": 63974,
+      "observation_id": 20794,
+      "raw_title": "Vienna Hand Cream",
+      "raw_brand": "MOOD",
+      "source_url": "https://sourcebeauty.com/products/mood-vienna-hand-cream",
+      "status": "fetched",
+      "pages": 1
+    },
+    {
+      "canonical_id": 63981,
+      "observation_id": 20075,
+      "raw_title": "Heartleaf Quercetinol Pore Deep Cleansing Foam",
+      "raw_brand": "Anua",
+      "source_url": "https://sourcebeauty.com/products/anua-heartleaf-quercetinol-pore-deep-cleansing-foam",
+      "status": "fetched",
+      "pages": 1
+    },
+    {
+      "canonical_id": 63986,
+      "observation_id": 21968,
+      "raw_title": "Besame Strawberry Lip Balm",
+      "raw_brand": "Norshek",
+      "source_url": "https://sourcebeauty.com/products/besame-strawberry-lip-balm",
+      "status": "fetched",
+      "pages": 1
+    },
+    {
+      "canonical_id": 63994,
+      "observation_id": 18507,
+      "raw_title": "Protect Sun Lotion SPF 50+",
+      "raw_brand": "Skinify",
+      "source_url": "https://sourcebeauty.com/products/skinify-protect-sun-lotion-spf-50",
+      "status": "fetched",
+      "pages": 1
+    }
+  ],
+  "last_canonical_id": 63994,
+  "more_candidates_in_selection": true
+}

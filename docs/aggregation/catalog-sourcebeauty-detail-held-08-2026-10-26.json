@@ -1,0 +1,21 @@
+{
+  "applied": true,
+  "backup_path": "/mnt/windows/Users/AmrAlfayoumy/Downloads/skincare/repo/api/backups/catalog/catalog-20261026T005445Z-1dc77bc9.sqlite3",
+  "model_calls": 0,
+  "results": [
+    {
+      "status": "held_for_review",
+      "canonical_id": 65297,
+      "original_observation_id": 18908,
+      "observation_id": 22930,
+      "evidence_id": 1180,
+      "ingredient_count": 59,
+      "reason": "Retailer declaration contains broken chemical names and OCR artifacts (Methy|propanediol, Oc- tyldodeceth-16); exact complete INCI is unverified.",
+      "review_id": 8702
+    }
+  ],
+  "visibility_publication": {
+    "canonical_id": 68183,
+    "history_id": 702
+  }
+}

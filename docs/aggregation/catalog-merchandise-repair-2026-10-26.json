@@ -1,0 +1,1121 @@
+{
+  "applied": true,
+  "backup_path": "/mnt/windows/Users/AmrAlfayoumy/Downloads/skincare/repo/api/backups/catalog/catalog-20261026T005050Z-655586db.sqlite3",
+  "before": 1085,
+  "after": 856,
+  "result": {
+    "uncertain_preserved": 767,
+    "resolved": 229,
+    "superseded_evidence_preserved": 76,
+    "cluster_conflict_preserved": 13
+  },
+  "canonical_projection": {
+    "counts": {
+      "specific_hair_type_preserved": 237,
+      "updated": 84,
+      "uncertain_preserved": 812,
+      "specific_category_preserved": 1,
+      "cluster_conflict_preserved": 1
+    },
+    "changes": [
+      {
+        "canonical_id": 63438,
+        "title": "Essence Disney The Little Mermaid Peptide Shimmer Lip Gloss - 01 Mer-mazing",
+        "before": "Toner",
+        "after": "Makeup",
+        "is_skincare": false,
+        "evidence": [
+          {
+            "source": "title",
+            "match": "\\b(?:lip liner|lip gloss|brow pomade|brow pencil|eye pencil|color corrector|setting spray|bb (?:cream|skin editor))\\b"
+          }
+        ]
+      },
+      {
+        "canonical_id": 63540,
+        "title": "Catrice The Summer Edition Peptide SPF 25 Lip Gloss - C01 Strawberry Sorbet",
+        "before": "Sunscreen",
+        "after": "Makeup",
+        "is_skincare": false,
+        "evidence": [
+          {
+            "source": "title",
+            "match": "\\b(?:lip liner|lip gloss|brow pomade|brow pencil|eye pencil|color corrector|setting spray|bb (?:cream|skin editor))\\b"
+          }
+        ]
+      },
+      {
+        "canonical_id": 63589,
+        "title": "Essence Candy Bomb Shiny Lip Gloss - 01 Cotton Candy",
+        "before": "Toner",
+        "after": "Makeup",
+        "is_skincare": false,
+        "evidence": [
+          {
+            "source": "title",
+            "match": "\\b(?:lip liner|lip gloss|brow pomade|brow pencil|eye pencil|color corrector|setting spray|bb (?:cream|skin editor))\\b"
+          }
+        ]
+      },
+      {
+        "canonical_id": 63926,
+        "title": "Essence What The Fake! Plumping Lip Gloss - 4ml",
+        "before": "Toner",
+        "after": "Makeup",
+        "is_skincare": false,
+        "evidence": [
+          {
+            "source": "title",
+            "match": "\\b(?:lip liner|lip gloss|brow pomade|brow pencil|eye pencil|color corrector|setting spray|bb (?:cream|skin editor))\\b"
+          }
+        ]
+      },
+      {
+        "canonical_id": 64222,
+        "title": "Essence Long Lasting 18h + Waterproof Eye Pencil",
+        "before": "Toner",
+        "after": "Makeup",
+        "is_skincare": false,
+        "evidence": [
+          {
+            "source": "title",
+            "match": "\\b(?:lip liner|lip gloss|brow pomade|brow pencil|eye pencil|color corrector|setting spray|bb (?:cream|skin editor))\\b"
+          }
+        ]
+      },
+      {
+        "canonical_id": 64223,
+        "title": "Essence Long Lasting 18h + Waterproof Eye Pencil",
+        "before": "Toner",
+        "after": "Makeup",
+        "is_skincare": false,
+        "evidence": [
+          {
+            "source": "title",
+            "match": "\\b(?:lip liner|lip gloss|brow pomade|brow pencil|eye pencil|color corrector|setting spray|bb (?:cream|skin editor))\\b"
+          }
+        ]
+      },
+      {
+        "canonical_id": 64224,
+        "title": "Essence Long Lasting 18h + Waterproof Eye Pencil",
+        "before": "Toner",
+        "after": "Makeup",
+        "is_skincare": false,
+        "evidence": [
+          {
+            "source": "title",
+            "match": "\\b(?:lip liner|lip gloss|brow pomade|brow pencil|eye pencil|color corrector|setting spray|bb (?:cream|skin editor))\\b"
+          }
+        ]
+      },
+      {
+        "canonical_id": 64225,
+        "title": "Essence Long Lasting 18h + Waterproof Eye Pencil",
+        "before": "Toner",
+        "after": "Makeup",
+        "is_skincare": false,
+        "evidence": [
+          {
+            "source": "title",
+            "match": "\\b(?:lip liner|lip gloss|brow pomade|brow pencil|eye pencil|color corrector|setting spray|bb (?:cream|skin editor))\\b"
+          }
+        ]
+      },
+      {
+        "canonical_id": 64226,
+        "title": "Essence Long Lasting 18h + Waterproof Eye Pencil",
+        "before": "Toner",
+        "after": "Makeup",
+        "is_skincare": false,
+        "evidence": [
+          {
+            "source": "title",
+            "match": "\\b(?:lip liner|lip gloss|brow pomade|brow pencil|eye pencil|color corrector|setting spray|bb (?:cream|skin editor))\\b"
+          }
+        ]
+      },
+      {
+        "canonical_id": 64258,
+        "title": "Bourjois Healthy Mix Clean Bb Cream - 30ml",
+        "before": "Moisturizer",
+        "after": "Makeup",
+        "is_skincare": false,
+        "evidence": [
+          {
+            "source": "title",
+            "match": "\\b(?:lip liner|lip gloss|brow pomade|brow pencil|eye pencil|color corrector|setting spray|bb (?:cream|skin editor))\\b"
+          }
+        ]
+      },
+      {
+        "canonical_id": 64259,
+        "title": "Bourjois Healthy Mix Clean Bb Cream - 30ml",
+        "before": "Moisturizer",
+        "after": "Makeup",
+        "is_skincare": false,
+        "evidence": [
+          {
+            "source": "title",
+            "match": "\\b(?:lip liner|lip gloss|brow pomade|brow pencil|eye pencil|color corrector|setting spray|bb (?:cream|skin editor))\\b"
+          }
+        ]
+      },
+      {
+        "canonical_id": 64281,
+        "title": "Callista Glowing Beauty SPF 15 BB Cream - 25ml",
+        "before": "Sunscreen",
+        "after": "Makeup",
+        "is_skincare": false,
+        "evidence": [
+          {
+            "source": "title",
+            "match": "\\b(?:lip liner|lip gloss|brow pomade|brow pencil|eye pencil|color corrector|setting spray|bb (?:cream|skin editor))\\b"
+          }
+        ]
+      },
+      {
+        "canonical_id": 64282,
+        "title": "Callista Glowing Beauty SPF 15 BB Cream - 25ml",
+        "before": "Sunscreen",
+        "after": "Makeup",
+        "is_skincare": false,
+        "evidence": [
+          {
+            "source": "title",
+            "match": "\\b(?:lip liner|lip gloss|brow pomade|brow pencil|eye pencil|color corrector|setting spray|bb (?:cream|skin editor))\\b"
+          }
+        ]
+      },
+      {
+        "canonical_id": 64283,
+        "title": "Callista Glowing Beauty SPF 15 BB Cream - 25ml",
+        "before": "Sunscreen",
+        "after": "Makeup",
+        "is_skincare": false,
+        "evidence": [
+          {
+            "source": "title",
+            "match": "\\b(?:lip liner|lip gloss|brow pomade|brow pencil|eye pencil|color corrector|setting spray|bb (?:cream|skin editor))\\b"
+          }
+        ]
+      },
+      {
+        "canonical_id": 64284,
+        "title": "Callista Glowing Beauty SPF 15 BB Cream - 25ml",
+        "before": "Sunscreen",
+        "after": "Makeup",
+        "is_skincare": false,
+        "evidence": [
+          {
+            "source": "title",
+            "match": "\\b(?:lip liner|lip gloss|brow pomade|brow pencil|eye pencil|color corrector|setting spray|bb (?:cream|skin editor))\\b"
+          }
+        ]
+      },
+      {
+        "canonical_id": 64285,
+        "title": "Callista Glowing Beauty SPF 15 BB Cream - 25ml",
+        "before": "Sunscreen",
+        "after": "Makeup",
+        "is_skincare": false,
+        "evidence": [
+          {
+            "source": "title",
+            "match": "\\b(?:lip liner|lip gloss|brow pomade|brow pencil|eye pencil|color corrector|setting spray|bb (?:cream|skin editor))\\b"
+          }
+        ]
+      },
+      {
+        "canonical_id": 64624,
+        "title": "Catrice Pistachio Cream Delight Milky Drip Lip Gloss C01.",
+        "before": "Moisturizer",
+        "after": "Makeup",
+        "is_skincare": false,
+        "evidence": [
+          {
+            "source": "title",
+            "match": "\\b(?:lip liner|lip gloss|brow pomade|brow pencil|eye pencil|color corrector|setting spray|bb (?:cream|skin editor))\\b"
+          }
+        ]
+      },
+      {
+        "canonical_id": 64758,
+        "title": "Sheglam Booster Shine Plumping Lip Gloss-Speia Kiss.",
+        "before": "Serum",
+        "after": "Makeup",
+        "is_skincare": false,
+        "evidence": [
+          {
+            "source": "title",
+            "match": "\\b(?:lip liner|lip gloss|brow pomade|brow pencil|eye pencil|color corrector|setting spray|bb (?:cream|skin editor))\\b"
+          }
+        ]
+      },
+      {
+        "canonical_id": 64779,
+        "title": "Essence Extreme Shine Volume Lip Gloss 21 Pretty In Pink.",
+        "before": "Toner",
+        "after": "Makeup",
+        "is_skincare": false,
+        "evidence": [
+          {
+            "source": "title",
+            "match": "\\b(?:lip liner|lip gloss|brow pomade|brow pencil|eye pencil|color corrector|setting spray|bb (?:cream|skin editor))\\b"
+          }
+        ]
+      },
+      {
+        "canonical_id": 64785,
+        "title": "Essence Micro Precise Brow Pencil 04 Neutral Brown.",
+        "before": "Toner",
+        "after": "Makeup",
+        "is_skincare": false,
+        "evidence": [
+          {
+            "source": "title",
+            "match": "\\b(?:lip liner|lip gloss|brow pomade|brow pencil|eye pencil|color corrector|setting spray|bb (?:cream|skin editor))\\b"
+          }
+        ]
+      },
+      {
+        "canonical_id": 64865,
+        "title": "Essence Juicy Bomb Plumping Lip Gloss 04 Blossom Peach.",
+        "before": "Toner",
+        "after": "Makeup",
+        "is_skincare": false,
+        "evidence": [
+          {
+            "source": "title",
+            "match": "\\b(?:lip liner|lip gloss|brow pomade|brow pencil|eye pencil|color corrector|setting spray|bb (?:cream|skin editor))\\b"
+          }
+        ]
+      },
+      {
+        "canonical_id": 64873,
+        "title": "Sheglam Fall In Line Peel Off Lip Liner Stain-Brownie Points.",
+        "before": "Exfoliator",
+        "after": "Makeup",
+        "is_skincare": false,
+        "evidence": [
+          {
+            "source": "title",
+            "match": "\\b(?:lip liner|lip gloss|brow pomade|brow pencil|eye pencil|color corrector|setting spray|bb (?:cream|skin editor))\\b"
+          }
+        ]
+      },
+      {
+        "canonical_id": 64902,
+        "title": "Flormar Dewy Lip Booster Lip Gloss 07 Bronze Elegance.",
+        "before": "Serum",
+        "after": "Makeup",
+        "is_skincare": false,
+        "evidence": [
+          {
+            "source": "title",
+            "match": "\\b(?:lip liner|lip gloss|brow pomade|brow pencil|eye pencil|color corrector|setting spray|bb (?:cream|skin editor))\\b"
+          }
+        ]
+      },
+      {
+        "canonical_id": 64921,
+        "title": "Sheglam Bold Booster Plumping Lip Liner-Mocha Muse.",
+        "before": "Serum",
+        "after": "Makeup",
+        "is_skincare": false,
+        "evidence": [
+          {
+            "source": "title",
+            "match": "\\b(?:lip liner|lip gloss|brow pomade|brow pencil|eye pencil|color corrector|setting spray|bb (?:cream|skin editor))\\b"
+          }
+        ]
+      },
+      {
+        "canonical_id": 65141,
+        "title": "Sheglam Crystal Glaze Moisturizing Lip Gloss-Cocoa .",
+        "before": "Moisturizer",
+        "after": "Makeup",
+        "is_skincare": false,
+        "evidence": [
+          {
+            "source": "title",
+            "match": "\\b(?:lip liner|lip gloss|brow pomade|brow pencil|eye pencil|color corrector|setting spray|bb (?:cream|skin editor))\\b"
+          }
+        ]
+      },
+      {
+        "canonical_id": 65187,
+        "title": "Amanda Milano Bb Cream 01.",
+        "before": "Moisturizer",
+        "after": "Makeup",
+        "is_skincare": false,
+        "evidence": [
+          {
+            "source": "title",
+            "match": "\\b(?:lip liner|lip gloss|brow pomade|brow pencil|eye pencil|color corrector|setting spray|bb (?:cream|skin editor))\\b"
+          }
+        ]
+      },
+      {
+        "canonical_id": 65897,
+        "title": "Essence Longlasting Eye Pencil",
+        "before": "Toner",
+        "after": "Makeup",
+        "is_skincare": false,
+        "evidence": [
+          {
+            "source": "title",
+            "match": "\\b(?:lip liner|lip gloss|brow pomade|brow pencil|eye pencil|color corrector|setting spray|bb (?:cream|skin editor))\\b"
+          }
+        ]
+      },
+      {
+        "canonical_id": 65898,
+        "title": "Essence Longlasting Eye Pencil",
+        "before": "Toner",
+        "after": "Makeup",
+        "is_skincare": false,
+        "evidence": [
+          {
+            "source": "title",
+            "match": "\\b(?:lip liner|lip gloss|brow pomade|brow pencil|eye pencil|color corrector|setting spray|bb (?:cream|skin editor))\\b"
+          }
+        ]
+      },
+      {
+        "canonical_id": 65899,
+        "title": "Essence Longlasting Eye Pencil",
+        "before": "Toner",
+        "after": "Makeup",
+        "is_skincare": false,
+        "evidence": [
+          {
+            "source": "title",
+            "match": "\\b(?:lip liner|lip gloss|brow pomade|brow pencil|eye pencil|color corrector|setting spray|bb (?:cream|skin editor))\\b"
+          }
+        ]
+      },
+      {
+        "canonical_id": 65900,
+        "title": "Essence Longlasting Eye Pencil",
+        "before": "Toner",
+        "after": "Makeup",
+        "is_skincare": false,
+        "evidence": [
+          {
+            "source": "title",
+            "match": "\\b(?:lip liner|lip gloss|brow pomade|brow pencil|eye pencil|color corrector|setting spray|bb (?:cream|skin editor))\\b"
+          }
+        ]
+      },
+      {
+        "canonical_id": 65901,
+        "title": "Essence Longlasting Eye Pencil",
+        "before": "Toner",
+        "after": "Makeup",
+        "is_skincare": false,
+        "evidence": [
+          {
+            "source": "title",
+            "match": "\\b(?:lip liner|lip gloss|brow pomade|brow pencil|eye pencil|color corrector|setting spray|bb (?:cream|skin editor))\\b"
+          }
+        ]
+      },
+      {
+        "canonical_id": 65902,
+        "title": "Essence Longlasting Eye Pencil",
+        "before": "Toner",
+        "after": "Makeup",
+        "is_skincare": false,
+        "evidence": [
+          {
+            "source": "title",
+            "match": "\\b(?:lip liner|lip gloss|brow pomade|brow pencil|eye pencil|color corrector|setting spray|bb (?:cream|skin editor))\\b"
+          }
+        ]
+      },
+      {
+        "canonical_id": 65903,
+        "title": "Essence Longlasting Eye Pencil",
+        "before": "Toner",
+        "after": "Makeup",
+        "is_skincare": false,
+        "evidence": [
+          {
+            "source": "title",
+            "match": "\\b(?:lip liner|lip gloss|brow pomade|brow pencil|eye pencil|color corrector|setting spray|bb (?:cream|skin editor))\\b"
+          }
+        ]
+      },
+      {
+        "canonical_id": 65904,
+        "title": "Essence Longlasting Eye Pencil",
+        "before": "Toner",
+        "after": "Makeup",
+        "is_skincare": false,
+        "evidence": [
+          {
+            "source": "title",
+            "match": "\\b(?:lip liner|lip gloss|brow pomade|brow pencil|eye pencil|color corrector|setting spray|bb (?:cream|skin editor))\\b"
+          }
+        ]
+      },
+      {
+        "canonical_id": 65905,
+        "title": "Essence Longlasting Eye Pencil",
+        "before": "Toner",
+        "after": "Makeup",
+        "is_skincare": false,
+        "evidence": [
+          {
+            "source": "title",
+            "match": "\\b(?:lip liner|lip gloss|brow pomade|brow pencil|eye pencil|color corrector|setting spray|bb (?:cream|skin editor))\\b"
+          }
+        ]
+      },
+      {
+        "canonical_id": 65906,
+        "title": "Essence Longlasting Eye Pencil",
+        "before": "Toner",
+        "after": "Makeup",
+        "is_skincare": false,
+        "evidence": [
+          {
+            "source": "title",
+            "match": "\\b(?:lip liner|lip gloss|brow pomade|brow pencil|eye pencil|color corrector|setting spray|bb (?:cream|skin editor))\\b"
+          }
+        ]
+      },
+      {
+        "canonical_id": 65907,
+        "title": "Essence Longlasting Eye Pencil",
+        "before": "Toner",
+        "after": "Makeup",
+        "is_skincare": false,
+        "evidence": [
+          {
+            "source": "title",
+            "match": "\\b(?:lip liner|lip gloss|brow pomade|brow pencil|eye pencil|color corrector|setting spray|bb (?:cream|skin editor))\\b"
+          }
+        ]
+      },
+      {
+        "canonical_id": 65908,
+        "title": "Essence Longlasting Eye Pencil",
+        "before": "Toner",
+        "after": "Makeup",
+        "is_skincare": false,
+        "evidence": [
+          {
+            "source": "title",
+            "match": "\\b(?:lip liner|lip gloss|brow pomade|brow pencil|eye pencil|color corrector|setting spray|bb (?:cream|skin editor))\\b"
+          }
+        ]
+      },
+      {
+        "canonical_id": 65909,
+        "title": "Essence Longlasting Eye Pencil",
+        "before": "Toner",
+        "after": "Makeup",
+        "is_skincare": false,
+        "evidence": [
+          {
+            "source": "title",
+            "match": "\\b(?:lip liner|lip gloss|brow pomade|brow pencil|eye pencil|color corrector|setting spray|bb (?:cream|skin editor))\\b"
+          }
+        ]
+      },
+      {
+        "canonical_id": 65910,
+        "title": "Essence Longlasting Eye Pencil",
+        "before": "Toner",
+        "after": "Makeup",
+        "is_skincare": false,
+        "evidence": [
+          {
+            "source": "title",
+            "match": "\\b(?:lip liner|lip gloss|brow pomade|brow pencil|eye pencil|color corrector|setting spray|bb (?:cream|skin editor))\\b"
+          }
+        ]
+      },
+      {
+        "canonical_id": 65911,
+        "title": "Essence Longlasting Eye Pencil",
+        "before": "Toner",
+        "after": "Makeup",
+        "is_skincare": false,
+        "evidence": [
+          {
+            "source": "title",
+            "match": "\\b(?:lip liner|lip gloss|brow pomade|brow pencil|eye pencil|color corrector|setting spray|bb (?:cream|skin editor))\\b"
+          }
+        ]
+      },
+      {
+        "canonical_id": 66672,
+        "title": "NEXO Eventone BB Cream",
+        "before": "Moisturizer",
+        "after": "Makeup",
+        "is_skincare": false,
+        "evidence": [
+          {
+            "source": "title",
+            "match": "\\b(?:lip liner|lip gloss|brow pomade|brow pencil|eye pencil|color corrector|setting spray|bb (?:cream|skin editor))\\b"
+          }
+        ]
+      },
+      {
+        "canonical_id": 66698,
+        "title": "Anti Blemish BB Cream",
+        "before": "Moisturizer",
+        "after": "Makeup",
+        "is_skincare": false,
+        "evidence": [
+          {
+            "source": "title",
+            "match": "\\b(?:lip liner|lip gloss|brow pomade|brow pencil|eye pencil|color corrector|setting spray|bb (?:cream|skin editor))\\b"
+          }
+        ]
+      },
+      {
+        "canonical_id": 66699,
+        "title": "Anti Blemish BB Cream",
+        "before": "Moisturizer",
+        "after": "Makeup",
+        "is_skincare": false,
+        "evidence": [
+          {
+            "source": "title",
+            "match": "\\b(?:lip liner|lip gloss|brow pomade|brow pencil|eye pencil|color corrector|setting spray|bb (?:cream|skin editor))\\b"
+          }
+        ]
+      },
+      {
+        "canonical_id": 66756,
+        "title": "BB Cream Matte Finish",
+        "before": "Moisturizer",
+        "after": "Makeup",
+        "is_skincare": false,
+        "evidence": [
+          {
+            "source": "title",
+            "match": "\\b(?:lip liner|lip gloss|brow pomade|brow pencil|eye pencil|color corrector|setting spray|bb (?:cream|skin editor))\\b"
+          }
+        ]
+      },
+      {
+        "canonical_id": 66757,
+        "title": "BB Cream Matte Finish",
+        "before": "Moisturizer",
+        "after": "Makeup",
+        "is_skincare": false,
+        "evidence": [
+          {
+            "source": "title",
+            "match": "\\b(?:lip liner|lip gloss|brow pomade|brow pencil|eye pencil|color corrector|setting spray|bb (?:cream|skin editor))\\b"
+          }
+        ]
+      },
+      {
+        "canonical_id": 66758,
+        "title": "BB Cream Matte Finish",
+        "before": "Moisturizer",
+        "after": "Makeup",
+        "is_skincare": false,
+        "evidence": [
+          {
+            "source": "title",
+            "match": "\\b(?:lip liner|lip gloss|brow pomade|brow pencil|eye pencil|color corrector|setting spray|bb (?:cream|skin editor))\\b"
+          }
+        ]
+      },
+      {
+        "canonical_id": 66759,
+        "title": "BB Cream Matte Finish",
+        "before": "Moisturizer",
+        "after": "Makeup",
+        "is_skincare": false,
+        "evidence": [
+          {
+            "source": "title",
+            "match": "\\b(?:lip liner|lip gloss|brow pomade|brow pencil|eye pencil|color corrector|setting spray|bb (?:cream|skin editor))\\b"
+          }
+        ]
+      },
+      {
+        "canonical_id": 66760,
+        "title": "BB Cream Matte Finish",
+        "before": "Moisturizer",
+        "after": "Makeup",
+        "is_skincare": false,
+        "evidence": [
+          {
+            "source": "title",
+            "match": "\\b(?:lip liner|lip gloss|brow pomade|brow pencil|eye pencil|color corrector|setting spray|bb (?:cream|skin editor))\\b"
+          }
+        ]
+      },
+      {
+        "canonical_id": 66761,
+        "title": "BB Cream Matte Finish",
+        "before": "Moisturizer",
+        "after": "Makeup",
+        "is_skincare": false,
+        "evidence": [
+          {
+            "source": "title",
+            "match": "\\b(?:lip liner|lip gloss|brow pomade|brow pencil|eye pencil|color corrector|setting spray|bb (?:cream|skin editor))\\b"
+          }
+        ]
+      },
+      {
+        "canonical_id": 66797,
+        "title": "BB Cream",
+        "before": "Moisturizer",
+        "after": "Makeup",
+        "is_skincare": false,
+        "evidence": [
+          {
+            "source": "title",
+            "match": "\\b(?:lip liner|lip gloss|brow pomade|brow pencil|eye pencil|color corrector|setting spray|bb (?:cream|skin editor))\\b"
+          }
+        ]
+      },
+      {
+        "canonical_id": 66798,
+        "title": "BB Cream",
+        "before": "Moisturizer",
+        "after": "Makeup",
+        "is_skincare": false,
+        "evidence": [
+          {
+            "source": "title",
+            "match": "\\b(?:lip liner|lip gloss|brow pomade|brow pencil|eye pencil|color corrector|setting spray|bb (?:cream|skin editor))\\b"
+          }
+        ]
+      },
+      {
+        "canonical_id": 66799,
+        "title": "BB Cream",
+        "before": "Moisturizer",
+        "after": "Makeup",
+        "is_skincare": false,
+        "evidence": [
+          {
+            "source": "title",
+            "match": "\\b(?:lip liner|lip gloss|brow pomade|brow pencil|eye pencil|color corrector|setting spray|bb (?:cream|skin editor))\\b"
+          }
+        ]
+      },
+      {
+        "canonical_id": 66800,
+        "title": "BB Cream",
+        "before": "Moisturizer",
+        "after": "Makeup",
+        "is_skincare": false,
+        "evidence": [
+          {
+            "source": "title",
+            "match": "\\b(?:lip liner|lip gloss|brow pomade|brow pencil|eye pencil|color corrector|setting spray|bb (?:cream|skin editor))\\b"
+          }
+        ]
+      },
+      {
+        "canonical_id": 67447,
+        "title": "Oil Free BB Cream Beauty Balm",
+        "before": "Moisturizer",
+        "after": "Makeup",
+        "is_skincare": false,
+        "evidence": [
+          {
+            "source": "title",
+            "match": "\\b(?:lip liner|lip gloss|brow pomade|brow pencil|eye pencil|color corrector|setting spray|bb (?:cream|skin editor))\\b"
+          }
+        ]
+      },
+      {
+        "canonical_id": 67448,
+        "title": "Oil Free BB Cream Beauty Balm",
+        "before": "Moisturizer",
+        "after": "Makeup",
+        "is_skincare": false,
+        "evidence": [
+          {
+            "source": "title",
+            "match": "\\b(?:lip liner|lip gloss|brow pomade|brow pencil|eye pencil|color corrector|setting spray|bb (?:cream|skin editor))\\b"
+          }
+        ]
+      },
+      {
+        "canonical_id": 67449,
+        "title": "Oil Free BB Cream Beauty Balm",
+        "before": "Moisturizer",
+        "after": "Makeup",
+        "is_skincare": false,
+        "evidence": [
+          {
+            "source": "title",
+            "match": "\\b(?:lip liner|lip gloss|brow pomade|brow pencil|eye pencil|color corrector|setting spray|bb (?:cream|skin editor))\\b"
+          }
+        ]
+      },
+      {
+        "canonical_id": 67450,
+        "title": "Oil Free BB Cream Beauty Balm",
+        "before": "Moisturizer",
+        "after": "Makeup",
+        "is_skincare": false,
+        "evidence": [
+          {
+            "source": "title",
+            "match": "\\b(?:lip liner|lip gloss|brow pomade|brow pencil|eye pencil|color corrector|setting spray|bb (?:cream|skin editor))\\b"
+          }
+        ]
+      },
+      {
+        "canonical_id": 67451,
+        "title": "Oil Free BB Cream Beauty Balm",
+        "before": "Moisturizer",
+        "after": "Makeup",
+        "is_skincare": false,
+        "evidence": [
+          {
+            "source": "title",
+            "match": "\\b(?:lip liner|lip gloss|brow pomade|brow pencil|eye pencil|color corrector|setting spray|bb (?:cream|skin editor))\\b"
+          }
+        ]
+      },
+      {
+        "canonical_id": 67466,
+        "title": "Uvepro BB Cream SPF20",
+        "before": "Sunscreen",
+        "after": "Makeup",
+        "is_skincare": false,
+        "evidence": [
+          {
+            "source": "title",
+            "match": "\\b(?:lip liner|lip gloss|brow pomade|brow pencil|eye pencil|color corrector|setting spray|bb (?:cream|skin editor))\\b"
+          }
+        ]
+      },
+      {
+        "canonical_id": 68201,
+        "title": "Canpol Babies Rattle With Teether Colourful Animals",
+        "before": "Baby Care",
+        "after": "Tools & Accessories",
+        "is_skincare": false,
+        "evidence": [
+          {
+            "source": "title",
+            "match": "\\b(?:sunglasses|(?:water )?teethers?|soother (?:holder|clip)|foot file|(?:writing|activity) (?:german |arabic |french )?book)\\b"
+          }
+        ]
+      },
+      {
+        "canonical_id": 68202,
+        "title": "Canpol Babies Exotic Animals Soother Clip With Ribbon (0m+)",
+        "before": "Baby Care",
+        "after": "Tools & Accessories",
+        "is_skincare": false,
+        "evidence": [
+          {
+            "source": "title",
+            "match": "\\b(?:sunglasses|(?:water )?teethers?|soother (?:holder|clip)|foot file|(?:writing|activity) (?:german |arabic |french )?book)\\b"
+          }
+        ]
+      },
+      {
+        "canonical_id": 68258,
+        "title": "Canpol Babies Soother Holder Pastelove (0m+)",
+        "before": "Baby Care",
+        "after": "Tools & Accessories",
+        "is_skincare": false,
+        "evidence": [
+          {
+            "source": "title",
+            "match": "\\b(?:sunglasses|(?:water )?teethers?|soother (?:holder|clip)|foot file|(?:writing|activity) (?:german |arabic |french )?book)\\b"
+          }
+        ]
+      },
+      {
+        "canonical_id": 69286,
+        "title": "Catrice The Summer Edit Peptide SPF 25 Lip Gloss - C03 Peach Iced Tea",
+        "before": "Sunscreen",
+        "after": "Makeup",
+        "is_skincare": false,
+        "evidence": [
+          {
+            "source": "title",
+            "match": "\\b(?:lip liner|lip gloss|brow pomade|brow pencil|eye pencil|color corrector|setting spray|bb (?:cream|skin editor))\\b"
+          }
+        ]
+      },
+      {
+        "canonical_id": 69287,
+        "title": "Catrice The Summer Edit Peptide SPF 25 Lip Gloss - C02 Guava Jam",
+        "before": "Sunscreen",
+        "after": "Makeup",
+        "is_skincare": false,
+        "evidence": [
+          {
+            "source": "title",
+            "match": "\\b(?:lip liner|lip gloss|brow pomade|brow pencil|eye pencil|color corrector|setting spray|bb (?:cream|skin editor))\\b"
+          }
+        ]
+      },
+      {
+        "canonical_id": 69304,
+        "title": "Essence Glimmer In A Bubble Lip Gloss - 3.5ml",
+        "before": "Toner",
+        "after": "Makeup",
+        "is_skincare": false,
+        "evidence": [
+          {
+            "source": "title",
+            "match": "\\b(?:lip liner|lip gloss|brow pomade|brow pencil|eye pencil|color corrector|setting spray|bb (?:cream|skin editor))\\b"
+          }
+        ]
+      },
+      {
+        "canonical_id": 69475,
+        "title": "Sheglam Booster Shine Plumping Lip Gloss-True Passion.",
+        "before": "Serum",
+        "after": "Makeup",
+        "is_skincare": false,
+        "evidence": [
+          {
+            "source": "title",
+            "match": "\\b(?:lip liner|lip gloss|brow pomade|brow pencil|eye pencil|color corrector|setting spray|bb (?:cream|skin editor))\\b"
+          }
+        ]
+      },
+      {
+        "canonical_id": 69477,
+        "title": "Essence Extreme Shine Volume Lip Gloss 20 Peach Please.",
+        "before": "Toner",
+        "after": "Makeup",
+        "is_skincare": false,
+        "evidence": [
+          {
+            "source": "title",
+            "match": "\\b(?:lip liner|lip gloss|brow pomade|brow pencil|eye pencil|color corrector|setting spray|bb (?:cream|skin editor))\\b"
+          }
+        ]
+      },
+      {
+        "canonical_id": 69478,
+        "title": "Essence Extreme Shine Volume Lip Gloss 16 Nude Sorbet.",
+        "before": "Toner",
+        "after": "Makeup",
+        "is_skincare": false,
+        "evidence": [
+          {
+            "source": "title",
+            "match": "\\b(?:lip liner|lip gloss|brow pomade|brow pencil|eye pencil|color corrector|setting spray|bb (?:cream|skin editor))\\b"
+          }
+        ]
+      },
+      {
+        "canonical_id": 69485,
+        "title": "Essence Micro Precise Brow Pencil 03 Light Brown.",
+        "before": "Toner",
+        "after": "Makeup",
+        "is_skincare": false,
+        "evidence": [
+          {
+            "source": "title",
+            "match": "\\b(?:lip liner|lip gloss|brow pomade|brow pencil|eye pencil|color corrector|setting spray|bb (?:cream|skin editor))\\b"
+          }
+        ]
+      },
+      {
+        "canonical_id": 69501,
+        "title": "Essence Juicy Bomb Plumping Lip Gloss 01 Sweet Strawberry.",
+        "before": "Toner",
+        "after": "Makeup",
+        "is_skincare": false,
+        "evidence": [
+          {
+            "source": "title",
+            "match": "\\b(?:lip liner|lip gloss|brow pomade|brow pencil|eye pencil|color corrector|setting spray|bb (?:cream|skin editor))\\b"
+          }
+        ]
+      },
+      {
+        "canonical_id": 69502,
+        "title": "Essence Juicy Bomb Plumping Lip Gloss 02 Sour Cherry.",
+        "before": "Toner",
+        "after": "Makeup",
+        "is_skincare": false,
+        "evidence": [
+          {
+            "source": "title",
+            "match": "\\b(?:lip liner|lip gloss|brow pomade|brow pencil|eye pencil|color corrector|setting spray|bb (?:cream|skin editor))\\b"
+          }
+        ]
+      },
+      {
+        "canonical_id": 69504,
+        "title": "Essence Choco Bomb Shiny Lip Gloss - 01 Chocoholic.",
+        "before": "Toner",
+        "after": "Makeup",
+        "is_skincare": false,
+        "evidence": [
+          {
+            "source": "title",
+            "match": "\\b(?:lip liner|lip gloss|brow pomade|brow pencil|eye pencil|color corrector|setting spray|bb (?:cream|skin editor))\\b"
+          }
+        ]
+      },
+      {
+        "canonical_id": 69509,
+        "title": "Sheglam Fall In Line Peel Off Lip Liner Stain-Plum Sauce.",
+        "before": "Exfoliator",
+        "after": "Makeup",
+        "is_skincare": false,
+        "evidence": [
+          {
+            "source": "title",
+            "match": "\\b(?:lip liner|lip gloss|brow pomade|brow pencil|eye pencil|color corrector|setting spray|bb (?:cream|skin editor))\\b"
+          }
+        ]
+      },
+      {
+        "canonical_id": 69510,
+        "title": "Sheglam Fall In Line Peel Off Lip Liner Stain-Cherry Bark.",
+        "before": "Exfoliator",
+        "after": "Makeup",
+        "is_skincare": false,
+        "evidence": [
+          {
+            "source": "title",
+            "match": "\\b(?:lip liner|lip gloss|brow pomade|brow pencil|eye pencil|color corrector|setting spray|bb (?:cream|skin editor))\\b"
+          }
+        ]
+      },
+      {
+        "canonical_id": 69523,
+        "title": "Flormar Dewy Lip Booster Lip Gloss 013 Scarlet Spice.",
+        "before": "Serum",
+        "after": "Makeup",
+        "is_skincare": false,
+        "evidence": [
+          {
+            "source": "title",
+            "match": "\\b(?:lip liner|lip gloss|brow pomade|brow pencil|eye pencil|color corrector|setting spray|bb (?:cream|skin editor))\\b"
+          }
+        ]
+      },
+      {
+        "canonical_id": 69524,
+        "title": "Flormar Dewy Lip Booster Lip Gloss 08 Cocoa Delight.",
+        "before": "Serum",
+        "after": "Makeup",
+        "is_skincare": false,
+        "evidence": [
+          {
+            "source": "title",
+            "match": "\\b(?:lip liner|lip gloss|brow pomade|brow pencil|eye pencil|color corrector|setting spray|bb (?:cream|skin editor))\\b"
+          }
+        ]
+      },
+      {
+        "canonical_id": 69537,
+        "title": "Sheglam Bold Booster Plumping Lip Liner-Cocoa Crush.",
+        "before": "Serum",
+        "after": "Makeup",
+        "is_skincare": false,
+        "evidence": [
+          {
+            "source": "title",
+            "match": "\\b(?:lip liner|lip gloss|brow pomade|brow pencil|eye pencil|color corrector|setting spray|bb (?:cream|skin editor))\\b"
+          }
+        ]
+      },
+      {
+        "canonical_id": 69550,
+        "title": "Essence Birthday Bomb Shiny Lip Gloss.",
+        "before": "Toner",
+        "after": "Makeup",
+        "is_skincare": false,
+        "evidence": [
+          {
+            "source": "title",
+            "match": "\\b(?:lip liner|lip gloss|brow pomade|brow pencil|eye pencil|color corrector|setting spray|bb (?:cream|skin editor))\\b"
+          }
+        ]
+      },
+      {
+        "canonical_id": 69573,
+        "title": "Sheglam Booster Shine Plumping Lip Gloss-Pink Flamingo.",
+        "before": "Serum",
+        "after": "Makeup",
+        "is_skincare": false,
+        "evidence": [
+          {
+            "source": "title",
+            "match": "\\b(?:lip liner|lip gloss|brow pomade|brow pencil|eye pencil|color corrector|setting spray|bb (?:cream|skin editor))\\b"
+          }
+        ]
+      },
+      {
+        "canonical_id": 69587,
+        "title": "Sheglam Bold Booster Plumping Lip Liner-Barely There.",
+        "before": "Serum",
+        "after": "Makeup",
+        "is_skincare": false,
+        "evidence": [
+          {
+            "source": "title",
+            "match": "\\b(?:lip liner|lip gloss|brow pomade|brow pencil|eye pencil|color corrector|setting spray|bb (?:cream|skin editor))\\b"
+          }
+        ]
+      },
+      {
+        "canonical_id": 69630,
+        "title": "Sheglam Fall In Line Peel Off Lip Liner Stain-Pinky Promise",
+        "before": "Exfoliator",
+        "after": "Makeup",
+        "is_skincare": false,
+        "evidence": [
+          {
+            "source": "title",
+            "match": "\\b(?:lip liner|lip gloss|brow pomade|brow pencil|eye pencil|color corrector|setting spray|bb (?:cream|skin editor))\\b"
+          }
+        ]
+      },
+      {
+        "canonical_id": 69631,
+        "title": "Sheglam Fall In Line Peel Off Lip Liner Stain-Mauvelous",
+        "before": "Exfoliator",
+        "after": "Makeup",
+        "is_skincare": false,
+        "evidence": [
+          {
+            "source": "title",
+            "match": "\\b(?:lip liner|lip gloss|brow pomade|brow pencil|eye pencil|color corrector|setting spray|bb (?:cream|skin editor))\\b"
+          }
+        ]
+      },
+      {
+        "canonical_id": 70418,
+        "title": "Amanda Milano Bb Cream 04.",
+        "before": "Moisturizer",
+        "after": "Makeup",
+        "is_skincare": false,
+        "evidence": [
+          {
+            "source": "title",
+            "match": "\\b(?:lip liner|lip gloss|brow pomade|brow pencil|eye pencil|color corrector|setting spray|bb (?:cream|skin editor))\\b"
+          }
+        ]
+      }
+    ]
+  },
+  "explicit_hair_types": {
+    "counts": {
+      "specific_role_conflict_preserved": 2
+    },
+    "changes": []
+  }
+}

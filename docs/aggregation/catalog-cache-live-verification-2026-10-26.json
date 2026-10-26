@@ -1,0 +1,26 @@
+{
+  "pid": 973064,
+  "before": {
+    "pid": 973064,
+    "revision": 0,
+    "health": {
+      "status": "active",
+      "database": "Production SQLite WAL",
+      "products_indexed": 4334,
+      "products_with_ingredients": 101,
+      "ai_engine": "Jev 1.13 Free (OpenCode Zen) + Cosmetic Formulation Bioequivalence"
+    }
+  },
+  "after": {
+    "revision": 12,
+    "health": {
+      "status": "active",
+      "database": "Production SQLite WAL",
+      "products_indexed": 4334,
+      "products_with_ingredients": 113,
+      "ai_engine": "Jev 1.13 Free (OpenCode Zen) + Cosmetic Formulation Bioequivalence"
+    }
+  },
+  "refresh_http_seconds": 0.658,
+  "api_restarted_between_reads": false
+}

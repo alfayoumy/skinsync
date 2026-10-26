@@ -1,0 +1,212 @@
+{
+  "overview": {
+    "total_store_listings": 22155,
+    "canonical_entities": 7342,
+    "multi_store_clusters": 1128,
+    "active_skincare_products": 4334,
+    "suppressed_non_skincare": 1398,
+    "products_with_ingredients": 115,
+    "inci_matched_products": 0,
+    "ai_verified_products": 0,
+    "verified_identities": 692,
+    "skincare_canonical_products": 5944,
+    "coverage_percent": 1.9
+  },
+  "retailer_rows_with_raw_ingredients": 0,
+  "listings_with_verified_published_formula": 316,
+  "examples": [
+    {
+      "id": 22813,
+      "store_id": "bashrety",
+      "store_name": "Bashrety",
+      "title": "HYS\u00c9AC New Skin Serum \u2013 Anti-Blemish Booster",
+      "clean_title": null,
+      "brand": "URIAGE",
+      "category": "Serum",
+      "listing_category": "Serum",
+      "price": 1599.0,
+      "compare_at_price": 0.0,
+      "is_available": 1,
+      "image_url": "https://cdn.shopify.com/s/files/1/0377/4460/7277/files/1000x1000HA.jpg?v=1788865926",
+      "product_url": "https://bashrety.tv/products/hyseac-new-skin-serum-anti-blemish-booster",
+      "ingredient_source": "source:bloompharmacy",
+      "ingredient_source_url": "https://www.bloompharmacy.com/products/uriage-hyseac-anti-blemish-booster-serum-30ml",
+      "has_ingredients": 1,
+      "source_association_verified": 1,
+      "canonical_product_id": 63154,
+      "canonical_title": "HYS\u00c9AC New Skin Serum \u2013 Anti-Blemish Booster",
+      "store_count": 2,
+      "min_price": 1599.0,
+      "max_price": 1599.0,
+      "inci_matched_id": null,
+      "inci_matched_name": null,
+      "inci_hybrid_score": null,
+      "inci_cross_score": null,
+      "gate1_quality_status": null,
+      "gate2_safeguard_status": null,
+      "gate4_cross_status": null,
+      "gate4_gemini_status": null,
+      "is_skincare": 1,
+      "listing_is_skincare": 1,
+      "updated_at": "2026-10-25 00:10:46"
+    },
+    {
+      "id": 22816,
+      "store_id": "bashrety",
+      "store_name": "Bashrety",
+      "title": "SVR Sebiaclear Micro-Peel",
+      "clean_title": null,
+      "brand": "SVR",
+      "category": "Exfoliator",
+      "listing_category": "Exfoliator",
+      "price": 799.0,
+      "compare_at_price": 0.0,
+      "is_available": 1,
+      "image_url": "https://cdn.shopify.com/s/files/1/0377/4460/7277/files/ChatGPTImageAug11_2026_12_21_12PM.png?v=1786444019",
+      "product_url": "https://bashrety.tv/products/svr-sebiaclear-micro-peel",
+      "ingredient_source": "source:bloompharmacy",
+      "ingredient_source_url": "https://www.bloompharmacy.com/products/svr-sebiaclear-micro-peel-150ml",
+      "has_ingredients": 1,
+      "source_association_verified": 1,
+      "canonical_product_id": 63157,
+      "canonical_title": "SVR Sebiaclear Micro-Peel",
+      "store_count": 3,
+      "min_price": 799.0,
+      "max_price": 835.0,
+      "inci_matched_id": null,
+      "inci_matched_name": null,
+      "inci_hybrid_score": null,
+      "inci_cross_score": null,
+      "gate1_quality_status": null,
+      "gate2_safeguard_status": null,
+      "gate4_cross_status": null,
+      "gate4_gemini_status": null,
+      "is_skincare": 1,
+      "listing_is_skincare": 1,
+      "updated_at": "2026-10-25 00:10:46"
+    }
+  ],
+  "health": {
+    "canonical_products": 7348,
+    "active_canonical_products": 7342,
+    "active_skincare_products": 5944,
+    "verified_identities": 692,
+    "published_inci": 119,
+    "published_skincare_inci": 115,
+    "observed_products_with_inci": 1079,
+    "pending_reviews": {
+      "category": 1091,
+      "identity": 973
+    },
+    "pending_identity_reviews": 973,
+    "pending_category_reviews": 1091,
+    "awaiting_evidence": 0,
+    "sources": [
+      {
+        "id": "bashrety",
+        "name": "Bashrety",
+        "enabled": 1,
+        "publish_enabled": 0
+      },
+      {
+        "id": "bloompharmacy",
+        "name": "Bloom Pharmacy",
+        "enabled": 1,
+        "publish_enabled": 0
+      },
+      {
+        "id": "drdawood",
+        "name": "Dr Dawood",
+        "enabled": 1,
+        "publish_enabled": 0
+      },
+      {
+        "id": "feel22",
+        "name": "Feel22 Egypt",
+        "enabled": 1,
+        "publish_enabled": 0
+      },
+      {
+        "id": "rawafrican",
+        "name": "Raw African",
+        "enabled": 1,
+        "publish_enabled": 0
+      },
+      {
+        "id": "sourcebeauty",
+        "name": "Source Beauty",
+        "enabled": 1,
+        "publish_enabled": 0
+      }
+    ],
+    "formula_evidence": [
+      {
+        "completeness": "full",
+        "order_verified": 1,
+        "count": 395
+      },
+      {
+        "completeness": "partial",
+        "order_verified": 0,
+        "count": 85
+      },
+      {
+        "completeness": "unverified",
+        "order_verified": 0,
+        "count": 75
+      },
+      {
+        "completeness": "unverified",
+        "order_verified": 1,
+        "count": 37
+      }
+    ],
+    "gemini_results": [
+      {
+        "status": "auto_resolved",
+        "verdict": "different_product",
+        "count": 123
+      },
+      {
+        "status": "auto_resolved",
+        "verdict": "same_product",
+        "count": 626
+      },
+      {
+        "status": "needs_manual",
+        "verdict": null,
+        "count": 1
+      },
+      {
+        "status": "needs_manual",
+        "verdict": "different_product",
+        "count": 7
+      },
+      {
+        "status": "needs_manual",
+        "verdict": "same_product",
+        "count": 1
+      },
+      {
+        "status": "needs_manual",
+        "verdict": "uncertain",
+        "count": 25
+      },
+      {
+        "status": "queued",
+        "verdict": "different_product",
+        "count": 218
+      },
+      {
+        "status": "queued",
+        "verdict": "same_product",
+        "count": 187
+      },
+      {
+        "status": "queued",
+        "verdict": "uncertain",
+        "count": 534
+      }
+    ]
+  }
+}

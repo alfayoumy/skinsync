@@ -1,0 +1,17 @@
+{
+  "applied": true,
+  "backup_path": "/mnt/windows/Users/AmrAlfayoumy/Downloads/skincare/repo/api/backups/catalog/catalog-20261026T210123Z-2bd4cbe8.sqlite3",
+  "model_calls": 0,
+  "preview_scope": null,
+  "results": [
+    {
+      "url": "https://www.bloompharmacy.com/products/svr-topialyse-cream-200ml",
+      "status": "published",
+      "canonical_id": 63212,
+      "original_observation_id": 6521,
+      "observation_id": 23010,
+      "evidence_id": 1300,
+      "ingredient_count": 21
+    }
+  ]
+}

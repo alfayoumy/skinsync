@@ -1,0 +1,174 @@
+{
+  "canonical_products": 7349,
+  "active_canonical_products": 7343,
+  "active_skincare_products": 5816,
+  "verified_identities": 693,
+  "published_inci": 163,
+  "published_skincare_inci": 159,
+  "observed_products_with_inci": 1153,
+  "pending_reviews": {
+    "category": 855,
+    "formulation": 4,
+    "identity": 973
+  },
+  "pending_identity_reviews": 973,
+  "pending_category_reviews": 855,
+  "awaiting_evidence": 0,
+  "sources": [
+    {
+      "id": "bashrety",
+      "name": "Bashrety",
+      "enabled": 1,
+      "publish_enabled": 0
+    },
+    {
+      "id": "bloompharmacy",
+      "name": "Bloom Pharmacy",
+      "enabled": 1,
+      "publish_enabled": 0
+    },
+    {
+      "id": "drdawood",
+      "name": "Dr Dawood",
+      "enabled": 1,
+      "publish_enabled": 0
+    },
+    {
+      "id": "feel22",
+      "name": "Feel22 Egypt",
+      "enabled": 1,
+      "publish_enabled": 0
+    },
+    {
+      "id": "rawafrican",
+      "name": "Raw African",
+      "enabled": 1,
+      "publish_enabled": 0
+    },
+    {
+      "id": "sourcebeauty",
+      "name": "Source Beauty",
+      "enabled": 1,
+      "publish_enabled": 0
+    }
+  ],
+  "formula_evidence": [
+    {
+      "completeness": "full",
+      "order_verified": 1,
+      "count": 439
+    },
+    {
+      "completeness": "partial",
+      "order_verified": 0,
+      "count": 115
+    },
+    {
+      "completeness": "unverified",
+      "order_verified": 0,
+      "count": 75
+    },
+    {
+      "completeness": "unverified",
+      "order_verified": 1,
+      "count": 37
+    }
+  ],
+  "gemini_results": [
+    {
+      "status": "auto_resolved",
+      "verdict": "different_product",
+      "count": 123
+    },
+    {
+      "status": "auto_resolved",
+      "verdict": "same_product",
+      "count": 626
+    },
+    {
+      "status": "needs_manual",
+      "verdict": null,
+      "count": 1
+    },
+    {
+      "status": "needs_manual",
+      "verdict": "different_product",
+      "count": 7
+    },
+    {
+      "status": "needs_manual",
+      "verdict": "same_product",
+      "count": 1
+    },
+    {
+      "status": "needs_manual",
+      "verdict": "uncertain",
+      "count": 25
+    },
+    {
+      "status": "queued",
+      "verdict": "different_product",
+      "count": 218
+    },
+    {
+      "status": "queued",
+      "verdict": "same_product",
+      "count": 187
+    },
+    {
+      "status": "queued",
+      "verdict": "uncertain",
+      "count": 534
+    }
+  ],
+  "integrity_check": "ok",
+  "foreign_key_violations": 0,
+  "pair_results": [
+    {
+      "verdict": "prepared",
+      "count": 4073
+    },
+    {
+      "verdict": "different_product",
+      "count": 295
+    },
+    {
+      "verdict": "same_product",
+      "count": 26
+    },
+    {
+      "verdict": "uncertain",
+      "count": 6
+    }
+  ],
+  "pair_payload_violations": 0,
+  "current_declaration_quality_findings": [
+    {
+      "canonical_id": 64415,
+      "title": "La Roche-Posay Anthelios Uvmune 400 Oil Control Tinted Gel-Cream SPF50+ - 50ml",
+      "flags": {
+        "partial_reason": "non_specific_or_contaminated_declaration"
+      }
+    },
+    {
+      "canonical_id": 65115,
+      "title": "Eqqualberry Vitamin Illuminating Cream 50 Ml.",
+      "flags": {
+        "partial_reason": "non_specific_or_contaminated_declaration"
+      }
+    }
+  ],
+  "live_health": {
+    "available": false,
+    "error_type": "URLError"
+  },
+  "snapshot_at_utc": "2026-10-26T18:00:52Z",
+  "visible_skincare_products": 4245,
+  "legacy_retailer_rows": 22155,
+  "legacy_retailer_rows_with_raw_ingredients": 0,
+  "gemini_queue_status_counts": {
+    "auto_resolved": 749,
+    "needs_manual": 34,
+    "queued": 939
+  }
+}

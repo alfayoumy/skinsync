@@ -1,0 +1,42 @@
+{
+  "applied": false,
+  "backup_path": null,
+  "preview_scope": "consistent_isolated_snapshot",
+  "before": 835,
+  "after": 835,
+  "result": {
+    "uncertain_preserved": 753,
+    "superseded_evidence_preserved": 76,
+    "cluster_conflict_preserved": 6
+  },
+  "canonical_projection": {
+    "counts": {
+      "specific_hair_type_preserved": 227,
+      "uncertain_preserved": 775,
+      "human_approved_preserved": 8,
+      "specific_category_preserved": 1,
+      "updated": 1
+    },
+    "changes": [
+      {
+        "canonical_id": 70547,
+        "title": "Sheglam Air Plush Lip & Cheek Cream- 402 Drift Off.",
+        "before": "Moisturizer",
+        "after": "Makeup",
+        "is_skincare": false,
+        "evidence": [
+          {
+            "source": "title",
+            "match": "\\b(?:brow (?:(?:fixing|lifting|lift|freeze) ){0,3}(?:gel|glue|wax|mascara|pen)|(?:kajal|kohl)(?: kohl)? pencil|eye brightening pen|highlighter|skin tint|bronzing stick|make ?up (?:fixing|setting) spray|false lash(?:es)?|glamour lashes|(?:ink|pro) liner|lipliner|(?:color|colour) changing lip (?:and )?cheek oil|lip (?:and )?cheek (?:cream|tint|stick)|cheek (?:and )?lip cream|lip (?:mousse|marker|pen|pencil|stain|blur))\\b"
+          }
+        ]
+      }
+    ]
+  },
+  "explicit_hair_types": {
+    "counts": {
+      "specific_role_conflict_preserved": 2
+    },
+    "changes": []
+  }
+}

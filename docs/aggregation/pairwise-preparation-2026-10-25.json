@@ -1,0 +1,1530 @@
+{
+  "backup_path": "/mnt/windows/Users/AmrAlfayoumy/Downloads/skincare/repo/api/backups/catalog/catalog-20261025T194251Z-c259d1b8.sqlite3",
+  "result": {
+    "applied": true,
+    "products_per_request": 2,
+    "provider_calls": 0,
+    "reviews_prepared": 1045,
+    "pairs_prepared": 4400,
+    "examples": [
+      {
+        "review_id": 9,
+        "pair_count": 2,
+        "pairs": [
+          [
+            {
+              "title": "NUXE Huile prodigieuse\u00ae Dry oil 50ML",
+              "brand": "NUXE",
+              "source_id": "bashrety",
+              "source_product_id": "9282139324669",
+              "url": "https://bashrety.tv/products/nuxe-huile-prodigieuse\u00ae-dry-oil-50ml-eid",
+              "identity_attributes": {
+                "application_area": "face",
+                "concentrations": [],
+                "formula_revision": null,
+                "fragrance": null,
+                "function": "Body Care",
+                "market": "EG",
+                "name": "dry huile oil prodigieuse",
+                "region_defining": false,
+                "shade": null,
+                "spf": null,
+                "timing": null,
+                "tint": null,
+                "vehicle": "oil"
+              }
+            },
+            {
+              "canonical_product_id": 63165,
+              "title": "NUXE Huile Prodigieuse\u00ae Or Floral Shimmering Dry Oil 50ml",
+              "brand": "NUXE",
+              "identity_attributes": {
+                "name": "dry floral huile oil or prodigieuse shimmering",
+                "vehicle": "oil",
+                "application_area": "face",
+                "function": "Body Care",
+                "spf": null,
+                "concentrations": [],
+                "timing": null,
+                "fragrance": null,
+                "tint": null,
+                "market": "EG",
+                "region_defining": false,
+                "formula_revision": null,
+                "shade": null
+              }
+            }
+          ],
+          [
+            {
+              "title": "NUXE Huile prodigieuse\u00ae Dry oil 50ML",
+              "brand": "NUXE",
+              "source_id": "bashrety",
+              "source_product_id": "9282139324669",
+              "url": "https://bashrety.tv/products/nuxe-huile-prodigieuse\u00ae-dry-oil-50ml-eid",
+              "identity_attributes": {
+                "application_area": "face",
+                "concentrations": [],
+                "formula_revision": null,
+                "fragrance": null,
+                "function": "Body Care",
+                "market": "EG",
+                "name": "dry huile oil prodigieuse",
+                "region_defining": false,
+                "shade": null,
+                "spf": null,
+                "timing": null,
+                "tint": null,
+                "vehicle": "oil"
+              }
+            },
+            {
+              "canonical_product_id": 69226,
+              "title": "NUXE Huile Prodigieuse Dry Oil Golden 50 ml",
+              "brand": "NUXE",
+              "identity_attributes": {
+                "name": "dry golden huile oil prodigieuse",
+                "vehicle": "oil",
+                "application_area": "face",
+                "function": "Body Care",
+                "spf": null,
+                "concentrations": [],
+                "timing": null,
+                "fragrance": null,
+                "tint": null,
+                "market": "EG",
+                "region_defining": false,
+                "formula_revision": null,
+                "shade": null
+              }
+            }
+          ]
+        ]
+      },
+      {
+        "review_id": 14,
+        "pair_count": 2,
+        "pairs": [
+          [
+            {
+              "title": "NUXE Huile prodigieuse\u00ae Dry oil 100ML",
+              "brand": "NUXE",
+              "source_id": "bashrety",
+              "source_product_id": "9282143813885",
+              "url": "https://bashrety.tv/products/nuxe-huile-prodigieuse\u00ae-dry-oil-100ml-eid",
+              "identity_attributes": {
+                "application_area": "face",
+                "concentrations": [],
+                "formula_revision": null,
+                "fragrance": null,
+                "function": "Body Care",
+                "market": "EG",
+                "name": "dry huile oil prodigieuse",
+                "region_defining": false,
+                "shade": null,
+                "spf": null,
+                "timing": null,
+                "tint": null,
+                "vehicle": "oil"
+              }
+            },
+            {
+              "canonical_product_id": 63165,
+              "title": "NUXE Huile Prodigieuse\u00ae Or Floral Shimmering Dry Oil 50ml",
+              "brand": "NUXE",
+              "identity_attributes": {
+                "name": "dry floral huile oil or prodigieuse shimmering",
+                "vehicle": "oil",
+                "application_area": "face",
+                "function": "Body Care",
+                "spf": null,
+                "concentrations": [],
+                "timing": null,
+                "fragrance": null,
+                "tint": null,
+                "market": "EG",
+                "region_defining": false,
+                "formula_revision": null,
+                "shade": null
+              }
+            }
+          ],
+          [
+            {
+              "title": "NUXE Huile prodigieuse\u00ae Dry oil 100ML",
+              "brand": "NUXE",
+              "source_id": "bashrety",
+              "source_product_id": "9282143813885",
+              "url": "https://bashrety.tv/products/nuxe-huile-prodigieuse\u00ae-dry-oil-100ml-eid",
+              "identity_attributes": {
+                "application_area": "face",
+                "concentrations": [],
+                "formula_revision": null,
+                "fragrance": null,
+                "function": "Body Care",
+                "market": "EG",
+                "name": "dry huile oil prodigieuse",
+                "region_defining": false,
+                "shade": null,
+                "spf": null,
+                "timing": null,
+                "tint": null,
+                "vehicle": "oil"
+              }
+            },
+            {
+              "canonical_product_id": 69226,
+              "title": "NUXE Huile Prodigieuse Dry Oil Golden 50 ml",
+              "brand": "NUXE",
+              "identity_attributes": {
+                "name": "dry golden huile oil prodigieuse",
+                "vehicle": "oil",
+                "application_area": "face",
+                "function": "Body Care",
+                "spf": null,
+                "concentrations": [],
+                "timing": null,
+                "fragrance": null,
+                "tint": null,
+                "market": "EG",
+                "region_defining": false,
+                "formula_revision": null,
+                "shade": null
+              }
+            }
+          ]
+        ]
+      },
+      {
+        "review_id": 16,
+        "pair_count": 2,
+        "pairs": [
+          [
+            {
+              "title": "NUXE Huile Prodigieuse Dry Oil Florale 100 ml",
+              "brand": "NUXE",
+              "source_id": "bashrety",
+              "source_product_id": "9282144633085",
+              "url": "https://bashrety.tv/products/nuxe-huile-prodigieuse-dry-oil-florale-100-ml-eid",
+              "identity_attributes": {
+                "application_area": "face",
+                "concentrations": [],
+                "formula_revision": null,
+                "fragrance": null,
+                "function": "Body Care",
+                "market": "EG",
+                "name": "dry florale huile oil prodigieuse",
+                "region_defining": false,
+                "shade": null,
+                "spf": null,
+                "timing": null,
+                "tint": null,
+                "vehicle": "oil"
+              }
+            },
+            {
+              "canonical_product_id": 63165,
+              "title": "NUXE Huile Prodigieuse\u00ae Or Floral Shimmering Dry Oil 50ml",
+              "brand": "NUXE",
+              "identity_attributes": {
+                "name": "dry floral huile oil or prodigieuse shimmering",
+                "vehicle": "oil",
+                "application_area": "face",
+                "function": "Body Care",
+                "spf": null,
+                "concentrations": [],
+                "timing": null,
+                "fragrance": null,
+                "tint": null,
+                "market": "EG",
+                "region_defining": false,
+                "formula_revision": null,
+                "shade": null
+              }
+            }
+          ],
+          [
+            {
+              "title": "NUXE Huile Prodigieuse Dry Oil Florale 100 ml",
+              "brand": "NUXE",
+              "source_id": "bashrety",
+              "source_product_id": "9282144633085",
+              "url": "https://bashrety.tv/products/nuxe-huile-prodigieuse-dry-oil-florale-100-ml-eid",
+              "identity_attributes": {
+                "application_area": "face",
+                "concentrations": [],
+                "formula_revision": null,
+                "fragrance": null,
+                "function": "Body Care",
+                "market": "EG",
+                "name": "dry florale huile oil prodigieuse",
+                "region_defining": false,
+                "shade": null,
+                "spf": null,
+                "timing": null,
+                "tint": null,
+                "vehicle": "oil"
+              }
+            },
+            {
+              "canonical_product_id": 69226,
+              "title": "NUXE Huile Prodigieuse Dry Oil Golden 50 ml",
+              "brand": "NUXE",
+              "identity_attributes": {
+                "name": "dry golden huile oil prodigieuse",
+                "vehicle": "oil",
+                "application_area": "face",
+                "function": "Body Care",
+                "spf": null,
+                "concentrations": [],
+                "timing": null,
+                "fragrance": null,
+                "tint": null,
+                "market": "EG",
+                "region_defining": false,
+                "formula_revision": null,
+                "shade": null
+              }
+            }
+          ]
+        ]
+      },
+      {
+        "review_id": 19,
+        "pair_count": 3,
+        "pairs": [
+          [
+            {
+              "title": "Nuxuriance Ultra Day & Night Care Cream 75ml",
+              "brand": "NUXE",
+              "source_id": "bashrety",
+              "source_product_id": "9282146271485",
+              "url": "https://bashrety.tv/products/nuxuriance-ultra-day-night-care-cream-75ml-eid",
+              "identity_attributes": {
+                "application_area": "face",
+                "concentrations": [],
+                "formula_revision": null,
+                "fragrance": null,
+                "function": "Moisturizer",
+                "market": "EG",
+                "name": "care cream day night nuxuriance ultra",
+                "region_defining": false,
+                "shade": null,
+                "spf": null,
+                "timing": "night",
+                "tint": null,
+                "vehicle": "cream"
+              }
+            },
+            {
+              "canonical_product_id": 63182,
+              "title": "Nuxuriance Ultra Hand Cream 75ml",
+              "brand": "NUXE",
+              "identity_attributes": {
+                "name": "cream hand nuxuriance ultra",
+                "vehicle": "cream",
+                "application_area": "body",
+                "function": "Body Care",
+                "spf": null,
+                "concentrations": [],
+                "timing": null,
+                "fragrance": null,
+                "tint": null,
+                "market": "EG",
+                "region_defining": false,
+                "formula_revision": null,
+                "shade": null
+              }
+            }
+          ],
+          [
+            {
+              "title": "Nuxuriance Ultra Day & Night Care Cream 75ml",
+              "brand": "NUXE",
+              "source_id": "bashrety",
+              "source_product_id": "9282146271485",
+              "url": "https://bashrety.tv/products/nuxuriance-ultra-day-night-care-cream-75ml-eid",
+              "identity_attributes": {
+                "application_area": "face",
+                "concentrations": [],
+                "formula_revision": null,
+                "fragrance": null,
+                "function": "Moisturizer",
+                "market": "EG",
+                "name": "care cream day night nuxuriance ultra",
+                "region_defining": false,
+                "shade": null,
+                "spf": null,
+                "timing": "night",
+                "tint": null,
+                "vehicle": "cream"
+              }
+            },
+            {
+              "canonical_product_id": 63189,
+              "title": "Nuxuriance Ultra Eye and Lips Cream",
+              "brand": "NUXE",
+              "identity_attributes": {
+                "name": "cream eye lips nuxuriance ultra",
+                "vehicle": "cream",
+                "application_area": "eye",
+                "function": "Moisturizer",
+                "spf": null,
+                "concentrations": [],
+                "timing": null,
+                "fragrance": null,
+                "tint": null,
+                "market": "EG",
+                "region_defining": false,
+                "formula_revision": null,
+                "shade": null
+              }
+            }
+          ],
+          [
+            {
+              "title": "Nuxuriance Ultra Day & Night Care Cream 75ml",
+              "brand": "NUXE",
+              "source_id": "bashrety",
+              "source_product_id": "9282146271485",
+              "url": "https://bashrety.tv/products/nuxuriance-ultra-day-night-care-cream-75ml-eid",
+              "identity_attributes": {
+                "application_area": "face",
+                "concentrations": [],
+                "formula_revision": null,
+                "fragrance": null,
+                "function": "Moisturizer",
+                "market": "EG",
+                "name": "care cream day night nuxuriance ultra",
+                "region_defining": false,
+                "shade": null,
+                "spf": null,
+                "timing": "night",
+                "tint": null,
+                "vehicle": "cream"
+              }
+            },
+            {
+              "canonical_product_id": 63192,
+              "title": "NUXE Merveillance Lift Day& Night Cream 75 ml",
+              "brand": "NUXE",
+              "identity_attributes": {
+                "name": "cream day lift merveillance night",
+                "vehicle": "cream",
+                "application_area": "face",
+                "function": "Moisturizer",
+                "spf": null,
+                "concentrations": [],
+                "timing": "night",
+                "fragrance": null,
+                "tint": null,
+                "market": "EG",
+                "region_defining": false,
+                "formula_revision": null,
+                "shade": null
+              }
+            }
+          ]
+        ]
+      },
+      {
+        "review_id": 20,
+        "pair_count": 2,
+        "pairs": [
+          [
+            {
+              "title": "Nuxuriance Ultra\u00a0 night Cream 50ml",
+              "brand": "NUXE",
+              "source_id": "bashrety",
+              "source_product_id": "9282151317757",
+              "url": "https://bashrety.tv/products/nuxuriance-ultra-night-cream-50ml-eid",
+              "identity_attributes": {
+                "application_area": "face",
+                "concentrations": [],
+                "formula_revision": null,
+                "fragrance": null,
+                "function": "Moisturizer",
+                "market": "EG",
+                "name": "cream night nuxuriance ultra",
+                "region_defining": false,
+                "shade": null,
+                "spf": null,
+                "timing": "night",
+                "tint": null,
+                "vehicle": "cream"
+              }
+            },
+            {
+              "canonical_product_id": 63182,
+              "title": "Nuxuriance Ultra Hand Cream 75ml",
+              "brand": "NUXE",
+              "identity_attributes": {
+                "name": "cream hand nuxuriance ultra",
+                "vehicle": "cream",
+                "application_area": "body",
+                "function": "Body Care",
+                "spf": null,
+                "concentrations": [],
+                "timing": null,
+                "fragrance": null,
+                "tint": null,
+                "market": "EG",
+                "region_defining": false,
+                "formula_revision": null,
+                "shade": null
+              }
+            }
+          ],
+          [
+            {
+              "title": "Nuxuriance Ultra\u00a0 night Cream 50ml",
+              "brand": "NUXE",
+              "source_id": "bashrety",
+              "source_product_id": "9282151317757",
+              "url": "https://bashrety.tv/products/nuxuriance-ultra-night-cream-50ml-eid",
+              "identity_attributes": {
+                "application_area": "face",
+                "concentrations": [],
+                "formula_revision": null,
+                "fragrance": null,
+                "function": "Moisturizer",
+                "market": "EG",
+                "name": "cream night nuxuriance ultra",
+                "region_defining": false,
+                "shade": null,
+                "spf": null,
+                "timing": "night",
+                "tint": null,
+                "vehicle": "cream"
+              }
+            },
+            {
+              "canonical_product_id": 63189,
+              "title": "Nuxuriance Ultra Eye and Lips Cream",
+              "brand": "NUXE",
+              "identity_attributes": {
+                "name": "cream eye lips nuxuriance ultra",
+                "vehicle": "cream",
+                "application_area": "eye",
+                "function": "Moisturizer",
+                "spf": null,
+                "concentrations": [],
+                "timing": null,
+                "fragrance": null,
+                "tint": null,
+                "market": "EG",
+                "region_defining": false,
+                "formula_revision": null,
+                "shade": null
+              }
+            }
+          ]
+        ]
+      },
+      {
+        "review_id": 30,
+        "pair_count": 4,
+        "pairs": [
+          [
+            {
+              "title": "SVR SUN SECURE BLUR SPF50+ 50ML",
+              "brand": "SVR",
+              "source_id": "bashrety",
+              "source_product_id": "9147556200701",
+              "url": "https://bashrety.tv/products/svr-sun-secure-blur-spf50-50ml",
+              "identity_attributes": {
+                "application_area": "face",
+                "concentrations": [],
+                "formula_revision": null,
+                "fragrance": null,
+                "function": "Sunscreen",
+                "market": "EG",
+                "name": "blur secure spf50+ sun",
+                "region_defining": false,
+                "shade": null,
+                "spf": "50",
+                "timing": null,
+                "tint": null,
+                "vehicle": null
+              }
+            },
+            {
+              "canonical_product_id": 63159,
+              "title": "SVR Sun Secure Easy Stick SPF50+ 10g",
+              "brand": "SVR",
+              "identity_attributes": {
+                "name": "easy secure spf50+ stick sun",
+                "vehicle": "stick",
+                "application_area": "face",
+                "function": "Sunscreen",
+                "spf": "50",
+                "concentrations": [],
+                "timing": null,
+                "fragrance": null,
+                "tint": null,
+                "market": "EG",
+                "region_defining": false,
+                "formula_revision": null,
+                "shade": null
+              }
+            }
+          ],
+          [
+            {
+              "title": "SVR SUN SECURE BLUR SPF50+ 50ML",
+              "brand": "SVR",
+              "source_id": "bashrety",
+              "source_product_id": "9147556200701",
+              "url": "https://bashrety.tv/products/svr-sun-secure-blur-spf50-50ml",
+              "identity_attributes": {
+                "application_area": "face",
+                "concentrations": [],
+                "formula_revision": null,
+                "fragrance": null,
+                "function": "Sunscreen",
+                "market": "EG",
+                "name": "blur secure spf50+ sun",
+                "region_defining": false,
+                "shade": null,
+                "spf": "50",
+                "timing": null,
+                "tint": null,
+                "vehicle": null
+              }
+            },
+            {
+              "canonical_product_id": 66010,
+              "title": "SVR Sun Secure Blur SPF50+ Optical Mousse Cream 50ml",
+              "brand": "SVR",
+              "identity_attributes": {
+                "name": "blur cream mousse optical secure spf50+ sun",
+                "vehicle": "cream",
+                "application_area": "face",
+                "function": "Sunscreen",
+                "spf": "50",
+                "concentrations": [],
+                "timing": null,
+                "fragrance": null,
+                "tint": null,
+                "market": "EG",
+                "region_defining": false,
+                "formula_revision": null,
+                "shade": null
+              }
+            }
+          ],
+          [
+            {
+              "title": "SVR SUN SECURE BLUR SPF50+ 50ML",
+              "brand": "SVR",
+              "source_id": "bashrety",
+              "source_product_id": "9147556200701",
+              "url": "https://bashrety.tv/products/svr-sun-secure-blur-spf50-50ml",
+              "identity_attributes": {
+                "application_area": "face",
+                "concentrations": [],
+                "formula_revision": null,
+                "fragrance": null,
+                "function": "Sunscreen",
+                "market": "EG",
+                "name": "blur secure spf50+ sun",
+                "region_defining": false,
+                "shade": null,
+                "spf": "50",
+                "timing": null,
+                "tint": null,
+                "vehicle": null
+              }
+            },
+            {
+              "canonical_product_id": 69224,
+              "title": "SVR Sun Secure Eau Solaire SPF50+",
+              "brand": "SVR",
+              "identity_attributes": {
+                "name": "eau secure solaire spf50+ sun",
+                "vehicle": null,
+                "application_area": "face",
+                "function": "Sunscreen",
+                "spf": "50",
+                "concentrations": [],
+                "timing": null,
+                "fragrance": null,
+                "tint": null,
+                "market": "EG",
+                "region_defining": false,
+                "formula_revision": null,
+                "shade": null
+              }
+            }
+          ],
+          [
+            {
+              "title": "SVR SUN SECURE BLUR SPF50+ 50ML",
+              "brand": "SVR",
+              "source_id": "bashrety",
+              "source_product_id": "9147556200701",
+              "url": "https://bashrety.tv/products/svr-sun-secure-blur-spf50-50ml",
+              "identity_attributes": {
+                "application_area": "face",
+                "concentrations": [],
+                "formula_revision": null,
+                "fragrance": null,
+                "function": "Sunscreen",
+                "market": "EG",
+                "name": "blur secure spf50+ sun",
+                "region_defining": false,
+                "shade": null,
+                "spf": "50",
+                "timing": null,
+                "tint": null,
+                "vehicle": null
+              }
+            },
+            {
+              "canonical_product_id": 69228,
+              "title": "SVR SUN SECURE FLUIDE SPF50+ 50ML",
+              "brand": "SVR",
+              "identity_attributes": {
+                "name": "fluide secure spf50+ sun",
+                "vehicle": null,
+                "application_area": "face",
+                "function": "Sunscreen",
+                "spf": "50",
+                "concentrations": [],
+                "timing": null,
+                "fragrance": null,
+                "tint": null,
+                "market": "EG",
+                "region_defining": false,
+                "formula_revision": null,
+                "shade": null
+              }
+            }
+          ]
+        ]
+      },
+      {
+        "review_id": 32,
+        "pair_count": 3,
+        "pairs": [
+          [
+            {
+              "title": "SVR AMPOULE C 30ML",
+              "brand": "SVR",
+              "source_id": "bashrety",
+              "source_product_id": "9147554824445",
+              "url": "https://bashrety.tv/products/svr-ampoule-c-30ml",
+              "identity_attributes": {
+                "application_area": "face",
+                "concentrations": [],
+                "formula_revision": null,
+                "fragrance": null,
+                "function": "Serum",
+                "market": "EG",
+                "name": "ampoule c",
+                "region_defining": false,
+                "shade": null,
+                "spf": null,
+                "timing": null,
+                "tint": null,
+                "vehicle": null
+              }
+            },
+            {
+              "canonical_product_id": 63210,
+              "title": "SVR AMPOULE B 30ML",
+              "brand": "SVR",
+              "identity_attributes": {
+                "name": "ampoule b",
+                "vehicle": null,
+                "application_area": "face",
+                "function": "Serum",
+                "spf": null,
+                "concentrations": [],
+                "timing": null,
+                "fragrance": null,
+                "tint": null,
+                "market": "EG",
+                "region_defining": false,
+                "formula_revision": null,
+                "shade": null
+              }
+            }
+          ],
+          [
+            {
+              "title": "SVR AMPOULE C 30ML",
+              "brand": "SVR",
+              "source_id": "bashrety",
+              "source_product_id": "9147554824445",
+              "url": "https://bashrety.tv/products/svr-ampoule-c-30ml",
+              "identity_attributes": {
+                "application_area": "face",
+                "concentrations": [],
+                "formula_revision": null,
+                "fragrance": null,
+                "function": "Serum",
+                "market": "EG",
+                "name": "ampoule c",
+                "region_defining": false,
+                "shade": null,
+                "spf": null,
+                "timing": null,
+                "tint": null,
+                "vehicle": null
+              }
+            },
+            {
+              "canonical_product_id": 63863,
+              "title": "Svr C Anti-Ox Ampoule - 30ml",
+              "brand": "SVR",
+              "identity_attributes": {
+                "name": "ampoule anti c ox",
+                "vehicle": null,
+                "application_area": "face",
+                "function": "Serum",
+                "spf": null,
+                "concentrations": [],
+                "timing": null,
+                "fragrance": null,
+                "tint": null,
+                "market": "EG",
+                "region_defining": false,
+                "formula_revision": null,
+                "shade": null
+              }
+            }
+          ],
+          [
+            {
+              "title": "SVR AMPOULE C 30ML",
+              "brand": "SVR",
+              "source_id": "bashrety",
+              "source_product_id": "9147554824445",
+              "url": "https://bashrety.tv/products/svr-ampoule-c-30ml",
+              "identity_attributes": {
+                "application_area": "face",
+                "concentrations": [],
+                "formula_revision": null,
+                "fragrance": null,
+                "function": "Serum",
+                "market": "EG",
+                "name": "ampoule c",
+                "region_defining": false,
+                "shade": null,
+                "spf": null,
+                "timing": null,
+                "tint": null,
+                "vehicle": null
+              }
+            },
+            {
+              "canonical_product_id": 69229,
+              "title": "SVR AMPOULE A 30ML",
+              "brand": "SVR",
+              "identity_attributes": {
+                "name": "a ampoule",
+                "vehicle": null,
+                "application_area": "face",
+                "function": "Serum",
+                "spf": null,
+                "concentrations": [],
+                "timing": null,
+                "fragrance": null,
+                "tint": null,
+                "market": "EG",
+                "region_defining": false,
+                "formula_revision": null,
+                "shade": null
+              }
+            }
+          ]
+        ]
+      },
+      {
+        "review_id": 41,
+        "pair_count": 4,
+        "pairs": [
+          [
+            {
+              "title": "ACTI-CLEAR Gentle Cleansing Gel 250ml",
+              "brand": "dermactive",
+              "source_id": "bashrety",
+              "source_product_id": "8299345314045",
+              "url": "https://bashrety.tv/products/acti-clear-gentle-cleansing-gel-250ml",
+              "identity_attributes": {
+                "application_area": "face",
+                "concentrations": [],
+                "formula_revision": null,
+                "fragrance": null,
+                "function": "Cleanser",
+                "market": "EG",
+                "name": "acti cleansing clear gel gentle",
+                "region_defining": false,
+                "shade": null,
+                "spf": null,
+                "timing": null,
+                "tint": null,
+                "vehicle": "gel"
+              }
+            },
+            {
+              "canonical_product_id": 63217,
+              "title": "ACTI-WHITE Foaming Cleansing Gel",
+              "brand": "Dermactive",
+              "identity_attributes": {
+                "name": "acti cleansing foaming gel white",
+                "vehicle": "gel",
+                "application_area": "face",
+                "function": "Cleanser",
+                "spf": null,
+                "concentrations": [],
+                "timing": null,
+                "fragrance": null,
+                "tint": null,
+                "market": "EG",
+                "region_defining": false,
+                "formula_revision": null,
+                "shade": null
+              }
+            }
+          ],
+          [
+            {
+              "title": "ACTI-CLEAR Gentle Cleansing Gel 250ml",
+              "brand": "dermactive",
+              "source_id": "bashrety",
+              "source_product_id": "8299345314045",
+              "url": "https://bashrety.tv/products/acti-clear-gentle-cleansing-gel-250ml",
+              "identity_attributes": {
+                "application_area": "face",
+                "concentrations": [],
+                "formula_revision": null,
+                "fragrance": null,
+                "function": "Cleanser",
+                "market": "EG",
+                "name": "acti cleansing clear gel gentle",
+                "region_defining": false,
+                "shade": null,
+                "spf": null,
+                "timing": null,
+                "tint": null,
+                "vehicle": "gel"
+              }
+            },
+            {
+              "canonical_product_id": 63300,
+              "title": "ACTI-CLEAR Global AC Cream Gel",
+              "brand": "Dermactive",
+              "identity_attributes": {
+                "name": "ac acti clear cream gel global",
+                "vehicle": "cream",
+                "application_area": "face",
+                "function": "Moisturizer",
+                "spf": null,
+                "concentrations": [],
+                "timing": null,
+                "fragrance": null,
+                "tint": null,
+                "market": "EG",
+                "region_defining": false,
+                "formula_revision": null,
+                "shade": null
+              }
+            }
+          ],
+          [
+            {
+              "title": "ACTI-CLEAR Gentle Cleansing Gel 250ml",
+              "brand": "dermactive",
+              "source_id": "bashrety",
+              "source_product_id": "8299345314045",
+              "url": "https://bashrety.tv/products/acti-clear-gentle-cleansing-gel-250ml",
+              "identity_attributes": {
+                "application_area": "face",
+                "concentrations": [],
+                "formula_revision": null,
+                "fragrance": null,
+                "function": "Cleanser",
+                "market": "EG",
+                "name": "acti cleansing clear gel gentle",
+                "region_defining": false,
+                "shade": null,
+                "spf": null,
+                "timing": null,
+                "tint": null,
+                "vehicle": "gel"
+              }
+            },
+            {
+              "canonical_product_id": 67834,
+              "title": "ACTI-CLEAR Hydra-Mattifying Gel",
+              "brand": "Dermactive",
+              "identity_attributes": {
+                "name": "acti clear gel hydra mattifying",
+                "vehicle": "gel",
+                "application_area": "face",
+                "function": null,
+                "spf": null,
+                "concentrations": [],
+                "timing": null,
+                "fragrance": null,
+                "tint": null,
+                "market": "EG",
+                "region_defining": false,
+                "formula_revision": null,
+                "shade": null
+              }
+            }
+          ],
+          [
+            {
+              "title": "ACTI-CLEAR Gentle Cleansing Gel 250ml",
+              "brand": "dermactive",
+              "source_id": "bashrety",
+              "source_product_id": "8299345314045",
+              "url": "https://bashrety.tv/products/acti-clear-gentle-cleansing-gel-250ml",
+              "identity_attributes": {
+                "application_area": "face",
+                "concentrations": [],
+                "formula_revision": null,
+                "fragrance": null,
+                "function": "Cleanser",
+                "market": "EG",
+                "name": "acti cleansing clear gel gentle",
+                "region_defining": false,
+                "shade": null,
+                "spf": null,
+                "timing": null,
+                "tint": null,
+                "vehicle": "gel"
+              }
+            },
+            {
+              "canonical_product_id": 69272,
+              "title": "Dermactive Acti-White Brightening Foaming Cleansing Gel \u2013 200ml",
+              "brand": "Dermactive",
+              "identity_attributes": {
+                "name": "acti brightening cleansing foaming gel white",
+                "vehicle": "gel",
+                "application_area": "face",
+                "function": "Cleanser",
+                "spf": null,
+                "concentrations": [],
+                "timing": null,
+                "fragrance": null,
+                "tint": null,
+                "market": "EG",
+                "region_defining": false,
+                "formula_revision": null,
+                "shade": null
+              }
+            }
+          ]
+        ]
+      },
+      {
+        "review_id": 51,
+        "pair_count": 3,
+        "pairs": [
+          [
+            {
+              "title": "Acti-Repair Soothing Cleansing Gel",
+              "brand": "dermactive",
+              "source_id": "bashrety",
+              "source_product_id": "8299344134397",
+              "url": "https://bashrety.tv/products/acti-repair-soothing-cleansing-gel",
+              "identity_attributes": {
+                "application_area": "face",
+                "concentrations": [],
+                "formula_revision": null,
+                "fragrance": null,
+                "function": "Cleanser",
+                "market": "EG",
+                "name": "acti cleansing gel repair soothing",
+                "region_defining": false,
+                "shade": null,
+                "spf": null,
+                "timing": null,
+                "tint": null,
+                "vehicle": "gel"
+              }
+            },
+            {
+              "canonical_product_id": 63217,
+              "title": "ACTI-WHITE Foaming Cleansing Gel",
+              "brand": "Dermactive",
+              "identity_attributes": {
+                "name": "acti cleansing foaming gel white",
+                "vehicle": "gel",
+                "application_area": "face",
+                "function": "Cleanser",
+                "spf": null,
+                "concentrations": [],
+                "timing": null,
+                "fragrance": null,
+                "tint": null,
+                "market": "EG",
+                "region_defining": false,
+                "formula_revision": null,
+                "shade": null
+              }
+            }
+          ],
+          [
+            {
+              "title": "Acti-Repair Soothing Cleansing Gel",
+              "brand": "dermactive",
+              "source_id": "bashrety",
+              "source_product_id": "8299344134397",
+              "url": "https://bashrety.tv/products/acti-repair-soothing-cleansing-gel",
+              "identity_attributes": {
+                "application_area": "face",
+                "concentrations": [],
+                "formula_revision": null,
+                "fragrance": null,
+                "function": "Cleanser",
+                "market": "EG",
+                "name": "acti cleansing gel repair soothing",
+                "region_defining": false,
+                "shade": null,
+                "spf": null,
+                "timing": null,
+                "tint": null,
+                "vehicle": "gel"
+              }
+            },
+            {
+              "canonical_product_id": 63953,
+              "title": "Dermactive Acti-Repair Moisturizing Face Hydro Gel For Dry Skin - 50ml",
+              "brand": "Dermactive",
+              "identity_attributes": {
+                "name": "acti face gel hydro moisturizing repair",
+                "vehicle": "gel",
+                "application_area": "face",
+                "function": "Moisturizer",
+                "spf": null,
+                "concentrations": [],
+                "timing": null,
+                "fragrance": null,
+                "tint": null,
+                "market": "EG",
+                "region_defining": false,
+                "formula_revision": null,
+                "shade": null
+              }
+            }
+          ],
+          [
+            {
+              "title": "Acti-Repair Soothing Cleansing Gel",
+              "brand": "dermactive",
+              "source_id": "bashrety",
+              "source_product_id": "8299344134397",
+              "url": "https://bashrety.tv/products/acti-repair-soothing-cleansing-gel",
+              "identity_attributes": {
+                "application_area": "face",
+                "concentrations": [],
+                "formula_revision": null,
+                "fragrance": null,
+                "function": "Cleanser",
+                "market": "EG",
+                "name": "acti cleansing gel repair soothing",
+                "region_defining": false,
+                "shade": null,
+                "spf": null,
+                "timing": null,
+                "tint": null,
+                "vehicle": "gel"
+              }
+            },
+            {
+              "canonical_product_id": 69272,
+              "title": "Dermactive Acti-White Brightening Foaming Cleansing Gel \u2013 200ml",
+              "brand": "Dermactive",
+              "identity_attributes": {
+                "name": "acti brightening cleansing foaming gel white",
+                "vehicle": "gel",
+                "application_area": "face",
+                "function": "Cleanser",
+                "spf": null,
+                "concentrations": [],
+                "timing": null,
+                "fragrance": null,
+                "tint": null,
+                "market": "EG",
+                "region_defining": false,
+                "formula_revision": null,
+                "shade": null
+              }
+            }
+          ]
+        ]
+      },
+      {
+        "review_id": 59,
+        "pair_count": 2,
+        "pairs": [
+          [
+            {
+              "title": "DERMACTIVE ACTI-REPAIR SMOOTHING CREAM 200 ML",
+              "brand": "dermactive",
+              "source_id": "bashrety",
+              "source_product_id": "8807154516221",
+              "url": "https://bashrety.tv/products/dermactive-acti-repair-smoothing-cream-200-ml",
+              "identity_attributes": {
+                "application_area": "face",
+                "concentrations": [],
+                "formula_revision": null,
+                "fragrance": null,
+                "function": "Moisturizer",
+                "market": "EG",
+                "name": "acti cream repair smoothing",
+                "region_defining": false,
+                "shade": null,
+                "spf": null,
+                "timing": null,
+                "tint": null,
+                "vehicle": "cream"
+              }
+            },
+            {
+              "canonical_product_id": 63219,
+              "title": "ACTI-REPAIR CICA Cream",
+              "brand": "Dermactive",
+              "identity_attributes": {
+                "name": "acti cica cream repair",
+                "vehicle": "cream",
+                "application_area": "face",
+                "function": "Moisturizer",
+                "spf": null,
+                "concentrations": [],
+                "timing": null,
+                "fragrance": null,
+                "tint": null,
+                "market": "EG",
+                "region_defining": false,
+                "formula_revision": null,
+                "shade": null
+              }
+            }
+          ],
+          [
+            {
+              "title": "DERMACTIVE ACTI-REPAIR SMOOTHING CREAM 200 ML",
+              "brand": "dermactive",
+              "source_id": "bashrety",
+              "source_product_id": "8807154516221",
+              "url": "https://bashrety.tv/products/dermactive-acti-repair-smoothing-cream-200-ml",
+              "identity_attributes": {
+                "application_area": "face",
+                "concentrations": [],
+                "formula_revision": null,
+                "fragrance": null,
+                "function": "Moisturizer",
+                "market": "EG",
+                "name": "acti cream repair smoothing",
+                "region_defining": false,
+                "shade": null,
+                "spf": null,
+                "timing": null,
+                "tint": null,
+                "vehicle": "cream"
+              }
+            },
+            {
+              "canonical_product_id": 63260,
+              "title": "DERMACTIVE ACTI-REPAIR HAND CREAM 60 ML",
+              "brand": "Dermactive",
+              "identity_attributes": {
+                "name": "acti cream hand repair",
+                "vehicle": "cream",
+                "application_area": "body",
+                "function": "Body Care",
+                "spf": null,
+                "concentrations": [],
+                "timing": null,
+                "fragrance": null,
+                "tint": null,
+                "market": "EG",
+                "region_defining": false,
+                "formula_revision": null,
+                "shade": null
+              }
+            }
+          ]
+        ]
+      },
+      {
+        "review_id": 5226,
+        "pair_count": 6,
+        "pairs": [
+          [
+            {
+              "title": "White Musk Hand & Body Lotion - Travel Size",
+              "brand": "Bubblzz",
+              "source_id": "sourcebeauty",
+              "source_product_id": "8118119989535",
+              "url": "https://sourcebeauty.com/products/white-musk-hand-body-lotion",
+              "identity_attributes": {
+                "application_area": "body",
+                "concentrations": [],
+                "formula_revision": null,
+                "fragrance": null,
+                "function": "Body Care",
+                "market": "EG",
+                "name": "body hand lotion musk size travel white",
+                "region_defining": false,
+                "shade": null,
+                "spf": null,
+                "timing": null,
+                "tint": null,
+                "vehicle": "lotion"
+              }
+            },
+            {
+              "canonical_product_id": 63689,
+              "title": "Bubblzz Cupcake Travel Size Hand & Body Lotion - 50ml",
+              "brand": "Bubblzz",
+              "identity_attributes": {
+                "name": "body cupcake hand lotion size travel",
+                "vehicle": "lotion",
+                "application_area": "body",
+                "function": "Body Care",
+                "spf": null,
+                "concentrations": [],
+                "timing": null,
+                "fragrance": null,
+                "tint": null,
+                "market": "EG",
+                "region_defining": false,
+                "formula_revision": null,
+                "shade": null
+              }
+            }
+          ],
+          [
+            {
+              "title": "White Musk Hand & Body Lotion - Travel Size",
+              "brand": "Bubblzz",
+              "source_id": "sourcebeauty",
+              "source_product_id": "8118119989535",
+              "url": "https://sourcebeauty.com/products/white-musk-hand-body-lotion",
+              "identity_attributes": {
+                "application_area": "body",
+                "concentrations": [],
+                "formula_revision": null,
+                "fragrance": null,
+                "function": "Body Care",
+                "market": "EG",
+                "name": "body hand lotion musk size travel white",
+                "region_defining": false,
+                "shade": null,
+                "spf": null,
+                "timing": null,
+                "tint": null,
+                "vehicle": "lotion"
+              }
+            },
+            {
+              "canonical_product_id": 65681,
+              "title": "Bubblzz Strawberries & Cream Travel Size Hand & Body Lotion",
+              "brand": "Bubblzz",
+              "identity_attributes": {
+                "name": "body cream hand lotion size strawberries travel",
+                "vehicle": "cream",
+                "application_area": "body",
+                "function": "Body Care",
+                "spf": null,
+                "concentrations": [],
+                "timing": null,
+                "fragrance": null,
+                "tint": null,
+                "market": "EG",
+                "region_defining": false,
+                "formula_revision": null,
+                "shade": null
+              }
+            }
+          ],
+          [
+            {
+              "title": "White Musk Hand & Body Lotion - Travel Size",
+              "brand": "Bubblzz",
+              "source_id": "sourcebeauty",
+              "source_product_id": "8118119989535",
+              "url": "https://sourcebeauty.com/products/white-musk-hand-body-lotion",
+              "identity_attributes": {
+                "application_area": "body",
+                "concentrations": [],
+                "formula_revision": null,
+                "fragrance": null,
+                "function": "Body Care",
+                "market": "EG",
+                "name": "body hand lotion musk size travel white",
+                "region_defining": false,
+                "shade": null,
+                "spf": null,
+                "timing": null,
+                "tint": null,
+                "vehicle": "lotion"
+              }
+            },
+            {
+              "canonical_product_id": 65682,
+              "title": "Bubblzz Bonbon Scented Travel Size Hand And Body Moisturizer",
+              "brand": "Bubblzz",
+              "identity_attributes": {
+                "name": "body bonbon hand moisturizer scented size travel",
+                "vehicle": null,
+                "application_area": "body",
+                "function": "Moisturizer",
+                "spf": null,
+                "concentrations": [],
+                "timing": null,
+                "fragrance": "scented",
+                "tint": null,
+                "market": "EG",
+                "region_defining": false,
+                "formula_revision": null,
+                "shade": null
+              }
+            }
+          ],
+          [
+            {
+              "title": "White Musk Hand & Body Lotion - Travel Size",
+              "brand": "Bubblzz",
+              "source_id": "sourcebeauty",
+              "source_product_id": "8118119989535",
+              "url": "https://sourcebeauty.com/products/white-musk-hand-body-lotion",
+              "identity_attributes": {
+                "application_area": "body",
+                "concentrations": [],
+                "formula_revision": null,
+                "fragrance": null,
+                "function": "Body Care",
+                "market": "EG",
+                "name": "body hand lotion musk size travel white",
+                "region_defining": false,
+                "shade": null,
+                "spf": null,
+                "timing": null,
+                "tint": null,
+                "vehicle": "lotion"
+              }
+            },
+            {
+              "canonical_product_id": 65684,
+              "title": "Bubblzz White Musk Ultra Rich Body Lotion",
+              "brand": "Bubblzz",
+              "identity_attributes": {
+                "name": "body lotion musk rich ultra white",
+                "vehicle": "lotion",
+                "application_area": "body",
+                "function": "Body Care",
+                "spf": null,
+                "concentrations": [],
+                "timing": null,
+                "fragrance": null,
+                "tint": null,
+                "market": "EG",
+                "region_defining": false,
+                "formula_revision": null,
+                "shade": null
+              }
+            }
+          ],
+          [
+            {
+              "title": "White Musk Hand & Body Lotion - Travel Size",
+              "brand": "Bubblzz",
+              "source_id": "sourcebeauty",
+              "source_product_id": "8118119989535",
+              "url": "https://sourcebeauty.com/products/white-musk-hand-body-lotion",
+              "identity_attributes": {
+                "application_area": "body",
+                "concentrations": [],
+                "formula_revision": null,
+                "fragrance": null,
+                "function": "Body Care",
+                "market": "EG",
+                "name": "body hand lotion musk size travel white",
+                "region_defining": false,
+                "shade": null,
+                "spf": null,
+                "timing": null,
+                "tint": null,
+                "vehicle": "lotion"
+              }
+            },
+            {
+              "canonical_product_id": 70431,
+              "title": "Bubblzz Bubblegum Travel Size Hand & Body Lotion",
+              "brand": "Bubblzz",
+              "identity_attributes": {
+                "name": "body bubblegum hand lotion size travel",
+                "vehicle": "lotion",
+                "application_area": "body",
+                "function": "Body Care",
+                "spf": null,
+                "concentrations": [],
+                "timing": null,
+                "fragrance": null,
+                "tint": null,
+                "market": "EG",
+                "region_defining": false,
+                "formula_revision": null,
+                "shade": null
+              }
+            }
+          ],
+          [
+            {
+              "title": "White Musk Hand & Body Lotion - Travel Size",
+              "brand": "Bubblzz",
+              "source_id": "sourcebeauty",
+              "source_product_id": "8118119989535",
+              "url": "https://sourcebeauty.com/products/white-musk-hand-body-lotion",
+              "identity_attributes": {
+                "application_area": "body",
+                "concentrations": [],
+                "formula_revision": null,
+                "fragrance": null,
+                "function": "Body Care",
+                "market": "EG",
+                "name": "body hand lotion musk size travel white",
+                "region_defining": false,
+                "shade": null,
+                "spf": null,
+                "timing": null,
+                "tint": null,
+                "vehicle": "lotion"
+              }
+            },
+            {
+              "canonical_product_id": 70435,
+              "title": "Bubblzz Vanilla Travel Size Hand & Body Lotion",
+              "brand": "Bubblzz",
+              "identity_attributes": {
+                "name": "body hand lotion size travel vanilla",
+                "vehicle": "lotion",
+                "application_area": "body",
+                "function": "Body Care",
+                "spf": null,
+                "concentrations": [],
+                "timing": null,
+                "fragrance": null,
+                "tint": null,
+                "market": "EG",
+                "region_defining": false,
+                "formula_revision": null,
+                "shade": null
+              }
+            }
+          ]
+        ]
+      }
+    ]
+  }
+}

@@ -1,0 +1,80 @@
+{
+  "applied": true,
+  "backup_path": "/mnt/windows/Users/AmrAlfayoumy/Downloads/skincare/repo/api/backups/catalog/catalog-20261026T210704Z-1f0f4bba.sqlite3",
+  "model_calls": 0,
+  "preview_scope": null,
+  "results": [
+    {
+      "url": "https://sourcebeauty.com/products/beesline-radiant-bright-silky-touch-underarm-serum",
+      "status": "evidence_only",
+      "canonical_id": 69271,
+      "original_observation_id": 20314,
+      "observation_id": 23027,
+      "evidence_id": 1328,
+      "ingredient_count": 3
+    },
+    {
+      "url": "https://sourcebeauty.com/products/bubblzz-coconut-shower-gel",
+      "status": "evidence_only",
+      "canonical_id": 69275,
+      "original_observation_id": 15952,
+      "observation_id": 23028,
+      "evidence_id": 1329,
+      "ingredient_count": 6
+    },
+    {
+      "url": "https://sourcebeauty.com/products/arencia-vitamin-c-booster-shot",
+      "status": "evidence_only",
+      "canonical_id": 69290,
+      "original_observation_id": 16915,
+      "observation_id": 23029,
+      "evidence_id": 1330,
+      "ingredient_count": 7
+    },
+    {
+      "url": "https://sourcebeauty.com/products/isis-uveblock-spf-50-fluid",
+      "status": "published",
+      "canonical_id": 69296,
+      "original_observation_id": 15508,
+      "observation_id": 23030,
+      "evidence_id": 1331,
+      "ingredient_count": 36
+    },
+    {
+      "url": "https://sourcebeauty.com/products/beesline-radiant-bright-underarm-jouri-rose-serum",
+      "status": "evidence_only",
+      "canonical_id": 69297,
+      "original_observation_id": 20316,
+      "observation_id": 23031,
+      "evidence_id": 1333,
+      "ingredient_count": 3
+    },
+    {
+      "url": "https://sourcebeauty.com/products/beesline-radiant-bright-underarm-delays-shaving-serum",
+      "status": "evidence_only",
+      "canonical_id": 69298,
+      "original_observation_id": 20318,
+      "observation_id": 23032,
+      "evidence_id": 1334,
+      "ingredient_count": 3
+    },
+    {
+      "url": "https://sourcebeauty.com/products/dark-tanning-oil",
+      "status": "evidence_only",
+      "canonical_id": 69310,
+      "original_observation_id": 21079,
+      "observation_id": 23033,
+      "evidence_id": 1335,
+      "ingredient_count": 3
+    },
+    {
+      "url": "https://sourcebeauty.com/products/glamy-lab-whitening-foam-cleanser",
+      "status": "published",
+      "canonical_id": 69311,
+      "original_observation_id": 17377,
+      "observation_id": 23034,
+      "evidence_id": 1336,
+      "ingredient_count": 26
+    }
+  ]
+}

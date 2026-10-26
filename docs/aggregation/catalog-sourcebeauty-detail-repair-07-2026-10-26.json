@@ -1,0 +1,216 @@
+{
+  "applied": true,
+  "backup_path": "/mnt/windows/Users/AmrAlfayoumy/Downloads/skincare/repo/api/backups/catalog/catalog-20261026T004930Z-11ba6fd0.sqlite3",
+  "model_calls": 0,
+  "results": [
+    {
+      "url": "https://sourcebeauty.com/products/cosrx-advanced-snail-mucin-gel-cleanser",
+      "status": "published",
+      "canonical_id": 65022,
+      "original_observation_id": 20467,
+      "observation_id": 22884,
+      "evidence_id": 1106,
+      "ingredient_count": 20
+    },
+    {
+      "url": "https://sourcebeauty.com/products/the-ordinary-saccharomyces-ferment-30-milky-toner",
+      "status": "published",
+      "canonical_id": 65025,
+      "original_observation_id": 17458,
+      "observation_id": 22885,
+      "evidence_id": 1108,
+      "ingredient_count": 13
+    },
+    {
+      "url": "https://sourcebeauty.com/products/helmaderm-hydrating-cream-gel",
+      "status": "evidence_only",
+      "canonical_id": 65039,
+      "original_observation_id": 17736,
+      "observation_id": 22886,
+      "evidence_id": 1110,
+      "ingredient_count": 15
+    },
+    {
+      "url": "https://sourcebeauty.com/products/anua-heartleaf-77-soothing-toner",
+      "status": "published",
+      "canonical_id": 65054,
+      "original_observation_id": 20078,
+      "observation_id": 22887,
+      "evidence_id": 1111,
+      "ingredient_count": 21
+    },
+    {
+      "url": "https://sourcebeauty.com/products/isntree-hyaluronic-acid-toner",
+      "status": "evidence_only",
+      "canonical_id": 65088,
+      "original_observation_id": 17892,
+      "observation_id": 22888,
+      "evidence_id": 1113,
+      "ingredient_count": 2
+    },
+    {
+      "url": "https://sourcebeauty.com/products/tocobo-vita-vita-waterproof-sun-stick-spf50",
+      "status": "published",
+      "canonical_id": 65098,
+      "original_observation_id": 18911,
+      "observation_id": 22889,
+      "evidence_id": 1114,
+      "ingredient_count": 29
+    },
+    {
+      "url": "https://sourcebeauty.com/products/isntree-plum-peptide-booster-2000s",
+      "status": "no_full_declaration",
+      "canonical_id": 65100,
+      "observation_id": 19651
+    },
+    {
+      "url": "https://sourcebeauty.com/products/isntree-hyper-niacinamide-20-serum",
+      "status": "published",
+      "canonical_id": 65101,
+      "original_observation_id": 19656,
+      "observation_id": 22890,
+      "evidence_id": 1116,
+      "ingredient_count": 30
+    },
+    {
+      "url": "https://sourcebeauty.com/products/isntree-hyper-vitamin-c-23-serum",
+      "status": "published",
+      "canonical_id": 65104,
+      "original_observation_id": 19654,
+      "observation_id": 22891,
+      "evidence_id": 1118,
+      "ingredient_count": 17
+    },
+    {
+      "url": "https://sourcebeauty.com/products/axis-y-artichoke-intensive-skin-barrier-ampoule",
+      "status": "published",
+      "canonical_id": 65105,
+      "original_observation_id": 20193,
+      "observation_id": 22892,
+      "evidence_id": 1120,
+      "ingredient_count": 34
+    },
+    {
+      "url": "https://sourcebeauty.com/products/starville-facial-cleanser-hydro",
+      "status": "published",
+      "canonical_id": 65108,
+      "original_observation_id": 17406,
+      "observation_id": 22893,
+      "evidence_id": 1122,
+      "ingredient_count": 21
+    },
+    {
+      "url": "https://sourcebeauty.com/products/starville-collage-serum",
+      "status": "published",
+      "canonical_id": 65109,
+      "original_observation_id": 17407,
+      "observation_id": 22894,
+      "evidence_id": 1124,
+      "ingredient_count": 23
+    },
+    {
+      "url": "https://sourcebeauty.com/products/starville-collage-cream",
+      "status": "published",
+      "canonical_id": 65110,
+      "original_observation_id": 17408,
+      "observation_id": 22895,
+      "evidence_id": 1126,
+      "ingredient_count": 31
+    },
+    {
+      "url": "https://sourcebeauty.com/products/eqqualberry-vitamin-illuminating-cream",
+      "status": "published",
+      "canonical_id": 65115,
+      "original_observation_id": 16978,
+      "observation_id": 22896,
+      "evidence_id": 1128,
+      "ingredient_count": 60
+    },
+    {
+      "url": "https://sourcebeauty.com/products/medicube-pdrn-pink-hyaluronic-moisturizing-cream",
+      "status": "published",
+      "canonical_id": 65121,
+      "original_observation_id": 19528,
+      "observation_id": 22897,
+      "evidence_id": 1130,
+      "ingredient_count": 58
+    },
+    {
+      "url": "https://sourcebeauty.com/products/numbuzin-no-1-easy-peasy-cleansing-oil",
+      "status": "published",
+      "canonical_id": 65132,
+      "original_observation_id": 19518,
+      "observation_id": 22898,
+      "evidence_id": 1132,
+      "ingredient_count": 13
+    },
+    {
+      "url": "https://sourcebeauty.com/products/medicube-zero-pore-blackhead-deep-cleansing-oil",
+      "status": "published",
+      "canonical_id": 65133,
+      "original_observation_id": 19873,
+      "observation_id": 22899,
+      "evidence_id": 1134,
+      "ingredient_count": 50
+    },
+    {
+      "url": "https://sourcebeauty.com/products/anua-zero-cast-moisturizing-finish-sunscreen",
+      "status": "published",
+      "canonical_id": 65134,
+      "original_observation_id": 15695,
+      "observation_id": 22900,
+      "evidence_id": 1136,
+      "ingredient_count": 22
+    },
+    {
+      "url": "https://sourcebeauty.com/products/cosrx-advanced-snail-radiance-dual-essence",
+      "status": "published",
+      "canonical_id": 65140,
+      "original_observation_id": 19493,
+      "observation_id": 22901,
+      "evidence_id": 1138,
+      "ingredient_count": 22
+    },
+    {
+      "url": "https://sourcebeauty.com/products/vitamin-c-cleansing-gel",
+      "status": "evidence_only",
+      "canonical_id": 65146,
+      "original_observation_id": 20953,
+      "observation_id": 22902,
+      "evidence_id": 1140,
+      "ingredient_count": 14
+    },
+    {
+      "url": "https://sourcebeauty.com/products/axis-y-daily-purifying-treatment-toner",
+      "status": "published",
+      "canonical_id": 65164,
+      "original_observation_id": 17640,
+      "observation_id": 22903,
+      "evidence_id": 1141,
+      "ingredient_count": 38
+    },
+    {
+      "url": "https://sourcebeauty.com/products/tirtir-niacinamide-20-serum",
+      "status": "published",
+      "canonical_id": 65171,
+      "original_observation_id": 20156,
+      "observation_id": 22904,
+      "evidence_id": 1143,
+      "ingredient_count": 37
+    },
+    {
+      "url": "https://sourcebeauty.com/products/bg-argan-oil-serum",
+      "status": "preserved",
+      "reason": "Current retailer product type does not establish an approved skincare product."
+    },
+    {
+      "url": "https://sourcebeauty.com/products/medicube-collagen-glow-booster-serum-15ml",
+      "status": "published",
+      "canonical_id": 65253,
+      "original_observation_id": 20064,
+      "observation_id": 22905,
+      "evidence_id": 1145,
+      "ingredient_count": 34
+    }
+  ]
+}

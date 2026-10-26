@@ -1,0 +1,280 @@
+{
+  "source_id": "sourcebeauty",
+  "model_calls": 0,
+  "read_only": true,
+  "selected": 30,
+  "results": [
+    {
+      "canonical_id": 64570,
+      "observation_id": 18783,
+      "raw_title": "Skin Emollient Cream",
+      "raw_brand": "BG",
+      "source_url": "https://sourcebeauty.com/products/bg-skin-emollient-cream",
+      "status": "fetched",
+      "pages": 1
+    },
+    {
+      "canonical_id": 64612,
+      "observation_id": 17378,
+      "raw_title": "Hydra Intense Cream",
+      "raw_brand": "Glamy Lab",
+      "source_url": "https://sourcebeauty.com/products/glamy-lab-hydra-intense-cream",
+      "status": "fetched",
+      "pages": 1
+    },
+    {
+      "canonical_id": 64636,
+      "observation_id": 16923,
+      "raw_title": "Eyephalt Retinol Eyebag Cream",
+      "raw_brand": "Dr.Melaxin",
+      "source_url": "https://sourcebeauty.com/products/dr-melaxin-eyephalt-retinol-eyebag-cream",
+      "status": "fetched",
+      "pages": 1
+    },
+    {
+      "canonical_id": 64645,
+      "observation_id": 15591,
+      "raw_title": "Body Wash - Tropical Fruits Scent",
+      "raw_brand": "Bobana",
+      "source_url": "https://sourcebeauty.com/products/bobana-body-wash-tropical-fruits-scent",
+      "status": "fetched",
+      "pages": 1
+    },
+    {
+      "canonical_id": 64646,
+      "observation_id": 15593,
+      "raw_title": "Body Wash - Wild Roses",
+      "raw_brand": "Bobana",
+      "source_url": "https://sourcebeauty.com/products/bobana-body-wash-wild-roses",
+      "status": "fetched",
+      "pages": 1
+    },
+    {
+      "canonical_id": 64675,
+      "observation_id": 21254,
+      "raw_title": "Charcoal & Vitamin E Sheet Mask",
+      "raw_brand": "Bobana",
+      "source_url": "https://sourcebeauty.com/products/skin-purifying-charcoal-vitamin-e-sheet-mask",
+      "status": "fetched",
+      "pages": 1
+    },
+    {
+      "canonical_id": 64676,
+      "observation_id": 21252,
+      "raw_title": "Tropical Fruits Body Lotion",
+      "raw_brand": "Bobana",
+      "source_url": "https://sourcebeauty.com/products/bobana-tropical-fruits-body-lotion",
+      "status": "fetched",
+      "pages": 1
+    },
+    {
+      "canonical_id": 64677,
+      "observation_id": 21253,
+      "raw_title": "Wild Roses Body Lotion",
+      "raw_brand": "Bobana",
+      "source_url": "https://sourcebeauty.com/products/bobana-wild-roses-scent-body-lotion",
+      "status": "fetched",
+      "pages": 1
+    },
+    {
+      "canonical_id": 64678,
+      "observation_id": 21278,
+      "raw_title": "Coconut Milk Body Lotion",
+      "raw_brand": "Bobana",
+      "source_url": "https://sourcebeauty.com/products/bobana-coconut-milk-body-lotion",
+      "status": "fetched",
+      "pages": 1
+    },
+    {
+      "canonical_id": 64679,
+      "observation_id": 21277,
+      "raw_title": "Coconut Milk Hand Cream",
+      "raw_brand": "Bobana",
+      "source_url": "https://sourcebeauty.com/products/bobana-coconut-milk-hand-cream",
+      "status": "fetched",
+      "pages": 1
+    },
+    {
+      "canonical_id": 64680,
+      "observation_id": 21250,
+      "raw_title": "Tropical Fruits Hand Cream",
+      "raw_brand": "Bobana",
+      "source_url": "https://sourcebeauty.com/products/bobana-tropical-fruits-hand-cream",
+      "status": "fetched",
+      "pages": 1
+    },
+    {
+      "canonical_id": 64681,
+      "observation_id": 21251,
+      "raw_title": "Wild Roses Hand Cream",
+      "raw_brand": "Bobana",
+      "source_url": "https://sourcebeauty.com/products/bobana-wild-roses-scent-hand-cream",
+      "status": "fetched",
+      "pages": 1
+    },
+    {
+      "canonical_id": 64682,
+      "observation_id": 21294,
+      "raw_title": "Vitamin C Face Wash",
+      "raw_brand": "Bobana",
+      "source_url": "https://sourcebeauty.com/products/vitamin-c-face-wash",
+      "status": "fetched",
+      "pages": 1
+    },
+    {
+      "canonical_id": 64686,
+      "observation_id": 18168,
+      "raw_title": "Morning Star Hyaluronic Gel Cleanser",
+      "raw_brand": "NUT Botanicals",
+      "source_url": "https://sourcebeauty.com/products/morning-star-hyaluronic-gel-cleanser",
+      "status": "fetched",
+      "pages": 1
+    },
+    {
+      "canonical_id": 64728,
+      "observation_id": 17187,
+      "raw_title": "Gim PDRN Hydro Bouncy Ampoule",
+      "raw_brand": "Isntree",
+      "source_url": "https://sourcebeauty.com/products/isntree-gim-pdrn-hydro-bouncy-ampoule",
+      "status": "fetched",
+      "pages": 1
+    },
+    {
+      "canonical_id": 64734,
+      "observation_id": 19384,
+      "raw_title": "Zero Foam Cleanser",
+      "raw_brand": "medicube",
+      "source_url": "https://sourcebeauty.com/products/medicube-zero-foam-cleanser",
+      "status": "fetched",
+      "pages": 1
+    },
+    {
+      "canonical_id": 64742,
+      "observation_id": 18509,
+      "raw_title": "Clean Ascorbic Acid Facial Cleanser",
+      "raw_brand": "Skinify",
+      "source_url": "https://sourcebeauty.com/products/skinify-clean-ascorbic-acid-facial-cleanser-dull-uneven-skin",
+      "status": "fetched",
+      "pages": 1
+    },
+    {
+      "canonical_id": 64743,
+      "observation_id": 18453,
+      "raw_title": "Clear Salicylic Acid (BHA) 2% Exfoliator Solution",
+      "raw_brand": "Skinify",
+      "source_url": "https://sourcebeauty.com/products/skinify-clear-salicylic-acid-bha-2-exfoliator-solution",
+      "status": "fetched",
+      "pages": 1
+    },
+    {
+      "canonical_id": 64745,
+      "observation_id": 18492,
+      "raw_title": "Glow Multi Vitamins + Ascorbic Acid Antioxidant Face Cream",
+      "raw_brand": "Skinify",
+      "source_url": "https://sourcebeauty.com/products/skinify-glow-multi-vitamins-ascorbic-acid-antioxidant-face-cream-dull-uneven-skin-tone",
+      "status": "fetched",
+      "pages": 1
+    },
+    {
+      "canonical_id": 64746,
+      "observation_id": 18491,
+      "raw_title": "Hydrate Hyaluronic Acid + NMF Face Cream",
+      "raw_brand": "Skinify",
+      "source_url": "https://sourcebeauty.com/products/skinify-hydrate-hyaluronic-acid-nmf-face-cream",
+      "status": "fetched",
+      "pages": 1
+    },
+    {
+      "canonical_id": 64749,
+      "observation_id": 17943,
+      "raw_title": "Plump Hyaluronic Acid 2% + B5 Face Serum",
+      "raw_brand": "Skinify",
+      "source_url": "https://sourcebeauty.com/products/skinify-plump-hyaluronic-acid-2-b5-face-serum",
+      "status": "fetched",
+      "pages": 1
+    },
+    {
+      "canonical_id": 64799,
+      "observation_id": 20458,
+      "raw_title": "Rice Ceramide 7 Hydrating Barrier Serum",
+      "raw_brand": "Anua",
+      "source_url": "https://sourcebeauty.com/products/anua-hydrating-barrier-serum",
+      "status": "fetched",
+      "pages": 1
+    },
+    {
+      "canonical_id": 64815,
+      "observation_id": 20955,
+      "raw_title": "Purifying Toner",
+      "raw_brand": "Dermatique",
+      "source_url": "https://sourcebeauty.com/products/purifying-toner",
+      "status": "fetched",
+      "pages": 1
+    },
+    {
+      "canonical_id": 64816,
+      "observation_id": 18279,
+      "raw_title": "Sun Screen Gel Cream Tinted",
+      "raw_brand": "Kolagra",
+      "source_url": "https://sourcebeauty.com/products/kolagra-sun-screen-gel-cream-tinted",
+      "status": "fetched",
+      "pages": 1
+    },
+    {
+      "canonical_id": 64818,
+      "observation_id": 16916,
+      "raw_title": "Pore Melt Mochi Cleansing Oil",
+      "raw_brand": "Arencia",
+      "source_url": "https://sourcebeauty.com/products/arencia-pore-melt-mochi-cleansing-oil",
+      "status": "fetched",
+      "pages": 1
+    },
+    {
+      "canonical_id": 64832,
+      "observation_id": 21020,
+      "raw_title": "Snow White Milky Lotion",
+      "raw_brand": "Secret Key",
+      "source_url": "https://sourcebeauty.com/products/snow-white-milky-lotion",
+      "status": "fetched",
+      "pages": 1
+    },
+    {
+      "canonical_id": 64882,
+      "observation_id": 15731,
+      "raw_title": "Panthenol Face Cream",
+      "raw_brand": "Hepta",
+      "source_url": "https://sourcebeauty.com/products/hepta-panthenol-face-cream",
+      "status": "fetched",
+      "pages": 1
+    },
+    {
+      "canonical_id": 64925,
+      "observation_id": 20630,
+      "raw_title": "Niacinamide Facial Wash - For Oily Skin",
+      "raw_brand": "Ninetimes",
+      "source_url": "https://sourcebeauty.com/products/ninetimes-facial-wash-pump-oily-skin-facial-wash",
+      "status": "fetched",
+      "pages": 1
+    },
+    {
+      "canonical_id": 64981,
+      "observation_id": 20098,
+      "raw_title": "Galactomyces Glutathione Glow Milky Toner",
+      "raw_brand": "Some By Mi",
+      "source_url": "https://sourcebeauty.com/products/some-by-mi-galactomyces-glutathione-glow-milky-toner",
+      "status": "fetched",
+      "pages": 1
+    },
+    {
+      "canonical_id": 65021,
+      "observation_id": 19501,
+      "raw_title": "The Niacinamide 15 Serum",
+      "raw_brand": "Cosrx",
+      "source_url": "https://sourcebeauty.com/products/cosrx-the-niacinamide-15-serum",
+      "status": "fetched",
+      "pages": 1
+    }
+  ],
+  "last_canonical_id": 65021,
+  "more_candidates_in_selection": true
+}

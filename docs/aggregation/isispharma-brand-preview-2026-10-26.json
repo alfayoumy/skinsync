@@ -1,0 +1,264 @@
+{
+  "applied": false,
+  "backup_path": null,
+  "result": {
+    "brand_id": 617,
+    "retired_brand_ids": [
+      633
+    ],
+    "history_id": 1
+  },
+  "duplicate_title_groups": [
+    [
+      {
+        "id": 63195,
+        "canonical_title": "SECALIA FACE CREAM 40 ML",
+        "brand": "ISISPHARMA",
+        "identity_status": "verified",
+        "inci": null
+      },
+      {
+        "id": 63639,
+        "canonical_title": "Isis Pharma Secalia Face Cream - 40ml",
+        "brand": "Isis Pharma",
+        "identity_status": "verified",
+        "inci": 255
+      }
+    ],
+    [
+      {
+        "id": 63196,
+        "canonical_title": "SECALIA BODY LOTION 200 ML",
+        "brand": "ISISPHARMA",
+        "identity_status": "verified",
+        "inci": null
+      },
+      {
+        "id": 63439,
+        "canonical_title": "Isis Pharma Secalia Body Lotion - 200ml",
+        "brand": "Isis Pharma",
+        "identity_status": "verified",
+        "inci": 301
+      }
+    ],
+    [
+      {
+        "id": 63198,
+        "canonical_title": "GLYCO A POST PEELING 40 ML",
+        "brand": "ISISPHARMA",
+        "identity_status": "provisional",
+        "inci": null
+      },
+      {
+        "id": 69989,
+        "canonical_title": "Glyco A Post Peeling",
+        "brand": "Isis Pharma",
+        "identity_status": "provisional",
+        "inci": null
+      }
+    ],
+    [
+      {
+        "id": 63200,
+        "canonical_title": "NEOTONE  SPF50+ Radiance",
+        "brand": "ISISPHARMA",
+        "identity_status": "provisional",
+        "inci": null
+      },
+      {
+        "id": 63377,
+        "canonical_title": "Isis Pharma Neotone Radiance Spf50+ - 30ml",
+        "brand": "Isis Pharma",
+        "identity_status": "provisional",
+        "inci": null
+      }
+    ],
+    [
+      {
+        "id": 63298,
+        "canonical_title": "TEEN DERM K concentrate",
+        "brand": "ISISPHARMA",
+        "identity_status": "verified",
+        "inci": null
+      },
+      {
+        "id": 63536,
+        "canonical_title": "Isis Pharma Teen Derm K Concentrate - 30ml",
+        "brand": "Isis Pharma",
+        "identity_status": "verified",
+        "inci": null
+      }
+    ],
+    [
+      {
+        "id": 63326,
+        "canonical_title": "RUBORIL Expert SPF50+",
+        "brand": "ISISPHARMA",
+        "identity_status": "provisional",
+        "inci": null
+      },
+      {
+        "id": 63748,
+        "canonical_title": "Isis Pharma Ruboril Expert SPF 50 + 40ml",
+        "brand": "Isis Pharma",
+        "identity_status": "provisional",
+        "inci": null
+      }
+    ],
+    [
+      {
+        "id": 63955,
+        "canonical_title": "Isis Pharma Neotone Exfoliating Cleansing Gel - 150ml",
+        "brand": "Isis Pharma",
+        "identity_status": "provisional",
+        "inci": null
+      },
+      {
+        "id": 69958,
+        "canonical_title": "Isispharma Neotone Exfoliating Cleansing Gel 150ml",
+        "brand": "ISISPHARMA",
+        "identity_status": "provisional",
+        "inci": null
+      }
+    ],
+    [
+      {
+        "id": 66631,
+        "canonical_title": "Uveblock SPF50+ Hydra Lotion",
+        "brand": "Isis Pharma",
+        "identity_status": "provisional",
+        "inci": null
+      },
+      {
+        "id": 69244,
+        "canonical_title": "UVEBLOCK SPF50+ Hydra Lotion",
+        "brand": "ISISPHARMA",
+        "identity_status": "provisional",
+        "inci": null
+      }
+    ],
+    [
+      {
+        "id": 66632,
+        "canonical_title": "Uveblock SPF50+ Fluid Light Tinted",
+        "brand": "Isis Pharma",
+        "identity_status": "provisional",
+        "inci": null
+      },
+      {
+        "id": 69245,
+        "canonical_title": "UVEBLOCK SPF50+ Fluid Light Tinted",
+        "brand": "ISISPHARMA",
+        "identity_status": "provisional",
+        "inci": null
+      }
+    ]
+  ],
+  "evidence_urls": [
+    "https://www.isispharma.com/en/product/face-cream/",
+    "https://www.bloompharmacy.com/products/isis-pharma-secalia-face-cream-40ml"
+  ],
+  "reason": "Manufacturer and Egyptian retailer independently demonstrate the two spellings of ISISPHARMA. Product merges require separate exact marketed identity and concordant source evidence.",
+  "products_merged": 6,
+  "duplicate_repairs": [
+    {
+      "canonical_ids": [
+        63195,
+        63639
+      ],
+      "marketed_identity": "cream face secalia",
+      "action": "merged",
+      "survivor_id": 63639,
+      "history_ids": [
+        570
+      ]
+    },
+    {
+      "canonical_ids": [
+        63196,
+        63439
+      ],
+      "marketed_identity": "body lotion secalia",
+      "action": "merged",
+      "survivor_id": 63439,
+      "history_ids": [
+        571
+      ]
+    },
+    {
+      "canonical_ids": [
+        63198,
+        69989
+      ],
+      "marketed_identity": "a glyco peeling post",
+      "action": "preserved",
+      "reason": "Pending identity review."
+    },
+    {
+      "canonical_ids": [
+        63200,
+        63377
+      ],
+      "marketed_identity": "50 neotone radiance spf",
+      "action": "merged",
+      "survivor_id": 63200,
+      "history_ids": [
+        572
+      ]
+    },
+    {
+      "canonical_ids": [
+        63298,
+        63536
+      ],
+      "marketed_identity": "concentrate derm k teen",
+      "action": "merged",
+      "survivor_id": 63298,
+      "history_ids": [
+        573
+      ]
+    },
+    {
+      "canonical_ids": [
+        63326,
+        63748
+      ],
+      "marketed_identity": "50 expert ruboril spf",
+      "action": "preserved",
+      "reason": "Pending identity review."
+    },
+    {
+      "canonical_ids": [
+        63955,
+        69958
+      ],
+      "marketed_identity": "cleansing exfoliating gel neotone",
+      "action": "merged",
+      "survivor_id": 63955,
+      "history_ids": [
+        574
+      ]
+    },
+    {
+      "canonical_ids": [
+        66631,
+        69244
+      ],
+      "marketed_identity": "50 hydra lotion spf uveblock",
+      "action": "merged",
+      "survivor_id": 66631,
+      "history_ids": [
+        575
+      ]
+    },
+    {
+      "canonical_ids": [
+        66632,
+        69245
+      ],
+      "marketed_identity": "50 fluid light spf tinted uveblock",
+      "action": "preserved",
+      "reason": "Retailer identity is not an exact verified match."
+    }
+  ]
+}

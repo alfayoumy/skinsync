@@ -1,0 +1,617 @@
+{
+  "task_id": "task_20261025_194847_99cabdc4",
+  "result": {
+    "status": "completed",
+    "processed": 1,
+    "api_calls": 6,
+    "products_per_request": 2,
+    "needs_manual": 1
+  },
+  "actual_requests": [
+    {
+      "pair_key": "b77b3f2cee432250340249c24a3546b4614030ad4bfda229d05b893f33d9714b",
+      "product_count": 2,
+      "products": [
+        {
+          "title": "White Musk Hand & Body Lotion - Travel Size",
+          "brand": "Bubblzz",
+          "source_id": "sourcebeauty",
+          "source_product_id": "8118119989535",
+          "url": "https://sourcebeauty.com/products/white-musk-hand-body-lotion",
+          "identity_attributes": {
+            "application_area": "body",
+            "concentrations": [],
+            "formula_revision": null,
+            "fragrance": null,
+            "function": "Body Care",
+            "market": "EG",
+            "name": "body hand lotion musk size travel white",
+            "region_defining": false,
+            "shade": null,
+            "spf": null,
+            "timing": null,
+            "tint": null,
+            "vehicle": "lotion"
+          }
+        },
+        {
+          "canonical_product_id": 63689,
+          "title": "Bubblzz Cupcake Travel Size Hand & Body Lotion - 50ml",
+          "brand": "Bubblzz",
+          "identity_attributes": {
+            "name": "body cupcake hand lotion size travel",
+            "vehicle": "lotion",
+            "application_area": "body",
+            "function": "Body Care",
+            "spf": null,
+            "concentrations": [],
+            "timing": null,
+            "fragrance": null,
+            "tint": null,
+            "market": "EG",
+            "region_defining": false,
+            "formula_revision": null,
+            "shade": null
+          }
+        }
+      ]
+    },
+    {
+      "pair_key": "0b17e3a67afde6dce0bc54283cae318635676be456d172d9638eefa8f2b5f941",
+      "product_count": 2,
+      "products": [
+        {
+          "title": "White Musk Hand & Body Lotion - Travel Size",
+          "brand": "Bubblzz",
+          "source_id": "sourcebeauty",
+          "source_product_id": "8118119989535",
+          "url": "https://sourcebeauty.com/products/white-musk-hand-body-lotion",
+          "identity_attributes": {
+            "application_area": "body",
+            "concentrations": [],
+            "formula_revision": null,
+            "fragrance": null,
+            "function": "Body Care",
+            "market": "EG",
+            "name": "body hand lotion musk size travel white",
+            "region_defining": false,
+            "shade": null,
+            "spf": null,
+            "timing": null,
+            "tint": null,
+            "vehicle": "lotion"
+          }
+        },
+        {
+          "canonical_product_id": 65681,
+          "title": "Bubblzz Strawberries & Cream Travel Size Hand & Body Lotion",
+          "brand": "Bubblzz",
+          "identity_attributes": {
+            "name": "body cream hand lotion size strawberries travel",
+            "vehicle": "cream",
+            "application_area": "body",
+            "function": "Body Care",
+            "spf": null,
+            "concentrations": [],
+            "timing": null,
+            "fragrance": null,
+            "tint": null,
+            "market": "EG",
+            "region_defining": false,
+            "formula_revision": null,
+            "shade": null
+          }
+        }
+      ]
+    },
+    {
+      "pair_key": "a5dafd04f51f3e21b54fb5e4c03cbf2b819a8a681e238a11fe1692224f6c216b",
+      "product_count": 2,
+      "products": [
+        {
+          "title": "White Musk Hand & Body Lotion - Travel Size",
+          "brand": "Bubblzz",
+          "source_id": "sourcebeauty",
+          "source_product_id": "8118119989535",
+          "url": "https://sourcebeauty.com/products/white-musk-hand-body-lotion",
+          "identity_attributes": {
+            "application_area": "body",
+            "concentrations": [],
+            "formula_revision": null,
+            "fragrance": null,
+            "function": "Body Care",
+            "market": "EG",
+            "name": "body hand lotion musk size travel white",
+            "region_defining": false,
+            "shade": null,
+            "spf": null,
+            "timing": null,
+            "tint": null,
+            "vehicle": "lotion"
+          }
+        },
+        {
+          "canonical_product_id": 65682,
+          "title": "Bubblzz Bonbon Scented Travel Size Hand And Body Moisturizer",
+          "brand": "Bubblzz",
+          "identity_attributes": {
+            "name": "body bonbon hand moisturizer scented size travel",
+            "vehicle": null,
+            "application_area": "body",
+            "function": "Moisturizer",
+            "spf": null,
+            "concentrations": [],
+            "timing": null,
+            "fragrance": "scented",
+            "tint": null,
+            "market": "EG",
+            "region_defining": false,
+            "formula_revision": null,
+            "shade": null
+          }
+        }
+      ]
+    },
+    {
+      "pair_key": "32f57ac1f9474c01290a379bc1382d2f7ddcbf12c077dfca272aa543edf183bf",
+      "product_count": 2,
+      "products": [
+        {
+          "title": "White Musk Hand & Body Lotion - Travel Size",
+          "brand": "Bubblzz",
+          "source_id": "sourcebeauty",
+          "source_product_id": "8118119989535",
+          "url": "https://sourcebeauty.com/products/white-musk-hand-body-lotion",
+          "identity_attributes": {
+            "application_area": "body",
+            "concentrations": [],
+            "formula_revision": null,
+            "fragrance": null,
+            "function": "Body Care",
+            "market": "EG",
+            "name": "body hand lotion musk size travel white",
+            "region_defining": false,
+            "shade": null,
+            "spf": null,
+            "timing": null,
+            "tint": null,
+            "vehicle": "lotion"
+          }
+        },
+        {
+          "canonical_product_id": 65684,
+          "title": "Bubblzz White Musk Ultra Rich Body Lotion",
+          "brand": "Bubblzz",
+          "identity_attributes": {
+            "name": "body lotion musk rich ultra white",
+            "vehicle": "lotion",
+            "application_area": "body",
+            "function": "Body Care",
+            "spf": null,
+            "concentrations": [],
+            "timing": null,
+            "fragrance": null,
+            "tint": null,
+            "market": "EG",
+            "region_defining": false,
+            "formula_revision": null,
+            "shade": null
+          }
+        }
+      ]
+    },
+    {
+      "pair_key": "0bcb82d600e6c2f271702a535205dc9b5680cb2ea81933565db66779bbba2a35",
+      "product_count": 2,
+      "products": [
+        {
+          "title": "White Musk Hand & Body Lotion - Travel Size",
+          "brand": "Bubblzz",
+          "source_id": "sourcebeauty",
+          "source_product_id": "8118119989535",
+          "url": "https://sourcebeauty.com/products/white-musk-hand-body-lotion",
+          "identity_attributes": {
+            "application_area": "body",
+            "concentrations": [],
+            "formula_revision": null,
+            "fragrance": null,
+            "function": "Body Care",
+            "market": "EG",
+            "name": "body hand lotion musk size travel white",
+            "region_defining": false,
+            "shade": null,
+            "spf": null,
+            "timing": null,
+            "tint": null,
+            "vehicle": "lotion"
+          }
+        },
+        {
+          "canonical_product_id": 70431,
+          "title": "Bubblzz Bubblegum Travel Size Hand & Body Lotion",
+          "brand": "Bubblzz",
+          "identity_attributes": {
+            "name": "body bubblegum hand lotion size travel",
+            "vehicle": "lotion",
+            "application_area": "body",
+            "function": "Body Care",
+            "spf": null,
+            "concentrations": [],
+            "timing": null,
+            "fragrance": null,
+            "tint": null,
+            "market": "EG",
+            "region_defining": false,
+            "formula_revision": null,
+            "shade": null
+          }
+        }
+      ]
+    },
+    {
+      "pair_key": "66b9544379208890638100255a570695ffa95874eced5af0ebf91f7ec26537ed",
+      "product_count": 2,
+      "products": [
+        {
+          "title": "White Musk Hand & Body Lotion - Travel Size",
+          "brand": "Bubblzz",
+          "source_id": "sourcebeauty",
+          "source_product_id": "8118119989535",
+          "url": "https://sourcebeauty.com/products/white-musk-hand-body-lotion",
+          "identity_attributes": {
+            "application_area": "body",
+            "concentrations": [],
+            "formula_revision": null,
+            "fragrance": null,
+            "function": "Body Care",
+            "market": "EG",
+            "name": "body hand lotion musk size travel white",
+            "region_defining": false,
+            "shade": null,
+            "spf": null,
+            "timing": null,
+            "tint": null,
+            "vehicle": "lotion"
+          }
+        },
+        {
+          "canonical_product_id": 70435,
+          "title": "Bubblzz Vanilla Travel Size Hand & Body Lotion",
+          "brand": "Bubblzz",
+          "identity_attributes": {
+            "name": "body hand lotion size travel vanilla",
+            "vehicle": "lotion",
+            "application_area": "body",
+            "function": "Body Care",
+            "spf": null,
+            "concentrations": [],
+            "timing": null,
+            "fragrance": null,
+            "tint": null,
+            "market": "EG",
+            "region_defining": false,
+            "formula_revision": null,
+            "shade": null
+          }
+        }
+      ]
+    }
+  ],
+  "pair_results": [
+    {
+      "pair_key": "0b17e3a67afde6dce0bc54283cae318635676be456d172d9638eefa8f2b5f941",
+      "canonical_candidate_id": 65681,
+      "verdict": "different_product",
+      "confidence": 0.99,
+      "explanation": "The two products have different scents ('White Musk' vs 'Strawberries & Cream'), which represent distinct formulations within the same product line.",
+      "products": [
+        {
+          "title": "White Musk Hand & Body Lotion - Travel Size",
+          "brand": "Bubblzz",
+          "source_id": "sourcebeauty",
+          "source_product_id": "8118119989535",
+          "url": "https://sourcebeauty.com/products/white-musk-hand-body-lotion",
+          "identity_attributes": {
+            "application_area": "body",
+            "concentrations": [],
+            "formula_revision": null,
+            "fragrance": null,
+            "function": "Body Care",
+            "market": "EG",
+            "name": "body hand lotion musk size travel white",
+            "region_defining": false,
+            "shade": null,
+            "spf": null,
+            "timing": null,
+            "tint": null,
+            "vehicle": "lotion"
+          }
+        },
+        {
+          "canonical_product_id": 65681,
+          "title": "Bubblzz Strawberries & Cream Travel Size Hand & Body Lotion",
+          "brand": "Bubblzz",
+          "identity_attributes": {
+            "name": "body cream hand lotion size strawberries travel",
+            "vehicle": "cream",
+            "application_area": "body",
+            "function": "Body Care",
+            "spf": null,
+            "concentrations": [],
+            "timing": null,
+            "fragrance": null,
+            "tint": null,
+            "market": "EG",
+            "region_defining": false,
+            "formula_revision": null,
+            "shade": null
+          }
+        }
+      ]
+    },
+    {
+      "pair_key": "0bcb82d600e6c2f271702a535205dc9b5680cb2ea81933565db66779bbba2a35",
+      "canonical_candidate_id": 70431,
+      "verdict": "different_product",
+      "confidence": 0.95,
+      "explanation": "The products are from the same brand and have the same vehicle and size (travel size), but they have different scents: one is 'White Musk' and the other is 'Bubblegum'. Different scents indicate different product formulations.",
+      "products": [
+        {
+          "title": "White Musk Hand & Body Lotion - Travel Size",
+          "brand": "Bubblzz",
+          "source_id": "sourcebeauty",
+          "source_product_id": "8118119989535",
+          "url": "https://sourcebeauty.com/products/white-musk-hand-body-lotion",
+          "identity_attributes": {
+            "application_area": "body",
+            "concentrations": [],
+            "formula_revision": null,
+            "fragrance": null,
+            "function": "Body Care",
+            "market": "EG",
+            "name": "body hand lotion musk size travel white",
+            "region_defining": false,
+            "shade": null,
+            "spf": null,
+            "timing": null,
+            "tint": null,
+            "vehicle": "lotion"
+          }
+        },
+        {
+          "canonical_product_id": 70431,
+          "title": "Bubblzz Bubblegum Travel Size Hand & Body Lotion",
+          "brand": "Bubblzz",
+          "identity_attributes": {
+            "name": "body bubblegum hand lotion size travel",
+            "vehicle": "lotion",
+            "application_area": "body",
+            "function": "Body Care",
+            "spf": null,
+            "concentrations": [],
+            "timing": null,
+            "fragrance": null,
+            "tint": null,
+            "market": "EG",
+            "region_defining": false,
+            "formula_revision": null,
+            "shade": null
+          }
+        }
+      ]
+    },
+    {
+      "pair_key": "32f57ac1f9474c01290a379bc1382d2f7ddcbf12c077dfca272aa543edf183bf",
+      "canonical_candidate_id": 65684,
+      "verdict": "different_product",
+      "confidence": 0.85,
+      "explanation": "The products are from the same brand and share the White Musk scent, but one is a standard 'Hand & Body Lotion - Travel Size' while the other is an 'Ultra Rich Body Lotion', indicating different product lines or formulations.",
+      "products": [
+        {
+          "title": "White Musk Hand & Body Lotion - Travel Size",
+          "brand": "Bubblzz",
+          "source_id": "sourcebeauty",
+          "source_product_id": "8118119989535",
+          "url": "https://sourcebeauty.com/products/white-musk-hand-body-lotion",
+          "identity_attributes": {
+            "application_area": "body",
+            "concentrations": [],
+            "formula_revision": null,
+            "fragrance": null,
+            "function": "Body Care",
+            "market": "EG",
+            "name": "body hand lotion musk size travel white",
+            "region_defining": false,
+            "shade": null,
+            "spf": null,
+            "timing": null,
+            "tint": null,
+            "vehicle": "lotion"
+          }
+        },
+        {
+          "canonical_product_id": 65684,
+          "title": "Bubblzz White Musk Ultra Rich Body Lotion",
+          "brand": "Bubblzz",
+          "identity_attributes": {
+            "name": "body lotion musk rich ultra white",
+            "vehicle": "lotion",
+            "application_area": "body",
+            "function": "Body Care",
+            "spf": null,
+            "concentrations": [],
+            "timing": null,
+            "fragrance": null,
+            "tint": null,
+            "market": "EG",
+            "region_defining": false,
+            "formula_revision": null,
+            "shade": null
+          }
+        }
+      ]
+    },
+    {
+      "pair_key": "66b9544379208890638100255a570695ffa95874eced5af0ebf91f7ec26537ed",
+      "canonical_candidate_id": 70435,
+      "verdict": "different_product",
+      "confidence": 0.99,
+      "explanation": "The products have different scents: one is 'White Musk' and the other is 'Vanilla'. Different scents indicate different formulations.",
+      "products": [
+        {
+          "title": "White Musk Hand & Body Lotion - Travel Size",
+          "brand": "Bubblzz",
+          "source_id": "sourcebeauty",
+          "source_product_id": "8118119989535",
+          "url": "https://sourcebeauty.com/products/white-musk-hand-body-lotion",
+          "identity_attributes": {
+            "application_area": "body",
+            "concentrations": [],
+            "formula_revision": null,
+            "fragrance": null,
+            "function": "Body Care",
+            "market": "EG",
+            "name": "body hand lotion musk size travel white",
+            "region_defining": false,
+            "shade": null,
+            "spf": null,
+            "timing": null,
+            "tint": null,
+            "vehicle": "lotion"
+          }
+        },
+        {
+          "canonical_product_id": 70435,
+          "title": "Bubblzz Vanilla Travel Size Hand & Body Lotion",
+          "brand": "Bubblzz",
+          "identity_attributes": {
+            "name": "body hand lotion size travel vanilla",
+            "vehicle": "lotion",
+            "application_area": "body",
+            "function": "Body Care",
+            "spf": null,
+            "concentrations": [],
+            "timing": null,
+            "fragrance": null,
+            "tint": null,
+            "market": "EG",
+            "region_defining": false,
+            "formula_revision": null,
+            "shade": null
+          }
+        }
+      ]
+    },
+    {
+      "pair_key": "a5dafd04f51f3e21b54fb5e4c03cbf2b819a8a681e238a11fe1692224f6c216b",
+      "canonical_candidate_id": 65682,
+      "verdict": "different_product",
+      "confidence": 0.95,
+      "explanation": "The products have different scents/fragrances specified in their titles ('White Musk' versus 'Bonbon Scented'), indicating they are distinct variants within the brand's product line.",
+      "products": [
+        {
+          "title": "White Musk Hand & Body Lotion - Travel Size",
+          "brand": "Bubblzz",
+          "source_id": "sourcebeauty",
+          "source_product_id": "8118119989535",
+          "url": "https://sourcebeauty.com/products/white-musk-hand-body-lotion",
+          "identity_attributes": {
+            "application_area": "body",
+            "concentrations": [],
+            "formula_revision": null,
+            "fragrance": null,
+            "function": "Body Care",
+            "market": "EG",
+            "name": "body hand lotion musk size travel white",
+            "region_defining": false,
+            "shade": null,
+            "spf": null,
+            "timing": null,
+            "tint": null,
+            "vehicle": "lotion"
+          }
+        },
+        {
+          "canonical_product_id": 65682,
+          "title": "Bubblzz Bonbon Scented Travel Size Hand And Body Moisturizer",
+          "brand": "Bubblzz",
+          "identity_attributes": {
+            "name": "body bonbon hand moisturizer scented size travel",
+            "vehicle": null,
+            "application_area": "body",
+            "function": "Moisturizer",
+            "spf": null,
+            "concentrations": [],
+            "timing": null,
+            "fragrance": "scented",
+            "tint": null,
+            "market": "EG",
+            "region_defining": false,
+            "formula_revision": null,
+            "shade": null
+          }
+        }
+      ]
+    },
+    {
+      "pair_key": "b77b3f2cee432250340249c24a3546b4614030ad4bfda229d05b893f33d9714b",
+      "canonical_candidate_id": 63689,
+      "verdict": "different_product",
+      "confidence": 0.95,
+      "explanation": "The products belong to different scent lines (White Musk vs. Cupcake), which represent distinct formulations.",
+      "products": [
+        {
+          "title": "White Musk Hand & Body Lotion - Travel Size",
+          "brand": "Bubblzz",
+          "source_id": "sourcebeauty",
+          "source_product_id": "8118119989535",
+          "url": "https://sourcebeauty.com/products/white-musk-hand-body-lotion",
+          "identity_attributes": {
+            "application_area": "body",
+            "concentrations": [],
+            "formula_revision": null,
+            "fragrance": null,
+            "function": "Body Care",
+            "market": "EG",
+            "name": "body hand lotion musk size travel white",
+            "region_defining": false,
+            "shade": null,
+            "spf": null,
+            "timing": null,
+            "tint": null,
+            "vehicle": "lotion"
+          }
+        },
+        {
+          "canonical_product_id": 63689,
+          "title": "Bubblzz Cupcake Travel Size Hand & Body Lotion - 50ml",
+          "brand": "Bubblzz",
+          "identity_attributes": {
+            "name": "body cupcake hand lotion size travel",
+            "vehicle": "lotion",
+            "application_area": "body",
+            "function": "Body Care",
+            "spf": null,
+            "concentrations": [],
+            "timing": null,
+            "fragrance": null,
+            "tint": null,
+            "market": "EG",
+            "region_defining": false,
+            "formula_revision": null,
+            "shade": null
+          }
+        }
+      ]
+    }
+  ],
+  "queue": {
+    "status": "needs_manual",
+    "comparison_mode": "pairwise",
+    "verdict": "uncertain",
+    "confidence": 0.85,
+    "explanation": "5 of 6 pairs are confidently different; remaining pairs are uncertain or below 90%. | Five independent pair rejections applied; the remaining 85% pair is below the 90% application threshold."
+  },
+  "applied_negative_pairs": 5,
+  "cached_reapplication_provider_calls": 0
+}

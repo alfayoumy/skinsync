@@ -1,0 +1,80 @@
+{
+  "applied": true,
+  "backup_path": "/mnt/windows/Users/AmrAlfayoumy/Downloads/skincare/repo/api/backups/catalog/catalog-20261026T205629Z-40769482.sqlite3",
+  "model_calls": 0,
+  "preview_scope": null,
+  "results": [
+    {
+      "url": "https://sourcebeauty.com/products/the-ordinary-glycolic-acid-7-exfoliating-toner",
+      "status": "published",
+      "canonical_id": 66151,
+      "original_observation_id": 17460,
+      "observation_id": 22997,
+      "evidence_id": 1275,
+      "ingredient_count": 42
+    },
+    {
+      "url": "https://sourcebeauty.com/products/round-lab-vita-niacinamide-dark-spot-serum",
+      "status": "published",
+      "canonical_id": 66161,
+      "original_observation_id": 19619,
+      "observation_id": 22998,
+      "evidence_id": 1277,
+      "ingredient_count": 36
+    },
+    {
+      "url": "https://sourcebeauty.com/products/amanda-hydrating-nourishing-night-cream",
+      "status": "evidence_only",
+      "canonical_id": 66180,
+      "original_observation_id": 21619,
+      "observation_id": 22999,
+      "evidence_id": 1279,
+      "ingredient_count": 2
+    },
+    {
+      "url": "https://sourcebeauty.com/products/the-ordinary-soothing-barrier-support-serum",
+      "status": "published",
+      "canonical_id": 66224,
+      "original_observation_id": 17463,
+      "observation_id": 23000,
+      "evidence_id": 1280,
+      "ingredient_count": 45
+    },
+    {
+      "url": "https://sourcebeauty.com/products/anua-peach-77-niacin-enriched-cream",
+      "status": "published",
+      "canonical_id": 66232,
+      "original_observation_id": 20071,
+      "observation_id": 23001,
+      "evidence_id": 1282,
+      "ingredient_count": 39
+    },
+    {
+      "url": "https://sourcebeauty.com/products/numbuzin-no-1-pantothenic-b5-active-soothing-serum",
+      "status": "published",
+      "canonical_id": 66233,
+      "original_observation_id": 16904,
+      "observation_id": 23002,
+      "evidence_id": 1284,
+      "ingredient_count": 55
+    },
+    {
+      "url": "https://sourcebeauty.com/products/skin1004-hyalu-cica-brightening-toner",
+      "status": "published",
+      "canonical_id": 66259,
+      "original_observation_id": 20259,
+      "observation_id": 23003,
+      "evidence_id": 1286,
+      "ingredient_count": 34
+    },
+    {
+      "url": "https://sourcebeauty.com/products/eqqualberry-nad-peptide-boosting-toner",
+      "status": "published",
+      "canonical_id": 66270,
+      "original_observation_id": 16976,
+      "observation_id": 23004,
+      "evidence_id": 1288,
+      "ingredient_count": 52
+    }
+  ]
+}

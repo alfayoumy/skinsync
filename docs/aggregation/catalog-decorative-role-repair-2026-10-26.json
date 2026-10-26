@@ -1,0 +1,787 @@
+{
+  "applied": true,
+  "backup_path": "/mnt/windows/Users/AmrAlfayoumy/Downloads/skincare/repo/api/backups/catalog/catalog-20261026T193855Z-52dfe8e6.sqlite3",
+  "before": 839,
+  "after": 835,
+  "result": {
+    "uncertain_preserved": 753,
+    "superseded_evidence_preserved": 76,
+    "cluster_conflict_preserved": 6,
+    "resolved": 4
+  },
+  "canonical_projection": {
+    "counts": {
+      "specific_hair_type_preserved": 227,
+      "uncertain_preserved": 781,
+      "updated": 58,
+      "human_approved_preserved": 2,
+      "specific_category_preserved": 1
+    },
+    "changes": [
+      {
+        "canonical_id": 63919,
+        "title": "Essence The Game Edit Blurring Lip Pen - 1.45gm",
+        "before": "Toner",
+        "after": "Makeup",
+        "is_skincare": false,
+        "evidence": [
+          {
+            "source": "title",
+            "match": "\\b(?:brow (?:(?:fixing|lifting|lift|freeze) ){0,3}(?:gel|glue|wax|mascara|pen)|(?:kajal|kohl)(?: kohl)? pencil|eye brightening pen|highlighter|skin tint|bronzing stick|make ?up (?:fixing|setting) spray|false lash(?:es)?|glamour lashes|(?:ink|pro) liner|lipliner|(?:color|colour) changing lip (?:and )?cheek oil|lip (?:and )?cheek (?:cream|tint|stick)|cheek (?:and )?lip cream|lip (?:mousse|marker|pen|pencil|stain|blur))\\b"
+          }
+        ]
+      },
+      {
+        "canonical_id": 64115,
+        "title": "Rimmel Kind & Free Glow It Up Moisturising Skin Tint - 30ml",
+        "before": "Moisturizer",
+        "after": "Makeup",
+        "is_skincare": false,
+        "evidence": [
+          {
+            "source": "title",
+            "match": "\\b(?:brow (?:(?:fixing|lifting|lift|freeze) ){0,3}(?:gel|glue|wax|mascara|pen)|(?:kajal|kohl)(?: kohl)? pencil|eye brightening pen|highlighter|skin tint|bronzing stick|make ?up (?:fixing|setting) spray|false lash(?:es)?|glamour lashes|(?:ink|pro) liner|lipliner|(?:color|colour) changing lip (?:and )?cheek oil|lip (?:and )?cheek (?:cream|tint|stick)|cheek (?:and )?lip cream|lip (?:mousse|marker|pen|pencil|stain|blur))\\b"
+          }
+        ]
+      },
+      {
+        "canonical_id": 64116,
+        "title": "Rimmel Kind & Free Glow It Up Moisturising Skin Tint - 30ml",
+        "before": "Moisturizer",
+        "after": "Makeup",
+        "is_skincare": false,
+        "evidence": [
+          {
+            "source": "title",
+            "match": "\\b(?:brow (?:(?:fixing|lifting|lift|freeze) ){0,3}(?:gel|glue|wax|mascara|pen)|(?:kajal|kohl)(?: kohl)? pencil|eye brightening pen|highlighter|skin tint|bronzing stick|make ?up (?:fixing|setting) spray|false lash(?:es)?|glamour lashes|(?:ink|pro) liner|lipliner|(?:color|colour) changing lip (?:and )?cheek oil|lip (?:and )?cheek (?:cream|tint|stick)|cheek (?:and )?lip cream|lip (?:mousse|marker|pen|pencil|stain|blur))\\b"
+          }
+        ]
+      },
+      {
+        "canonical_id": 64117,
+        "title": "Rimmel Kind & Free Glow It Up Moisturising Skin Tint - 30ml",
+        "before": "Moisturizer",
+        "after": "Makeup",
+        "is_skincare": false,
+        "evidence": [
+          {
+            "source": "title",
+            "match": "\\b(?:brow (?:(?:fixing|lifting|lift|freeze) ){0,3}(?:gel|glue|wax|mascara|pen)|(?:kajal|kohl)(?: kohl)? pencil|eye brightening pen|highlighter|skin tint|bronzing stick|make ?up (?:fixing|setting) spray|false lash(?:es)?|glamour lashes|(?:ink|pro) liner|lipliner|(?:color|colour) changing lip (?:and )?cheek oil|lip (?:and )?cheek (?:cream|tint|stick)|cheek (?:and )?lip cream|lip (?:mousse|marker|pen|pencil|stain|blur))\\b"
+          }
+        ]
+      },
+      {
+        "canonical_id": 64118,
+        "title": "Rimmel Kind & Free Glow It Up Moisturising Skin Tint - 30ml",
+        "before": "Moisturizer",
+        "after": "Makeup",
+        "is_skincare": false,
+        "evidence": [
+          {
+            "source": "title",
+            "match": "\\b(?:brow (?:(?:fixing|lifting|lift|freeze) ){0,3}(?:gel|glue|wax|mascara|pen)|(?:kajal|kohl)(?: kohl)? pencil|eye brightening pen|highlighter|skin tint|bronzing stick|make ?up (?:fixing|setting) spray|false lash(?:es)?|glamour lashes|(?:ink|pro) liner|lipliner|(?:color|colour) changing lip (?:and )?cheek oil|lip (?:and )?cheek (?:cream|tint|stick)|cheek (?:and )?lip cream|lip (?:mousse|marker|pen|pencil|stain|blur))\\b"
+          }
+        ]
+      },
+      {
+        "canonical_id": 64119,
+        "title": "Rimmel Kind & Free Glow It Up Moisturising Skin Tint - 30ml",
+        "before": "Moisturizer",
+        "after": "Makeup",
+        "is_skincare": false,
+        "evidence": [
+          {
+            "source": "title",
+            "match": "\\b(?:brow (?:(?:fixing|lifting|lift|freeze) ){0,3}(?:gel|glue|wax|mascara|pen)|(?:kajal|kohl)(?: kohl)? pencil|eye brightening pen|highlighter|skin tint|bronzing stick|make ?up (?:fixing|setting) spray|false lash(?:es)?|glamour lashes|(?:ink|pro) liner|lipliner|(?:color|colour) changing lip (?:and )?cheek oil|lip (?:and )?cheek (?:cream|tint|stick)|cheek (?:and )?lip cream|lip (?:mousse|marker|pen|pencil|stain|blur))\\b"
+          }
+        ]
+      },
+      {
+        "canonical_id": 64120,
+        "title": "Rimmel Kind & Free Glow It Up Moisturising Skin Tint - 30ml",
+        "before": "Moisturizer",
+        "after": "Makeup",
+        "is_skincare": false,
+        "evidence": [
+          {
+            "source": "title",
+            "match": "\\b(?:brow (?:(?:fixing|lifting|lift|freeze) ){0,3}(?:gel|glue|wax|mascara|pen)|(?:kajal|kohl)(?: kohl)? pencil|eye brightening pen|highlighter|skin tint|bronzing stick|make ?up (?:fixing|setting) spray|false lash(?:es)?|glamour lashes|(?:ink|pro) liner|lipliner|(?:color|colour) changing lip (?:and )?cheek oil|lip (?:and )?cheek (?:cream|tint|stick)|cheek (?:and )?lip cream|lip (?:mousse|marker|pen|pencil|stain|blur))\\b"
+          }
+        ]
+      },
+      {
+        "canonical_id": 64121,
+        "title": "Rimmel Kind & Free Glow It Up Moisturising Skin Tint - 30ml",
+        "before": "Moisturizer",
+        "after": "Makeup",
+        "is_skincare": false,
+        "evidence": [
+          {
+            "source": "title",
+            "match": "\\b(?:brow (?:(?:fixing|lifting|lift|freeze) ){0,3}(?:gel|glue|wax|mascara|pen)|(?:kajal|kohl)(?: kohl)? pencil|eye brightening pen|highlighter|skin tint|bronzing stick|make ?up (?:fixing|setting) spray|false lash(?:es)?|glamour lashes|(?:ink|pro) liner|lipliner|(?:color|colour) changing lip (?:and )?cheek oil|lip (?:and )?cheek (?:cream|tint|stick)|cheek (?:and )?lip cream|lip (?:mousse|marker|pen|pencil|stain|blur))\\b"
+          }
+        ]
+      },
+      {
+        "canonical_id": 64658,
+        "title": "Essence Lash Princess False Lash Effect Black Waterproof.",
+        "before": "Toner",
+        "after": "Makeup",
+        "is_skincare": false,
+        "evidence": [
+          {
+            "source": "title",
+            "match": "\\b(?:brow (?:(?:fixing|lifting|lift|freeze) ){0,3}(?:gel|glue|wax|mascara|pen)|(?:kajal|kohl)(?: kohl)? pencil|eye brightening pen|highlighter|skin tint|bronzing stick|make ?up (?:fixing|setting) spray|false lash(?:es)?|glamour lashes|(?:ink|pro) liner|lipliner|(?:color|colour) changing lip (?:and )?cheek oil|lip (?:and )?cheek (?:cream|tint|stick)|cheek (?:and )?lip cream|lip (?:mousse|marker|pen|pencil|stain|blur))\\b"
+          }
+        ]
+      },
+      {
+        "canonical_id": 64659,
+        "title": "Essence Inner Eye Brightening Pen 01 Everybody's Shade.",
+        "before": "Toner",
+        "after": "Makeup",
+        "is_skincare": false,
+        "evidence": [
+          {
+            "source": "title",
+            "match": "\\b(?:brow (?:(?:fixing|lifting|lift|freeze) ){0,3}(?:gel|glue|wax|mascara|pen)|(?:kajal|kohl)(?: kohl)? pencil|eye brightening pen|highlighter|skin tint|bronzing stick|make ?up (?:fixing|setting) spray|false lash(?:es)?|glamour lashes|(?:ink|pro) liner|lipliner|(?:color|colour) changing lip (?:and )?cheek oil|lip (?:and )?cheek (?:cream|tint|stick)|cheek (?:and )?lip cream|lip (?:mousse|marker|pen|pencil|stain|blur))\\b"
+          }
+        ]
+      },
+      {
+        "canonical_id": 64660,
+        "title": "Essence Kajal Pencil 04 White.",
+        "before": "Toner",
+        "after": "Makeup",
+        "is_skincare": false,
+        "evidence": [
+          {
+            "source": "title",
+            "match": "\\b(?:brow (?:(?:fixing|lifting|lift|freeze) ){0,3}(?:gel|glue|wax|mascara|pen)|(?:kajal|kohl)(?: kohl)? pencil|eye brightening pen|highlighter|skin tint|bronzing stick|make ?up (?:fixing|setting) spray|false lash(?:es)?|glamour lashes|(?:ink|pro) liner|lipliner|(?:color|colour) changing lip (?:and )?cheek oil|lip (?:and )?cheek (?:cream|tint|stick)|cheek (?:and )?lip cream|lip (?:mousse|marker|pen|pencil|stain|blur))\\b"
+          }
+        ]
+      },
+      {
+        "canonical_id": 64661,
+        "title": "Essence Kajal Pencil 01 Black.",
+        "before": "Toner",
+        "after": "Makeup",
+        "is_skincare": false,
+        "evidence": [
+          {
+            "source": "title",
+            "match": "\\b(?:brow (?:(?:fixing|lifting|lift|freeze) ){0,3}(?:gel|glue|wax|mascara|pen)|(?:kajal|kohl)(?: kohl)? pencil|eye brightening pen|highlighter|skin tint|bronzing stick|make ?up (?:fixing|setting) spray|false lash(?:es)?|glamour lashes|(?:ink|pro) liner|lipliner|(?:color|colour) changing lip (?:and )?cheek oil|lip (?:and )?cheek (?:cream|tint|stick)|cheek (?:and )?lip cream|lip (?:mousse|marker|pen|pencil|stain|blur))\\b"
+          }
+        ]
+      },
+      {
+        "canonical_id": 64773,
+        "title": "Essence line it like a PRO! Liner 01 Black.",
+        "before": "Toner",
+        "after": "Makeup",
+        "is_skincare": false,
+        "evidence": [
+          {
+            "source": "title",
+            "match": "\\b(?:brow (?:(?:fixing|lifting|lift|freeze) ){0,3}(?:gel|glue|wax|mascara|pen)|(?:kajal|kohl)(?: kohl)? pencil|eye brightening pen|highlighter|skin tint|bronzing stick|make ?up (?:fixing|setting) spray|false lash(?:es)?|glamour lashes|(?:ink|pro) liner|lipliner|(?:color|colour) changing lip (?:and )?cheek oil|lip (?:and )?cheek (?:cream|tint|stick)|cheek (?:and )?lip cream|lip (?:mousse|marker|pen|pencil|stain|blur))\\b"
+          }
+        ]
+      },
+      {
+        "canonical_id": 64775,
+        "title": "Essence What The Fluff Duo Powder Puff.",
+        "before": "Toner",
+        "after": "Tools & Accessories",
+        "is_skincare": false,
+        "evidence": [
+          {
+            "source": "title",
+            "match": "\\b(?:makeup brush|hair dryer|tweezers?|gift card|empty packaging|box only|pouch|tote|powder puff|sharpener|brush holder|lash(?:es)? storage case)\\b"
+          }
+        ]
+      },
+      {
+        "canonical_id": 64778,
+        "title": "Essence Line n'Stain Tattoo Lipliner 03 Make A Mauve.",
+        "before": "Toner",
+        "after": "Makeup",
+        "is_skincare": false,
+        "evidence": [
+          {
+            "source": "title",
+            "match": "\\b(?:brow (?:(?:fixing|lifting|lift|freeze) ){0,3}(?:gel|glue|wax|mascara|pen)|(?:kajal|kohl)(?: kohl)? pencil|eye brightening pen|highlighter|skin tint|bronzing stick|make ?up (?:fixing|setting) spray|false lash(?:es)?|glamour lashes|(?:ink|pro) liner|lipliner|(?:color|colour) changing lip (?:and )?cheek oil|lip (?:and )?cheek (?:cream|tint|stick)|cheek (?:and )?lip cream|lip (?:mousse|marker|pen|pencil|stain|blur))\\b"
+          }
+        ]
+      },
+      {
+        "canonical_id": 64781,
+        "title": "Essence Skin Tint 60.",
+        "before": "Toner",
+        "after": "Makeup",
+        "is_skincare": false,
+        "evidence": [
+          {
+            "source": "title",
+            "match": "\\b(?:brow (?:(?:fixing|lifting|lift|freeze) ){0,3}(?:gel|glue|wax|mascara|pen)|(?:kajal|kohl)(?: kohl)? pencil|eye brightening pen|highlighter|skin tint|bronzing stick|make ?up (?:fixing|setting) spray|false lash(?:es)?|glamour lashes|(?:ink|pro) liner|lipliner|(?:color|colour) changing lip (?:and )?cheek oil|lip (?:and )?cheek (?:cream|tint|stick)|cheek (?:and )?lip cream|lip (?:mousse|marker|pen|pencil|stain|blur))\\b"
+          }
+        ]
+      },
+      {
+        "canonical_id": 64782,
+        "title": "Essence 8H Matte Comfort Lipliner 07 Classic Red.",
+        "before": "Toner",
+        "after": "Makeup",
+        "is_skincare": false,
+        "evidence": [
+          {
+            "source": "title",
+            "match": "\\b(?:brow (?:(?:fixing|lifting|lift|freeze) ){0,3}(?:gel|glue|wax|mascara|pen)|(?:kajal|kohl)(?: kohl)? pencil|eye brightening pen|highlighter|skin tint|bronzing stick|make ?up (?:fixing|setting) spray|false lash(?:es)?|glamour lashes|(?:ink|pro) liner|lipliner|(?:color|colour) changing lip (?:and )?cheek oil|lip (?:and )?cheek (?:cream|tint|stick)|cheek (?:and )?lip cream|lip (?:mousse|marker|pen|pencil|stain|blur))\\b"
+          }
+        ]
+      },
+      {
+        "canonical_id": 64783,
+        "title": "Essence Baby Got Glow Highlighter Stick 10 Golden Aura.",
+        "before": "Toner",
+        "after": "Makeup",
+        "is_skincare": false,
+        "evidence": [
+          {
+            "source": "title",
+            "match": "\\b(?:brow (?:(?:fixing|lifting|lift|freeze) ){0,3}(?:gel|glue|wax|mascara|pen)|(?:kajal|kohl)(?: kohl)? pencil|eye brightening pen|highlighter|skin tint|bronzing stick|make ?up (?:fixing|setting) spray|false lash(?:es)?|glamour lashes|(?:ink|pro) liner|lipliner|(?:color|colour) changing lip (?:and )?cheek oil|lip (?:and )?cheek (?:cream|tint|stick)|cheek (?:and )?lip cream|lip (?:mousse|marker|pen|pencil|stain|blur))\\b"
+          }
+        ]
+      },
+      {
+        "canonical_id": 64784,
+        "title": "Essence Baby Got Bronze Bronzing Stick 010 Cinnamon Spice.",
+        "before": "Toner",
+        "after": "Makeup",
+        "is_skincare": false,
+        "evidence": [
+          {
+            "source": "title",
+            "match": "\\b(?:brow (?:(?:fixing|lifting|lift|freeze) ){0,3}(?:gel|glue|wax|mascara|pen)|(?:kajal|kohl)(?: kohl)? pencil|eye brightening pen|highlighter|skin tint|bronzing stick|make ?up (?:fixing|setting) spray|false lash(?:es)?|glamour lashes|(?:ink|pro) liner|lipliner|(?:color|colour) changing lip (?:and )?cheek oil|lip (?:and )?cheek (?:cream|tint|stick)|cheek (?:and )?lip cream|lip (?:mousse|marker|pen|pencil|stain|blur))\\b"
+          }
+        ]
+      },
+      {
+        "canonical_id": 64866,
+        "title": "Essence Fix & Last Keep It Perfect Make Up Fixing Spray.",
+        "before": "Toner",
+        "after": "Makeup",
+        "is_skincare": false,
+        "evidence": [
+          {
+            "source": "title",
+            "match": "\\b(?:brow (?:(?:fixing|lifting|lift|freeze) ){0,3}(?:gel|glue|wax|mascara|pen)|(?:kajal|kohl)(?: kohl)? pencil|eye brightening pen|highlighter|skin tint|bronzing stick|make ?up (?:fixing|setting) spray|false lash(?:es)?|glamour lashes|(?:ink|pro) liner|lipliner|(?:color|colour) changing lip (?:and )?cheek oil|lip (?:and )?cheek (?:cream|tint|stick)|cheek (?:and )?lip cream|lip (?:mousse|marker|pen|pencil|stain|blur))\\b"
+          }
+        ]
+      },
+      {
+        "canonical_id": 64955,
+        "title": "Sheglam Dew & Done Skin Tint With Spf20-Sand.",
+        "before": "Sunscreen",
+        "after": "Makeup",
+        "is_skincare": false,
+        "evidence": [
+          {
+            "source": "title",
+            "match": "\\b(?:brow (?:(?:fixing|lifting|lift|freeze) ){0,3}(?:gel|glue|wax|mascara|pen)|(?:kajal|kohl)(?: kohl)? pencil|eye brightening pen|highlighter|skin tint|bronzing stick|make ?up (?:fixing|setting) spray|false lash(?:es)?|glamour lashes|(?:ink|pro) liner|lipliner|(?:color|colour) changing lip (?:and )?cheek oil|lip (?:and )?cheek (?:cream|tint|stick)|cheek (?:and )?lip cream|lip (?:mousse|marker|pen|pencil|stain|blur))\\b"
+          }
+        ]
+      },
+      {
+        "canonical_id": 64969,
+        "title": "Essence Kajal Kohl Pencil 25 Feel The Mari-Time.",
+        "before": "Toner",
+        "after": "Makeup",
+        "is_skincare": false,
+        "evidence": [
+          {
+            "source": "title",
+            "match": "\\b(?:brow (?:(?:fixing|lifting|lift|freeze) ){0,3}(?:gel|glue|wax|mascara|pen)|(?:kajal|kohl)(?: kohl)? pencil|eye brightening pen|highlighter|skin tint|bronzing stick|make ?up (?:fixing|setting) spray|false lash(?:es)?|glamour lashes|(?:ink|pro) liner|lipliner|(?:color|colour) changing lip (?:and )?cheek oil|lip (?:and )?cheek (?:cream|tint|stick)|cheek (?:and )?lip cream|lip (?:mousse|marker|pen|pencil|stain|blur))\\b"
+          }
+        ]
+      },
+      {
+        "canonical_id": 64970,
+        "title": "Essence Kajal Kohl Pencil 30 Classic Blue.",
+        "before": "Toner",
+        "after": "Makeup",
+        "is_skincare": false,
+        "evidence": [
+          {
+            "source": "title",
+            "match": "\\b(?:brow (?:(?:fixing|lifting|lift|freeze) ){0,3}(?:gel|glue|wax|mascara|pen)|(?:kajal|kohl)(?: kohl)? pencil|eye brightening pen|highlighter|skin tint|bronzing stick|make ?up (?:fixing|setting) spray|false lash(?:es)?|glamour lashes|(?:ink|pro) liner|lipliner|(?:color|colour) changing lip (?:and )?cheek oil|lip (?:and )?cheek (?:cream|tint|stick)|cheek (?:and )?lip cream|lip (?:mousse|marker|pen|pencil|stain|blur))\\b"
+          }
+        ]
+      },
+      {
+        "canonical_id": 64971,
+        "title": "Essence Fix It Like A Pro Transparent Brow Fixing Gel.",
+        "before": "Toner",
+        "after": "Makeup",
+        "is_skincare": false,
+        "evidence": [
+          {
+            "source": "title",
+            "match": "\\b(?:brow (?:(?:fixing|lifting|lift|freeze) ){0,3}(?:gel|glue|wax|mascara|pen)|(?:kajal|kohl)(?: kohl)? pencil|eye brightening pen|highlighter|skin tint|bronzing stick|make ?up (?:fixing|setting) spray|false lash(?:es)?|glamour lashes|(?:ink|pro) liner|lipliner|(?:color|colour) changing lip (?:and )?cheek oil|lip (?:and )?cheek (?:cream|tint|stick)|cheek (?:and )?lip cream|lip (?:mousse|marker|pen|pencil|stain|blur))\\b"
+          }
+        ]
+      },
+      {
+        "canonical_id": 64988,
+        "title": "Essence Brow Lift & Freeze Glue 01 Transparent.",
+        "before": "Toner",
+        "after": "Makeup",
+        "is_skincare": false,
+        "evidence": [
+          {
+            "source": "title",
+            "match": "\\b(?:brow (?:(?:fixing|lifting|lift|freeze) ){0,3}(?:gel|glue|wax|mascara|pen)|(?:kajal|kohl)(?: kohl)? pencil|eye brightening pen|highlighter|skin tint|bronzing stick|make ?up (?:fixing|setting) spray|false lash(?:es)?|glamour lashes|(?:ink|pro) liner|lipliner|(?:color|colour) changing lip (?:and )?cheek oil|lip (?:and )?cheek (?:cream|tint|stick)|cheek (?:and )?lip cream|lip (?:mousse|marker|pen|pencil|stain|blur))\\b"
+          }
+        ]
+      },
+      {
+        "canonical_id": 65158,
+        "title": "Essence Skin Tint 20 Beige.",
+        "before": "Toner",
+        "after": "Makeup",
+        "is_skincare": false,
+        "evidence": [
+          {
+            "source": "title",
+            "match": "\\b(?:brow (?:(?:fixing|lifting|lift|freeze) ){0,3}(?:gel|glue|wax|mascara|pen)|(?:kajal|kohl)(?: kohl)? pencil|eye brightening pen|highlighter|skin tint|bronzing stick|make ?up (?:fixing|setting) spray|false lash(?:es)?|glamour lashes|(?:ink|pro) liner|lipliner|(?:color|colour) changing lip (?:and )?cheek oil|lip (?:and )?cheek (?:cream|tint|stick)|cheek (?:and )?lip cream|lip (?:mousse|marker|pen|pencil|stain|blur))\\b"
+          }
+        ]
+      },
+      {
+        "canonical_id": 65198,
+        "title": "Flormar Waterproof Lipliner 229 Tender Cream.",
+        "before": "Moisturizer",
+        "after": "Makeup",
+        "is_skincare": false,
+        "evidence": [
+          {
+            "source": "title",
+            "match": "\\b(?:brow (?:(?:fixing|lifting|lift|freeze) ){0,3}(?:gel|glue|wax|mascara|pen)|(?:kajal|kohl)(?: kohl)? pencil|eye brightening pen|highlighter|skin tint|bronzing stick|make ?up (?:fixing|setting) spray|false lash(?:es)?|glamour lashes|(?:ink|pro) liner|lipliner|(?:color|colour) changing lip (?:and )?cheek oil|lip (?:and )?cheek (?:cream|tint|stick)|cheek (?:and )?lip cream|lip (?:mousse|marker|pen|pencil|stain|blur))\\b"
+          }
+        ]
+      },
+      {
+        "canonical_id": 65206,
+        "title": "Essence Brow Lifting Gel Set.",
+        "before": "Toner",
+        "after": "Set",
+        "is_skincare": false,
+        "evidence": [
+          {
+            "source": "title",
+            "match": "bundle"
+          }
+        ]
+      },
+      {
+        "canonical_id": 65209,
+        "title": "Essence 24Ever Ink Liner - 01 Intense Black.",
+        "before": "Toner",
+        "after": "Makeup",
+        "is_skincare": false,
+        "evidence": [
+          {
+            "source": "title",
+            "match": "\\b(?:brow (?:(?:fixing|lifting|lift|freeze) ){0,3}(?:gel|glue|wax|mascara|pen)|(?:kajal|kohl)(?: kohl)? pencil|eye brightening pen|highlighter|skin tint|bronzing stick|make ?up (?:fixing|setting) spray|false lash(?:es)?|glamour lashes|(?:ink|pro) liner|lipliner|(?:color|colour) changing lip (?:and )?cheek oil|lip (?:and )?cheek (?:cream|tint|stick)|cheek (?:and )?lip cream|lip (?:mousse|marker|pen|pencil|stain|blur))\\b"
+          }
+        ]
+      },
+      {
+        "canonical_id": 65219,
+        "title": "Essence Electric Glow Colour Changing Lip& Cheek Oil.",
+        "before": "Toner",
+        "after": "Makeup",
+        "is_skincare": false,
+        "evidence": [
+          {
+            "source": "title",
+            "match": "\\b(?:brow (?:(?:fixing|lifting|lift|freeze) ){0,3}(?:gel|glue|wax|mascara|pen)|(?:kajal|kohl)(?: kohl)? pencil|eye brightening pen|highlighter|skin tint|bronzing stick|make ?up (?:fixing|setting) spray|false lash(?:es)?|glamour lashes|(?:ink|pro) liner|lipliner|(?:color|colour) changing lip (?:and )?cheek oil|lip (?:and )?cheek (?:cream|tint|stick)|cheek (?:and )?lip cream|lip (?:mousse|marker|pen|pencil|stain|blur))\\b"
+          }
+        ]
+      },
+      {
+        "canonical_id": 65220,
+        "title": "Essence Fix & Last 18H Long-Lasting Makeup Fixing Spray 50Ml.",
+        "before": "Toner",
+        "after": "Makeup",
+        "is_skincare": false,
+        "evidence": [
+          {
+            "source": "title",
+            "match": "\\b(?:brow (?:(?:fixing|lifting|lift|freeze) ){0,3}(?:gel|glue|wax|mascara|pen)|(?:kajal|kohl)(?: kohl)? pencil|eye brightening pen|highlighter|skin tint|bronzing stick|make ?up (?:fixing|setting) spray|false lash(?:es)?|glamour lashes|(?:ink|pro) liner|lipliner|(?:color|colour) changing lip (?:and )?cheek oil|lip (?:and )?cheek (?:cream|tint|stick)|cheek (?:and )?lip cream|lip (?:mousse|marker|pen|pencil|stain|blur))\\b"
+          }
+        ]
+      },
+      {
+        "canonical_id": 65226,
+        "title": "Essence Duo Sharpener.",
+        "before": "Toner",
+        "after": "Tools & Accessories",
+        "is_skincare": false,
+        "evidence": [
+          {
+            "source": "title",
+            "match": "\\b(?:makeup brush|hair dryer|tweezers?|gift card|empty packaging|box only|pouch|tote|powder puff|sharpener|brush holder|lash(?:es)? storage case)\\b"
+          }
+        ]
+      },
+      {
+        "canonical_id": 66117,
+        "title": "Essence Magnetic Lashes Storage Case",
+        "before": "Toner",
+        "after": "Tools & Accessories",
+        "is_skincare": false,
+        "evidence": [
+          {
+            "source": "title",
+            "match": "\\b(?:makeup brush|hair dryer|tweezers?|gift card|empty packaging|box only|pouch|tote|powder puff|sharpener|brush holder|lash(?:es)? storage case)\\b"
+          }
+        ]
+      },
+      {
+        "canonical_id": 66149,
+        "title": "Essence It's Brush Hour! Brush Holder",
+        "before": "Toner",
+        "after": "Tools & Accessories",
+        "is_skincare": false,
+        "evidence": [
+          {
+            "source": "title",
+            "match": "\\b(?:makeup brush|hair dryer|tweezers?|gift card|empty packaging|box only|pouch|tote|powder puff|sharpener|brush holder|lash(?:es)? storage case)\\b"
+          }
+        ]
+      },
+      {
+        "canonical_id": 66278,
+        "title": "Rimmel Kind & Free Glow It Up Moisturising Skin Tint",
+        "before": "Moisturizer",
+        "after": "Makeup",
+        "is_skincare": false,
+        "evidence": [
+          {
+            "source": "title",
+            "match": "\\b(?:brow (?:(?:fixing|lifting|lift|freeze) ){0,3}(?:gel|glue|wax|mascara|pen)|(?:kajal|kohl)(?: kohl)? pencil|eye brightening pen|highlighter|skin tint|bronzing stick|make ?up (?:fixing|setting) spray|false lash(?:es)?|glamour lashes|(?:ink|pro) liner|lipliner|(?:color|colour) changing lip (?:and )?cheek oil|lip (?:and )?cheek (?:cream|tint|stick)|cheek (?:and )?lip cream|lip (?:mousse|marker|pen|pencil|stain|blur))\\b"
+          }
+        ]
+      },
+      {
+        "canonical_id": 66279,
+        "title": "Rimmel Kind & Free Glow It Up Moisturising Skin Tint",
+        "before": "Moisturizer",
+        "after": "Makeup",
+        "is_skincare": false,
+        "evidence": [
+          {
+            "source": "title",
+            "match": "\\b(?:brow (?:(?:fixing|lifting|lift|freeze) ){0,3}(?:gel|glue|wax|mascara|pen)|(?:kajal|kohl)(?: kohl)? pencil|eye brightening pen|highlighter|skin tint|bronzing stick|make ?up (?:fixing|setting) spray|false lash(?:es)?|glamour lashes|(?:ink|pro) liner|lipliner|(?:color|colour) changing lip (?:and )?cheek oil|lip (?:and )?cheek (?:cream|tint|stick)|cheek (?:and )?lip cream|lip (?:mousse|marker|pen|pencil|stain|blur))\\b"
+          }
+        ]
+      },
+      {
+        "canonical_id": 66280,
+        "title": "Rimmel Kind & Free Glow It Up Moisturising Skin Tint",
+        "before": "Moisturizer",
+        "after": "Makeup",
+        "is_skincare": false,
+        "evidence": [
+          {
+            "source": "title",
+            "match": "\\b(?:brow (?:(?:fixing|lifting|lift|freeze) ){0,3}(?:gel|glue|wax|mascara|pen)|(?:kajal|kohl)(?: kohl)? pencil|eye brightening pen|highlighter|skin tint|bronzing stick|make ?up (?:fixing|setting) spray|false lash(?:es)?|glamour lashes|(?:ink|pro) liner|lipliner|(?:color|colour) changing lip (?:and )?cheek oil|lip (?:and )?cheek (?:cream|tint|stick)|cheek (?:and )?lip cream|lip (?:mousse|marker|pen|pencil|stain|blur))\\b"
+          }
+        ]
+      },
+      {
+        "canonical_id": 66304,
+        "title": "Essence Bring On The Lashes Glamour Lashes",
+        "before": "Toner",
+        "after": "Makeup",
+        "is_skincare": false,
+        "evidence": [
+          {
+            "source": "title",
+            "match": "\\b(?:brow (?:(?:fixing|lifting|lift|freeze) ){0,3}(?:gel|glue|wax|mascara|pen)|(?:kajal|kohl)(?: kohl)? pencil|eye brightening pen|highlighter|skin tint|bronzing stick|make ?up (?:fixing|setting) spray|false lash(?:es)?|glamour lashes|(?:ink|pro) liner|lipliner|(?:color|colour) changing lip (?:and )?cheek oil|lip (?:and )?cheek (?:cream|tint|stick)|cheek (?:and )?lip cream|lip (?:mousse|marker|pen|pencil|stain|blur))\\b"
+          }
+        ]
+      },
+      {
+        "canonical_id": 69503,
+        "title": "Essence Baby Got Glow Highlighter Stick 20 Rosy Glaze.",
+        "before": "Toner",
+        "after": "Makeup",
+        "is_skincare": false,
+        "evidence": [
+          {
+            "source": "title",
+            "match": "\\b(?:brow (?:(?:fixing|lifting|lift|freeze) ){0,3}(?:gel|glue|wax|mascara|pen)|(?:kajal|kohl)(?: kohl)? pencil|eye brightening pen|highlighter|skin tint|bronzing stick|make ?up (?:fixing|setting) spray|false lash(?:es)?|glamour lashes|(?:ink|pro) liner|lipliner|(?:color|colour) changing lip (?:and )?cheek oil|lip (?:and )?cheek (?:cream|tint|stick)|cheek (?:and )?lip cream|lip (?:mousse|marker|pen|pencil|stain|blur))\\b"
+          }
+        ]
+      },
+      {
+        "canonical_id": 69505,
+        "title": "Essence 8H Matte Comfort Lipliner 03 Soft Beige.",
+        "before": "Toner",
+        "after": "Makeup",
+        "is_skincare": false,
+        "evidence": [
+          {
+            "source": "title",
+            "match": "\\b(?:brow (?:(?:fixing|lifting|lift|freeze) ){0,3}(?:gel|glue|wax|mascara|pen)|(?:kajal|kohl)(?: kohl)? pencil|eye brightening pen|highlighter|skin tint|bronzing stick|make ?up (?:fixing|setting) spray|false lash(?:es)?|glamour lashes|(?:ink|pro) liner|lipliner|(?:color|colour) changing lip (?:and )?cheek oil|lip (?:and )?cheek (?:cream|tint|stick)|cheek (?:and )?lip cream|lip (?:mousse|marker|pen|pencil|stain|blur))\\b"
+          }
+        ]
+      },
+      {
+        "canonical_id": 69506,
+        "title": "Essence 8H Matte Comfort Lipliner 21 Clouded.",
+        "before": "Toner",
+        "after": "Makeup",
+        "is_skincare": false,
+        "evidence": [
+          {
+            "source": "title",
+            "match": "\\b(?:brow (?:(?:fixing|lifting|lift|freeze) ){0,3}(?:gel|glue|wax|mascara|pen)|(?:kajal|kohl)(?: kohl)? pencil|eye brightening pen|highlighter|skin tint|bronzing stick|make ?up (?:fixing|setting) spray|false lash(?:es)?|glamour lashes|(?:ink|pro) liner|lipliner|(?:color|colour) changing lip (?:and )?cheek oil|lip (?:and )?cheek (?:cream|tint|stick)|cheek (?:and )?lip cream|lip (?:mousse|marker|pen|pencil|stain|blur))\\b"
+          }
+        ]
+      },
+      {
+        "canonical_id": 69507,
+        "title": "Essence 8H Matte Comfort Lipliner 15 Vintage Rose.",
+        "before": "Toner",
+        "after": "Makeup",
+        "is_skincare": false,
+        "evidence": [
+          {
+            "source": "title",
+            "match": "\\b(?:brow (?:(?:fixing|lifting|lift|freeze) ){0,3}(?:gel|glue|wax|mascara|pen)|(?:kajal|kohl)(?: kohl)? pencil|eye brightening pen|highlighter|skin tint|bronzing stick|make ?up (?:fixing|setting) spray|false lash(?:es)?|glamour lashes|(?:ink|pro) liner|lipliner|(?:color|colour) changing lip (?:and )?cheek oil|lip (?:and )?cheek (?:cream|tint|stick)|cheek (?:and )?lip cream|lip (?:mousse|marker|pen|pencil|stain|blur))\\b"
+          }
+        ]
+      },
+      {
+        "canonical_id": 69508,
+        "title": "Essence 8H Matte Comfort Lipliner 012 Cushion Talk.",
+        "before": "Toner",
+        "after": "Makeup",
+        "is_skincare": false,
+        "evidence": [
+          {
+            "source": "title",
+            "match": "\\b(?:brow (?:(?:fixing|lifting|lift|freeze) ){0,3}(?:gel|glue|wax|mascara|pen)|(?:kajal|kohl)(?: kohl)? pencil|eye brightening pen|highlighter|skin tint|bronzing stick|make ?up (?:fixing|setting) spray|false lash(?:es)?|glamour lashes|(?:ink|pro) liner|lipliner|(?:color|colour) changing lip (?:and )?cheek oil|lip (?:and )?cheek (?:cream|tint|stick)|cheek (?:and )?lip cream|lip (?:mousse|marker|pen|pencil|stain|blur))\\b"
+          }
+        ]
+      },
+      {
+        "canonical_id": 69514,
+        "title": "Catrice Pistachio Cream Delight Highlighter C01 Champagne.",
+        "before": "Moisturizer",
+        "after": "Makeup",
+        "is_skincare": false,
+        "evidence": [
+          {
+            "source": "title",
+            "match": "\\b(?:brow (?:(?:fixing|lifting|lift|freeze) ){0,3}(?:gel|glue|wax|mascara|pen)|(?:kajal|kohl)(?: kohl)? pencil|eye brightening pen|highlighter|skin tint|bronzing stick|make ?up (?:fixing|setting) spray|false lash(?:es)?|glamour lashes|(?:ink|pro) liner|lipliner|(?:color|colour) changing lip (?:and )?cheek oil|lip (?:and )?cheek (?:cream|tint|stick)|cheek (?:and )?lip cream|lip (?:mousse|marker|pen|pencil|stain|blur))\\b"
+          }
+        ]
+      },
+      {
+        "canonical_id": 69544,
+        "title": "Essence Line N'Stain Tattoo Lipliner 01 Everyone'S Nude-Pink.",
+        "before": "Toner",
+        "after": "Makeup",
+        "is_skincare": false,
+        "evidence": [
+          {
+            "source": "title",
+            "match": "\\b(?:brow (?:(?:fixing|lifting|lift|freeze) ){0,3}(?:gel|glue|wax|mascara|pen)|(?:kajal|kohl)(?: kohl)? pencil|eye brightening pen|highlighter|skin tint|bronzing stick|make ?up (?:fixing|setting) spray|false lash(?:es)?|glamour lashes|(?:ink|pro) liner|lipliner|(?:color|colour) changing lip (?:and )?cheek oil|lip (?:and )?cheek (?:cream|tint|stick)|cheek (?:and )?lip cream|lip (?:mousse|marker|pen|pencil|stain|blur))\\b"
+          }
+        ]
+      },
+      {
+        "canonical_id": 69598,
+        "title": "Essence 8H Matte Comfort Lipliner 09 Fiery Red.",
+        "before": "Toner",
+        "after": "Makeup",
+        "is_skincare": false,
+        "evidence": [
+          {
+            "source": "title",
+            "match": "\\b(?:brow (?:(?:fixing|lifting|lift|freeze) ){0,3}(?:gel|glue|wax|mascara|pen)|(?:kajal|kohl)(?: kohl)? pencil|eye brightening pen|highlighter|skin tint|bronzing stick|make ?up (?:fixing|setting) spray|false lash(?:es)?|glamour lashes|(?:ink|pro) liner|lipliner|(?:color|colour) changing lip (?:and )?cheek oil|lip (?:and )?cheek (?:cream|tint|stick)|cheek (?:and )?lip cream|lip (?:mousse|marker|pen|pencil|stain|blur))\\b"
+          }
+        ]
+      },
+      {
+        "canonical_id": 69599,
+        "title": "Essence 8H Matte Comfort Lipliner 19 Burgundy Bestie.",
+        "before": "Toner",
+        "after": "Makeup",
+        "is_skincare": false,
+        "evidence": [
+          {
+            "source": "title",
+            "match": "\\b(?:brow (?:(?:fixing|lifting|lift|freeze) ){0,3}(?:gel|glue|wax|mascara|pen)|(?:kajal|kohl)(?: kohl)? pencil|eye brightening pen|highlighter|skin tint|bronzing stick|make ?up (?:fixing|setting) spray|false lash(?:es)?|glamour lashes|(?:ink|pro) liner|lipliner|(?:color|colour) changing lip (?:and )?cheek oil|lip (?:and )?cheek (?:cream|tint|stick)|cheek (?:and )?lip cream|lip (?:mousse|marker|pen|pencil|stain|blur))\\b"
+          }
+        ]
+      },
+      {
+        "canonical_id": 69600,
+        "title": "Essence 8H Matte Comfort Lipliner 10 The Perfect Shade.",
+        "before": "Toner",
+        "after": "Makeup",
+        "is_skincare": false,
+        "evidence": [
+          {
+            "source": "title",
+            "match": "\\b(?:brow (?:(?:fixing|lifting|lift|freeze) ){0,3}(?:gel|glue|wax|mascara|pen)|(?:kajal|kohl)(?: kohl)? pencil|eye brightening pen|highlighter|skin tint|bronzing stick|make ?up (?:fixing|setting) spray|false lash(?:es)?|glamour lashes|(?:ink|pro) liner|lipliner|(?:color|colour) changing lip (?:and )?cheek oil|lip (?:and )?cheek (?:cream|tint|stick)|cheek (?:and )?lip cream|lip (?:mousse|marker|pen|pencil|stain|blur))\\b"
+          }
+        ]
+      },
+      {
+        "canonical_id": 69601,
+        "title": "Essence 8H Matte Comfort Lipliner 01 Cinnamon Spice.",
+        "before": "Toner",
+        "after": "Makeup",
+        "is_skincare": false,
+        "evidence": [
+          {
+            "source": "title",
+            "match": "\\b(?:brow (?:(?:fixing|lifting|lift|freeze) ){0,3}(?:gel|glue|wax|mascara|pen)|(?:kajal|kohl)(?: kohl)? pencil|eye brightening pen|highlighter|skin tint|bronzing stick|make ?up (?:fixing|setting) spray|false lash(?:es)?|glamour lashes|(?:ink|pro) liner|lipliner|(?:color|colour) changing lip (?:and )?cheek oil|lip (?:and )?cheek (?:cream|tint|stick)|cheek (?:and )?lip cream|lip (?:mousse|marker|pen|pencil|stain|blur))\\b"
+          }
+        ]
+      },
+      {
+        "canonical_id": 69602,
+        "title": "Essence 8H Matte Comfort Lipliner 02 Silky Hazelnut.",
+        "before": "Toner",
+        "after": "Makeup",
+        "is_skincare": false,
+        "evidence": [
+          {
+            "source": "title",
+            "match": "\\b(?:brow (?:(?:fixing|lifting|lift|freeze) ){0,3}(?:gel|glue|wax|mascara|pen)|(?:kajal|kohl)(?: kohl)? pencil|eye brightening pen|highlighter|skin tint|bronzing stick|make ?up (?:fixing|setting) spray|false lash(?:es)?|glamour lashes|(?:ink|pro) liner|lipliner|(?:color|colour) changing lip (?:and )?cheek oil|lip (?:and )?cheek (?:cream|tint|stick)|cheek (?:and )?lip cream|lip (?:mousse|marker|pen|pencil|stain|blur))\\b"
+          }
+        ]
+      },
+      {
+        "canonical_id": 69613,
+        "title": "Essence Line N'Stain Tattoo Lipliner 02 Must Have Brown.",
+        "before": "Toner",
+        "after": "Makeup",
+        "is_skincare": false,
+        "evidence": [
+          {
+            "source": "title",
+            "match": "\\b(?:brow (?:(?:fixing|lifting|lift|freeze) ){0,3}(?:gel|glue|wax|mascara|pen)|(?:kajal|kohl)(?: kohl)? pencil|eye brightening pen|highlighter|skin tint|bronzing stick|make ?up (?:fixing|setting) spray|false lash(?:es)?|glamour lashes|(?:ink|pro) liner|lipliner|(?:color|colour) changing lip (?:and )?cheek oil|lip (?:and )?cheek (?:cream|tint|stick)|cheek (?:and )?lip cream|lip (?:mousse|marker|pen|pencil|stain|blur))\\b"
+          }
+        ]
+      },
+      {
+        "canonical_id": 69922,
+        "title": "Essence 8h Matte Comfort Lipliner",
+        "before": "Toner",
+        "after": "Makeup",
+        "is_skincare": false,
+        "evidence": [
+          {
+            "source": "title",
+            "match": "\\b(?:brow (?:(?:fixing|lifting|lift|freeze) ){0,3}(?:gel|glue|wax|mascara|pen)|(?:kajal|kohl)(?: kohl)? pencil|eye brightening pen|highlighter|skin tint|bronzing stick|make ?up (?:fixing|setting) spray|false lash(?:es)?|glamour lashes|(?:ink|pro) liner|lipliner|(?:color|colour) changing lip (?:and )?cheek oil|lip (?:and )?cheek (?:cream|tint|stick)|cheek (?:and )?lip cream|lip (?:mousse|marker|pen|pencil|stain|blur))\\b"
+          }
+        ]
+      },
+      {
+        "canonical_id": 70411,
+        "title": "Sheglam Dew & Done Skin Tint With Spf20-Nude.",
+        "before": "Sunscreen",
+        "after": "Makeup",
+        "is_skincare": false,
+        "evidence": [
+          {
+            "source": "title",
+            "match": "\\b(?:brow (?:(?:fixing|lifting|lift|freeze) ){0,3}(?:gel|glue|wax|mascara|pen)|(?:kajal|kohl)(?: kohl)? pencil|eye brightening pen|highlighter|skin tint|bronzing stick|make ?up (?:fixing|setting) spray|false lash(?:es)?|glamour lashes|(?:ink|pro) liner|lipliner|(?:color|colour) changing lip (?:and )?cheek oil|lip (?:and )?cheek (?:cream|tint|stick)|cheek (?:and )?lip cream|lip (?:mousse|marker|pen|pencil|stain|blur))\\b"
+          }
+        ]
+      },
+      {
+        "canonical_id": 70412,
+        "title": "Sheglam Dew & Done Skin Tint With Spf20-Fair.",
+        "before": "Sunscreen",
+        "after": "Makeup",
+        "is_skincare": false,
+        "evidence": [
+          {
+            "source": "title",
+            "match": "\\b(?:brow (?:(?:fixing|lifting|lift|freeze) ){0,3}(?:gel|glue|wax|mascara|pen)|(?:kajal|kohl)(?: kohl)? pencil|eye brightening pen|highlighter|skin tint|bronzing stick|make ?up (?:fixing|setting) spray|false lash(?:es)?|glamour lashes|(?:ink|pro) liner|lipliner|(?:color|colour) changing lip (?:and )?cheek oil|lip (?:and )?cheek (?:cream|tint|stick)|cheek (?:and )?lip cream|lip (?:mousse|marker|pen|pencil|stain|blur))\\b"
+          }
+        ]
+      },
+      {
+        "canonical_id": 70413,
+        "title": "Sheglam Dew & Done Skin Tint With Spf20-Shell.",
+        "before": "Sunscreen",
+        "after": "Makeup",
+        "is_skincare": false,
+        "evidence": [
+          {
+            "source": "title",
+            "match": "\\b(?:brow (?:(?:fixing|lifting|lift|freeze) ){0,3}(?:gel|glue|wax|mascara|pen)|(?:kajal|kohl)(?: kohl)? pencil|eye brightening pen|highlighter|skin tint|bronzing stick|make ?up (?:fixing|setting) spray|false lash(?:es)?|glamour lashes|(?:ink|pro) liner|lipliner|(?:color|colour) changing lip (?:and )?cheek oil|lip (?:and )?cheek (?:cream|tint|stick)|cheek (?:and )?lip cream|lip (?:mousse|marker|pen|pencil|stain|blur))\\b"
+          }
+        ]
+      },
+      {
+        "canonical_id": 70536,
+        "title": "Essence The Super Peptide Glossy Lip Treatment 06 Plum Fection.",
+        "before": "Toner",
+        "after": "Lip Care",
+        "is_skincare": true,
+        "evidence": [
+          {
+            "source": "title",
+            "category": "Lip Care",
+            "match": "lip treatment",
+            "weight": 4
+          }
+        ]
+      },
+      {
+        "canonical_id": 70537,
+        "title": "Essence The Super Peptide Glossy Lip Treatment 02 Pinkified.",
+        "before": "Toner",
+        "after": "Lip Care",
+        "is_skincare": true,
+        "evidence": [
+          {
+            "source": "title",
+            "category": "Lip Care",
+            "match": "lip treatment",
+            "weight": 4
+          }
+        ]
+      },
+      {
+        "canonical_id": 70541,
+        "title": "Sheglam Tint Lock Tattoo Peel Off Brow Gel-Ebony.",
+        "before": "Exfoliator",
+        "after": "Makeup",
+        "is_skincare": false,
+        "evidence": [
+          {
+            "source": "title",
+            "match": "\\b(?:brow (?:(?:fixing|lifting|lift|freeze) ){0,3}(?:gel|glue|wax|mascara|pen)|(?:kajal|kohl)(?: kohl)? pencil|eye brightening pen|highlighter|skin tint|bronzing stick|make ?up (?:fixing|setting) spray|false lash(?:es)?|glamour lashes|(?:ink|pro) liner|lipliner|(?:color|colour) changing lip (?:and )?cheek oil|lip (?:and )?cheek (?:cream|tint|stick)|cheek (?:and )?lip cream|lip (?:mousse|marker|pen|pencil|stain|blur))\\b"
+          }
+        ]
+      }
+    ]
+  },
+  "explicit_hair_types": {
+    "counts": {
+      "specific_role_conflict_preserved": 2
+    },
+    "changes": []
+  }
+}

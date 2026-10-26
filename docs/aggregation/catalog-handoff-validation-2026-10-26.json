@@ -1,0 +1,19 @@
+{
+  "checked_at_utc": "2026-10-26T18:08:21.762290+00:00",
+  "backend_regressions": {
+    "tests_run": 488,
+    "elapsed_seconds": 59.876,
+    "status": "passed",
+    "database": "isolated consistent SQLite backup",
+    "command": "SKINSYNC_DB_PATH=<isolated-backup.sqlite3> PYTHONPATH=api:api/tests python3 -m unittest discover -s api/tests"
+  },
+  "handoff_local_links": "passed",
+  "handoff_snapshot_count_checks": "passed",
+  "git_diff_check": "passed",
+  "production_data_mutated_by_documentation_verification": false,
+  "runtime_verification": "localhost:8000 was unreachable at the handoff snapshot; historical live verification is not a current deployment proof",
+  "remaining_published_quality_findings": [
+    64415,
+    65115
+  ]
+}

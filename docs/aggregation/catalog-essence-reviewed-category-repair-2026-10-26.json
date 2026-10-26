@@ -1,0 +1,56 @@
+{
+  "applied": true,
+  "backup_path": "/mnt/windows/Users/AmrAlfayoumy/Downloads/skincare/repo/api/backups/catalog/catalog-20261026T194319Z-33bd37d8.sqlite3",
+  "model_calls": 0,
+  "ingredient_publications": 0,
+  "results": [
+    {
+      "canonical_id": 63743,
+      "review_id": 8704,
+      "before": "Toner",
+      "after": "Makeup",
+      "reason": "Tinted pH-reactive lip-colour product, supported by the exact retained Makeup retailer classification and the Crystal Crush Lip Glow product description.",
+      "evidence_url": "https://www.hondoscenter.com/en/crystal-crush-lip-glow-00200443243.html"
+    },
+    {
+      "canonical_id": 63822,
+      "review_id": 8705,
+      "before": "Toner",
+      "after": "Makeup",
+      "reason": "The manufacturer lists Feelin Comfy Plumping Lip Glow in its lip-gloss collection.",
+      "evidence_url": "https://www.essence.eu/en-ie/c/152025/lips-make-up/lip-gloss"
+    },
+    {
+      "canonical_id": 64968,
+      "review_id": 8706,
+      "before": "Toner",
+      "after": "Makeup",
+      "reason": "Manufacturer identifies Soft Touch Bouncy Glow as a cream-to-powder highlighter; the retained Face Serum retailer label is wrong.",
+      "evidence_url": "https://essencemakeup.com/products/soft-touch-bouncy-glow"
+    },
+    {
+      "canonical_id": 64989,
+      "review_id": 8707,
+      "before": "Toner",
+      "after": "Makeup",
+      "reason": "Retained exact retailer product type is Face Powder and the marketed title explicitly identifies Banana Powder.",
+      "evidence_url": null
+    },
+    {
+      "canonical_id": 65205,
+      "review_id": 8708,
+      "before": "Toner",
+      "after": "Makeup",
+      "reason": "Retained exact retailer product type is Face Powder and the marketed title explicitly identifies Loose Powder.",
+      "evidence_url": null
+    },
+    {
+      "canonical_id": 65896,
+      "review_id": 8709,
+      "before": "Toner",
+      "after": "Makeup",
+      "reason": "Manufacturer identifies this facial spray as a makeup preparation/setting spray; brand Essence is not evidence of a toner.",
+      "evidence_url": "https://essencemakeup.com/products/jelly-grip-refreshing-aloe-spray"
+    }
+  ]
+}

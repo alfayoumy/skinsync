@@ -1,0 +1,1235 @@
+{
+  "applied": false,
+  "backup_path": null,
+  "before": 855,
+  "after": 839,
+  "result": {
+    "uncertain_preserved": 756,
+    "resolved": 16,
+    "superseded_evidence_preserved": 76,
+    "cluster_conflict_preserved": 7
+  },
+  "canonical_projection": {
+    "counts": {
+      "updated": 80,
+      "specific_hair_type_preserved": 239,
+      "uncertain_preserved": 835,
+      "human_approved_preserved": 2,
+      "specific_category_preserved": 1
+    },
+    "changes": [
+      {
+        "canonical_id": 63170,
+        "title": "NUXE Very Rose Plumping Lip Serum 8ml",
+        "before": "Serum",
+        "after": "Lip Care",
+        "is_skincare": true,
+        "evidence": [
+          {
+            "source": "title",
+            "category": "Lip Care",
+            "match": "lip serum",
+            "weight": 4
+          },
+          {
+            "source": "title",
+            "category": "Serum",
+            "match": "serum",
+            "weight": 4
+          }
+        ]
+      },
+      {
+        "canonical_id": 63189,
+        "title": "Nuxuriance Ultra Eye and Lips Cream",
+        "before": "Moisturizer",
+        "after": "Lip Care",
+        "is_skincare": true,
+        "evidence": [
+          {
+            "source": "title",
+            "category": "Lip Care",
+            "match": "lips cream",
+            "weight": 4
+          },
+          {
+            "source": "title",
+            "category": "Moisturizer",
+            "match": "cream",
+            "weight": 4
+          }
+        ]
+      },
+      {
+        "canonical_id": 63383,
+        "title": "Essence Care Bears Trio & Fluffy Holder Lip Oil Set - 3x5ml",
+        "before": "Lip Care",
+        "after": "Set",
+        "is_skincare": false,
+        "evidence": [
+          {
+            "source": "title",
+            "match": "bundle"
+          }
+        ]
+      },
+      {
+        "canonical_id": 63384,
+        "title": "Sheglam Tint Lock Tattoo Peel Off Brow Gel",
+        "before": "Exfoliator",
+        "after": "Makeup",
+        "is_skincare": false,
+        "evidence": [
+          {
+            "source": "title",
+            "match": "\\b(?:brow (?:gel|wax|mascara|pen)|lip (?:and )?cheek (?:cream|tint|stick)|cheek (?:and )?lip cream|lip (?:mousse|marker|pencil|stain|blur))\\b"
+          }
+        ]
+      },
+      {
+        "canonical_id": 63385,
+        "title": "Sheglam Tint Lock Tattoo Peel Off Brow Gel",
+        "before": "Exfoliator",
+        "after": "Makeup",
+        "is_skincare": false,
+        "evidence": [
+          {
+            "source": "title",
+            "match": "\\b(?:brow (?:gel|wax|mascara|pen)|lip (?:and )?cheek (?:cream|tint|stick)|cheek (?:and )?lip cream|lip (?:mousse|marker|pencil|stain|blur))\\b"
+          }
+        ]
+      },
+      {
+        "canonical_id": 63386,
+        "title": "Sheglam Tint Lock Tattoo Peel Off Brow Gel",
+        "before": "Exfoliator",
+        "after": "Makeup",
+        "is_skincare": false,
+        "evidence": [
+          {
+            "source": "title",
+            "match": "\\b(?:brow (?:gel|wax|mascara|pen)|lip (?:and )?cheek (?:cream|tint|stick)|cheek (?:and )?lip cream|lip (?:mousse|marker|pencil|stain|blur))\\b"
+          }
+        ]
+      },
+      {
+        "canonical_id": 63387,
+        "title": "Sheglam Tint Lock Tattoo Peel Off Brow Gel",
+        "before": "Exfoliator",
+        "after": "Makeup",
+        "is_skincare": false,
+        "evidence": [
+          {
+            "source": "title",
+            "match": "\\b(?:brow (?:gel|wax|mascara|pen)|lip (?:and )?cheek (?:cream|tint|stick)|cheek (?:and )?lip cream|lip (?:mousse|marker|pencil|stain|blur))\\b"
+          }
+        ]
+      },
+      {
+        "canonical_id": 63388,
+        "title": "Sheglam Tint Lock Tattoo Peel Off Brow Gel",
+        "before": "Exfoliator",
+        "after": "Makeup",
+        "is_skincare": false,
+        "evidence": [
+          {
+            "source": "title",
+            "match": "\\b(?:brow (?:gel|wax|mascara|pen)|lip (?:and )?cheek (?:cream|tint|stick)|cheek (?:and )?lip cream|lip (?:mousse|marker|pencil|stain|blur))\\b"
+          }
+        ]
+      },
+      {
+        "canonical_id": 63389,
+        "title": "Sheglam Air Plush Lip & Cheek Cream - 7gm",
+        "before": "Moisturizer",
+        "after": "Makeup",
+        "is_skincare": false,
+        "evidence": [
+          {
+            "source": "title",
+            "match": "\\b(?:brow (?:gel|wax|mascara|pen)|lip (?:and )?cheek (?:cream|tint|stick)|cheek (?:and )?lip cream|lip (?:mousse|marker|pencil|stain|blur))\\b"
+          }
+        ]
+      },
+      {
+        "canonical_id": 63390,
+        "title": "Sheglam Air Plush Lip & Cheek Cream - 7gm",
+        "before": "Moisturizer",
+        "after": "Makeup",
+        "is_skincare": false,
+        "evidence": [
+          {
+            "source": "title",
+            "match": "\\b(?:brow (?:gel|wax|mascara|pen)|lip (?:and )?cheek (?:cream|tint|stick)|cheek (?:and )?lip cream|lip (?:mousse|marker|pencil|stain|blur))\\b"
+          }
+        ]
+      },
+      {
+        "canonical_id": 63391,
+        "title": "Sheglam Air Plush Lip & Cheek Cream - 7gm",
+        "before": "Moisturizer",
+        "after": "Makeup",
+        "is_skincare": false,
+        "evidence": [
+          {
+            "source": "title",
+            "match": "\\b(?:brow (?:gel|wax|mascara|pen)|lip (?:and )?cheek (?:cream|tint|stick)|cheek (?:and )?lip cream|lip (?:mousse|marker|pencil|stain|blur))\\b"
+          }
+        ]
+      },
+      {
+        "canonical_id": 63392,
+        "title": "Sheglam Air Plush Lip & Cheek Cream - 7gm",
+        "before": "Moisturizer",
+        "after": "Makeup",
+        "is_skincare": false,
+        "evidence": [
+          {
+            "source": "title",
+            "match": "\\b(?:brow (?:gel|wax|mascara|pen)|lip (?:and )?cheek (?:cream|tint|stick)|cheek (?:and )?lip cream|lip (?:mousse|marker|pencil|stain|blur))\\b"
+          }
+        ]
+      },
+      {
+        "canonical_id": 63434,
+        "title": "Essence The Most Wonderful Kiss of The Year Hydra Kiss Lip Oil Set - 3 Pcs",
+        "before": "Lip Care",
+        "after": "Set",
+        "is_skincare": false,
+        "evidence": [
+          {
+            "source": "title",
+            "match": "bundle"
+          }
+        ]
+      },
+      {
+        "canonical_id": 63504,
+        "title": "Essence Juicy Matte Lip Mousse - 2.7ml",
+        "before": "Toner",
+        "after": "Makeup",
+        "is_skincare": false,
+        "evidence": [
+          {
+            "source": "title",
+            "match": "\\b(?:brow (?:gel|wax|mascara|pen)|lip (?:and )?cheek (?:cream|tint|stick)|cheek (?:and )?lip cream|lip (?:mousse|marker|pencil|stain|blur))\\b"
+          }
+        ]
+      },
+      {
+        "canonical_id": 63505,
+        "title": "Essence Juicy Matte Lip Mousse - 2.7ml",
+        "before": "Toner",
+        "after": "Makeup",
+        "is_skincare": false,
+        "evidence": [
+          {
+            "source": "title",
+            "match": "\\b(?:brow (?:gel|wax|mascara|pen)|lip (?:and )?cheek (?:cream|tint|stick)|cheek (?:and )?lip cream|lip (?:mousse|marker|pencil|stain|blur))\\b"
+          }
+        ]
+      },
+      {
+        "canonical_id": 63539,
+        "title": "Sheglam Air Plush Lip Cheek Cream - 7gm",
+        "before": "Moisturizer",
+        "after": "Makeup",
+        "is_skincare": false,
+        "evidence": [
+          {
+            "source": "title",
+            "match": "\\b(?:brow (?:gel|wax|mascara|pen)|lip (?:and )?cheek (?:cream|tint|stick)|cheek (?:and )?lip cream|lip (?:mousse|marker|pencil|stain|blur))\\b"
+          }
+        ]
+      },
+      {
+        "canonical_id": 63541,
+        "title": "Essence Cat Lovers Peptide Lip Cream - 01 Little Paw",
+        "before": "Toner",
+        "after": "Lip Care",
+        "is_skincare": true,
+        "evidence": [
+          {
+            "source": "title",
+            "category": "Lip Care",
+            "match": "lip cream",
+            "weight": 4
+          },
+          {
+            "source": "title",
+            "category": "Moisturizer",
+            "match": "cream",
+            "weight": 4
+          }
+        ]
+      },
+      {
+        "canonical_id": 63584,
+        "title": "Essence Juicy Nail Balm - 12.8ml",
+        "before": "Toner",
+        "after": "Nail Care",
+        "is_skincare": false,
+        "evidence": [
+          {
+            "source": "title",
+            "match": "\\bnails? (?:cream|balm|oil|treatment|lotion|serum|booster|rescue|growth|guard)\\b"
+          }
+        ]
+      },
+      {
+        "canonical_id": 63586,
+        "title": "Essence Juicy Serum Hydrating Lip Treatment - 7.5ml",
+        "before": "Toner",
+        "after": "Lip Care",
+        "is_skincare": true,
+        "evidence": [
+          {
+            "source": "title",
+            "category": "Lip Care",
+            "match": "lip treatment",
+            "weight": 4
+          },
+          {
+            "source": "title",
+            "category": "Serum",
+            "match": "serum",
+            "weight": 4
+          }
+        ]
+      },
+      {
+        "canonical_id": 63587,
+        "title": "Essence Juicy Tint Lip Marker - 3.5ml",
+        "before": "Toner",
+        "after": "Makeup",
+        "is_skincare": false,
+        "evidence": [
+          {
+            "source": "title",
+            "match": "\\b(?:brow (?:gel|wax|mascara|pen)|lip (?:and )?cheek (?:cream|tint|stick)|cheek (?:and )?lip cream|lip (?:mousse|marker|pencil|stain|blur))\\b"
+          }
+        ]
+      },
+      {
+        "canonical_id": 63588,
+        "title": "Essence Juicy Tint Lip Marker - 3.5ml",
+        "before": "Toner",
+        "after": "Makeup",
+        "is_skincare": false,
+        "evidence": [
+          {
+            "source": "title",
+            "match": "\\b(?:brow (?:gel|wax|mascara|pen)|lip (?:and )?cheek (?:cream|tint|stick)|cheek (?:and )?lip cream|lip (?:mousse|marker|pencil|stain|blur))\\b"
+          }
+        ]
+      },
+      {
+        "canonical_id": 63637,
+        "title": "Essence Glimmer In A Bubble Ph-Responsive Lip and Cheek Balm - 2.4gm",
+        "before": "Toner",
+        "after": "Moisturizer",
+        "is_skincare": true,
+        "evidence": [
+          {
+            "source": "title",
+            "category": "Moisturizer",
+            "match": "balm",
+            "weight": 4
+          }
+        ]
+      },
+      {
+        "canonical_id": 63674,
+        "title": "Carrot Sun Cream with Coconut Extract - 350ml",
+        "before": "Sunscreen",
+        "after": "Moisturizer",
+        "is_skincare": true,
+        "evidence": [
+          {
+            "source": "title",
+            "category": "Moisturizer",
+            "match": "cream",
+            "weight": 4
+          }
+        ]
+      },
+      {
+        "canonical_id": 63699,
+        "title": "Sheglam Cheek & Lip Cream Stack - 3.96gm",
+        "before": "Moisturizer",
+        "after": "Makeup",
+        "is_skincare": false,
+        "evidence": [
+          {
+            "source": "title",
+            "match": "\\b(?:brow (?:gel|wax|mascara|pen)|lip (?:and )?cheek (?:cream|tint|stick)|cheek (?:and )?lip cream|lip (?:mousse|marker|pencil|stain|blur))\\b"
+          }
+        ]
+      },
+      {
+        "canonical_id": 63700,
+        "title": "Sheglam Cheek & Lip Cream Stack - 3.96gm",
+        "before": "Moisturizer",
+        "after": "Makeup",
+        "is_skincare": false,
+        "evidence": [
+          {
+            "source": "title",
+            "match": "\\b(?:brow (?:gel|wax|mascara|pen)|lip (?:and )?cheek (?:cream|tint|stick)|cheek (?:and )?lip cream|lip (?:mousse|marker|pencil|stain|blur))\\b"
+          }
+        ]
+      },
+      {
+        "canonical_id": 63726,
+        "title": "Essence The Super Peptide Glossy Lip Treatment - 10ml",
+        "before": "Toner",
+        "after": "Lip Care",
+        "is_skincare": true,
+        "evidence": [
+          {
+            "source": "title",
+            "category": "Lip Care",
+            "match": "lip treatment",
+            "weight": 4
+          }
+        ]
+      },
+      {
+        "canonical_id": 63727,
+        "title": "Essence The Super Peptide Glossy Lip Treatment - 10ml",
+        "before": "Toner",
+        "after": "Lip Care",
+        "is_skincare": true,
+        "evidence": [
+          {
+            "source": "title",
+            "category": "Lip Care",
+            "match": "lip treatment",
+            "weight": 4
+          }
+        ]
+      },
+      {
+        "canonical_id": 63728,
+        "title": "Essence The Super Peptide Glossy Lip Treatment - 10ml",
+        "before": "Toner",
+        "after": "Lip Care",
+        "is_skincare": true,
+        "evidence": [
+          {
+            "source": "title",
+            "category": "Lip Care",
+            "match": "lip treatment",
+            "weight": 4
+          }
+        ]
+      },
+      {
+        "canonical_id": 63729,
+        "title": "Essence The Super Peptide Glossy Lip Treatment - 10ml",
+        "before": "Toner",
+        "after": "Lip Care",
+        "is_skincare": true,
+        "evidence": [
+          {
+            "source": "title",
+            "category": "Lip Care",
+            "match": "lip treatment",
+            "weight": 4
+          }
+        ]
+      },
+      {
+        "canonical_id": 63753,
+        "title": "Essence Ciao Matte Lip Blur - 11ml",
+        "before": "Toner",
+        "after": "Makeup",
+        "is_skincare": false,
+        "evidence": [
+          {
+            "source": "title",
+            "match": "\\b(?:brow (?:gel|wax|mascara|pen)|lip (?:and )?cheek (?:cream|tint|stick)|cheek (?:and )?lip cream|lip (?:mousse|marker|pencil|stain|blur))\\b"
+          }
+        ]
+      },
+      {
+        "canonical_id": 63764,
+        "title": "The Essence of Rice Face Serum - 33ml",
+        "before": "Toner",
+        "after": "Serum",
+        "is_skincare": true,
+        "evidence": [
+          {
+            "source": "title",
+            "category": "Serum",
+            "match": "serum",
+            "weight": 4
+          }
+        ]
+      },
+      {
+        "canonical_id": 63795,
+        "title": "Anua Pdrn Hyaluron Lip Serum - 10ml",
+        "before": "Serum",
+        "after": "Lip Care",
+        "is_skincare": true,
+        "evidence": [
+          {
+            "source": "title",
+            "category": "Lip Care",
+            "match": "lip serum",
+            "weight": 4
+          },
+          {
+            "source": "title",
+            "category": "Serum",
+            "match": "serum",
+            "weight": 4
+          }
+        ]
+      },
+      {
+        "canonical_id": 63925,
+        "title": "Essence The Lip Smilin' Club Glycerin Lip Treatment -12gm",
+        "before": "Toner",
+        "after": "Lip Care",
+        "is_skincare": true,
+        "evidence": [
+          {
+            "source": "title",
+            "category": "Lip Care",
+            "match": "lip treatment",
+            "weight": 4
+          }
+        ]
+      },
+      {
+        "canonical_id": 64228,
+        "title": "Essence Disney Alice In Wonderland Lip Scrub - 10ml",
+        "before": "Toner",
+        "after": "Exfoliator",
+        "is_skincare": true,
+        "evidence": [
+          {
+            "source": "title",
+            "category": "Exfoliator",
+            "match": "scrub",
+            "weight": 4
+          }
+        ]
+      },
+      {
+        "canonical_id": 64395,
+        "title": "Carrot Sun Cream - 350ml",
+        "before": "Sunscreen",
+        "after": "Moisturizer",
+        "is_skincare": true,
+        "evidence": [
+          {
+            "source": "title",
+            "category": "Moisturizer",
+            "match": "cream",
+            "weight": 4
+          }
+        ]
+      },
+      {
+        "canonical_id": 64543,
+        "title": "Topface Prohd Velvet Kiss Lip Cream 009.",
+        "before": "Moisturizer",
+        "after": "Lip Care",
+        "is_skincare": true,
+        "evidence": [
+          {
+            "source": "title",
+            "category": "Lip Care",
+            "match": "lip cream",
+            "weight": 4
+          },
+          {
+            "source": "title",
+            "category": "Moisturizer",
+            "match": "cream",
+            "weight": 4
+          }
+        ]
+      },
+      {
+        "canonical_id": 64602,
+        "title": "Sheglam Marshmallow Puff Lip Blur Pen-212 Rose Creme.",
+        "before": "Moisturizer",
+        "after": "Makeup",
+        "is_skincare": false,
+        "evidence": [
+          {
+            "source": "title",
+            "match": "\\b(?:brow (?:gel|wax|mascara|pen)|lip (?:and )?cheek (?:cream|tint|stick)|cheek (?:and )?lip cream|lip (?:mousse|marker|pencil|stain|blur))\\b"
+          }
+        ]
+      },
+      {
+        "canonical_id": 64801,
+        "title": "Sheglam Line To Shine Peel-Off Lip Stain & Gloss Duo-510 Papaya Glaze.",
+        "before": "Exfoliator",
+        "after": "Makeup",
+        "is_skincare": false,
+        "evidence": [
+          {
+            "source": "title",
+            "match": "\\b(?:brow (?:gel|wax|mascara|pen)|lip (?:and )?cheek (?:cream|tint|stick)|cheek (?:and )?lip cream|lip (?:mousse|marker|pencil|stain|blur))\\b"
+          }
+        ]
+      },
+      {
+        "canonical_id": 64862,
+        "title": "Essence What The Fluff?! Mattifying Face Balm - 01 On Cloud Candy.",
+        "before": "Toner",
+        "after": "Moisturizer",
+        "is_skincare": true,
+        "evidence": [
+          {
+            "source": "title",
+            "category": "Moisturizer",
+            "match": "balm",
+            "weight": 4
+          }
+        ]
+      },
+      {
+        "canonical_id": 64864,
+        "title": "Essence Juicy Melon Tinted Lip & Cheek Balm.",
+        "before": "Toner",
+        "after": "Moisturizer",
+        "is_skincare": true,
+        "evidence": [
+          {
+            "source": "title",
+            "category": "Moisturizer",
+            "match": "balm",
+            "weight": 4
+          }
+        ]
+      },
+      {
+        "canonical_id": 64972,
+        "title": "Essence Brow Powder Duo Set 003 Dark Brown.",
+        "before": "Toner",
+        "after": "Set",
+        "is_skincare": false,
+        "evidence": [
+          {
+            "source": "title",
+            "match": "bundle"
+          }
+        ]
+      },
+      {
+        "canonical_id": 65094,
+        "title": "The Ordinary Pha 5% Exfoliating Lip Serum [ Int ] -15Ml",
+        "before": "Serum",
+        "after": "Lip Care",
+        "is_skincare": true,
+        "evidence": [
+          {
+            "source": "title",
+            "category": "Lip Care",
+            "match": "lip serum",
+            "weight": 4
+          },
+          {
+            "source": "title",
+            "category": "Serum",
+            "match": "serum",
+            "weight": 4
+          }
+        ]
+      },
+      {
+        "canonical_id": 65881,
+        "title": "Rhea Beauty Hyaluronic Acid Lip Serum",
+        "before": "Serum",
+        "after": "Lip Care",
+        "is_skincare": true,
+        "evidence": [
+          {
+            "source": "title",
+            "category": "Lip Care",
+            "match": "lip serum",
+            "weight": 4
+          },
+          {
+            "source": "title",
+            "category": "Serum",
+            "match": "serum",
+            "weight": 4
+          }
+        ]
+      },
+      {
+        "canonical_id": 66078,
+        "title": "Sephora Cream Lip Stain",
+        "before": "Moisturizer",
+        "after": "Makeup",
+        "is_skincare": false,
+        "evidence": [
+          {
+            "source": "title",
+            "match": "\\b(?:brow (?:gel|wax|mascara|pen)|lip (?:and )?cheek (?:cream|tint|stick)|cheek (?:and )?lip cream|lip (?:mousse|marker|pencil|stain|blur))\\b"
+          }
+        ]
+      },
+      {
+        "canonical_id": 66079,
+        "title": "Sephora Cream Lip Stain",
+        "before": "Moisturizer",
+        "after": "Makeup",
+        "is_skincare": false,
+        "evidence": [
+          {
+            "source": "title",
+            "match": "\\b(?:brow (?:gel|wax|mascara|pen)|lip (?:and )?cheek (?:cream|tint|stick)|cheek (?:and )?lip cream|lip (?:mousse|marker|pencil|stain|blur))\\b"
+          }
+        ]
+      },
+      {
+        "canonical_id": 66080,
+        "title": "Sephora Cream Lip Stain",
+        "before": "Moisturizer",
+        "after": "Makeup",
+        "is_skincare": false,
+        "evidence": [
+          {
+            "source": "title",
+            "match": "\\b(?:brow (?:gel|wax|mascara|pen)|lip (?:and )?cheek (?:cream|tint|stick)|cheek (?:and )?lip cream|lip (?:mousse|marker|pencil|stain|blur))\\b"
+          }
+        ]
+      },
+      {
+        "canonical_id": 66081,
+        "title": "Sephora Cream Lip Stain",
+        "before": "Moisturizer",
+        "after": "Makeup",
+        "is_skincare": false,
+        "evidence": [
+          {
+            "source": "title",
+            "match": "\\b(?:brow (?:gel|wax|mascara|pen)|lip (?:and )?cheek (?:cream|tint|stick)|cheek (?:and )?lip cream|lip (?:mousse|marker|pencil|stain|blur))\\b"
+          }
+        ]
+      },
+      {
+        "canonical_id": 66082,
+        "title": "Sephora Cream Lip Stain",
+        "before": "Moisturizer",
+        "after": "Makeup",
+        "is_skincare": false,
+        "evidence": [
+          {
+            "source": "title",
+            "match": "\\b(?:brow (?:gel|wax|mascara|pen)|lip (?:and )?cheek (?:cream|tint|stick)|cheek (?:and )?lip cream|lip (?:mousse|marker|pencil|stain|blur))\\b"
+          }
+        ]
+      },
+      {
+        "canonical_id": 66083,
+        "title": "Sephora Cream Lip Stain",
+        "before": "Moisturizer",
+        "after": "Makeup",
+        "is_skincare": false,
+        "evidence": [
+          {
+            "source": "title",
+            "match": "\\b(?:brow (?:gel|wax|mascara|pen)|lip (?:and )?cheek (?:cream|tint|stick)|cheek (?:and )?lip cream|lip (?:mousse|marker|pencil|stain|blur))\\b"
+          }
+        ]
+      },
+      {
+        "canonical_id": 66084,
+        "title": "Sephora Cream Lip Stain",
+        "before": "Moisturizer",
+        "after": "Makeup",
+        "is_skincare": false,
+        "evidence": [
+          {
+            "source": "title",
+            "match": "\\b(?:brow (?:gel|wax|mascara|pen)|lip (?:and )?cheek (?:cream|tint|stick)|cheek (?:and )?lip cream|lip (?:mousse|marker|pencil|stain|blur))\\b"
+          }
+        ]
+      },
+      {
+        "canonical_id": 66085,
+        "title": "Sephora Cream Lip Stain",
+        "before": "Moisturizer",
+        "after": "Makeup",
+        "is_skincare": false,
+        "evidence": [
+          {
+            "source": "title",
+            "match": "\\b(?:brow (?:gel|wax|mascara|pen)|lip (?:and )?cheek (?:cream|tint|stick)|cheek (?:and )?lip cream|lip (?:mousse|marker|pencil|stain|blur))\\b"
+          }
+        ]
+      },
+      {
+        "canonical_id": 66086,
+        "title": "Sephora Cream Lip Stain",
+        "before": "Moisturizer",
+        "after": "Makeup",
+        "is_skincare": false,
+        "evidence": [
+          {
+            "source": "title",
+            "match": "\\b(?:brow (?:gel|wax|mascara|pen)|lip (?:and )?cheek (?:cream|tint|stick)|cheek (?:and )?lip cream|lip (?:mousse|marker|pencil|stain|blur))\\b"
+          }
+        ]
+      },
+      {
+        "canonical_id": 66100,
+        "title": "Sheglam Air Plush Lip & Cheek Cream",
+        "before": "Moisturizer",
+        "after": "Makeup",
+        "is_skincare": false,
+        "evidence": [
+          {
+            "source": "title",
+            "match": "\\b(?:brow (?:gel|wax|mascara|pen)|lip (?:and )?cheek (?:cream|tint|stick)|cheek (?:and )?lip cream|lip (?:mousse|marker|pencil|stain|blur))\\b"
+          }
+        ]
+      },
+      {
+        "canonical_id": 66101,
+        "title": "Sheglam Air Plush Lip & Cheek Cream",
+        "before": "Moisturizer",
+        "after": "Makeup",
+        "is_skincare": false,
+        "evidence": [
+          {
+            "source": "title",
+            "match": "\\b(?:brow (?:gel|wax|mascara|pen)|lip (?:and )?cheek (?:cream|tint|stick)|cheek (?:and )?lip cream|lip (?:mousse|marker|pencil|stain|blur))\\b"
+          }
+        ]
+      },
+      {
+        "canonical_id": 66141,
+        "title": "L'Or\u00e9al Paris Paradise Hyaluron Tint Lip Stain Serum",
+        "before": "Serum",
+        "after": "Makeup",
+        "is_skincare": false,
+        "evidence": [
+          {
+            "source": "title",
+            "match": "\\b(?:brow (?:gel|wax|mascara|pen)|lip (?:and )?cheek (?:cream|tint|stick)|cheek (?:and )?lip cream|lip (?:mousse|marker|pencil|stain|blur))\\b"
+          }
+        ]
+      },
+      {
+        "canonical_id": 66142,
+        "title": "L'Or\u00e9al Paris Paradise Hyaluron Tint Lip Stain Serum",
+        "before": "Serum",
+        "after": "Makeup",
+        "is_skincare": false,
+        "evidence": [
+          {
+            "source": "title",
+            "match": "\\b(?:brow (?:gel|wax|mascara|pen)|lip (?:and )?cheek (?:cream|tint|stick)|cheek (?:and )?lip cream|lip (?:mousse|marker|pencil|stain|blur))\\b"
+          }
+        ]
+      },
+      {
+        "canonical_id": 66143,
+        "title": "L'Or\u00e9al Paris Paradise Hyaluron Tint Lip Stain Serum",
+        "before": "Serum",
+        "after": "Makeup",
+        "is_skincare": false,
+        "evidence": [
+          {
+            "source": "title",
+            "match": "\\b(?:brow (?:gel|wax|mascara|pen)|lip (?:and )?cheek (?:cream|tint|stick)|cheek (?:and )?lip cream|lip (?:mousse|marker|pencil|stain|blur))\\b"
+          }
+        ]
+      },
+      {
+        "canonical_id": 66144,
+        "title": "L'Or\u00e9al Paris Paradise Hyaluron Tint Lip Stain Serum",
+        "before": "Serum",
+        "after": "Makeup",
+        "is_skincare": false,
+        "evidence": [
+          {
+            "source": "title",
+            "match": "\\b(?:brow (?:gel|wax|mascara|pen)|lip (?:and )?cheek (?:cream|tint|stick)|cheek (?:and )?lip cream|lip (?:mousse|marker|pencil|stain|blur))\\b"
+          }
+        ]
+      },
+      {
+        "canonical_id": 66595,
+        "title": "Lip Serum",
+        "before": "Serum",
+        "after": "Lip Care",
+        "is_skincare": true,
+        "evidence": [
+          {
+            "source": "title",
+            "category": "Lip Care",
+            "match": "lip serum",
+            "weight": 4
+          },
+          {
+            "source": "title",
+            "category": "Serum",
+            "match": "serum",
+            "weight": 4
+          }
+        ]
+      },
+      {
+        "canonical_id": 66945,
+        "title": "Lip Shield - Night Lip Serum",
+        "before": "Serum",
+        "after": "Lip Care",
+        "is_skincare": true,
+        "evidence": [
+          {
+            "source": "title",
+            "category": "Lip Care",
+            "match": "lip serum",
+            "weight": 4
+          },
+          {
+            "source": "title",
+            "category": "Serum",
+            "match": "serum",
+            "weight": 4
+          }
+        ]
+      },
+      {
+        "canonical_id": 67508,
+        "title": "Soft Matte Lip Cream",
+        "before": "Moisturizer",
+        "after": "Lip Care",
+        "is_skincare": true,
+        "evidence": [
+          {
+            "source": "title",
+            "category": "Lip Care",
+            "match": "lip cream",
+            "weight": 4
+          },
+          {
+            "source": "title",
+            "category": "Moisturizer",
+            "match": "cream",
+            "weight": 4
+          }
+        ]
+      },
+      {
+        "canonical_id": 67509,
+        "title": "Soft Matte Lip Cream",
+        "before": "Moisturizer",
+        "after": "Lip Care",
+        "is_skincare": true,
+        "evidence": [
+          {
+            "source": "title",
+            "category": "Lip Care",
+            "match": "lip cream",
+            "weight": 4
+          },
+          {
+            "source": "title",
+            "category": "Moisturizer",
+            "match": "cream",
+            "weight": 4
+          }
+        ]
+      },
+      {
+        "canonical_id": 67510,
+        "title": "Soft Matte Lip Cream",
+        "before": "Moisturizer",
+        "after": "Lip Care",
+        "is_skincare": true,
+        "evidence": [
+          {
+            "source": "title",
+            "category": "Lip Care",
+            "match": "lip cream",
+            "weight": 4
+          },
+          {
+            "source": "title",
+            "category": "Moisturizer",
+            "match": "cream",
+            "weight": 4
+          }
+        ]
+      },
+      {
+        "canonical_id": 67511,
+        "title": "Soft Matte Lip Cream",
+        "before": "Moisturizer",
+        "after": "Lip Care",
+        "is_skincare": true,
+        "evidence": [
+          {
+            "source": "title",
+            "category": "Lip Care",
+            "match": "lip cream",
+            "weight": 4
+          },
+          {
+            "source": "title",
+            "category": "Moisturizer",
+            "match": "cream",
+            "weight": 4
+          }
+        ]
+      },
+      {
+        "canonical_id": 68001,
+        "title": "Avent Response 2 Baby Bottle 0m+ Set - 125ml",
+        "before": "Tools & Accessories",
+        "after": "Set",
+        "is_skincare": false,
+        "evidence": [
+          {
+            "source": "title",
+            "match": "bundle"
+          }
+        ]
+      },
+      {
+        "canonical_id": 69283,
+        "title": "Essence Dog Lovers Peptide Lip Cream - 01 Best Buddy",
+        "before": "Toner",
+        "after": "Lip Care",
+        "is_skincare": true,
+        "evidence": [
+          {
+            "source": "title",
+            "category": "Lip Care",
+            "match": "lip cream",
+            "weight": 4
+          },
+          {
+            "source": "title",
+            "category": "Moisturizer",
+            "match": "cream",
+            "weight": 4
+          }
+        ]
+      },
+      {
+        "canonical_id": 69336,
+        "title": "Essence What The Fluff Lip Scrub - 1.8gm",
+        "before": "Toner",
+        "after": "Exfoliator",
+        "is_skincare": true,
+        "evidence": [
+          {
+            "source": "title",
+            "category": "Exfoliator",
+            "match": "scrub",
+            "weight": 4
+          }
+        ]
+      },
+      {
+        "canonical_id": 69348,
+        "title": "Essence Disney The Little Mermaid Lip Scrub - 10gm",
+        "before": "Toner",
+        "after": "Exfoliator",
+        "is_skincare": true,
+        "evidence": [
+          {
+            "source": "title",
+            "category": "Exfoliator",
+            "match": "scrub",
+            "weight": 4
+          }
+        ]
+      },
+      {
+        "canonical_id": 69486,
+        "title": "Sheglam Line To Shine Peel-Off Lip Stain & Gloss Duo-311 Berry Milkshake.",
+        "before": "Exfoliator",
+        "after": "Makeup",
+        "is_skincare": false,
+        "evidence": [
+          {
+            "source": "title",
+            "match": "\\b(?:brow (?:gel|wax|mascara|pen)|lip (?:and )?cheek (?:cream|tint|stick)|cheek (?:and )?lip cream|lip (?:mousse|marker|pencil|stain|blur))\\b"
+          }
+        ]
+      },
+      {
+        "canonical_id": 69487,
+        "title": "Sheglam Line To Shine Peel-Off Lip Stain & Gloss Duo-512 Mocha Cream.",
+        "before": "Exfoliator",
+        "after": "Makeup",
+        "is_skincare": false,
+        "evidence": [
+          {
+            "source": "title",
+            "match": "\\b(?:brow (?:gel|wax|mascara|pen)|lip (?:and )?cheek (?:cream|tint|stick)|cheek (?:and )?lip cream|lip (?:mousse|marker|pencil|stain|blur))\\b"
+          }
+        ]
+      },
+      {
+        "canonical_id": 69488,
+        "title": "Sheglam Line To Shine Peel-Off Lip Stain & Gloss Duo-013 Peach Mousse.",
+        "before": "Exfoliator",
+        "after": "Makeup",
+        "is_skincare": false,
+        "evidence": [
+          {
+            "source": "title",
+            "match": "\\b(?:brow (?:gel|wax|mascara|pen)|lip (?:and )?cheek (?:cream|tint|stick)|cheek (?:and )?lip cream|lip (?:mousse|marker|pencil|stain|blur))\\b"
+          }
+        ]
+      },
+      {
+        "canonical_id": 69489,
+        "title": "Sheglam Line To Shine Peel-Off Lip Stain & Gloss Duo-511 Toasted Almond.",
+        "before": "Exfoliator",
+        "after": "Makeup",
+        "is_skincare": false,
+        "evidence": [
+          {
+            "source": "title",
+            "match": "\\b(?:brow (?:gel|wax|mascara|pen)|lip (?:and )?cheek (?:cream|tint|stick)|cheek (?:and )?lip cream|lip (?:mousse|marker|pencil|stain|blur))\\b"
+          }
+        ]
+      },
+      {
+        "canonical_id": 69490,
+        "title": "Sheglam Line To Shine Peel-Off Lip Stain & Gloss Duo-113 Rose Latte.",
+        "before": "Exfoliator",
+        "after": "Makeup",
+        "is_skincare": false,
+        "evidence": [
+          {
+            "source": "title",
+            "match": "\\b(?:brow (?:gel|wax|mascara|pen)|lip (?:and )?cheek (?:cream|tint|stick)|cheek (?:and )?lip cream|lip (?:mousse|marker|pencil|stain|blur))\\b"
+          }
+        ]
+      },
+      {
+        "canonical_id": 69491,
+        "title": "Sheglam Line To Shine Peel-Off Lip Stain & Gloss Duo-515 Fig Cookie.",
+        "before": "Exfoliator",
+        "after": "Makeup",
+        "is_skincare": false,
+        "evidence": [
+          {
+            "source": "title",
+            "match": "\\b(?:brow (?:gel|wax|mascara|pen)|lip (?:and )?cheek (?:cream|tint|stick)|cheek (?:and )?lip cream|lip (?:mousse|marker|pencil|stain|blur))\\b"
+          }
+        ]
+      },
+      {
+        "canonical_id": 69547,
+        "title": "Essence Brow Powder Duo Set 002.",
+        "before": "Toner",
+        "after": "Set",
+        "is_skincare": false,
+        "evidence": [
+          {
+            "source": "title",
+            "match": "bundle"
+          }
+        ]
+      },
+      {
+        "canonical_id": 69614,
+        "title": "Essence Juicy Berry Tinted Lip & Cheek Balm - 3Gm",
+        "before": "Toner",
+        "after": "Moisturizer",
+        "is_skincare": true,
+        "evidence": [
+          {
+            "source": "title",
+            "category": "Moisturizer",
+            "match": "balm",
+            "weight": 4
+          }
+        ]
+      },
+      {
+        "canonical_id": 70403,
+        "title": "Topface Prohd Velvet Kiss Lip Cream 003.",
+        "before": "Moisturizer",
+        "after": "Lip Care",
+        "is_skincare": true,
+        "evidence": [
+          {
+            "source": "title",
+            "category": "Lip Care",
+            "match": "lip cream",
+            "weight": 4
+          },
+          {
+            "source": "title",
+            "category": "Moisturizer",
+            "match": "cream",
+            "weight": 4
+          }
+        ]
+      },
+      {
+        "canonical_id": 70415,
+        "title": "Sheglam Air Plush Lip & Cheek Cream-028 Light Work.",
+        "before": "Moisturizer",
+        "after": "Makeup",
+        "is_skincare": false,
+        "evidence": [
+          {
+            "source": "title",
+            "match": "\\b(?:brow (?:gel|wax|mascara|pen)|lip (?:and )?cheek (?:cream|tint|stick)|cheek (?:and )?lip cream|lip (?:mousse|marker|pencil|stain|blur))\\b"
+          }
+        ]
+      },
+      {
+        "canonical_id": 70496,
+        "title": "Skin 1004 Madagascar Centella Tone Brightening Capsule Ampoule - 100ml",
+        "before": "Serum",
+        "after": "Supplements & Health",
+        "is_skincare": false,
+        "evidence": [
+          {
+            "source": "title",
+            "match": "\\b(?:dietary supplement|tablets?|capsules?|gummies|multivitamin|fish oil|protein powder)\\b"
+          }
+        ]
+      },
+      {
+        "canonical_id": 70513,
+        "title": "Topface Prohd Velvet Kiss Lip Cream 008.",
+        "before": "Moisturizer",
+        "after": "Lip Care",
+        "is_skincare": true,
+        "evidence": [
+          {
+            "source": "title",
+            "category": "Lip Care",
+            "match": "lip cream",
+            "weight": 4
+          },
+          {
+            "source": "title",
+            "category": "Moisturizer",
+            "match": "cream",
+            "weight": 4
+          }
+        ]
+      }
+    ]
+  },
+  "explicit_hair_types": {
+    "counts": {
+      "specific_role_conflict_preserved": 2
+    },
+    "changes": []
+  }
+}

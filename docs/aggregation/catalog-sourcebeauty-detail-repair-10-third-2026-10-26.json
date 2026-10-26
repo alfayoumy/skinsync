@@ -1,0 +1,53 @@
+{
+  "applied": true,
+  "backup_path": "/mnt/windows/Users/AmrAlfayoumy/Downloads/skincare/repo/api/backups/catalog/catalog-20261026T205800Z-401a68f7.sqlite3",
+  "model_calls": 0,
+  "preview_scope": null,
+  "results": [
+    {
+      "url": "https://sourcebeauty.com/products/eqqualberry-aloe-pdrn-calming-toner",
+      "status": "published",
+      "canonical_id": 66271,
+      "original_observation_id": 16977,
+      "observation_id": 23005,
+      "evidence_id": 1290,
+      "ingredient_count": 40
+    },
+    {
+      "url": "https://sourcebeauty.com/products/eqqualberry-vitamin-illuminating-toner",
+      "status": "published",
+      "canonical_id": 66272,
+      "original_observation_id": 16979,
+      "observation_id": 23006,
+      "evidence_id": 1292,
+      "ingredient_count": 47
+    },
+    {
+      "url": "https://sourcebeauty.com/products/vt-cosmetics-pdrn-essence-100",
+      "status": "published",
+      "canonical_id": 66281,
+      "original_observation_id": 15780,
+      "observation_id": 23007,
+      "evidence_id": 1294,
+      "ingredient_count": 31
+    },
+    {
+      "url": "https://sourcebeauty.com/products/eqqualberry-purple-rice-pore-purifying-pack-cleanser",
+      "status": "published",
+      "canonical_id": 66301,
+      "original_observation_id": 19534,
+      "observation_id": 23008,
+      "evidence_id": 1296,
+      "ingredient_count": 64
+    },
+    {
+      "url": "https://sourcebeauty.com/products/catrice-glow-super-vitamin-serum",
+      "status": "published",
+      "canonical_id": 66305,
+      "original_observation_id": 16790,
+      "observation_id": 23009,
+      "evidence_id": 1298,
+      "ingredient_count": 26
+    }
+  ]
+}

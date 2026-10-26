@@ -1,0 +1,7 @@
+{
+  "read_only": true,
+  "snapshot_at_utc": "2026-10-26T19:52:18.886519+00:00",
+  "scope": "Current review-evidence hashes and confident source/canonical negative pairs only; not a complete historical match audit.",
+  "conflicting_accepted_links": [],
+  "pair_payload_violations": 0
+}

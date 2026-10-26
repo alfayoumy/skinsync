@@ -1,0 +1,643 @@
+{
+  "applied": false,
+  "backup_path": null,
+  "before": 1376,
+  "after": 1127,
+  "result": {
+    "uncertain_preserved": 1033,
+    "resolved": 249,
+    "superseded_evidence_preserved": 76,
+    "cluster_conflict_preserved": 18
+  },
+  "canonical_projection": {
+    "counts": {
+      "updated": 38,
+      "uncertain_preserved": 1032,
+      "specific_category_preserved": 1
+    },
+    "changes": [
+      {
+        "canonical_id": 63211,
+        "title": "SVR SPIRIAL DEO-CREME 50ML",
+        "before": "Moisturizer",
+        "after": "Deodorant",
+        "is_skincare": false,
+        "evidence": [
+          {
+            "source": "title",
+            "match": "\\b(?:deodorant|deodrant|anti ?perspirant|deo|roll on)\\b"
+          }
+        ]
+      },
+      {
+        "canonical_id": 63362,
+        "title": "Glazed The Shave Of Your Dreams Shaving Cream - 200ml",
+        "before": "Moisturizer",
+        "after": "Body Care",
+        "is_skincare": true,
+        "evidence": [
+          {
+            "source": "title",
+            "category": "Body Care",
+            "match": "shaving cream",
+            "weight": 4
+          },
+          {
+            "source": "title",
+            "category": "Moisturizer",
+            "match": "cream",
+            "weight": 4
+          }
+        ]
+      },
+      {
+        "canonical_id": 63956,
+        "title": "Isis Pharma Neotone Eyes Cream - 15ml",
+        "before": "Moisturizer",
+        "after": "Eye Skincare",
+        "is_skincare": true,
+        "evidence": [
+          {
+            "source": "title",
+            "category": "Eye Skincare",
+            "match": "eyes cream",
+            "weight": 4
+          },
+          {
+            "source": "title",
+            "category": "Moisturizer",
+            "match": "cream",
+            "weight": 4
+          }
+        ]
+      },
+      {
+        "canonical_id": 65492,
+        "title": "Nawah Moisturizing Soap 50Gm",
+        "before": "Moisturizer",
+        "after": "Cleanser",
+        "is_skincare": true,
+        "evidence": [
+          {
+            "source": "title",
+            "category": "Cleanser",
+            "match": "soap",
+            "weight": 4
+          },
+          {
+            "source": "title",
+            "category": "Moisturizer",
+            "match": "moisturizing",
+            "weight": 4
+          }
+        ]
+      },
+      {
+        "canonical_id": 65991,
+        "title": "Dove Original Anti-Perspirant Moisturizing Cream 24h",
+        "before": "Moisturizer",
+        "after": "Deodorant",
+        "is_skincare": false,
+        "evidence": [
+          {
+            "source": "title",
+            "match": "\\b(?:deodorant|deodrant|anti ?perspirant|deo|roll on)\\b"
+          }
+        ]
+      },
+      {
+        "canonical_id": 66126,
+        "title": "Uriage Gyn-Phy Intimate Hygiene Refreshing Cleansing Gel 200ml",
+        "before": "Cleanser",
+        "after": "Body Care",
+        "is_skincare": true,
+        "evidence": [
+          {
+            "source": "title",
+            "category": "Body Care",
+            "match": "intimate hygiene",
+            "weight": 4
+          },
+          {
+            "source": "title",
+            "category": "Cleanser",
+            "match": "cleansing",
+            "weight": 4
+          }
+        ]
+      },
+      {
+        "canonical_id": 66217,
+        "title": "Nivea Men Protect & Care Protecting Shaving Cream",
+        "before": "Moisturizer",
+        "after": "Body Care",
+        "is_skincare": true,
+        "evidence": [
+          {
+            "source": "title",
+            "category": "Body Care",
+            "match": "shaving cream",
+            "weight": 4
+          },
+          {
+            "source": "title",
+            "category": "Moisturizer",
+            "match": "cream",
+            "weight": 4
+          }
+        ]
+      },
+      {
+        "canonical_id": 66388,
+        "title": "St. Ives Scrub Bar Soap",
+        "before": "Exfoliator",
+        "after": "Cleanser",
+        "is_skincare": true,
+        "evidence": [
+          {
+            "source": "title",
+            "category": "Cleanser",
+            "match": "soap",
+            "weight": 4
+          },
+          {
+            "source": "title",
+            "category": "Exfoliator",
+            "match": "scrub",
+            "weight": 4
+          }
+        ]
+      },
+      {
+        "canonical_id": 66389,
+        "title": "St. Ives Scrub Bar Soap",
+        "before": "Exfoliator",
+        "after": "Cleanser",
+        "is_skincare": true,
+        "evidence": [
+          {
+            "source": "title",
+            "category": "Cleanser",
+            "match": "soap",
+            "weight": 4
+          },
+          {
+            "source": "title",
+            "category": "Exfoliator",
+            "match": "scrub",
+            "weight": 4
+          }
+        ]
+      },
+      {
+        "canonical_id": 66664,
+        "title": "Ultra-Moisturizing Soap",
+        "before": "Moisturizer",
+        "after": "Cleanser",
+        "is_skincare": true,
+        "evidence": [
+          {
+            "source": "title",
+            "category": "Cleanser",
+            "match": "soap",
+            "weight": 4
+          },
+          {
+            "source": "title",
+            "category": "Moisturizer",
+            "match": "moisturizing",
+            "weight": 4
+          }
+        ]
+      },
+      {
+        "canonical_id": 66709,
+        "title": "Protect & Care - Protecting Shaving Cream",
+        "before": "Moisturizer",
+        "after": "Body Care",
+        "is_skincare": true,
+        "evidence": [
+          {
+            "source": "title",
+            "category": "Body Care",
+            "match": "shaving cream",
+            "weight": 4
+          },
+          {
+            "source": "title",
+            "category": "Moisturizer",
+            "match": "cream",
+            "weight": 4
+          }
+        ]
+      },
+      {
+        "canonical_id": 66710,
+        "title": "Protect & Care Moisturizing - Shaving Gel",
+        "before": "Moisturizer",
+        "after": "Body Care",
+        "is_skincare": true,
+        "evidence": [
+          {
+            "source": "title",
+            "category": "Body Care",
+            "match": "shaving gel",
+            "weight": 4
+          },
+          {
+            "source": "title",
+            "category": "Moisturizer",
+            "match": "moisturizing",
+            "weight": 4
+          }
+        ]
+      },
+      {
+        "canonical_id": 66895,
+        "title": "Luxury Shaving Cream, Rose Vanilla",
+        "before": "Moisturizer",
+        "after": "Body Care",
+        "is_skincare": true,
+        "evidence": [
+          {
+            "source": "title",
+            "category": "Body Care",
+            "match": "shaving cream",
+            "weight": 4
+          },
+          {
+            "source": "title",
+            "category": "Moisturizer",
+            "match": "cream",
+            "weight": 4
+          }
+        ]
+      },
+      {
+        "canonical_id": 67698,
+        "title": "Here To Shave The Day Shaving Cream for Normal Skin",
+        "before": "Moisturizer",
+        "after": "Body Care",
+        "is_skincare": true,
+        "evidence": [
+          {
+            "source": "title",
+            "category": "Body Care",
+            "match": "shaving cream",
+            "weight": 4
+          },
+          {
+            "source": "title",
+            "category": "Moisturizer",
+            "match": "cream",
+            "weight": 4
+          }
+        ]
+      },
+      {
+        "canonical_id": 68205,
+        "title": "Canpol Babies Glowing Handles Easy Start Training Cup (6m+) - 120 ml",
+        "before": "Baby Care",
+        "after": "Tools & Accessories",
+        "is_skincare": false,
+        "evidence": [
+          {
+            "source": "title",
+            "match": "\\b(?:cotton (?:ear )?buds|cotton swabs|bathroom scale|training cup|sport cup|drying rack|derma ?roller|skin care tool|candles?)\\b"
+          }
+        ]
+      },
+      {
+        "canonical_id": 68206,
+        "title": "Canpol Babies Glowing Handles Easy Start Training Cup (6m+) - 120 ml",
+        "before": "Baby Care",
+        "after": "Tools & Accessories",
+        "is_skincare": false,
+        "evidence": [
+          {
+            "source": "title",
+            "match": "\\b(?:cotton (?:ear )?buds|cotton swabs|bathroom scale|training cup|sport cup|drying rack|derma ?roller|skin care tool|candles?)\\b"
+          }
+        ]
+      },
+      {
+        "canonical_id": 68207,
+        "title": "Canpol Babies Sport Cup Bottle With Folding Spout (4y+) - 400ml",
+        "before": "Baby Care",
+        "after": "Tools & Accessories",
+        "is_skincare": false,
+        "evidence": [
+          {
+            "source": "title",
+            "match": "\\b(?:cotton (?:ear )?buds|cotton swabs|bathroom scale|training cup|sport cup|drying rack|derma ?roller|skin care tool|candles?)\\b"
+          }
+        ]
+      },
+      {
+        "canonical_id": 68380,
+        "title": "Bubblzz Mini Bath Bomb Set",
+        "before": "Set",
+        "after": "Body Care",
+        "is_skincare": true,
+        "evidence": [
+          {
+            "source": "title",
+            "category": "Body Care",
+            "match": "bath bomb",
+            "weight": 4
+          }
+        ]
+      },
+      {
+        "canonical_id": 68387,
+        "title": "Vaseline Healing Jelly Baby - 250ml",
+        "before": "Baby Care",
+        "after": "Moisturizer",
+        "is_skincare": true,
+        "evidence": [
+          {
+            "source": "title",
+            "category": "Moisturizer",
+            "match": "healing jelly",
+            "weight": 4
+          }
+        ]
+      },
+      {
+        "canonical_id": 68395,
+        "title": "Nile Naturals Aloe Vera & Sandalwood Oil Bar Soap - 100gm",
+        "before": "Fragrance",
+        "after": "Cleanser",
+        "is_skincare": true,
+        "evidence": [
+          {
+            "source": "title",
+            "category": "Cleanser",
+            "match": "soap",
+            "weight": 4
+          }
+        ]
+      },
+      {
+        "canonical_id": 68436,
+        "title": "Canpol Babies Soft Cotton Buds With Limiter For Babies - 55 pcs",
+        "before": "Baby Care",
+        "after": "Tools & Accessories",
+        "is_skincare": false,
+        "evidence": [
+          {
+            "source": "title",
+            "match": "\\b(?:cotton (?:ear )?buds|cotton swabs|bathroom scale|training cup|sport cup|drying rack|derma ?roller|skin care tool|candles?)\\b"
+          }
+        ]
+      },
+      {
+        "canonical_id": 68511,
+        "title": "Bubblzz Watermelon Soap \u2013 160gm",
+        "before": "Toner",
+        "after": "Cleanser",
+        "is_skincare": true,
+        "evidence": [
+          {
+            "source": "title",
+            "category": "Cleanser",
+            "match": "soap",
+            "weight": 4
+          }
+        ]
+      },
+      {
+        "canonical_id": 68738,
+        "title": "Canpol Babies Silicon Spout Training Cup (6m+) - 320ml",
+        "before": "Baby Care",
+        "after": "Tools & Accessories",
+        "is_skincare": false,
+        "evidence": [
+          {
+            "source": "title",
+            "match": "\\b(?:cotton (?:ear )?buds|cotton swabs|bathroom scale|training cup|sport cup|drying rack|derma ?roller|skin care tool|candles?)\\b"
+          }
+        ]
+      },
+      {
+        "canonical_id": 68739,
+        "title": "Canpol Babies Silicon Spout Training Cup (6m+) - 320ml",
+        "before": "Baby Care",
+        "after": "Tools & Accessories",
+        "is_skincare": false,
+        "evidence": [
+          {
+            "source": "title",
+            "match": "\\b(?:cotton (?:ear )?buds|cotton swabs|bathroom scale|training cup|sport cup|drying rack|derma ?roller|skin care tool|candles?)\\b"
+          }
+        ]
+      },
+      {
+        "canonical_id": 68740,
+        "title": "Canpol Babies Silicon Spout Training Cup (6m+) - 320ml",
+        "before": "Baby Care",
+        "after": "Tools & Accessories",
+        "is_skincare": false,
+        "evidence": [
+          {
+            "source": "title",
+            "match": "\\b(?:cotton (?:ear )?buds|cotton swabs|bathroom scale|training cup|sport cup|drying rack|derma ?roller|skin care tool|candles?)\\b"
+          }
+        ]
+      },
+      {
+        "canonical_id": 68741,
+        "title": "Canpol Babies Silicon Spout Training Cup (6m+) - 320ml",
+        "before": "Baby Care",
+        "after": "Tools & Accessories",
+        "is_skincare": false,
+        "evidence": [
+          {
+            "source": "title",
+            "match": "\\b(?:cotton (?:ear )?buds|cotton swabs|bathroom scale|training cup|sport cup|drying rack|derma ?roller|skin care tool|candles?)\\b"
+          }
+        ]
+      },
+      {
+        "canonical_id": 68742,
+        "title": "Canpol Babies Silicon Spout Training Cup (6m+) - 320ml",
+        "before": "Baby Care",
+        "after": "Tools & Accessories",
+        "is_skincare": false,
+        "evidence": [
+          {
+            "source": "title",
+            "match": "\\b(?:cotton (?:ear )?buds|cotton swabs|bathroom scale|training cup|sport cup|drying rack|derma ?roller|skin care tool|candles?)\\b"
+          }
+        ]
+      },
+      {
+        "canonical_id": 68743,
+        "title": "Canpol Babies Silicon Spout Training Cup (6m+) - 320ml",
+        "before": "Baby Care",
+        "after": "Tools & Accessories",
+        "is_skincare": false,
+        "evidence": [
+          {
+            "source": "title",
+            "match": "\\b(?:cotton (?:ear )?buds|cotton swabs|bathroom scale|training cup|sport cup|drying rack|derma ?roller|skin care tool|candles?)\\b"
+          }
+        ]
+      },
+      {
+        "canonical_id": 68744,
+        "title": "Canpol Babies Silicon Spout Training Cup (6m+) - 320ml",
+        "before": "Baby Care",
+        "after": "Tools & Accessories",
+        "is_skincare": false,
+        "evidence": [
+          {
+            "source": "title",
+            "match": "\\b(?:cotton (?:ear )?buds|cotton swabs|bathroom scale|training cup|sport cup|drying rack|derma ?roller|skin care tool|candles?)\\b"
+          }
+        ]
+      },
+      {
+        "canonical_id": 68906,
+        "title": "Miss Je Lu Moroccan Bath Soap with Aker Fasi 200 gm",
+        "before": "Body Care",
+        "after": "Cleanser",
+        "is_skincare": true,
+        "evidence": [
+          {
+            "source": "title",
+            "category": "Cleanser",
+            "match": "soap",
+            "weight": 4
+          }
+        ]
+      },
+      {
+        "canonical_id": 68919,
+        "title": "Moroccan Olive Oil Bath Soap 250ml",
+        "before": "Body Care",
+        "after": "Cleanser",
+        "is_skincare": true,
+        "evidence": [
+          {
+            "source": "title",
+            "category": "Cleanser",
+            "match": "soap",
+            "weight": 4
+          }
+        ]
+      },
+      {
+        "canonical_id": 68924,
+        "title": "Kolagra Whitening Soap 100Gm",
+        "before": "Body Care",
+        "after": "Cleanser",
+        "is_skincare": true,
+        "evidence": [
+          {
+            "source": "title",
+            "category": "Cleanser",
+            "match": "soap",
+            "weight": 4
+          }
+        ]
+      },
+      {
+        "canonical_id": 68940,
+        "title": "Dermanova Blossom Soap Shea Butter Offer (1+1)",
+        "before": "Body Care",
+        "after": "Cleanser",
+        "is_skincare": true,
+        "evidence": [
+          {
+            "source": "title",
+            "category": "Cleanser",
+            "match": "soap",
+            "weight": 4
+          }
+        ]
+      },
+      {
+        "canonical_id": 69002,
+        "title": "Luxury Beauty Soap 100Gm 1+1",
+        "before": "Body Care",
+        "after": "Cleanser",
+        "is_skincare": true,
+        "evidence": [
+          {
+            "source": "title",
+            "category": "Cleanser",
+            "match": "soap",
+            "weight": 4
+          }
+        ]
+      },
+      {
+        "canonical_id": 69081,
+        "title": "Ventamor Whitening Soap Black Soap",
+        "before": "Body Care",
+        "after": "Cleanser",
+        "is_skincare": true,
+        "evidence": [
+          {
+            "source": "title",
+            "category": "Cleanser",
+            "match": "soap",
+            "weight": 4
+          }
+        ]
+      },
+      {
+        "canonical_id": 69082,
+        "title": "Vintamor Whitening Soap",
+        "before": "Body Care",
+        "after": "Cleanser",
+        "is_skincare": true,
+        "evidence": [
+          {
+            "source": "title",
+            "category": "Cleanser",
+            "match": "soap",
+            "weight": 4
+          }
+        ]
+      },
+      {
+        "canonical_id": 69149,
+        "title": "Melanofree Soap",
+        "before": "Body Care",
+        "after": "Cleanser",
+        "is_skincare": true,
+        "evidence": [
+          {
+            "source": "title",
+            "category": "Cleanser",
+            "match": "soap",
+            "weight": 4
+          }
+        ]
+      },
+      {
+        "canonical_id": 70092,
+        "title": "Luxury Shaving Cream For Sensitive Skin, Herbal",
+        "before": "Moisturizer",
+        "after": "Body Care",
+        "is_skincare": true,
+        "evidence": [
+          {
+            "source": "title",
+            "category": "Body Care",
+            "match": "shaving cream",
+            "weight": 4
+          },
+          {
+            "source": "title",
+            "category": "Moisturizer",
+            "match": "cream",
+            "weight": 4
+          }
+        ]
+      }
+    ]
+  }
+}

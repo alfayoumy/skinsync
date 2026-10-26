@@ -1,0 +1,23 @@
+{
+  "applied": true,
+  "backup_path": "/mnt/windows/Users/AmrAlfayoumy/Downloads/skincare/repo/api/backups/catalog/catalog-20261026T210305Z-ef523e5a.sqlite3",
+  "history_id": 708,
+  "new_canonical_id": 70574,
+  "publication_history_id": 709,
+  "old_canonical_id": 63687,
+  "moved_product_ids": [
+    32037
+  ],
+  "moved_offer_ids": [
+    8910
+  ],
+  "model_calls": 0,
+  "reason": "Cotton Airy and Cotton Soft are distinct marketed sun-stick formulations. The current Dr Dawood Airy listing and manufacturer Airy page identify Airy; the U.S. label lists avobenzone/homosalate/octisalate/octocrylene, while the Korean Soft declaration differs. Correct historical Gemini source link; retain regional formulation uncertainty and publish no ingredients.",
+  "evidence_urls": [
+    "https://tocobo.us/collections/sun-care-korean-spf/products/cotton-airy-sun-stick-spf50",
+    "https://www.tocobo.co.kr/product/detail.html?product_no=32",
+    "https://dailymed.nlm.nih.gov/dailymed/drugInfo.cfm?setid=412975d8-0b8b-23bf-e063-6294a90a5568"
+  ],
+  "revoked_old_alias_id": 8416,
+  "alias_revocation_history_id": 710
+}

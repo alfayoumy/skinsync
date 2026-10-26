@@ -1,0 +1,369 @@
+{
+  "applied": false,
+  "source_pages": "data/catalog-repair/sourcebeauty-pages-09-refetch-2026-10-26.json",
+  "reviewed_pages": 49,
+  "held_pages": 11,
+  "manufacturer_comparison_url": "https://tirtir.global/products/ceramic-cream?variant=45772633735387",
+  "decisions": [
+    {
+      "url": "https://sourcebeauty.com/products/medicube-deep-vita-c-capsule-cream-55g",
+      "canonical_id": 65376,
+      "decision": "apply_only_if_fresh_validation_passes",
+      "reason": null
+    },
+    {
+      "url": "https://sourcebeauty.com/products/anua-pdrn-hyaluronic-acid-capsule-100-serum",
+      "canonical_id": 65382,
+      "decision": "apply_only_if_fresh_validation_passes",
+      "reason": null
+    },
+    {
+      "url": "https://sourcebeauty.com/products/cira-panthenol-cream",
+      "canonical_id": 65391,
+      "decision": "apply_only_if_fresh_validation_passes",
+      "reason": null
+    },
+    {
+      "url": "https://sourcebeauty.com/products/eqqualberry-purple-pdrn-pore-minimizing-serum-30ml",
+      "canonical_id": 65414,
+      "decision": "apply_only_if_fresh_validation_passes",
+      "reason": null
+    },
+    {
+      "url": "https://sourcebeauty.com/products/beauty-of-joseon-ginseng-cleansing-oil",
+      "canonical_id": 65423,
+      "decision": "apply_only_if_fresh_validation_passes",
+      "reason": null
+    },
+    {
+      "url": "https://sourcebeauty.com/products/mood-flower-bliss-shower-gel",
+      "canonical_id": 65435,
+      "decision": "apply_only_if_fresh_validation_passes",
+      "reason": null
+    },
+    {
+      "url": "https://sourcebeauty.com/products/mood-wild-rose-shower-gel",
+      "canonical_id": 65436,
+      "decision": "apply_only_if_fresh_validation_passes",
+      "reason": null
+    },
+    {
+      "url": "https://sourcebeauty.com/products/mood-warm-vanilla-shower-gel",
+      "canonical_id": 65437,
+      "decision": "apply_only_if_fresh_validation_passes",
+      "reason": null
+    },
+    {
+      "url": "https://sourcebeauty.com/products/mood-cherry-burst-shower-gel",
+      "canonical_id": 65438,
+      "decision": "apply_only_if_fresh_validation_passes",
+      "reason": null
+    },
+    {
+      "url": "https://sourcebeauty.com/products/mood-wild-rose-body-lotion",
+      "canonical_id": 65440,
+      "decision": "apply_only_if_fresh_validation_passes",
+      "reason": null
+    },
+    {
+      "url": "https://sourcebeauty.com/products/mood-warm-vanilla-body-lotion",
+      "canonical_id": 65441,
+      "decision": "apply_only_if_fresh_validation_passes",
+      "reason": null
+    },
+    {
+      "url": "https://sourcebeauty.com/products/mood-sugar-rush-body-lotion",
+      "canonical_id": 65442,
+      "decision": "apply_only_if_fresh_validation_passes",
+      "reason": null
+    },
+    {
+      "url": "https://sourcebeauty.com/products/medinza-seelit-sunscreen-lotion",
+      "canonical_id": 65450,
+      "decision": "apply_only_if_fresh_validation_passes",
+      "reason": null
+    },
+    {
+      "url": "https://sourcebeauty.com/products/farm-stay-aloevera-perfect-sun-cream",
+      "canonical_id": 65464,
+      "decision": "apply_only_if_fresh_validation_passes",
+      "reason": null
+    },
+    {
+      "url": "https://sourcebeauty.com/products/farm-stay-oil-free-uv-defence-sun-cream",
+      "canonical_id": 65466,
+      "decision": "retain_for_review",
+      "reason": "Malformed chemical naming in retained retailer declaration; exact INCI requires corroboration."
+    },
+    {
+      "url": "https://sourcebeauty.com/products/youlicious-sun-defense-dry-touch-oil-spf-50",
+      "canonical_id": 65470,
+      "decision": "apply_only_if_fresh_validation_passes",
+      "reason": null
+    },
+    {
+      "url": "https://sourcebeauty.com/products/medinza-daky-vitamin-c-serum",
+      "canonical_id": 65480,
+      "decision": "apply_only_if_fresh_validation_passes",
+      "reason": null
+    },
+    {
+      "url": "https://sourcebeauty.com/products/nut-botanicals-super-c-brightening-and-antioxidant-cleanser",
+      "canonical_id": 65486,
+      "decision": "apply_only_if_fresh_validation_passes",
+      "reason": null
+    },
+    {
+      "url": "https://sourcebeauty.com/products/nut-botanicals-marinebio-5-niacinamide-serum",
+      "canonical_id": 65489,
+      "decision": "apply_only_if_fresh_validation_passes",
+      "reason": null
+    },
+    {
+      "url": "https://sourcebeauty.com/products/nawah-eye-cream",
+      "canonical_id": null,
+      "decision": "apply_only_if_fresh_validation_passes",
+      "reason": null
+    },
+    {
+      "url": "https://sourcebeauty.com/products/bright-glow-eye-cream",
+      "canonical_id": 65498,
+      "decision": "apply_only_if_fresh_validation_passes",
+      "reason": null
+    },
+    {
+      "url": "https://sourcebeauty.com/products/eveline-clean-shot-enzymatic-peeling",
+      "canonical_id": null,
+      "decision": "apply_only_if_fresh_validation_passes",
+      "reason": null
+    },
+    {
+      "url": "https://sourcebeauty.com/products/eveline-clean-shot-ultra-soft-face-cleansing-foam",
+      "canonical_id": null,
+      "decision": "apply_only_if_fresh_validation_passes",
+      "reason": null
+    },
+    {
+      "url": "https://sourcebeauty.com/products/eveline-clean-shot-moisturizing-toner-hydrolate",
+      "canonical_id": 65514,
+      "decision": "apply_only_if_fresh_validation_passes",
+      "reason": null
+    },
+    {
+      "url": "https://sourcebeauty.com/products/parkville-regenerative-cream",
+      "canonical_id": 65535,
+      "decision": "apply_only_if_fresh_validation_passes",
+      "reason": null
+    },
+    {
+      "url": "https://sourcebeauty.com/products/starville-acne-prone-skin-lotion",
+      "canonical_id": 65537,
+      "decision": "retain_for_review",
+      "reason": "OCR damage in multiple chemical names; preserve literal evidence without reconstructing names."
+    },
+    {
+      "url": "https://sourcebeauty.com/products/parkville-whitening-gel-spf-50",
+      "canonical_id": 65538,
+      "decision": "retain_for_review",
+      "reason": "Nonspecific trade-name/active summary and malformed chemical names do not establish exact complete INCI."
+    },
+    {
+      "url": "https://sourcebeauty.com/products/ninetimes-vitamin-c-serum",
+      "canonical_id": 65544,
+      "decision": "apply_only_if_fresh_validation_passes",
+      "reason": null
+    },
+    {
+      "url": "https://sourcebeauty.com/products/ninetimes-niacinamide-serum",
+      "canonical_id": 65545,
+      "decision": "apply_only_if_fresh_validation_passes",
+      "reason": null
+    },
+    {
+      "url": "https://sourcebeauty.com/products/anua-heartleaf-pore-control-cleansing-oil",
+      "canonical_id": 65555,
+      "decision": "apply_only_if_fresh_validation_passes",
+      "reason": null
+    },
+    {
+      "url": "https://sourcebeauty.com/products/bright-glow-face-serum",
+      "canonical_id": 65580,
+      "decision": "apply_only_if_fresh_validation_passes",
+      "reason": null
+    },
+    {
+      "url": "https://sourcebeauty.com/products/bright-glow-day-cream",
+      "canonical_id": 65582,
+      "decision": "apply_only_if_fresh_validation_passes",
+      "reason": null
+    },
+    {
+      "url": "https://sourcebeauty.com/products/bright-glow-night-cream",
+      "canonical_id": 65583,
+      "decision": "apply_only_if_fresh_validation_passes",
+      "reason": null
+    },
+    {
+      "url": "https://sourcebeauty.com/products/dermaelle-hyaluwhite-sensitive-area-cream",
+      "canonical_id": 65597,
+      "decision": "apply_only_if_fresh_validation_passes",
+      "reason": null
+    },
+    {
+      "url": "https://sourcebeauty.com/products/tetra-hydro-micellar-water",
+      "canonical_id": 65612,
+      "decision": "apply_only_if_fresh_validation_passes",
+      "reason": null
+    },
+    {
+      "url": "https://sourcebeauty.com/products/tetra-hydro-ceramide-gel-cleanser",
+      "canonical_id": 65613,
+      "decision": "apply_only_if_fresh_validation_passes",
+      "reason": null
+    },
+    {
+      "url": "https://sourcebeauty.com/products/tetra-hydro-ceramide-barrier-cream",
+      "canonical_id": 65614,
+      "decision": "apply_only_if_fresh_validation_passes",
+      "reason": null
+    },
+    {
+      "url": "https://sourcebeauty.com/products/revox-just-retinol-toner",
+      "canonical_id": 65618,
+      "decision": "apply_only_if_fresh_validation_passes",
+      "reason": null
+    },
+    {
+      "url": "https://sourcebeauty.com/products/revox-buzz-face-cleansing-gel-with-honey-lemon",
+      "canonical_id": 65619,
+      "decision": "apply_only_if_fresh_validation_passes",
+      "reason": null
+    },
+    {
+      "url": "https://sourcebeauty.com/products/nawah-whitening-cream",
+      "canonical_id": null,
+      "decision": "apply_only_if_fresh_validation_passes",
+      "reason": null
+    },
+    {
+      "url": "https://sourcebeauty.com/products/nawah-facial-toner",
+      "canonical_id": null,
+      "decision": "apply_only_if_fresh_validation_passes",
+      "reason": null
+    },
+    {
+      "url": "https://sourcebeauty.com/products/nawah-micellear-water",
+      "canonical_id": null,
+      "decision": "apply_only_if_fresh_validation_passes",
+      "reason": null
+    },
+    {
+      "url": "https://sourcebeauty.com/products/nano-24k-gold-serum",
+      "canonical_id": 65626,
+      "decision": "apply_only_if_fresh_validation_passes",
+      "reason": null
+    },
+    {
+      "url": "https://sourcebeauty.com/products/nano-24k-gold-night-cream",
+      "canonical_id": 65627,
+      "decision": "retain_for_review",
+      "reason": "Nonspecific liposomal vitamin summary; complete chemically identified declaration not established."
+    },
+    {
+      "url": "https://sourcebeauty.com/products/nano-24k-gold-eye",
+      "canonical_id": 65628,
+      "decision": "retain_for_review",
+      "reason": "Nonspecific liposomal vitamin summary; complete chemically identified declaration not established."
+    },
+    {
+      "url": "https://sourcebeauty.com/products/nano-treat-oily-skin-cleanser",
+      "canonical_id": null,
+      "decision": "apply_only_if_fresh_validation_passes",
+      "reason": null
+    },
+    {
+      "url": "https://sourcebeauty.com/products/cosrx-aha-bha-clarifying-treatment-toner",
+      "canonical_id": 65640,
+      "decision": "apply_only_if_fresh_validation_passes",
+      "reason": null
+    },
+    {
+      "url": "https://sourcebeauty.com/products/tetra-hydro-daily-creamy-cleanser",
+      "canonical_id": 65654,
+      "decision": "apply_only_if_fresh_validation_passes",
+      "reason": null
+    },
+    {
+      "url": "https://sourcebeauty.com/products/beauty-of-joseon-revive-eye-serum-ginseng-retinal",
+      "canonical_id": 65661,
+      "decision": "apply_only_if_fresh_validation_passes",
+      "reason": null
+    },
+    {
+      "url": "https://sourcebeauty.com/products/bubblzz-white-musk-ultra-rich-body-lotion",
+      "canonical_id": 65684,
+      "decision": "retain_for_review",
+      "reason": "Long key-ingredient summary conflicts with the advertised panthenol/water-based lotion evidence; complete formulation not established."
+    },
+    {
+      "url": "https://sourcebeauty.com/products/kolagra-retinol-serum",
+      "canonical_id": 65708,
+      "decision": "apply_only_if_fresh_validation_passes",
+      "reason": null
+    },
+    {
+      "url": "https://sourcebeauty.com/products/eye-balm",
+      "canonical_id": 65715,
+      "decision": "retain_for_review",
+      "reason": "Nonspecific ingredient classes and misspellings require exact label/manufacturer evidence."
+    },
+    {
+      "url": "https://sourcebeauty.com/products/cosrx-centella-blemish-cream",
+      "canonical_id": 65726,
+      "decision": "apply_only_if_fresh_validation_passes",
+      "reason": null
+    },
+    {
+      "url": "https://sourcebeauty.com/products/kolagra-oily-skin-cleanser",
+      "canonical_id": 65824,
+      "decision": "apply_only_if_fresh_validation_passes",
+      "reason": null
+    },
+    {
+      "url": "https://sourcebeauty.com/products/facial-cleanser-skin-cleanser-200ml",
+      "canonical_id": 65827,
+      "decision": "apply_only_if_fresh_validation_passes",
+      "reason": null
+    },
+    {
+      "url": "https://sourcebeauty.com/products/niacinamide-serum",
+      "canonical_id": 65861,
+      "decision": "retain_for_review",
+      "reason": "Generic vitamin/trade-name summary requires an exact complete INCI declaration."
+    },
+    {
+      "url": "https://sourcebeauty.com/products/lip-plumping-serum",
+      "canonical_id": 65881,
+      "decision": "retain_for_review",
+      "reason": "Broken compound names and concatenated fragments; do not invent chemical corrections."
+    },
+    {
+      "url": "https://sourcebeauty.com/products/isntree-hyaluronic-acid-water-sleeping-mask",
+      "canonical_id": 65890,
+      "decision": "retain_for_review",
+      "reason": "Ingredient footnotes and malformed names require an exact verified declaration before publication."
+    },
+    {
+      "url": "https://sourcebeauty.com/products/tirtir-ceramic-cream",
+      "canonical_id": 65891,
+      "decision": "retain_for_review",
+      "reason": "Retailer formula materially differs from the manufacturer Ceramic Cream declaration; regional/revision identity must be checked."
+    },
+    {
+      "url": "https://sourcebeauty.com/products/tenzero-tenzero-tone-up-cream-perfect-brightening-50g",
+      "canonical_id": null,
+      "decision": "apply_only_if_fresh_validation_passes",
+      "reason": null
+    }
+  ]
+}

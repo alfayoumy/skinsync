@@ -1,0 +1,280 @@
+{
+  "source_id": "sourcebeauty",
+  "model_calls": 0,
+  "read_only": true,
+  "selected": 30,
+  "results": [
+    {
+      "canonical_id": 65268,
+      "observation_id": 17317,
+      "raw_title": "Body Wash",
+      "raw_brand": "Kolanog",
+      "source_url": "https://sourcebeauty.com/products/medinza-kolanog-body-wash",
+      "status": "error",
+      "error_type": "ExceptionGroup"
+    },
+    {
+      "canonical_id": 65269,
+      "observation_id": 17316,
+      "raw_title": "Foaming Cleanser",
+      "raw_brand": "Kolanog",
+      "source_url": "https://sourcebeauty.com/products/medinza-kolanog-foaming-cleanser",
+      "status": "fetched",
+      "pages": 1
+    },
+    {
+      "canonical_id": 65271,
+      "observation_id": 17319,
+      "raw_title": "Granya Skin Emollient Cream",
+      "raw_brand": "Granya",
+      "source_url": "https://sourcebeauty.com/products/medinza-granya-skin-emollient-cream",
+      "status": "fetched",
+      "pages": 1
+    },
+    {
+      "canonical_id": 65272,
+      "observation_id": 20373,
+      "raw_title": "Vitamin C Whitening Cream",
+      "raw_brand": "Kolagra",
+      "source_url": "https://sourcebeauty.com/products/kolagra-vitamin-c-whitening-cream",
+      "status": "fetched",
+      "pages": 1
+    },
+    {
+      "canonical_id": 65281,
+      "observation_id": 18136,
+      "raw_title": "Vee Allure Micellar Water",
+      "raw_brand": "Veexia",
+      "source_url": "https://sourcebeauty.com/products/vee-allure-micellar-water",
+      "status": "error",
+      "error_type": "ExceptionGroup"
+    },
+    {
+      "canonical_id": 65284,
+      "observation_id": 17083,
+      "raw_title": "Vee Allure Vitamin C Serum",
+      "raw_brand": "Veexia",
+      "source_url": "https://sourcebeauty.com/products/veexia-vee-allure-vitamin-c-serum",
+      "status": "fetched",
+      "pages": 1
+    },
+    {
+      "canonical_id": 65297,
+      "observation_id": 18908,
+      "raw_title": "PDRN Pink Collagen Toning Gel Toner Pads",
+      "raw_brand": "medicube",
+      "source_url": "https://sourcebeauty.com/products/medicube-pdrn-pink-collagen-toning-gel-toner-pads",
+      "status": "fetched",
+      "pages": 1
+    },
+    {
+      "canonical_id": 65312,
+      "observation_id": 15732,
+      "raw_title": "Panthenol Shower Gel",
+      "raw_brand": "Hepta",
+      "source_url": "https://sourcebeauty.com/products/hepta-panthenol-shower-gel",
+      "status": "fetched",
+      "pages": 1
+    },
+    {
+      "canonical_id": 65319,
+      "observation_id": 17485,
+      "raw_title": "Spicule Retinol PDRN Cream",
+      "raw_brand": "Mary&May",
+      "source_url": "https://sourcebeauty.com/products/mary-may-spicule-retinol-pdrn-cream",
+      "status": "fetched",
+      "pages": 1
+    },
+    {
+      "canonical_id": 65328,
+      "observation_id": 21104,
+      "raw_title": "Brightening Serum",
+      "raw_brand": "Natavis",
+      "source_url": "https://sourcebeauty.com/products/brightening-facial-serum",
+      "status": "fetched",
+      "pages": 1
+    },
+    {
+      "canonical_id": 65329,
+      "observation_id": 21106,
+      "raw_title": "Vitamin C Facial Moisturizer",
+      "raw_brand": "Natavis",
+      "source_url": "https://sourcebeauty.com/products/vitamin-c-facial-moisturizer",
+      "status": "fetched",
+      "pages": 1
+    },
+    {
+      "canonical_id": 65332,
+      "observation_id": 21108,
+      "raw_title": "White Advanced Cream",
+      "raw_brand": "Natavis",
+      "source_url": "https://sourcebeauty.com/products/ultra-hydrate-serum-2",
+      "status": "fetched",
+      "pages": 1
+    },
+    {
+      "canonical_id": 65333,
+      "observation_id": 21109,
+      "raw_title": "Ultra Hydrate Serum",
+      "raw_brand": "Natavis",
+      "source_url": "https://sourcebeauty.com/products/ultra-hydrate-serum",
+      "status": "fetched",
+      "pages": 1
+    },
+    {
+      "canonical_id": 65339,
+      "observation_id": 18291,
+      "raw_title": "Anti-Shine Face Toner",
+      "raw_brand": "Kolagra",
+      "source_url": "https://sourcebeauty.com/products/kolagra-anti-shine-face-toner",
+      "status": "fetched",
+      "pages": 1
+    },
+    {
+      "canonical_id": 65343,
+      "observation_id": 17891,
+      "raw_title": "Ultra-Low Molecular Hyaluronic Acid Serum",
+      "raw_brand": "Isntree",
+      "source_url": "https://sourcebeauty.com/products/isntree-ultralow-molecular-hyaluronic-acid-serum",
+      "status": "fetched",
+      "pages": 1
+    },
+    {
+      "canonical_id": 65344,
+      "observation_id": 20464,
+      "raw_title": "Deep Vita A Retinol Serum",
+      "raw_brand": "medicube",
+      "source_url": "https://sourcebeauty.com/products/medicube-deep-vita-a-retinol-serum",
+      "status": "fetched",
+      "pages": 1
+    },
+    {
+      "canonical_id": 65347,
+      "observation_id": 20188,
+      "raw_title": "Dark Spot Correcting Glow Toner",
+      "raw_brand": "Axis-Y",
+      "source_url": "https://sourcebeauty.com/products/axis-y-dark-spot-correcting-glow-toner",
+      "status": "fetched",
+      "pages": 1
+    },
+    {
+      "canonical_id": 65348,
+      "observation_id": 15975,
+      "raw_title": "Hyalurepair Cica Lotion",
+      "raw_brand": "Dermaelle",
+      "source_url": "https://sourcebeauty.com/products/dermaelle-hyalurepair-cica-lotion",
+      "status": "fetched",
+      "pages": 1
+    },
+    {
+      "canonical_id": 65349,
+      "observation_id": 15976,
+      "raw_title": "Hyalurepair Cica Facial Cleanser",
+      "raw_brand": "Dermaelle",
+      "source_url": "https://sourcebeauty.com/products/dermaelle-hyalurepair-cica-facial-cleanser",
+      "status": "fetched",
+      "pages": 1
+    },
+    {
+      "canonical_id": 65350,
+      "observation_id": 15977,
+      "raw_title": "Hyalurepair Cica Cream",
+      "raw_brand": "Dermaelle",
+      "source_url": "https://sourcebeauty.com/products/dermaelle-hyalurepair-cica-cream",
+      "status": "fetched",
+      "pages": 1
+    },
+    {
+      "canonical_id": 65351,
+      "observation_id": 15972,
+      "raw_title": "Hyalubalance Acne Prone Skin Advanced Cream",
+      "raw_brand": "Dermaelle",
+      "source_url": "https://sourcebeauty.com/products/dermaelle-hyalubalance-acne-prone-skin-advanced-cream",
+      "status": "error",
+      "error_type": "ExceptionGroup"
+    },
+    {
+      "canonical_id": 65359,
+      "observation_id": 15970,
+      "raw_title": "Hyalubalance Sebum Control Cleansing Gel",
+      "raw_brand": "Dermaelle",
+      "source_url": "https://sourcebeauty.com/products/dermaelle-hyalubalance-sebum-control-cleansing-gel",
+      "status": "fetched",
+      "pages": 1
+    },
+    {
+      "canonical_id": 65362,
+      "observation_id": 20158,
+      "raw_title": "Collagen Lifting Eye Cream",
+      "raw_brand": "TIRTIR",
+      "source_url": "https://sourcebeauty.com/products/tirtir-collagen-lifting-eye-cream",
+      "status": "fetched",
+      "pages": 1
+    },
+    {
+      "canonical_id": 65364,
+      "observation_id": 19652,
+      "raw_title": "Onion Newpair Booster Shot 2000",
+      "raw_brand": "Isntree",
+      "source_url": "https://sourcebeauty.com/products/isntree-onion-newpair-booster-shot-2000",
+      "status": "error",
+      "error_type": "ExceptionGroup"
+    },
+    {
+      "canonical_id": 65367,
+      "observation_id": 20736,
+      "raw_title": "Hyaluserum Advanced Hyaluronic Acid Serum",
+      "raw_brand": "Dermaelle",
+      "source_url": "https://sourcebeauty.com/products/dermaelle-hyaluserum-advanced-hyaluronic-acid-serum",
+      "status": "fetched",
+      "pages": 1
+    },
+    {
+      "canonical_id": 65368,
+      "observation_id": 18445,
+      "raw_title": "Glycotoner Glycolic Acid Toner",
+      "raw_brand": "Dermaelle",
+      "source_url": "https://sourcebeauty.com/products/dermaelle-glycotoner-glycolic-acid-toner",
+      "status": "fetched",
+      "pages": 1
+    },
+    {
+      "canonical_id": 65369,
+      "observation_id": 18447,
+      "raw_title": "Skin Booster MicroNeedling Serum",
+      "raw_brand": "Dermaelle",
+      "source_url": "https://sourcebeauty.com/products/dermaelle-skin-booster-microneedling-serum",
+      "status": "fetched",
+      "pages": 1
+    },
+    {
+      "canonical_id": 65370,
+      "observation_id": 18448,
+      "raw_title": "Advanced Vitamin C Serum",
+      "raw_brand": "Dermaelle",
+      "source_url": "https://sourcebeauty.com/products/dermaelle-advanced-vitamin-c-serum",
+      "status": "fetched",
+      "pages": 1
+    },
+    {
+      "canonical_id": 65372,
+      "observation_id": 20760,
+      "raw_title": "HyaluWhite All-in-One Exfoliating Cleanser",
+      "raw_brand": "Dermaelle",
+      "source_url": "https://sourcebeauty.com/products/dermaelle-hyaluwhite-all-in-one-exfoliating-cleanser",
+      "status": "fetched",
+      "pages": 1
+    },
+    {
+      "canonical_id": 65373,
+      "observation_id": 20763,
+      "raw_title": "HyaluWhite Face & Neck Cream",
+      "raw_brand": "Dermaelle",
+      "source_url": "https://sourcebeauty.com/products/dermaelle-hyaluwhite-face-neck-cream",
+      "status": "fetched",
+      "pages": 1
+    }
+  ],
+  "last_canonical_id": 65373,
+  "more_candidates_in_selection": true
+}

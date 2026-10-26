@@ -1,0 +1,406 @@
+{
+  "backup_path": "/mnt/windows/Users/AmrAlfayoumy/Downloads/skincare/repo/api/backups/catalog/catalog-20261025T185829Z-5cf59bb1.sqlite3",
+  "before": {
+    "canonical_products": 7230,
+    "verified_identities": 277,
+    "published_inci": 0,
+    "observed_products_with_inci": 999,
+    "pending_reviews": {
+      "category": 4258,
+      "identity": 1720
+    },
+    "pending_identity_reviews": 1720,
+    "pending_category_reviews": 4258,
+    "awaiting_evidence": 0,
+    "sources": [
+      {
+        "id": "bashrety",
+        "name": "Bashrety",
+        "enabled": 1,
+        "publish_enabled": 0
+      },
+      {
+        "id": "bloompharmacy",
+        "name": "Bloom Pharmacy",
+        "enabled": 1,
+        "publish_enabled": 0
+      },
+      {
+        "id": "drdawood",
+        "name": "Dr Dawood",
+        "enabled": 1,
+        "publish_enabled": 0
+      },
+      {
+        "id": "feel22",
+        "name": "Feel22 Egypt",
+        "enabled": 1,
+        "publish_enabled": 0
+      },
+      {
+        "id": "rawafrican",
+        "name": "Raw African",
+        "enabled": 1,
+        "publish_enabled": 0
+      },
+      {
+        "id": "sourcebeauty",
+        "name": "Source Beauty",
+        "enabled": 1,
+        "publish_enabled": 0
+      }
+    ],
+    "formula_evidence": [
+      {
+        "completeness": "full",
+        "order_verified": 1,
+        "count": 352
+      },
+      {
+        "completeness": "partial",
+        "order_verified": 0,
+        "count": 48
+      },
+      {
+        "completeness": "unverified",
+        "order_verified": 0,
+        "count": 75
+      },
+      {
+        "completeness": "unverified",
+        "order_verified": 1,
+        "count": 37
+      }
+    ],
+    "gemini_results": [
+      {
+        "status": "auto_resolved",
+        "verdict": "same_product",
+        "count": 2
+      },
+      {
+        "status": "needs_manual",
+        "verdict": "different_product",
+        "count": 331
+      },
+      {
+        "status": "needs_manual",
+        "verdict": "same_product",
+        "count": 803
+      },
+      {
+        "status": "needs_manual",
+        "verdict": "uncertain",
+        "count": 586
+      }
+    ]
+  },
+  "result": {
+    "dry_run": false,
+    "categories": {
+      "resolved": 2012,
+      "uncertain_preserved": 2155,
+      "superseded_evidence_preserved": 76,
+      "cluster_conflict_preserved": 15
+    },
+    "saved_matching": {
+      "dry_run": false,
+      "no_gemini_calls": true,
+      "threshold": 0.9,
+      "source_verdicts_seen": 1704,
+      "source_verdicts_eligible": 769,
+      "source_verdicts_not_eligible": 935,
+      "stored_decisions_checked": 785,
+      "automatically_verified": 0,
+      "source_matches_linked": 16,
+      "automatically_split": 0,
+      "new_canonical_products": 0,
+      "still_needs_review": 769,
+      "sample_results": [
+        {
+          "review_id": 30,
+          "verdict": "same_product",
+          "confidence": 0.92,
+          "action": "manual",
+          "reason": "Missing source/canonical formulation discriminator: vehicle"
+        },
+        {
+          "review_id": 52,
+          "verdict": "same_product",
+          "confidence": 0.95,
+          "action": "manual",
+          "reason": "Independent retailer evidence does not corroborate the marketed identity or verified GTIN."
+        },
+        {
+          "review_id": 66,
+          "verdict": "same_product",
+          "confidence": 0.95,
+          "action": "manual",
+          "reason": "Missing source/canonical formulation discriminator: vehicle"
+        },
+        {
+          "review_id": 83,
+          "verdict": "same_product",
+          "confidence": 0.95,
+          "action": "manual",
+          "reason": "No independent retailer listing anchors the proposed match."
+        },
+        {
+          "review_id": 89,
+          "verdict": "same_product",
+          "confidence": 0.98,
+          "action": "manual",
+          "reason": "Another canonical remains plausible without an explicit formulation conflict."
+        },
+        {
+          "review_id": 99,
+          "verdict": "same_product",
+          "confidence": 0.98,
+          "action": "manual",
+          "reason": "Independent retailer evidence does not corroborate the marketed identity or verified GTIN."
+        },
+        {
+          "review_id": 248,
+          "verdict": "same_product",
+          "confidence": 0.95,
+          "action": "manual",
+          "reason": "Missing source/canonical formulation discriminator: vehicle"
+        },
+        {
+          "review_id": 257,
+          "verdict": "same_product",
+          "confidence": 0.9,
+          "action": "manual",
+          "reason": "Independent retailer evidence does not corroborate the marketed identity or verified GTIN."
+        },
+        {
+          "review_id": 269,
+          "verdict": "same_product",
+          "confidence": 0.95,
+          "action": "manual",
+          "reason": "Independent retailer evidence does not corroborate the marketed identity or verified GTIN."
+        },
+        {
+          "review_id": 390,
+          "verdict": "same_product",
+          "confidence": 0.95,
+          "action": "manual",
+          "reason": "Independent retailer evidence does not corroborate the marketed identity or verified GTIN."
+        },
+        {
+          "review_id": 401,
+          "verdict": "same_product",
+          "confidence": 0.95,
+          "action": "manual",
+          "reason": "Missing source/canonical formulation discriminator: vehicle"
+        },
+        {
+          "review_id": 587,
+          "verdict": "same_product",
+          "confidence": 0.9,
+          "action": "manual",
+          "reason": "Independent retailer evidence does not corroborate the marketed identity or verified GTIN."
+        },
+        {
+          "review_id": 645,
+          "verdict": "same_product",
+          "confidence": 0.95,
+          "action": "manual",
+          "reason": "Independent retailer evidence does not corroborate the marketed identity or verified GTIN."
+        },
+        {
+          "review_id": 655,
+          "verdict": "same_product",
+          "confidence": 0.98,
+          "action": "manual",
+          "reason": "Independent retailer evidence does not corroborate the marketed identity or verified GTIN."
+        },
+        {
+          "review_id": 673,
+          "verdict": "same_product",
+          "confidence": 0.95,
+          "action": "manual",
+          "reason": "No independent retailer listing anchors the proposed match."
+        },
+        {
+          "review_id": 692,
+          "verdict": "same_product",
+          "confidence": 0.98,
+          "action": "manual",
+          "reason": "Independent retailer evidence does not corroborate the marketed identity or verified GTIN."
+        },
+        {
+          "review_id": 713,
+          "verdict": "same_product",
+          "confidence": 0.95,
+          "action": "manual",
+          "reason": "Independent retailer evidence does not corroborate the marketed identity or verified GTIN."
+        },
+        {
+          "review_id": 749,
+          "verdict": "same_product",
+          "confidence": 0.95,
+          "action": "manual",
+          "reason": "Independent retailer evidence does not corroborate the marketed identity or verified GTIN."
+        },
+        {
+          "review_id": 751,
+          "verdict": "same_product",
+          "confidence": 0.95,
+          "action": "manual",
+          "reason": "No independent retailer listing anchors the proposed match."
+        },
+        {
+          "review_id": 798,
+          "verdict": "same_product",
+          "confidence": 0.9,
+          "action": "manual",
+          "reason": "No independent retailer listing anchors the proposed match."
+        },
+        {
+          "review_id": 807,
+          "verdict": "same_product",
+          "confidence": 0.95,
+          "action": "manual",
+          "reason": "Independent retailer evidence does not corroborate the marketed identity or verified GTIN."
+        },
+        {
+          "review_id": 808,
+          "verdict": "same_product",
+          "confidence": 0.92,
+          "action": "manual",
+          "reason": "Missing source/canonical formulation discriminator: vehicle"
+        },
+        {
+          "review_id": 811,
+          "verdict": "same_product",
+          "confidence": 0.95,
+          "action": "manual",
+          "reason": "Independent retailer evidence does not corroborate the marketed identity or verified GTIN."
+        },
+        {
+          "review_id": 812,
+          "verdict": "same_product",
+          "confidence": 1.0,
+          "action": "manual",
+          "reason": "Independent retailer evidence does not corroborate the marketed identity or verified GTIN."
+        },
+        {
+          "review_id": 873,
+          "verdict": "same_product",
+          "confidence": 0.95,
+          "action": "manual",
+          "reason": "Independent retailer evidence does not corroborate the marketed identity or verified GTIN."
+        }
+      ],
+      "message": "Saved decisions were replayed without any additional Gemini requests."
+    },
+    "identities": {
+      "needs_independent_retailer": 5567,
+      "pending_identity_conflict": 210,
+      "verified": 238,
+      "brand_or_duplicate_conflict": 28,
+      "listing_or_variant_conflict": 6
+    },
+    "formulations": {
+      "published": 51,
+      "no_eligible_evidence": 464
+    },
+    "model_calls": 0
+  },
+  "after": {
+    "canonical_products": 7230,
+    "verified_identities": 515,
+    "published_inci": 51,
+    "observed_products_with_inci": 999,
+    "pending_reviews": {
+      "category": 2246,
+      "identity": 1704
+    },
+    "pending_identity_reviews": 1704,
+    "pending_category_reviews": 2246,
+    "awaiting_evidence": 0,
+    "sources": [
+      {
+        "id": "bashrety",
+        "name": "Bashrety",
+        "enabled": 1,
+        "publish_enabled": 0
+      },
+      {
+        "id": "bloompharmacy",
+        "name": "Bloom Pharmacy",
+        "enabled": 1,
+        "publish_enabled": 0
+      },
+      {
+        "id": "drdawood",
+        "name": "Dr Dawood",
+        "enabled": 1,
+        "publish_enabled": 0
+      },
+      {
+        "id": "feel22",
+        "name": "Feel22 Egypt",
+        "enabled": 1,
+        "publish_enabled": 0
+      },
+      {
+        "id": "rawafrican",
+        "name": "Raw African",
+        "enabled": 1,
+        "publish_enabled": 0
+      },
+      {
+        "id": "sourcebeauty",
+        "name": "Source Beauty",
+        "enabled": 1,
+        "publish_enabled": 0
+      }
+    ],
+    "formula_evidence": [
+      {
+        "completeness": "full",
+        "order_verified": 1,
+        "count": 352
+      },
+      {
+        "completeness": "partial",
+        "order_verified": 0,
+        "count": 48
+      },
+      {
+        "completeness": "unverified",
+        "order_verified": 0,
+        "count": 75
+      },
+      {
+        "completeness": "unverified",
+        "order_verified": 1,
+        "count": 37
+      }
+    ],
+    "gemini_results": [
+      {
+        "status": "auto_resolved",
+        "verdict": "same_product",
+        "count": 18
+      },
+      {
+        "status": "needs_manual",
+        "verdict": "different_product",
+        "count": 331
+      },
+      {
+        "status": "needs_manual",
+        "verdict": "same_product",
+        "count": 787
+      },
+      {
+        "status": "needs_manual",
+        "verdict": "uncertain",
+        "count": 586
+      }
+    ]
+  }
+}

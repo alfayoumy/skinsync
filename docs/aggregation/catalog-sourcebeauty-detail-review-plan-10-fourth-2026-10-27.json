@@ -1,0 +1,198 @@
+{
+  "reviewed_page_indices": [
+    39,
+    40,
+    41,
+    42,
+    43,
+    44,
+    45,
+    46,
+    47,
+    48,
+    49,
+    50,
+    51,
+    52,
+    53,
+    54,
+    55,
+    56,
+    57,
+    58,
+    59,
+    60,
+    61,
+    62,
+    63,
+    64,
+    65,
+    66,
+    67,
+    68,
+    69,
+    70
+  ],
+  "decisions": [
+    {
+      "url": "https://sourcebeauty.com/products/axis-ybiome-resetting-moringa-cleansing-oil",
+      "decision": "apply_if_fresh_validation_passes",
+      "reason": "Retain partial summaries without full-formula publication."
+    },
+    {
+      "url": "https://sourcebeauty.com/products/mixsoon-soondy-centella-asiatica-essence",
+      "decision": "apply_if_fresh_validation_passes",
+      "reason": "Retain partial summaries without full-formula publication."
+    },
+    {
+      "url": "https://sourcebeauty.com/products/luna-sun-care-lip-balm",
+      "decision": "hold",
+      "reason": "No validated ingredient section."
+    },
+    {
+      "url": "https://sourcebeauty.com/products/altesse-soin-cica-mild-foaming-cleanser",
+      "decision": "apply_if_fresh_validation_passes",
+      "reason": "Retain partial summaries without full-formula publication."
+    },
+    {
+      "url": "https://sourcebeauty.com/products/altesse-soin-cica-regenerating-serum",
+      "decision": "apply_if_fresh_validation_passes",
+      "reason": "Retain partial summaries without full-formula publication."
+    },
+    {
+      "url": "https://sourcebeauty.com/products/mixsoon-centella-cleansing-foam",
+      "decision": "hold",
+      "reason": "No validated ingredient section."
+    },
+    {
+      "url": "https://sourcebeauty.com/products/klairs-rich-moist-soothing-cream",
+      "decision": "apply_if_fresh_validation_passes",
+      "reason": "Retain partial summaries without full-formula publication."
+    },
+    {
+      "url": "https://sourcebeauty.com/products/some-by-mi-propolis-b5-glow-barrier-calming-toner",
+      "decision": "hold",
+      "reason": "No validated ingredient section."
+    },
+    {
+      "url": "https://sourcebeauty.com/products/mixsoon-bean-cleansing-oil",
+      "decision": "hold",
+      "reason": "Paired quotation marks contaminate the literal first/last chemical tokens; hold for formatting correction."
+    },
+    {
+      "url": "https://sourcebeauty.com/products/celimax-the-real-noni-acne-bubble-cleanser",
+      "decision": "apply_if_fresh_validation_passes",
+      "reason": "Reviewed literal ingredient declaration; fresh identity and completeness checks required."
+    },
+    {
+      "url": "https://sourcebeauty.com/products/medicube-age-r-pdrn-booster-gel",
+      "decision": "hold",
+      "reason": "Malformed Glutamic Acid token appears as lutamic Acid."
+    },
+    {
+      "url": "https://sourcebeauty.com/products/loreal-paris-glycolic-bright-glowing-night-cream",
+      "decision": "apply_if_fresh_validation_passes",
+      "reason": "Reviewed literal ingredient declaration; fresh identity and completeness checks required."
+    },
+    {
+      "url": "https://sourcebeauty.com/products/axis-y-biome-double-defense-sunscreen",
+      "decision": "apply_if_fresh_validation_passes",
+      "reason": "Reviewed literal ingredient declaration; fresh identity and completeness checks required."
+    },
+    {
+      "url": "https://sourcebeauty.com/products/mixsoon-bean-toner",
+      "decision": "apply_if_fresh_validation_passes",
+      "reason": "Reviewed literal ingredient declaration; fresh identity and completeness checks required."
+    },
+    {
+      "url": "https://sourcebeauty.com/products/klairs-all-day-airy-mineral-sunscreen-spf50",
+      "decision": "apply_if_fresh_validation_passes",
+      "reason": "Reviewed literal ingredient declaration; fresh identity and completeness checks required."
+    },
+    {
+      "url": "https://sourcebeauty.com/products/micellar-water-telofill",
+      "decision": "hold",
+      "reason": "Incomplete chemical names such as poly sorbate and h-castor oil."
+    },
+    {
+      "url": "https://sourcebeauty.com/products/telofill-mica-cleanser",
+      "decision": "hold",
+      "reason": "Water-last cleanser declaration requires ordered manufacturer corroboration."
+    },
+    {
+      "url": "https://sourcebeauty.com/products/favelin-cupcake-glaze-body-lotion-1",
+      "decision": "hold",
+      "reason": "Numerous broken chemical names and extraction fragments."
+    },
+    {
+      "url": "https://sourcebeauty.com/products/mixsoon-bifida-ferment-essence",
+      "decision": "apply_if_fresh_validation_passes",
+      "reason": "Retain partial summaries without full-formula publication."
+    },
+    {
+      "url": "https://sourcebeauty.com/products/cosrx-refresh-aha-bha-vitamin-c-daily-toner_1",
+      "decision": "apply_if_fresh_validation_passes",
+      "reason": "Reviewed literal ingredient declaration; fresh identity and completeness checks required."
+    },
+    {
+      "url": "https://sourcebeauty.com/products/cosrx-low-ph-niacinamide-micellar-cleansing-water",
+      "decision": "apply_if_fresh_validation_passes",
+      "reason": "Reviewed literal ingredient declaration; fresh identity and completeness checks required."
+    },
+    {
+      "url": "https://sourcebeauty.com/products/garnier-fast-bright-vitamin-c-booster-serum",
+      "decision": "apply_if_fresh_validation_passes",
+      "reason": "Reviewed literal ingredient declaration; fresh identity and completeness checks required."
+    },
+    {
+      "url": "https://sourcebeauty.com/products/african-blossom-body-wash",
+      "decision": "hold",
+      "reason": "Trade codes and non-specific names do not establish identified full INCI."
+    },
+    {
+      "url": "https://sourcebeauty.com/products/isis-uveblock-spf50-hydra-lotion",
+      "decision": "apply_if_fresh_validation_passes",
+      "reason": "Reviewed literal ingredient declaration; fresh identity and completeness checks required."
+    },
+    {
+      "url": "https://sourcebeauty.com/products/st-ives-hydrating-body-cream-with-avocado-vitamin-e",
+      "decision": "hold",
+      "reason": "Avocado and vitamin E named in product title are absent from the listed declaration."
+    },
+    {
+      "url": "https://sourcebeauty.com/products/eucerin-derm-purifyer-correcting-cleanser",
+      "decision": "apply_if_fresh_validation_passes",
+      "reason": "Reviewed literal ingredient declaration; fresh identity and completeness checks required."
+    },
+    {
+      "url": "https://sourcebeauty.com/products/essentials-tropical-shower-gel",
+      "decision": "hold",
+      "reason": "Water-last shower gel and unspecified color require ordered full-label confirmation."
+    },
+    {
+      "url": "https://sourcebeauty.com/products/soul-more-vanilla-hand-cream",
+      "decision": "hold",
+      "reason": "No validated ingredient section."
+    },
+    {
+      "url": "https://sourcebeauty.com/products/soul-more-destiny-showergel",
+      "decision": "hold",
+      "reason": "No validated ingredient section."
+    },
+    {
+      "url": "https://sourcebeauty.com/products/soul-more-strawberry-hand-cream",
+      "decision": "hold",
+      "reason": "No validated ingredient section."
+    },
+    {
+      "url": "https://sourcebeauty.com/products/soul-more-glossy-lip-balm-strawberry",
+      "decision": "hold",
+      "reason": "No validated ingredient section."
+    },
+    {
+      "url": "https://sourcebeauty.com/products/vanilla-wave-body-wash",
+      "decision": "hold",
+      "reason": "Surfactant percentage classes and unspecified preservatives/color are not full INCI."
+    }
+  ]
+}

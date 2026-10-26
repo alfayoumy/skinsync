@@ -1,0 +1,15 @@
+{
+  "before": {
+    "exceeded_seconds": 2
+  },
+  "after": {
+    "seconds": 0.0057,
+    "count": 14196
+  },
+  "plan": [
+    "SCAN p USING COVERING INDEX idx_products_is_skincare",
+    "CORRELATED SCALAR SUBQUERY 1",
+    "SEARCH o USING COVERING INDEX idx_product_offers_legacy_source (legacy_product_id=?)",
+    "SEARCH s USING INDEX sqlite_autoindex_sources_1 (id=?)"
+  ]
+}

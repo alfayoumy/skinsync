@@ -1,0 +1,81 @@
+{
+  "applied": true,
+  "backup_path": "/mnt/windows/Users/AmrAlfayoumy/Downloads/skincare/repo/api/backups/catalog/catalog-20261025T220311Z-4a31fb96.sqlite3",
+  "model_calls": 0,
+  "results": [
+    {
+      "url": "https://sourcebeauty.com/products/medicube-anti-aging-eye-contour-with-peptides",
+      "status": "evidence_only",
+      "canonical_id": 63444,
+      "original_observation_id": 20065,
+      "observation_id": 22785,
+      "evidence_id": 954,
+      "ingredient_count": 7
+    },
+    {
+      "url": "https://sourcebeauty.com/products/moisturizing-rich-cream",
+      "status": "evidence_only",
+      "canonical_id": 63445,
+      "original_observation_id": 17573,
+      "observation_id": 22786,
+      "evidence_id": 955,
+      "ingredient_count": 4
+    },
+    {
+      "url": "https://sourcebeauty.com/products/axis-y-vegan-collagen-eye-serum",
+      "status": "published",
+      "canonical_id": 63452,
+      "original_observation_id": 20194,
+      "observation_id": 22787,
+      "evidence_id": 956,
+      "ingredient_count": 39
+    },
+    {
+      "url": "https://sourcebeauty.com/products/essentials-vanilla-sugar-body-lotion",
+      "status": "published",
+      "canonical_id": 63456,
+      "original_observation_id": 21537,
+      "observation_id": 22788,
+      "evidence_id": 958,
+      "ingredient_count": 15
+    },
+    {
+      "url": "https://sourcebeauty.com/products/essentials-coconut-passion-shower-gel",
+      "status": "published",
+      "canonical_id": 63457,
+      "original_observation_id": 21535,
+      "observation_id": 22789,
+      "evidence_id": 960,
+      "ingredient_count": 22
+    },
+    {
+      "url": "https://sourcebeauty.com/products/pull-the-curl-trigger-definition-cream",
+      "status": "preserved",
+      "reason": "Current retailer product type does not establish an approved skincare product."
+    },
+    {
+      "url": "https://sourcebeauty.com/products/richie-honeymoon-night-cream",
+      "status": "preserved",
+      "reason": "Detail page fetch is incomplete, unavailable or redirected."
+    },
+    {
+      "url": "https://sourcebeauty.com/products/moist-1-cica-cream",
+      "status": "preserved",
+      "reason": "Detail page fetch is incomplete, unavailable or redirected."
+    },
+    {
+      "url": "https://sourcebeauty.com/products/moist-1-cream-with-urea",
+      "status": "preserved",
+      "reason": "Detail page fetch is incomplete, unavailable or redirected."
+    },
+    {
+      "url": "https://sourcebeauty.com/products/parkville-purifying-foam-cleanser",
+      "status": "published",
+      "canonical_id": 63515,
+      "original_observation_id": 21592,
+      "observation_id": 22790,
+      "evidence_id": 962,
+      "ingredient_count": 20
+    }
+  ]
+}

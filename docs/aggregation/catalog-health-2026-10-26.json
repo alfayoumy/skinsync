@@ -1,0 +1,157 @@
+{
+  "health": {
+    "canonical_products": 7348,
+    "active_canonical_products": 7342,
+    "active_skincare_products": 6200,
+    "verified_identities": 566,
+    "published_inci": 59,
+    "observed_products_with_inci": 999,
+    "pending_reviews": {
+      "category": 1111,
+      "identity": 973
+    },
+    "pending_identity_reviews": 973,
+    "pending_category_reviews": 1111,
+    "awaiting_evidence": 0,
+    "sources": [
+      {
+        "id": "bashrety",
+        "name": "Bashrety",
+        "enabled": 1,
+        "publish_enabled": 0
+      },
+      {
+        "id": "bloompharmacy",
+        "name": "Bloom Pharmacy",
+        "enabled": 1,
+        "publish_enabled": 0
+      },
+      {
+        "id": "drdawood",
+        "name": "Dr Dawood",
+        "enabled": 1,
+        "publish_enabled": 0
+      },
+      {
+        "id": "feel22",
+        "name": "Feel22 Egypt",
+        "enabled": 1,
+        "publish_enabled": 0
+      },
+      {
+        "id": "rawafrican",
+        "name": "Raw African",
+        "enabled": 1,
+        "publish_enabled": 0
+      },
+      {
+        "id": "sourcebeauty",
+        "name": "Source Beauty",
+        "enabled": 1,
+        "publish_enabled": 0
+      }
+    ],
+    "formula_evidence": [
+      {
+        "completeness": "full",
+        "order_verified": 1,
+        "count": 352
+      },
+      {
+        "completeness": "partial",
+        "order_verified": 0,
+        "count": 48
+      },
+      {
+        "completeness": "unverified",
+        "order_verified": 0,
+        "count": 75
+      },
+      {
+        "completeness": "unverified",
+        "order_verified": 1,
+        "count": 37
+      }
+    ],
+    "gemini_results": [
+      {
+        "status": "auto_resolved",
+        "verdict": "different_product",
+        "count": 123
+      },
+      {
+        "status": "auto_resolved",
+        "verdict": "same_product",
+        "count": 626
+      },
+      {
+        "status": "needs_manual",
+        "verdict": "different_product",
+        "count": 7
+      },
+      {
+        "status": "needs_manual",
+        "verdict": "same_product",
+        "count": 1
+      },
+      {
+        "status": "needs_manual",
+        "verdict": "uncertain",
+        "count": 25
+      },
+      {
+        "status": "queued",
+        "verdict": "different_product",
+        "count": 218
+      },
+      {
+        "status": "queued",
+        "verdict": "same_product",
+        "count": 187
+      },
+      {
+        "status": "queued",
+        "verdict": "uncertain",
+        "count": 535
+      }
+    ]
+  },
+  "integrity_check": "ok",
+  "foreign_key_errors": 0,
+  "pair_results": [
+    {
+      "verdict": null,
+      "count": 4073
+    },
+    {
+      "verdict": "different_product",
+      "count": 295
+    },
+    {
+      "verdict": "same_product",
+      "count": 26
+    },
+    {
+      "verdict": "uncertain",
+      "count": 6
+    }
+  ],
+  "invalid_pair_payloads": 0,
+  "model_jobs": [
+    {
+      "task_id": "task_20261025_210322_6d2594fe",
+      "status": "failed",
+      "processed_items": 319,
+      "error_message": "Gemini request unavailable or malformed. No cases auto-approved.",
+      "metadata": "{\"stats\": {\"pair_rejections\": 264, \"auto_resolved\": 72, \"needs_manual\": 32}, \"api_calls\": 321}"
+    },
+    {
+      "task_id": "task_20261025_212525_722d00eb",
+      "status": "failed",
+      "processed_items": 0,
+      "error_message": "Gemini returned HTTP 429; unfinished pairs remain queued. Completed pair results and applied decisions were preserved.",
+      "metadata": "{\"stats\": {}, \"api_calls\": 2, \"products_per_request\": 2}"
+    }
+  ],
+  "brand_merges": 6
+}

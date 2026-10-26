@@ -1,0 +1,1570 @@
+{
+  "backup_path": "/mnt/windows/Users/AmrAlfayoumy/Downloads/skincare/repo/api/backups/catalog/catalog-20261026T211438Z-f42b761e.sqlite3",
+  "result": {
+    "applied": true,
+    "products_per_request": 2,
+    "provider_calls": 0,
+    "new_pairs_prepared": 16,
+    "completed_pairs_retained": 37,
+    "reviews_prepared": 15,
+    "pairs_prepared": 53,
+    "examples": [
+      {
+        "review_id": 20,
+        "pair_count": 3,
+        "pairs": [
+          [
+            {
+              "title": "Nuxuriance Ultra\u00a0 night Cream 50ml",
+              "brand": "NUXE",
+              "source_id": "bashrety",
+              "source_product_id": "9282151317757",
+              "url": "https://bashrety.tv/products/nuxuriance-ultra-night-cream-50ml-eid",
+              "identity_attributes": {
+                "application_area": "face",
+                "concentrations": [],
+                "formula_revision": null,
+                "fragrance": null,
+                "function": "Moisturizer",
+                "market": "EG",
+                "name": "cream night nuxuriance ultra",
+                "region_defining": false,
+                "shade": null,
+                "spf": null,
+                "timing": "night",
+                "tint": null,
+                "vehicle": "cream"
+              }
+            },
+            {
+              "canonical_product_id": 63182,
+              "title": "Nuxuriance Ultra Hand Cream 75ml",
+              "brand": "NUXE",
+              "identity_attributes": {
+                "name": "cream hand nuxuriance ultra",
+                "vehicle": "cream",
+                "application_area": "body",
+                "function": "Body Care",
+                "spf": null,
+                "concentrations": [],
+                "timing": null,
+                "fragrance": null,
+                "tint": null,
+                "market": "EG",
+                "region_defining": false,
+                "formula_revision": null,
+                "shade": null
+              }
+            }
+          ],
+          [
+            {
+              "title": "Nuxuriance Ultra\u00a0 night Cream 50ml",
+              "brand": "NUXE",
+              "source_id": "bashrety",
+              "source_product_id": "9282151317757",
+              "url": "https://bashrety.tv/products/nuxuriance-ultra-night-cream-50ml-eid",
+              "identity_attributes": {
+                "application_area": "face",
+                "concentrations": [],
+                "formula_revision": null,
+                "fragrance": null,
+                "function": "Moisturizer",
+                "market": "EG",
+                "name": "cream night nuxuriance ultra",
+                "region_defining": false,
+                "shade": null,
+                "spf": null,
+                "timing": "night",
+                "tint": null,
+                "vehicle": "cream"
+              }
+            },
+            {
+              "canonical_product_id": 63189,
+              "title": "Nuxuriance Ultra Eye and Lips Cream",
+              "brand": "NUXE",
+              "identity_attributes": {
+                "name": "cream eye lips nuxuriance ultra",
+                "vehicle": "cream",
+                "application_area": "eye",
+                "function": "Moisturizer",
+                "spf": null,
+                "concentrations": [],
+                "timing": null,
+                "fragrance": null,
+                "tint": null,
+                "market": "EG",
+                "region_defining": false,
+                "formula_revision": null,
+                "shade": null
+              }
+            }
+          ],
+          [
+            {
+              "title": "Nuxuriance Ultra\u00a0 night Cream 50ml",
+              "brand": "NUXE",
+              "source_id": "bashrety",
+              "source_product_id": "9282151317757",
+              "url": "https://bashrety.tv/products/nuxuriance-ultra-night-cream-50ml-eid",
+              "identity_attributes": {
+                "application_area": "face",
+                "concentrations": [],
+                "formula_revision": null,
+                "fragrance": null,
+                "function": "Moisturizer",
+                "market": "EG",
+                "name": "cream night nuxuriance ultra",
+                "region_defining": false,
+                "shade": null,
+                "spf": null,
+                "timing": "night",
+                "tint": null,
+                "vehicle": "cream"
+              }
+            },
+            {
+              "canonical_product_id": 70452,
+              "title": "Nuxuriance Ultra Day & Night Care Cream 75ml",
+              "brand": "NUXE",
+              "identity_attributes": {
+                "name": "care cream day night nuxuriance ultra",
+                "vehicle": "cream",
+                "application_area": "face",
+                "function": "Moisturizer",
+                "spf": null,
+                "concentrations": [],
+                "timing": "night",
+                "fragrance": null,
+                "tint": null,
+                "market": "EG",
+                "region_defining": false,
+                "formula_revision": null,
+                "shade": null
+              }
+            }
+          ]
+        ]
+      },
+      {
+        "review_id": 885,
+        "pair_count": 4,
+        "pairs": [
+          [
+            {
+              "title": "Bioderma Photoderm Xdefense Ultra Fluid SPF 50+ Tinted Sunscreen Shade 03 - 40ml",
+              "brand": "Bioderma",
+              "source_id": "bloompharmacy",
+              "source_product_id": "9334102327604",
+              "url": "https://www.bloompharmacy.com/products/bioderma-photoderm-xdefense-ultra-fluid-spf-50-tinted-sunscreen-shade-03-40ml",
+              "identity_attributes": {
+                "application_area": "face",
+                "concentrations": [],
+                "formula_revision": null,
+                "fragrance": null,
+                "function": "Sunscreen",
+                "market": "EG",
+                "name": "03 50+ fluid photoderm shade spf sunscreen tinted ultra xdefense",
+                "region_defining": false,
+                "shade": null,
+                "spf": "50",
+                "timing": null,
+                "tint": "tinted",
+                "vehicle": "fluid"
+              }
+            },
+            {
+              "canonical_product_id": 63707,
+              "title": "Bioderma Photoderm Lait Ultra SPF 50+ Sunscreen Lotion - 100ml",
+              "brand": "Bioderma",
+              "identity_attributes": {
+                "name": "50+ lait lotion photoderm spf sunscreen ultra",
+                "vehicle": "lotion",
+                "application_area": "face",
+                "function": "Sunscreen",
+                "spf": "50",
+                "concentrations": [],
+                "timing": null,
+                "fragrance": null,
+                "tint": null,
+                "market": "EG",
+                "region_defining": false,
+                "formula_revision": null,
+                "shade": null
+              }
+            }
+          ],
+          [
+            {
+              "title": "Bioderma Photoderm Xdefense Ultra Fluid SPF 50+ Tinted Sunscreen Shade 03 - 40ml",
+              "brand": "Bioderma",
+              "source_id": "bloompharmacy",
+              "source_product_id": "9334102327604",
+              "url": "https://www.bloompharmacy.com/products/bioderma-photoderm-xdefense-ultra-fluid-spf-50-tinted-sunscreen-shade-03-40ml",
+              "identity_attributes": {
+                "application_area": "face",
+                "concentrations": [],
+                "formula_revision": null,
+                "fragrance": null,
+                "function": "Sunscreen",
+                "market": "EG",
+                "name": "03 50+ fluid photoderm shade spf sunscreen tinted ultra xdefense",
+                "region_defining": false,
+                "shade": null,
+                "spf": "50",
+                "timing": null,
+                "tint": "tinted",
+                "vehicle": "fluid"
+              }
+            },
+            {
+              "canonical_product_id": 63859,
+              "title": "Bioderma Photoderm Xdefense Ultra Fluid SPF 50+ Tinted Sunscreen Shade 01 - 40ml",
+              "brand": "Bioderma",
+              "identity_attributes": {
+                "name": "01 50+ fluid photoderm shade spf sunscreen tinted ultra xdefense",
+                "vehicle": "fluid",
+                "application_area": "face",
+                "function": "Sunscreen",
+                "spf": "50",
+                "concentrations": [],
+                "timing": null,
+                "fragrance": null,
+                "tint": "tinted",
+                "market": "EG",
+                "region_defining": false,
+                "formula_revision": null,
+                "shade": null
+              }
+            }
+          ],
+          [
+            {
+              "title": "Bioderma Photoderm Xdefense Ultra Fluid SPF 50+ Tinted Sunscreen Shade 03 - 40ml",
+              "brand": "Bioderma",
+              "source_id": "bloompharmacy",
+              "source_product_id": "9334102327604",
+              "url": "https://www.bloompharmacy.com/products/bioderma-photoderm-xdefense-ultra-fluid-spf-50-tinted-sunscreen-shade-03-40ml",
+              "identity_attributes": {
+                "application_area": "face",
+                "concentrations": [],
+                "formula_revision": null,
+                "fragrance": null,
+                "function": "Sunscreen",
+                "market": "EG",
+                "name": "03 50+ fluid photoderm shade spf sunscreen tinted ultra xdefense",
+                "region_defining": false,
+                "shade": null,
+                "spf": "50",
+                "timing": null,
+                "tint": "tinted",
+                "vehicle": "fluid"
+              }
+            },
+            {
+              "canonical_product_id": 70393,
+              "title": "Bioderma Photoderm Xdefense Ultra Fluid SPF 50+ Tinted Sunscreen Shade 04 - 40ml",
+              "brand": "Bioderma",
+              "identity_attributes": {
+                "name": "04 50+ fluid photoderm shade spf sunscreen tinted ultra xdefense",
+                "vehicle": "fluid",
+                "application_area": "face",
+                "function": "Sunscreen",
+                "spf": "50",
+                "concentrations": [],
+                "timing": null,
+                "fragrance": null,
+                "tint": "tinted",
+                "market": "EG",
+                "region_defining": false,
+                "formula_revision": null,
+                "shade": null
+              }
+            }
+          ],
+          [
+            {
+              "title": "Bioderma Photoderm Xdefense Ultra Fluid SPF 50+ Tinted Sunscreen Shade 03 - 40ml",
+              "brand": "Bioderma",
+              "source_id": "bloompharmacy",
+              "source_product_id": "9334102327604",
+              "url": "https://www.bloompharmacy.com/products/bioderma-photoderm-xdefense-ultra-fluid-spf-50-tinted-sunscreen-shade-03-40ml",
+              "identity_attributes": {
+                "application_area": "face",
+                "concentrations": [],
+                "formula_revision": null,
+                "fragrance": null,
+                "function": "Sunscreen",
+                "market": "EG",
+                "name": "03 50+ fluid photoderm shade spf sunscreen tinted ultra xdefense",
+                "region_defining": false,
+                "shade": null,
+                "spf": "50",
+                "timing": null,
+                "tint": "tinted",
+                "vehicle": "fluid"
+              }
+            },
+            {
+              "canonical_product_id": 70477,
+              "title": "Bioderma Photoderm Xdefense Ultra Fluid SPF 50+ Tinted Sunscreen Shade 02 - 40ml",
+              "brand": "Bioderma",
+              "identity_attributes": {
+                "name": "02 50+ fluid photoderm shade spf sunscreen tinted ultra xdefense",
+                "vehicle": "fluid",
+                "application_area": "face",
+                "function": "Sunscreen",
+                "spf": "50",
+                "concentrations": [],
+                "timing": null,
+                "fragrance": null,
+                "tint": "tinted",
+                "market": "EG",
+                "region_defining": false,
+                "formula_revision": null,
+                "shade": null
+              }
+            }
+          ]
+        ]
+      },
+      {
+        "review_id": 954,
+        "pair_count": 3,
+        "pairs": [
+          [
+            {
+              "title": "Dermactive Acti-Solaire SPF 50+ Light Tinted Ultra Fluid Dry Touch \u2013 50ml",
+              "brand": "Dermactive",
+              "source_id": "bloompharmacy",
+              "source_product_id": "8889557319988",
+              "url": "https://www.bloompharmacy.com/products/dermactive-acti-solaire-spf-50-ultra-fluid-dry-touch-light-tinted-50ml",
+              "identity_attributes": {
+                "application_area": "face",
+                "concentrations": [],
+                "formula_revision": null,
+                "fragrance": null,
+                "function": "Sunscreen",
+                "market": "EG",
+                "name": "50+ acti dry fluid light solaire spf tinted touch ultra",
+                "region_defining": false,
+                "shade": null,
+                "spf": "50",
+                "timing": null,
+                "tint": "tinted",
+                "vehicle": "fluid"
+              }
+            },
+            {
+              "canonical_product_id": 63161,
+              "title": "Acti-Solaire Ultra Fluid SPF50+ Instant Dry",
+              "brand": "Dermactive",
+              "identity_attributes": {
+                "name": "acti dry fluid instant solaire spf50+ ultra",
+                "vehicle": "fluid",
+                "application_area": "face",
+                "function": "Sunscreen",
+                "spf": "50",
+                "concentrations": [],
+                "timing": null,
+                "fragrance": null,
+                "tint": null,
+                "market": "EG",
+                "region_defining": false,
+                "formula_revision": null,
+                "shade": null
+              }
+            }
+          ],
+          [
+            {
+              "title": "Dermactive Acti-Solaire SPF 50+ Light Tinted Ultra Fluid Dry Touch \u2013 50ml",
+              "brand": "Dermactive",
+              "source_id": "bloompharmacy",
+              "source_product_id": "8889557319988",
+              "url": "https://www.bloompharmacy.com/products/dermactive-acti-solaire-spf-50-ultra-fluid-dry-touch-light-tinted-50ml",
+              "identity_attributes": {
+                "application_area": "face",
+                "concentrations": [],
+                "formula_revision": null,
+                "fragrance": null,
+                "function": "Sunscreen",
+                "market": "EG",
+                "name": "50+ acti dry fluid light solaire spf tinted touch ultra",
+                "region_defining": false,
+                "shade": null,
+                "spf": "50",
+                "timing": null,
+                "tint": "tinted",
+                "vehicle": "fluid"
+              }
+            },
+            {
+              "canonical_product_id": 69413,
+              "title": "Dermactive Acti-Solaire SPF 50+ Ultra Fluid Dry Touch - 50ml",
+              "brand": "Dermactive",
+              "identity_attributes": {
+                "name": "50+ acti dry fluid solaire spf touch ultra",
+                "vehicle": "fluid",
+                "application_area": "face",
+                "function": "Sunscreen",
+                "spf": "50",
+                "concentrations": [],
+                "timing": null,
+                "fragrance": null,
+                "tint": null,
+                "market": "EG",
+                "region_defining": false,
+                "formula_revision": null,
+                "shade": null
+              }
+            }
+          ],
+          [
+            {
+              "title": "Dermactive Acti-Solaire SPF 50+ Light Tinted Ultra Fluid Dry Touch \u2013 50ml",
+              "brand": "Dermactive",
+              "source_id": "bloompharmacy",
+              "source_product_id": "8889557319988",
+              "url": "https://www.bloompharmacy.com/products/dermactive-acti-solaire-spf-50-ultra-fluid-dry-touch-light-tinted-50ml",
+              "identity_attributes": {
+                "application_area": "face",
+                "concentrations": [],
+                "formula_revision": null,
+                "fragrance": null,
+                "function": "Sunscreen",
+                "market": "EG",
+                "name": "50+ acti dry fluid light solaire spf tinted touch ultra",
+                "region_defining": false,
+                "shade": null,
+                "spf": "50",
+                "timing": null,
+                "tint": "tinted",
+                "vehicle": "fluid"
+              }
+            },
+            {
+              "canonical_product_id": 70457,
+              "title": "ACTI-SOLAIRE SPF 50+ Ultra Fluid Light Tinted",
+              "brand": "Dermactive",
+              "identity_attributes": {
+                "name": "50+ acti fluid light solaire spf tinted ultra",
+                "vehicle": "fluid",
+                "application_area": "face",
+                "function": "Sunscreen",
+                "spf": "50",
+                "concentrations": [],
+                "timing": null,
+                "fragrance": null,
+                "tint": "tinted",
+                "market": "EG",
+                "region_defining": false,
+                "formula_revision": null,
+                "shade": null
+              }
+            }
+          ]
+        ]
+      },
+      {
+        "review_id": 1071,
+        "pair_count": 5,
+        "pairs": [
+          [
+            {
+              "title": "Rays & Rocks Blue Zinc SPF 50+ Sunscreen Stick - 30gm",
+              "brand": "Rays & Rocks",
+              "source_id": "bloompharmacy",
+              "source_product_id": "9319832453428",
+              "url": "https://www.bloompharmacy.com/products/rays-rocks-blue-zinc-spf-50-sunscreen-stick-30gm",
+              "identity_attributes": {
+                "application_area": "face",
+                "concentrations": [],
+                "formula_revision": null,
+                "fragrance": null,
+                "function": "Sunscreen",
+                "market": "EG",
+                "name": "50+ blue spf stick sunscreen zinc",
+                "region_defining": false,
+                "shade": null,
+                "spf": "50",
+                "timing": null,
+                "tint": null,
+                "vehicle": "stick"
+              }
+            },
+            {
+              "canonical_product_id": 63759,
+              "title": "Rays & Rocks Yellow Zinc SPF 50+ Sunscreen Stick - 30gm",
+              "brand": "Rays & Rocks",
+              "identity_attributes": {
+                "name": "50+ spf stick sunscreen yellow zinc",
+                "vehicle": "stick",
+                "application_area": "face",
+                "function": "Sunscreen",
+                "spf": "50",
+                "concentrations": [],
+                "timing": null,
+                "fragrance": null,
+                "tint": null,
+                "market": "EG",
+                "region_defining": false,
+                "formula_revision": null,
+                "shade": null
+              }
+            }
+          ],
+          [
+            {
+              "title": "Rays & Rocks Blue Zinc SPF 50+ Sunscreen Stick - 30gm",
+              "brand": "Rays & Rocks",
+              "source_id": "bloompharmacy",
+              "source_product_id": "9319832453428",
+              "url": "https://www.bloompharmacy.com/products/rays-rocks-blue-zinc-spf-50-sunscreen-stick-30gm",
+              "identity_attributes": {
+                "application_area": "face",
+                "concentrations": [],
+                "formula_revision": null,
+                "fragrance": null,
+                "function": "Sunscreen",
+                "market": "EG",
+                "name": "50+ blue spf stick sunscreen zinc",
+                "region_defining": false,
+                "shade": null,
+                "spf": "50",
+                "timing": null,
+                "tint": null,
+                "vehicle": "stick"
+              }
+            },
+            {
+              "canonical_product_id": 69305,
+              "title": "Rays & Rocks Green Zinc SPF 50+ Sunscreen Stick - 30gm",
+              "brand": "Rays & Rocks",
+              "identity_attributes": {
+                "name": "50+ green spf stick sunscreen zinc",
+                "vehicle": "stick",
+                "application_area": "face",
+                "function": "Sunscreen",
+                "spf": "50",
+                "concentrations": [],
+                "timing": null,
+                "fragrance": null,
+                "tint": null,
+                "market": "EG",
+                "region_defining": false,
+                "formula_revision": null,
+                "shade": null
+              }
+            }
+          ],
+          [
+            {
+              "title": "Rays & Rocks Blue Zinc SPF 50+ Sunscreen Stick - 30gm",
+              "brand": "Rays & Rocks",
+              "source_id": "bloompharmacy",
+              "source_product_id": "9319832453428",
+              "url": "https://www.bloompharmacy.com/products/rays-rocks-blue-zinc-spf-50-sunscreen-stick-30gm",
+              "identity_attributes": {
+                "application_area": "face",
+                "concentrations": [],
+                "formula_revision": null,
+                "fragrance": null,
+                "function": "Sunscreen",
+                "market": "EG",
+                "name": "50+ blue spf stick sunscreen zinc",
+                "region_defining": false,
+                "shade": null,
+                "spf": "50",
+                "timing": null,
+                "tint": null,
+                "vehicle": "stick"
+              }
+            },
+            {
+              "canonical_product_id": 70394,
+              "title": "Rays & Rocks Pink Zinc SPF 50+ Sunscreen Stick - 30gm",
+              "brand": "Rays & Rocks",
+              "identity_attributes": {
+                "name": "50+ pink spf stick sunscreen zinc",
+                "vehicle": "stick",
+                "application_area": "face",
+                "function": "Sunscreen",
+                "spf": "50",
+                "concentrations": [],
+                "timing": null,
+                "fragrance": null,
+                "tint": null,
+                "market": "EG",
+                "region_defining": false,
+                "formula_revision": null,
+                "shade": null
+              }
+            }
+          ],
+          [
+            {
+              "title": "Rays & Rocks Blue Zinc SPF 50+ Sunscreen Stick - 30gm",
+              "brand": "Rays & Rocks",
+              "source_id": "bloompharmacy",
+              "source_product_id": "9319832453428",
+              "url": "https://www.bloompharmacy.com/products/rays-rocks-blue-zinc-spf-50-sunscreen-stick-30gm",
+              "identity_attributes": {
+                "application_area": "face",
+                "concentrations": [],
+                "formula_revision": null,
+                "fragrance": null,
+                "function": "Sunscreen",
+                "market": "EG",
+                "name": "50+ blue spf stick sunscreen zinc",
+                "region_defining": false,
+                "shade": null,
+                "spf": "50",
+                "timing": null,
+                "tint": null,
+                "vehicle": "stick"
+              }
+            },
+            {
+              "canonical_product_id": 70395,
+              "title": "Rays & Rocks White Zinc SPF 50+ Sunscreen Stick - 30gm",
+              "brand": "Rays & Rocks",
+              "identity_attributes": {
+                "name": "50+ spf stick sunscreen white zinc",
+                "vehicle": "stick",
+                "application_area": "face",
+                "function": "Sunscreen",
+                "spf": "50",
+                "concentrations": [],
+                "timing": null,
+                "fragrance": null,
+                "tint": null,
+                "market": "EG",
+                "region_defining": false,
+                "formula_revision": null,
+                "shade": null
+              }
+            }
+          ],
+          [
+            {
+              "title": "Rays & Rocks Blue Zinc SPF 50+ Sunscreen Stick - 30gm",
+              "brand": "Rays & Rocks",
+              "source_id": "bloompharmacy",
+              "source_product_id": "9319832453428",
+              "url": "https://www.bloompharmacy.com/products/rays-rocks-blue-zinc-spf-50-sunscreen-stick-30gm",
+              "identity_attributes": {
+                "application_area": "face",
+                "concentrations": [],
+                "formula_revision": null,
+                "fragrance": null,
+                "function": "Sunscreen",
+                "market": "EG",
+                "name": "50+ blue spf stick sunscreen zinc",
+                "region_defining": false,
+                "shade": null,
+                "spf": "50",
+                "timing": null,
+                "tint": null,
+                "vehicle": "stick"
+              }
+            },
+            {
+              "canonical_product_id": 70488,
+              "title": "Rays & Rocks Purple Zinc SPF 50+ Sunscreen Stick - 30gm",
+              "brand": "Rays & Rocks",
+              "identity_attributes": {
+                "name": "50+ purple spf stick sunscreen zinc",
+                "vehicle": "stick",
+                "application_area": "face",
+                "function": "Sunscreen",
+                "spf": "50",
+                "concentrations": [],
+                "timing": null,
+                "fragrance": null,
+                "tint": null,
+                "market": "EG",
+                "region_defining": false,
+                "formula_revision": null,
+                "shade": null
+              }
+            }
+          ]
+        ]
+      },
+      {
+        "review_id": 1109,
+        "pair_count": 3,
+        "pairs": [
+          [
+            {
+              "title": "Bionnex Preventiva Tinted Sunscreen Cream SPF 50+ - 50ml",
+              "brand": "Bionnex",
+              "source_id": "bloompharmacy",
+              "source_product_id": "8840193507636",
+              "url": "https://www.bloompharmacy.com/products/bionnex-preventiva-tinted-sunscreen-cream-spf-50-50ml",
+              "identity_attributes": {
+                "application_area": "face",
+                "concentrations": [],
+                "formula_revision": null,
+                "fragrance": null,
+                "function": "Sunscreen",
+                "market": "EG",
+                "name": "50+ cream preventiva spf sunscreen tinted",
+                "region_defining": false,
+                "shade": null,
+                "spf": "50",
+                "timing": null,
+                "tint": "tinted",
+                "vehicle": "cream"
+              }
+            },
+            {
+              "canonical_product_id": 63232,
+              "title": "PREVENTIVA Dry Touch Sunscreen Fluid Spf50+",
+              "brand": "BIONNEX",
+              "identity_attributes": {
+                "name": "dry fluid preventiva spf50+ sunscreen touch",
+                "vehicle": "fluid",
+                "application_area": "face",
+                "function": "Sunscreen",
+                "spf": "50",
+                "concentrations": [],
+                "timing": null,
+                "fragrance": null,
+                "tint": null,
+                "market": "EG",
+                "region_defining": false,
+                "formula_revision": null,
+                "shade": null
+              }
+            }
+          ],
+          [
+            {
+              "title": "Bionnex Preventiva Tinted Sunscreen Cream SPF 50+ - 50ml",
+              "brand": "Bionnex",
+              "source_id": "bloompharmacy",
+              "source_product_id": "8840193507636",
+              "url": "https://www.bloompharmacy.com/products/bionnex-preventiva-tinted-sunscreen-cream-spf-50-50ml",
+              "identity_attributes": {
+                "application_area": "face",
+                "concentrations": [],
+                "formula_revision": null,
+                "fragrance": null,
+                "function": "Sunscreen",
+                "market": "EG",
+                "name": "50+ cream preventiva spf sunscreen tinted",
+                "region_defining": false,
+                "shade": null,
+                "spf": "50",
+                "timing": null,
+                "tint": "tinted",
+                "vehicle": "cream"
+              }
+            },
+            {
+              "canonical_product_id": 63294,
+              "title": "PREVENTIVA Sunscreen Cream Spf50+",
+              "brand": "BIONNEX",
+              "identity_attributes": {
+                "name": "cream preventiva spf50+ sunscreen",
+                "vehicle": "cream",
+                "application_area": "face",
+                "function": "Sunscreen",
+                "spf": "50",
+                "concentrations": [],
+                "timing": null,
+                "fragrance": null,
+                "tint": null,
+                "market": "EG",
+                "region_defining": false,
+                "formula_revision": null,
+                "shade": null
+              }
+            }
+          ],
+          [
+            {
+              "title": "Bionnex Preventiva Tinted Sunscreen Cream SPF 50+ - 50ml",
+              "brand": "Bionnex",
+              "source_id": "bloompharmacy",
+              "source_product_id": "8840193507636",
+              "url": "https://www.bloompharmacy.com/products/bionnex-preventiva-tinted-sunscreen-cream-spf-50-50ml",
+              "identity_attributes": {
+                "application_area": "face",
+                "concentrations": [],
+                "formula_revision": null,
+                "fragrance": null,
+                "function": "Sunscreen",
+                "market": "EG",
+                "name": "50+ cream preventiva spf sunscreen tinted",
+                "region_defining": false,
+                "shade": null,
+                "spf": "50",
+                "timing": null,
+                "tint": "tinted",
+                "vehicle": "cream"
+              }
+            },
+            {
+              "canonical_product_id": 70456,
+              "title": "PREVENTIVA Tinted Sunscreen Cream Spf50+",
+              "brand": "BIONNEX",
+              "identity_attributes": {
+                "name": "cream preventiva spf50+ sunscreen tinted",
+                "vehicle": "cream",
+                "application_area": "face",
+                "function": "Sunscreen",
+                "spf": "50",
+                "concentrations": [],
+                "timing": null,
+                "fragrance": null,
+                "tint": "tinted",
+                "market": "EG",
+                "region_defining": false,
+                "formula_revision": null,
+                "shade": null
+              }
+            }
+          ]
+        ]
+      },
+      {
+        "review_id": 1838,
+        "pair_count": 3,
+        "pairs": [
+          [
+            {
+              "title": "Topface Prohd Velvet Kiss Lip Cream 005.",
+              "brand": "TopFace",
+              "source_id": "drdawood",
+              "source_product_id": "10139910865143",
+              "url": "https://drdawoodstore.com/products/topface-prohd-velvet-kiss-lip-cream-005",
+              "identity_attributes": {
+                "application_area": "lip",
+                "concentrations": [],
+                "formula_revision": null,
+                "fragrance": null,
+                "function": "Moisturizer",
+                "market": "EG",
+                "name": "005 cream kiss lip prohd velvet",
+                "region_defining": false,
+                "shade": null,
+                "spf": null,
+                "timing": null,
+                "tint": null,
+                "vehicle": "cream"
+              }
+            },
+            {
+              "canonical_product_id": 64543,
+              "title": "Topface Prohd Velvet Kiss Lip Cream 009.",
+              "brand": "TopFace",
+              "identity_attributes": {
+                "name": "009 cream kiss lip prohd velvet",
+                "vehicle": "cream",
+                "application_area": "lip",
+                "function": "Moisturizer",
+                "spf": null,
+                "concentrations": [],
+                "timing": null,
+                "fragrance": null,
+                "tint": null,
+                "market": "EG",
+                "region_defining": false,
+                "formula_revision": null,
+                "shade": null
+              }
+            }
+          ],
+          [
+            {
+              "title": "Topface Prohd Velvet Kiss Lip Cream 005.",
+              "brand": "TopFace",
+              "source_id": "drdawood",
+              "source_product_id": "10139910865143",
+              "url": "https://drdawoodstore.com/products/topface-prohd-velvet-kiss-lip-cream-005",
+              "identity_attributes": {
+                "application_area": "lip",
+                "concentrations": [],
+                "formula_revision": null,
+                "fragrance": null,
+                "function": "Moisturizer",
+                "market": "EG",
+                "name": "005 cream kiss lip prohd velvet",
+                "region_defining": false,
+                "shade": null,
+                "spf": null,
+                "timing": null,
+                "tint": null,
+                "vehicle": "cream"
+              }
+            },
+            {
+              "canonical_product_id": 70403,
+              "title": "Topface Prohd Velvet Kiss Lip Cream 003.",
+              "brand": "TopFace",
+              "identity_attributes": {
+                "name": "003 cream kiss lip prohd velvet",
+                "vehicle": "cream",
+                "application_area": "lip",
+                "function": "Moisturizer",
+                "spf": null,
+                "concentrations": [],
+                "timing": null,
+                "fragrance": null,
+                "tint": null,
+                "market": "EG",
+                "region_defining": false,
+                "formula_revision": null,
+                "shade": null
+              }
+            }
+          ],
+          [
+            {
+              "title": "Topface Prohd Velvet Kiss Lip Cream 005.",
+              "brand": "TopFace",
+              "source_id": "drdawood",
+              "source_product_id": "10139910865143",
+              "url": "https://drdawoodstore.com/products/topface-prohd-velvet-kiss-lip-cream-005",
+              "identity_attributes": {
+                "application_area": "lip",
+                "concentrations": [],
+                "formula_revision": null,
+                "fragrance": null,
+                "function": "Moisturizer",
+                "market": "EG",
+                "name": "005 cream kiss lip prohd velvet",
+                "region_defining": false,
+                "shade": null,
+                "spf": null,
+                "timing": null,
+                "tint": null,
+                "vehicle": "cream"
+              }
+            },
+            {
+              "canonical_product_id": 70513,
+              "title": "Topface Prohd Velvet Kiss Lip Cream 008.",
+              "brand": "TopFace",
+              "identity_attributes": {
+                "name": "008 cream kiss lip prohd velvet",
+                "vehicle": "cream",
+                "application_area": "lip",
+                "function": "Moisturizer",
+                "spf": null,
+                "concentrations": [],
+                "timing": null,
+                "fragrance": null,
+                "tint": null,
+                "market": "EG",
+                "region_defining": false,
+                "formula_revision": null,
+                "shade": null
+              }
+            }
+          ]
+        ]
+      },
+      {
+        "review_id": 1840,
+        "pair_count": 3,
+        "pairs": [
+          [
+            {
+              "title": "Topface Prohd Velvet Kiss Lip Cream 002.",
+              "brand": "TopFace",
+              "source_id": "drdawood",
+              "source_product_id": "10139908735223",
+              "url": "https://drdawoodstore.com/products/topface-prohd-velvet-kiss-lip-cream-002",
+              "identity_attributes": {
+                "application_area": "lip",
+                "concentrations": [],
+                "formula_revision": null,
+                "fragrance": null,
+                "function": "Moisturizer",
+                "market": "EG",
+                "name": "002 cream kiss lip prohd velvet",
+                "region_defining": false,
+                "shade": null,
+                "spf": null,
+                "timing": null,
+                "tint": null,
+                "vehicle": "cream"
+              }
+            },
+            {
+              "canonical_product_id": 64543,
+              "title": "Topface Prohd Velvet Kiss Lip Cream 009.",
+              "brand": "TopFace",
+              "identity_attributes": {
+                "name": "009 cream kiss lip prohd velvet",
+                "vehicle": "cream",
+                "application_area": "lip",
+                "function": "Moisturizer",
+                "spf": null,
+                "concentrations": [],
+                "timing": null,
+                "fragrance": null,
+                "tint": null,
+                "market": "EG",
+                "region_defining": false,
+                "formula_revision": null,
+                "shade": null
+              }
+            }
+          ],
+          [
+            {
+              "title": "Topface Prohd Velvet Kiss Lip Cream 002.",
+              "brand": "TopFace",
+              "source_id": "drdawood",
+              "source_product_id": "10139908735223",
+              "url": "https://drdawoodstore.com/products/topface-prohd-velvet-kiss-lip-cream-002",
+              "identity_attributes": {
+                "application_area": "lip",
+                "concentrations": [],
+                "formula_revision": null,
+                "fragrance": null,
+                "function": "Moisturizer",
+                "market": "EG",
+                "name": "002 cream kiss lip prohd velvet",
+                "region_defining": false,
+                "shade": null,
+                "spf": null,
+                "timing": null,
+                "tint": null,
+                "vehicle": "cream"
+              }
+            },
+            {
+              "canonical_product_id": 70403,
+              "title": "Topface Prohd Velvet Kiss Lip Cream 003.",
+              "brand": "TopFace",
+              "identity_attributes": {
+                "name": "003 cream kiss lip prohd velvet",
+                "vehicle": "cream",
+                "application_area": "lip",
+                "function": "Moisturizer",
+                "spf": null,
+                "concentrations": [],
+                "timing": null,
+                "fragrance": null,
+                "tint": null,
+                "market": "EG",
+                "region_defining": false,
+                "formula_revision": null,
+                "shade": null
+              }
+            }
+          ],
+          [
+            {
+              "title": "Topface Prohd Velvet Kiss Lip Cream 002.",
+              "brand": "TopFace",
+              "source_id": "drdawood",
+              "source_product_id": "10139908735223",
+              "url": "https://drdawoodstore.com/products/topface-prohd-velvet-kiss-lip-cream-002",
+              "identity_attributes": {
+                "application_area": "lip",
+                "concentrations": [],
+                "formula_revision": null,
+                "fragrance": null,
+                "function": "Moisturizer",
+                "market": "EG",
+                "name": "002 cream kiss lip prohd velvet",
+                "region_defining": false,
+                "shade": null,
+                "spf": null,
+                "timing": null,
+                "tint": null,
+                "vehicle": "cream"
+              }
+            },
+            {
+              "canonical_product_id": 70513,
+              "title": "Topface Prohd Velvet Kiss Lip Cream 008.",
+              "brand": "TopFace",
+              "identity_attributes": {
+                "name": "008 cream kiss lip prohd velvet",
+                "vehicle": "cream",
+                "application_area": "lip",
+                "function": "Moisturizer",
+                "spf": null,
+                "concentrations": [],
+                "timing": null,
+                "fragrance": null,
+                "tint": null,
+                "market": "EG",
+                "region_defining": false,
+                "formula_revision": null,
+                "shade": null
+              }
+            }
+          ]
+        ]
+      },
+      {
+        "review_id": 2128,
+        "pair_count": 3,
+        "pairs": [
+          [
+            {
+              "title": "Bioderma Photoderm Xdefense Ultra-Fluid ( Teinte 02 )",
+              "brand": "Bioderma",
+              "source_id": "drdawood",
+              "source_product_id": "10041324962039",
+              "url": "https://drdawoodstore.com/products/bioderma-photoderm-xdefense-ultra-fluid-teinte-02",
+              "identity_attributes": {
+                "application_area": "face",
+                "concentrations": [],
+                "formula_revision": null,
+                "fragrance": null,
+                "function": "Sunscreen",
+                "market": "EG",
+                "name": "02 fluid photoderm teinte ultra xdefense",
+                "region_defining": false,
+                "shade": null,
+                "spf": null,
+                "timing": null,
+                "tint": null,
+                "vehicle": "fluid"
+              }
+            },
+            {
+              "canonical_product_id": 63859,
+              "title": "Bioderma Photoderm Xdefense Ultra Fluid SPF 50+ Tinted Sunscreen Shade 01 - 40ml",
+              "brand": "Bioderma",
+              "identity_attributes": {
+                "name": "01 50+ fluid photoderm shade spf sunscreen tinted ultra xdefense",
+                "vehicle": "fluid",
+                "application_area": "face",
+                "function": "Sunscreen",
+                "spf": "50",
+                "concentrations": [],
+                "timing": null,
+                "fragrance": null,
+                "tint": "tinted",
+                "market": "EG",
+                "region_defining": false,
+                "formula_revision": null,
+                "shade": null
+              }
+            }
+          ],
+          [
+            {
+              "title": "Bioderma Photoderm Xdefense Ultra-Fluid ( Teinte 02 )",
+              "brand": "Bioderma",
+              "source_id": "drdawood",
+              "source_product_id": "10041324962039",
+              "url": "https://drdawoodstore.com/products/bioderma-photoderm-xdefense-ultra-fluid-teinte-02",
+              "identity_attributes": {
+                "application_area": "face",
+                "concentrations": [],
+                "formula_revision": null,
+                "fragrance": null,
+                "function": "Sunscreen",
+                "market": "EG",
+                "name": "02 fluid photoderm teinte ultra xdefense",
+                "region_defining": false,
+                "shade": null,
+                "spf": null,
+                "timing": null,
+                "tint": null,
+                "vehicle": "fluid"
+              }
+            },
+            {
+              "canonical_product_id": 70393,
+              "title": "Bioderma Photoderm Xdefense Ultra Fluid SPF 50+ Tinted Sunscreen Shade 04 - 40ml",
+              "brand": "Bioderma",
+              "identity_attributes": {
+                "name": "04 50+ fluid photoderm shade spf sunscreen tinted ultra xdefense",
+                "vehicle": "fluid",
+                "application_area": "face",
+                "function": "Sunscreen",
+                "spf": "50",
+                "concentrations": [],
+                "timing": null,
+                "fragrance": null,
+                "tint": "tinted",
+                "market": "EG",
+                "region_defining": false,
+                "formula_revision": null,
+                "shade": null
+              }
+            }
+          ],
+          [
+            {
+              "title": "Bioderma Photoderm Xdefense Ultra-Fluid ( Teinte 02 )",
+              "brand": "Bioderma",
+              "source_id": "drdawood",
+              "source_product_id": "10041324962039",
+              "url": "https://drdawoodstore.com/products/bioderma-photoderm-xdefense-ultra-fluid-teinte-02",
+              "identity_attributes": {
+                "application_area": "face",
+                "concentrations": [],
+                "formula_revision": null,
+                "fragrance": null,
+                "function": "Sunscreen",
+                "market": "EG",
+                "name": "02 fluid photoderm teinte ultra xdefense",
+                "region_defining": false,
+                "shade": null,
+                "spf": null,
+                "timing": null,
+                "tint": null,
+                "vehicle": "fluid"
+              }
+            },
+            {
+              "canonical_product_id": 70477,
+              "title": "Bioderma Photoderm Xdefense Ultra Fluid SPF 50+ Tinted Sunscreen Shade 02 - 40ml",
+              "brand": "Bioderma",
+              "identity_attributes": {
+                "name": "02 50+ fluid photoderm shade spf sunscreen tinted ultra xdefense",
+                "vehicle": "fluid",
+                "application_area": "face",
+                "function": "Sunscreen",
+                "spf": "50",
+                "concentrations": [],
+                "timing": null,
+                "fragrance": null,
+                "tint": "tinted",
+                "market": "EG",
+                "region_defining": false,
+                "formula_revision": null,
+                "shade": null
+              }
+            }
+          ]
+        ]
+      },
+      {
+        "review_id": 2215,
+        "pair_count": 3,
+        "pairs": [
+          [
+            {
+              "title": "La Roche-Posay Anthelios Uv Air Serum Sunscreen Spf50+ 50Ml",
+              "brand": "La Roche-Posay",
+              "source_id": "drdawood",
+              "source_product_id": "10041298026743",
+              "url": "https://drdawoodstore.com/products/la-roche-posay-anthelios-uv-air-serum-sunscreen-spf50-50ml",
+              "identity_attributes": {
+                "application_area": "face",
+                "concentrations": [],
+                "formula_revision": null,
+                "fragrance": null,
+                "function": "Sunscreen",
+                "market": "EG",
+                "name": "air anthelios serum spf50+ sunscreen uv",
+                "region_defining": false,
+                "shade": null,
+                "spf": "50",
+                "timing": null,
+                "tint": null,
+                "vehicle": "serum"
+              }
+            },
+            {
+              "canonical_product_id": 63501,
+              "title": "La Roche-Posay Anthelios Uv Air Tinted Medium Natural SPF 50+ Sunscreen Serum - 50ml",
+              "brand": "La Roche-Posay",
+              "identity_attributes": {
+                "name": "50+ air anthelios medium natural serum spf sunscreen tinted uv",
+                "vehicle": "serum",
+                "application_area": "face",
+                "function": "Sunscreen",
+                "spf": "50",
+                "concentrations": [],
+                "timing": null,
+                "fragrance": null,
+                "tint": "tinted",
+                "market": "EG",
+                "region_defining": false,
+                "formula_revision": null,
+                "shade": null
+              }
+            }
+          ],
+          [
+            {
+              "title": "La Roche-Posay Anthelios Uv Air Serum Sunscreen Spf50+ 50Ml",
+              "brand": "La Roche-Posay",
+              "source_id": "drdawood",
+              "source_product_id": "10041298026743",
+              "url": "https://drdawoodstore.com/products/la-roche-posay-anthelios-uv-air-serum-sunscreen-spf50-50ml",
+              "identity_attributes": {
+                "application_area": "face",
+                "concentrations": [],
+                "formula_revision": null,
+                "fragrance": null,
+                "function": "Sunscreen",
+                "market": "EG",
+                "name": "air anthelios serum spf50+ sunscreen uv",
+                "region_defining": false,
+                "shade": null,
+                "spf": "50",
+                "timing": null,
+                "tint": null,
+                "vehicle": "serum"
+              }
+            },
+            {
+              "canonical_product_id": 63887,
+              "title": "La Roche-Posay Anthelios Dermo Baby Sunscreen Lotion SPF50+ - 50ml",
+              "brand": "La Roche-Posay",
+              "identity_attributes": {
+                "name": "anthelios baby dermo lotion spf50+ sunscreen",
+                "vehicle": "lotion",
+                "application_area": "face",
+                "function": "Sunscreen",
+                "spf": "50",
+                "concentrations": [],
+                "timing": null,
+                "fragrance": null,
+                "tint": null,
+                "market": "EG",
+                "region_defining": false,
+                "formula_revision": null,
+                "shade": null
+              }
+            }
+          ],
+          [
+            {
+              "title": "La Roche-Posay Anthelios Uv Air Serum Sunscreen Spf50+ 50Ml",
+              "brand": "La Roche-Posay",
+              "source_id": "drdawood",
+              "source_product_id": "10041298026743",
+              "url": "https://drdawoodstore.com/products/la-roche-posay-anthelios-uv-air-serum-sunscreen-spf50-50ml",
+              "identity_attributes": {
+                "application_area": "face",
+                "concentrations": [],
+                "formula_revision": null,
+                "fragrance": null,
+                "function": "Sunscreen",
+                "market": "EG",
+                "name": "air anthelios serum spf50+ sunscreen uv",
+                "region_defining": false,
+                "shade": null,
+                "spf": "50",
+                "timing": null,
+                "tint": null,
+                "vehicle": "serum"
+              }
+            },
+            {
+              "canonical_product_id": 70481,
+              "title": "La Roche-Posay Anthelios Uv Air SPF 50+ Serum Sunscreen - 50ml",
+              "brand": "La Roche-Posay",
+              "identity_attributes": {
+                "name": "50+ air anthelios serum spf sunscreen uv",
+                "vehicle": "serum",
+                "application_area": "face",
+                "function": "Sunscreen",
+                "spf": "50",
+                "concentrations": [],
+                "timing": null,
+                "fragrance": null,
+                "tint": null,
+                "market": "EG",
+                "region_defining": false,
+                "formula_revision": null,
+                "shade": null
+              }
+            }
+          ]
+        ]
+      },
+      {
+        "review_id": 2225,
+        "pair_count": 4,
+        "pairs": [
+          [
+            {
+              "title": "Vacation Aqua-Repair Lip Balm Dragon Fruit Spf 30+",
+              "brand": "Vacation",
+              "source_id": "drdawood",
+              "source_product_id": "10041297338615",
+              "url": "https://drdawoodstore.com/products/vacation-aqua-repair-lip-balm-grape-fruit-spf-30",
+              "identity_attributes": {
+                "application_area": "lip",
+                "concentrations": [],
+                "formula_revision": null,
+                "fragrance": null,
+                "function": "Sunscreen",
+                "market": "EG",
+                "name": "30+ aqua balm dragon fruit lip repair spf",
+                "region_defining": false,
+                "shade": null,
+                "spf": "30",
+                "timing": null,
+                "tint": null,
+                "vehicle": "balm"
+              }
+            },
+            {
+              "canonical_product_id": 64584,
+              "title": "Vacation Aqua-Repair Lip Balm Strawberry Spf 30+ 1+1",
+              "brand": "Vacation",
+              "identity_attributes": {
+                "name": "1+1 30+ aqua balm lip repair spf strawberry",
+                "vehicle": "balm",
+                "application_area": "lip",
+                "function": "Sunscreen",
+                "spf": "30",
+                "concentrations": [],
+                "timing": null,
+                "fragrance": null,
+                "tint": null,
+                "market": "EG",
+                "region_defining": false,
+                "formula_revision": null,
+                "shade": null
+              }
+            }
+          ],
+          [
+            {
+              "title": "Vacation Aqua-Repair Lip Balm Dragon Fruit Spf 30+",
+              "brand": "Vacation",
+              "source_id": "drdawood",
+              "source_product_id": "10041297338615",
+              "url": "https://drdawoodstore.com/products/vacation-aqua-repair-lip-balm-grape-fruit-spf-30",
+              "identity_attributes": {
+                "application_area": "lip",
+                "concentrations": [],
+                "formula_revision": null,
+                "fragrance": null,
+                "function": "Sunscreen",
+                "market": "EG",
+                "name": "30+ aqua balm dragon fruit lip repair spf",
+                "region_defining": false,
+                "shade": null,
+                "spf": "30",
+                "timing": null,
+                "tint": null,
+                "vehicle": "balm"
+              }
+            },
+            {
+              "canonical_product_id": 64586,
+              "title": "Vacation Aqua-Repair Lip Balm - Pina Colada (1+1)",
+              "brand": "Vacation",
+              "identity_attributes": {
+                "name": "1+1 aqua balm colada lip pina repair",
+                "vehicle": "balm",
+                "application_area": "lip",
+                "function": "Lip Care",
+                "spf": null,
+                "concentrations": [],
+                "timing": null,
+                "fragrance": null,
+                "tint": null,
+                "market": "EG",
+                "region_defining": false,
+                "formula_revision": null,
+                "shade": null
+              }
+            }
+          ],
+          [
+            {
+              "title": "Vacation Aqua-Repair Lip Balm Dragon Fruit Spf 30+",
+              "brand": "Vacation",
+              "source_id": "drdawood",
+              "source_product_id": "10041297338615",
+              "url": "https://drdawoodstore.com/products/vacation-aqua-repair-lip-balm-grape-fruit-spf-30",
+              "identity_attributes": {
+                "application_area": "lip",
+                "concentrations": [],
+                "formula_revision": null,
+                "fragrance": null,
+                "function": "Sunscreen",
+                "market": "EG",
+                "name": "30+ aqua balm dragon fruit lip repair spf",
+                "region_defining": false,
+                "shade": null,
+                "spf": "30",
+                "timing": null,
+                "tint": null,
+                "vehicle": "balm"
+              }
+            },
+            {
+              "canonical_product_id": 69535,
+              "title": "Vacation Aqua-Repair Lip Balm Honey & Cocoa Butter Spf 30+",
+              "brand": "Vacation",
+              "identity_attributes": {
+                "name": "30+ aqua balm butter cocoa honey lip repair spf",
+                "vehicle": "balm",
+                "application_area": "lip",
+                "function": "Sunscreen",
+                "spf": "30",
+                "concentrations": [],
+                "timing": null,
+                "fragrance": null,
+                "tint": null,
+                "market": "EG",
+                "region_defining": false,
+                "formula_revision": null,
+                "shade": null
+              }
+            }
+          ],
+          [
+            {
+              "title": "Vacation Aqua-Repair Lip Balm Dragon Fruit Spf 30+",
+              "brand": "Vacation",
+              "source_id": "drdawood",
+              "source_product_id": "10041297338615",
+              "url": "https://drdawoodstore.com/products/vacation-aqua-repair-lip-balm-grape-fruit-spf-30",
+              "identity_attributes": {
+                "application_area": "lip",
+                "concentrations": [],
+                "formula_revision": null,
+                "fragrance": null,
+                "function": "Sunscreen",
+                "market": "EG",
+                "name": "30+ aqua balm dragon fruit lip repair spf",
+                "region_defining": false,
+                "shade": null,
+                "spf": "30",
+                "timing": null,
+                "tint": null,
+                "vehicle": "balm"
+              }
+            },
+            {
+              "canonical_product_id": 70520,
+              "title": "Vacation Aqua-Repair Lip Balm Dragon Fruit Spf 30+ 1+1",
+              "brand": "Vacation",
+              "identity_attributes": {
+                "name": "1+1 30+ aqua balm dragon fruit lip repair spf",
+                "vehicle": "balm",
+                "application_area": "lip",
+                "function": "Sunscreen",
+                "spf": "30",
+                "concentrations": [],
+                "timing": null,
+                "fragrance": null,
+                "tint": null,
+                "market": "EG",
+                "region_defining": false,
+                "formula_revision": null,
+                "shade": null
+              }
+            }
+          ]
+        ]
+      }
+    ]
+  }
+}

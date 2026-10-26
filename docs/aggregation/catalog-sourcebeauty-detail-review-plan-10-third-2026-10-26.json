@@ -1,0 +1,36 @@
+{
+  "reviewed_page_indices": [
+    34,
+    35,
+    36,
+    37,
+    38
+  ],
+  "decisions": [
+    {
+      "url": "https://sourcebeauty.com/products/eqqualberry-aloe-pdrn-calming-toner",
+      "decision": "apply_if_fresh_validation_passes",
+      "reason": "Reviewed literal complete source declaration; exact source identity and competing formulas must revalidate."
+    },
+    {
+      "url": "https://sourcebeauty.com/products/eqqualberry-vitamin-illuminating-toner",
+      "decision": "apply_if_fresh_validation_passes",
+      "reason": "Reviewed literal complete source declaration; exact source identity and competing formulas must revalidate."
+    },
+    {
+      "url": "https://sourcebeauty.com/products/vt-cosmetics-pdrn-essence-100",
+      "decision": "apply_if_fresh_validation_passes",
+      "reason": "Reviewed literal complete source declaration; exact source identity and competing formulas must revalidate."
+    },
+    {
+      "url": "https://sourcebeauty.com/products/eqqualberry-purple-rice-pore-purifying-pack-cleanser",
+      "decision": "apply_if_fresh_validation_passes",
+      "reason": "Reviewed literal complete source declaration; exact source identity and competing formulas must revalidate."
+    },
+    {
+      "url": "https://sourcebeauty.com/products/catrice-glow-super-vitamin-serum",
+      "decision": "apply_if_fresh_validation_passes",
+      "reason": "Reviewed literal complete source declaration; exact source identity and competing formulas must revalidate."
+    }
+  ]
+}

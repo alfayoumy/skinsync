@@ -1,0 +1,175 @@
+{
+  "source_id": "bloompharmacy",
+  "model_calls": 0,
+  "read_only": true,
+  "selected": 10,
+  "results": [
+    {
+      "canonical_id": 63200,
+      "observation_id": 6311,
+      "raw_title": "Isis Pharma Neotone Radiance Spf50+ - 30ml",
+      "raw_brand": "Isis Pharma",
+      "source_url": "https://www.bloompharmacy.com/products/isis-pharma-neotone-radiance-spf50-30ml",
+      "status": "fetched",
+      "pages": 1
+    },
+    {
+      "canonical_id": 63209,
+      "observation_id": 8781,
+      "raw_title": "Svr Sebiaclear Cream Hydra - 40ml",
+      "raw_brand": "SVR",
+      "source_url": "https://www.bloompharmacy.com/products/svr-sebiaclear-cream-hydra-40ml",
+      "status": "error",
+      "error_type": "ExceptionGroup"
+    },
+    {
+      "canonical_id": 63212,
+      "observation_id": 6521,
+      "raw_title": "Svr Topialyse Cream - 200ml",
+      "raw_brand": "SVR",
+      "source_url": "https://www.bloompharmacy.com/products/svr-topialyse-cream-200ml",
+      "status": "fetched",
+      "pages": 1
+    },
+    {
+      "canonical_id": 63219,
+      "observation_id": 10546,
+      "raw_title": "Dermactive Acti-Repair Cica Cream - 50ml",
+      "raw_brand": "Dermactive",
+      "source_url": "https://www.bloompharmacy.com/products/dermactive-acti-repair-cica-cream-50ml",
+      "status": "fetched",
+      "pages": 1
+    },
+    {
+      "canonical_id": 63225,
+      "observation_id": 6584,
+      "raw_title": "Dermactive Acti-White Depigmenting Cream - 50ml",
+      "raw_brand": "Dermactive",
+      "source_url": "https://www.bloompharmacy.com/products/dermactive-acti-white-depigmenting-cream-50ml",
+      "status": "fetched",
+      "pages": 1
+    },
+    {
+      "canonical_id": 63228,
+      "observation_id": 6981,
+      "raw_title": "Bionnex Whitexpert Sensitive Area Whitening Cream - 50ml",
+      "raw_brand": "Bionnex",
+      "source_url": "https://www.bloompharmacy.com/products/bionnex-whitexpert-sensitive-area-whitening-cream-50ml",
+      "status": "fetched",
+      "pages": 1
+    },
+    {
+      "canonical_id": 63238,
+      "observation_id": 8853,
+      "raw_title": "Acm Depiwhite Eye Contour Gel - 15ml",
+      "raw_brand": "ACM",
+      "source_url": "https://www.bloompharmacy.com/products/acm-depiwhite-eye-contour-gel-15ml",
+      "status": "fetched",
+      "pages": 1
+    },
+    {
+      "canonical_id": 63239,
+      "observation_id": 9427,
+      "raw_title": "Uriage Hyseac Cleansing Gel",
+      "raw_brand": "Uriage",
+      "source_url": "https://www.bloompharmacy.com/products/uriage-hyseac-cleansing-gel",
+      "status": "fetched",
+      "pages": 1
+    },
+    {
+      "canonical_id": 63246,
+      "observation_id": 6978,
+      "raw_title": "Uriage Age Lift Peel New Skin Night Cream - 50ml",
+      "raw_brand": "Uriage",
+      "source_url": "https://www.bloompharmacy.com/products/uriage-age-lift-peel-new-skin-night-cream-50ml",
+      "status": "fetched",
+      "pages": 1
+    },
+    {
+      "canonical_id": 63258,
+      "observation_id": 9966,
+      "raw_title": "Eucerin Even Pigment Perfector Illuminating Serum - 30ml",
+      "raw_brand": "Eucerin",
+      "source_url": "https://www.bloompharmacy.com/products/eucerin-even-pigment-perfector-illuminating-serum-30ml",
+      "status": "fetched",
+      "pages": 1
+    }
+  ],
+  "last_canonical_id": 63258,
+  "more_candidates_in_selection": true,
+  "status": "completed",
+  "selected_products": [
+    {
+      "canonical_id": 63200,
+      "observation_id": 6311,
+      "raw_title": "Isis Pharma Neotone Radiance Spf50+ - 30ml",
+      "raw_brand": "Isis Pharma",
+      "source_url": "https://www.bloompharmacy.com/products/isis-pharma-neotone-radiance-spf50-30ml"
+    },
+    {
+      "canonical_id": 63209,
+      "observation_id": 8781,
+      "raw_title": "Svr Sebiaclear Cream Hydra - 40ml",
+      "raw_brand": "SVR",
+      "source_url": "https://www.bloompharmacy.com/products/svr-sebiaclear-cream-hydra-40ml"
+    },
+    {
+      "canonical_id": 63212,
+      "observation_id": 6521,
+      "raw_title": "Svr Topialyse Cream - 200ml",
+      "raw_brand": "SVR",
+      "source_url": "https://www.bloompharmacy.com/products/svr-topialyse-cream-200ml"
+    },
+    {
+      "canonical_id": 63219,
+      "observation_id": 10546,
+      "raw_title": "Dermactive Acti-Repair Cica Cream - 50ml",
+      "raw_brand": "Dermactive",
+      "source_url": "https://www.bloompharmacy.com/products/dermactive-acti-repair-cica-cream-50ml"
+    },
+    {
+      "canonical_id": 63225,
+      "observation_id": 6584,
+      "raw_title": "Dermactive Acti-White Depigmenting Cream - 50ml",
+      "raw_brand": "Dermactive",
+      "source_url": "https://www.bloompharmacy.com/products/dermactive-acti-white-depigmenting-cream-50ml"
+    },
+    {
+      "canonical_id": 63228,
+      "observation_id": 6981,
+      "raw_title": "Bionnex Whitexpert Sensitive Area Whitening Cream - 50ml",
+      "raw_brand": "Bionnex",
+      "source_url": "https://www.bloompharmacy.com/products/bionnex-whitexpert-sensitive-area-whitening-cream-50ml"
+    },
+    {
+      "canonical_id": 63238,
+      "observation_id": 8853,
+      "raw_title": "Acm Depiwhite Eye Contour Gel - 15ml",
+      "raw_brand": "ACM",
+      "source_url": "https://www.bloompharmacy.com/products/acm-depiwhite-eye-contour-gel-15ml"
+    },
+    {
+      "canonical_id": 63239,
+      "observation_id": 9427,
+      "raw_title": "Uriage Hyseac Cleansing Gel",
+      "raw_brand": "Uriage",
+      "source_url": "https://www.bloompharmacy.com/products/uriage-hyseac-cleansing-gel"
+    },
+    {
+      "canonical_id": 63246,
+      "observation_id": 6978,
+      "raw_title": "Uriage Age Lift Peel New Skin Night Cream - 50ml",
+      "raw_brand": "Uriage",
+      "source_url": "https://www.bloompharmacy.com/products/uriage-age-lift-peel-new-skin-night-cream-50ml"
+    },
+    {
+      "canonical_id": 63258,
+      "observation_id": 9966,
+      "raw_title": "Eucerin Even Pigment Perfector Illuminating Serum - 30ml",
+      "raw_brand": "Eucerin",
+      "source_url": "https://www.bloompharmacy.com/products/eucerin-even-pigment-perfector-illuminating-serum-30ml"
+    }
+  ],
+  "pages_output": "/mnt/windows/Users/AmrAlfayoumy/Downloads/skincare/repo/data/catalog-repair/bloom-pages-02-2026-10-26.json",
+  "pages_sha256": "076e5715c0b059620e03079de55333ed4c1039d8f82c8afb83263e2a5623f071"
+}

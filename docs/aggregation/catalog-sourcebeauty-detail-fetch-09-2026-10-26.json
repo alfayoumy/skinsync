@@ -1,0 +1,550 @@
+{
+  "source_id": "sourcebeauty",
+  "model_calls": 0,
+  "read_only": true,
+  "selected": 60,
+  "results": [
+    {
+      "canonical_id": 65376,
+      "observation_id": 20060,
+      "raw_title": "Deep Vita C Capsule Cream",
+      "raw_brand": "medicube",
+      "source_url": "https://sourcebeauty.com/products/medicube-deep-vita-c-capsule-cream-55g",
+      "status": "fetched",
+      "pages": 1
+    },
+    {
+      "canonical_id": 65382,
+      "observation_id": 20068,
+      "raw_title": "PDRN Hyaluronic Acid Capsule 100 Serum",
+      "raw_brand": "Anua",
+      "source_url": "https://sourcebeauty.com/products/anua-pdrn-hyaluronic-acid-capsule-100-serum",
+      "status": "fetched",
+      "pages": 1
+    },
+    {
+      "canonical_id": 65391,
+      "observation_id": 18963,
+      "raw_title": "Panthenol Cream",
+      "raw_brand": "Cira",
+      "source_url": "https://sourcebeauty.com/products/cira-panthenol-cream",
+      "status": "fetched",
+      "pages": 1
+    },
+    {
+      "canonical_id": 65414,
+      "observation_id": 19533,
+      "raw_title": "Purple PDRN Pore Minimizing Serum",
+      "raw_brand": "EQQUALBERRY",
+      "source_url": "https://sourcebeauty.com/products/eqqualberry-purple-pdrn-pore-minimizing-serum-30ml",
+      "status": "fetched",
+      "pages": 1
+    },
+    {
+      "canonical_id": 65423,
+      "observation_id": 20261,
+      "raw_title": "Ginseng Cleansing Oil",
+      "raw_brand": "Beauty Of Joseon",
+      "source_url": "https://sourcebeauty.com/products/beauty-of-joseon-ginseng-cleansing-oil",
+      "status": "fetched",
+      "pages": 1
+    },
+    {
+      "canonical_id": 65435,
+      "observation_id": 20562,
+      "raw_title": "Flower Bliss Shower Gel",
+      "raw_brand": "MOOD",
+      "source_url": "https://sourcebeauty.com/products/mood-flower-bliss-shower-gel",
+      "status": "fetched",
+      "pages": 1
+    },
+    {
+      "canonical_id": 65436,
+      "observation_id": 20561,
+      "raw_title": "Wild Rose Shower Gel",
+      "raw_brand": "MOOD",
+      "source_url": "https://sourcebeauty.com/products/mood-wild-rose-shower-gel",
+      "status": "fetched",
+      "pages": 1
+    },
+    {
+      "canonical_id": 65437,
+      "observation_id": 20563,
+      "raw_title": "Warm Vanilla Shower Gel",
+      "raw_brand": "MOOD",
+      "source_url": "https://sourcebeauty.com/products/mood-warm-vanilla-shower-gel",
+      "status": "fetched",
+      "pages": 1
+    },
+    {
+      "canonical_id": 65438,
+      "observation_id": 20560,
+      "raw_title": "Cherry Burst Shower Gel",
+      "raw_brand": "MOOD",
+      "source_url": "https://sourcebeauty.com/products/mood-cherry-burst-shower-gel",
+      "status": "fetched",
+      "pages": 1
+    },
+    {
+      "canonical_id": 65440,
+      "observation_id": 19390,
+      "raw_title": "Wild Rose Body Lotion",
+      "raw_brand": "MOOD",
+      "source_url": "https://sourcebeauty.com/products/mood-wild-rose-body-lotion",
+      "status": "fetched",
+      "pages": 1
+    },
+    {
+      "canonical_id": 65441,
+      "observation_id": 19387,
+      "raw_title": "Warm Vanilla Body Lotion",
+      "raw_brand": "MOOD",
+      "source_url": "https://sourcebeauty.com/products/mood-warm-vanilla-body-lotion",
+      "status": "fetched",
+      "pages": 1
+    },
+    {
+      "canonical_id": 65442,
+      "observation_id": 19386,
+      "raw_title": "Sugar Rush Body Lotion",
+      "raw_brand": "MOOD",
+      "source_url": "https://sourcebeauty.com/products/mood-sugar-rush-body-lotion",
+      "status": "fetched",
+      "pages": 1
+    },
+    {
+      "canonical_id": 65450,
+      "observation_id": 17553,
+      "raw_title": "Sunscreen Lotion SPF 50+",
+      "raw_brand": "See Lit",
+      "source_url": "https://sourcebeauty.com/products/medinza-seelit-sunscreen-lotion",
+      "status": "fetched",
+      "pages": 1
+    },
+    {
+      "canonical_id": 65464,
+      "observation_id": 18416,
+      "raw_title": "Aloevera Perfect Sun Cream",
+      "raw_brand": "Farm Stay",
+      "source_url": "https://sourcebeauty.com/products/farm-stay-aloevera-perfect-sun-cream",
+      "status": "fetched",
+      "pages": 1
+    },
+    {
+      "canonical_id": 65466,
+      "observation_id": 21015,
+      "raw_title": "Oil-Free UV Defence Sun Cream",
+      "raw_brand": "Farm Stay",
+      "source_url": "https://sourcebeauty.com/products/farm-stay-oil-free-uv-defence-sun-cream",
+      "status": "fetched",
+      "pages": 1
+    },
+    {
+      "canonical_id": 65470,
+      "observation_id": 16042,
+      "raw_title": "Sun Defense Dry Touch Oil SPF 50+",
+      "raw_brand": "Youlicious",
+      "source_url": "https://sourcebeauty.com/products/youlicious-sun-defense-dry-touch-oil-spf-50",
+      "status": "fetched",
+      "pages": 1
+    },
+    {
+      "canonical_id": 65480,
+      "observation_id": 17551,
+      "raw_title": "Vitamin C Serum",
+      "raw_brand": "Daky",
+      "source_url": "https://sourcebeauty.com/products/medinza-daky-vitamin-c-serum",
+      "status": "fetched",
+      "pages": 1
+    },
+    {
+      "canonical_id": 65486,
+      "observation_id": 19907,
+      "raw_title": "Super C Brightening & Antioxidant Cleanser",
+      "raw_brand": "NUT Botanicals",
+      "source_url": "https://sourcebeauty.com/products/nut-botanicals-super-c-brightening-and-antioxidant-cleanser",
+      "status": "fetched",
+      "pages": 1
+    },
+    {
+      "canonical_id": 65489,
+      "observation_id": 18352,
+      "raw_title": "MarineBio 5% Niacinamide Serum",
+      "raw_brand": "NUT Botanicals",
+      "source_url": "https://sourcebeauty.com/products/nut-botanicals-marinebio-5-niacinamide-serum",
+      "status": "fetched",
+      "pages": 1
+    },
+    {
+      "canonical_id": 65491,
+      "observation_id": 20022,
+      "raw_title": "Eye Cream",
+      "raw_brand": "Nawah",
+      "source_url": "https://sourcebeauty.com/products/nawah-eye-cream",
+      "status": "fetched",
+      "pages": 1
+    },
+    {
+      "canonical_id": 65498,
+      "observation_id": 16044,
+      "raw_title": "Bright & Glow Eye Cream",
+      "raw_brand": "Youlicious",
+      "source_url": "https://sourcebeauty.com/products/bright-glow-eye-cream",
+      "status": "fetched",
+      "pages": 1
+    },
+    {
+      "canonical_id": 65512,
+      "observation_id": 15990,
+      "raw_title": "Clean Shot Enzymatic Peeling",
+      "raw_brand": "Eveline",
+      "source_url": "https://sourcebeauty.com/products/eveline-clean-shot-enzymatic-peeling",
+      "status": "fetched",
+      "pages": 1
+    },
+    {
+      "canonical_id": 65513,
+      "observation_id": 15984,
+      "raw_title": "Clean Shot Ultra-soft Face Cleansing Foam",
+      "raw_brand": "Eveline",
+      "source_url": "https://sourcebeauty.com/products/eveline-clean-shot-ultra-soft-face-cleansing-foam",
+      "status": "fetched",
+      "pages": 1
+    },
+    {
+      "canonical_id": 65514,
+      "observation_id": 15983,
+      "raw_title": "Clean Shot Moisturizing Toner-Hydrolate",
+      "raw_brand": "Eveline",
+      "source_url": "https://sourcebeauty.com/products/eveline-clean-shot-moisturizing-toner-hydrolate",
+      "status": "fetched",
+      "pages": 1
+    },
+    {
+      "canonical_id": 65535,
+      "observation_id": 20310,
+      "raw_title": "Regenerative Cream",
+      "raw_brand": "Nolaver",
+      "source_url": "https://sourcebeauty.com/products/parkville-regenerative-cream",
+      "status": "fetched",
+      "pages": 1
+    },
+    {
+      "canonical_id": 65537,
+      "observation_id": 19114,
+      "raw_title": "Acne-Prone Skin Lotion",
+      "raw_brand": "Starville",
+      "source_url": "https://sourcebeauty.com/products/starville-acne-prone-skin-lotion",
+      "status": "fetched",
+      "pages": 1
+    },
+    {
+      "canonical_id": 65538,
+      "observation_id": 21489,
+      "raw_title": "Whitening Gel SPF 50+",
+      "raw_brand": "Starville",
+      "source_url": "https://sourcebeauty.com/products/parkville-whitening-gel-spf-50",
+      "status": "fetched",
+      "pages": 1
+    },
+    {
+      "canonical_id": 65544,
+      "observation_id": 20628,
+      "raw_title": "Vitamin C Serum",
+      "raw_brand": "Ninetimes",
+      "source_url": "https://sourcebeauty.com/products/ninetimes-vitamin-c-serum",
+      "status": "fetched",
+      "pages": 1
+    },
+    {
+      "canonical_id": 65545,
+      "observation_id": 20633,
+      "raw_title": "Niacinamide Serum",
+      "raw_brand": "Ninetimes",
+      "source_url": "https://sourcebeauty.com/products/ninetimes-niacinamide-serum",
+      "status": "fetched",
+      "pages": 1
+    },
+    {
+      "canonical_id": 65555,
+      "observation_id": 20076,
+      "raw_title": "Heartleaf Pore Control Cleansing Oil",
+      "raw_brand": "Anua",
+      "source_url": "https://sourcebeauty.com/products/anua-heartleaf-pore-control-cleansing-oil",
+      "status": "fetched",
+      "pages": 1
+    },
+    {
+      "canonical_id": 65580,
+      "observation_id": 20911,
+      "raw_title": "Bright & Glow Face Serum",
+      "raw_brand": "Youlicious",
+      "source_url": "https://sourcebeauty.com/products/bright-glow-face-serum",
+      "status": "fetched",
+      "pages": 1
+    },
+    {
+      "canonical_id": 65582,
+      "observation_id": 20910,
+      "raw_title": "Bright & Glow Day Cream",
+      "raw_brand": "Youlicious",
+      "source_url": "https://sourcebeauty.com/products/bright-glow-day-cream",
+      "status": "fetched",
+      "pages": 1
+    },
+    {
+      "canonical_id": 65583,
+      "observation_id": 20909,
+      "raw_title": "Bright & Glow Night Cream",
+      "raw_brand": "Youlicious",
+      "source_url": "https://sourcebeauty.com/products/bright-glow-night-cream",
+      "status": "fetched",
+      "pages": 1
+    },
+    {
+      "canonical_id": 65597,
+      "observation_id": 20764,
+      "raw_title": "HyaluWhite Sensitive Area Cream",
+      "raw_brand": "Dermaelle",
+      "source_url": "https://sourcebeauty.com/products/dermaelle-hyaluwhite-sensitive-area-cream",
+      "status": "fetched",
+      "pages": 1
+    },
+    {
+      "canonical_id": 65612,
+      "observation_id": 15851,
+      "raw_title": "Micellar Water",
+      "raw_brand": "Tetra Hydro",
+      "source_url": "https://sourcebeauty.com/products/tetra-hydro-micellar-water",
+      "status": "fetched",
+      "pages": 1
+    },
+    {
+      "canonical_id": 65613,
+      "observation_id": 15843,
+      "raw_title": "Ceramide Gel Cleanser",
+      "raw_brand": "Tetra Hydro",
+      "source_url": "https://sourcebeauty.com/products/tetra-hydro-ceramide-gel-cleanser",
+      "status": "fetched",
+      "pages": 1
+    },
+    {
+      "canonical_id": 65614,
+      "observation_id": 15836,
+      "raw_title": "Ceramide Barrier Cream",
+      "raw_brand": "Tetra Hydro",
+      "source_url": "https://sourcebeauty.com/products/tetra-hydro-ceramide-barrier-cream",
+      "status": "fetched",
+      "pages": 1
+    },
+    {
+      "canonical_id": 65618,
+      "observation_id": 21212,
+      "raw_title": "Just Retinol Toner",
+      "raw_brand": "Revox",
+      "source_url": "https://sourcebeauty.com/products/revox-just-retinol-toner",
+      "status": "fetched",
+      "pages": 1
+    },
+    {
+      "canonical_id": 65619,
+      "observation_id": 21213,
+      "raw_title": "Buzz Face Cleansing Gel",
+      "raw_brand": "Revox",
+      "source_url": "https://sourcebeauty.com/products/revox-buzz-face-cleansing-gel-with-honey-lemon",
+      "status": "fetched",
+      "pages": 1
+    },
+    {
+      "canonical_id": 65621,
+      "observation_id": 20021,
+      "raw_title": "Whitening Cream",
+      "raw_brand": "Nawah",
+      "source_url": "https://sourcebeauty.com/products/nawah-whitening-cream",
+      "status": "fetched",
+      "pages": 1
+    },
+    {
+      "canonical_id": 65623,
+      "observation_id": 20027,
+      "raw_title": "Facial Toner",
+      "raw_brand": "Nawah",
+      "source_url": "https://sourcebeauty.com/products/nawah-facial-toner",
+      "status": "fetched",
+      "pages": 1
+    },
+    {
+      "canonical_id": 65624,
+      "observation_id": 20028,
+      "raw_title": "Micellar Water",
+      "raw_brand": "Nawah",
+      "source_url": "https://sourcebeauty.com/products/nawah-micellear-water",
+      "status": "fetched",
+      "pages": 1
+    },
+    {
+      "canonical_id": 65626,
+      "observation_id": 16857,
+      "raw_title": "24K Gold Serum",
+      "raw_brand": "Nano Treat",
+      "source_url": "https://sourcebeauty.com/products/nano-24k-gold-serum",
+      "status": "fetched",
+      "pages": 1
+    },
+    {
+      "canonical_id": 65627,
+      "observation_id": 16858,
+      "raw_title": "24K Gold Night Cream",
+      "raw_brand": "Nano Treat",
+      "source_url": "https://sourcebeauty.com/products/nano-24k-gold-night-cream",
+      "status": "fetched",
+      "pages": 1
+    },
+    {
+      "canonical_id": 65628,
+      "observation_id": 16856,
+      "raw_title": "24K Gold Eye Cream",
+      "raw_brand": "Nano Treat",
+      "source_url": "https://sourcebeauty.com/products/nano-24k-gold-eye",
+      "status": "fetched",
+      "pages": 1
+    },
+    {
+      "canonical_id": 65631,
+      "observation_id": 16844,
+      "raw_title": "Oily Skin Cleanser",
+      "raw_brand": "Nano Treat",
+      "source_url": "https://sourcebeauty.com/products/nano-treat-oily-skin-cleanser",
+      "status": "fetched",
+      "pages": 1
+    },
+    {
+      "canonical_id": 65640,
+      "observation_id": 21008,
+      "raw_title": "AHA/BHA Clarifying Treatment Toner",
+      "raw_brand": "Cosrx",
+      "source_url": "https://sourcebeauty.com/products/cosrx-aha-bha-clarifying-treatment-toner",
+      "status": "fetched",
+      "pages": 1
+    },
+    {
+      "canonical_id": 65654,
+      "observation_id": 15846,
+      "raw_title": "Daily Creamy Cleanser",
+      "raw_brand": "Tetra Hydro",
+      "source_url": "https://sourcebeauty.com/products/tetra-hydro-daily-creamy-cleanser",
+      "status": "fetched",
+      "pages": 1
+    },
+    {
+      "canonical_id": 65661,
+      "observation_id": 20266,
+      "raw_title": "Revive Eye Serum Ginseng + Retinal",
+      "raw_brand": "Beauty Of Joseon",
+      "source_url": "https://sourcebeauty.com/products/beauty-of-joseon-revive-eye-serum-ginseng-retinal",
+      "status": "fetched",
+      "pages": 1
+    },
+    {
+      "canonical_id": 65684,
+      "observation_id": 16282,
+      "raw_title": "White Musk Ultra Rich Body Lotion",
+      "raw_brand": "Bubblzz",
+      "source_url": "https://sourcebeauty.com/products/bubblzz-white-musk-ultra-rich-body-lotion",
+      "status": "fetched",
+      "pages": 1
+    },
+    {
+      "canonical_id": 65708,
+      "observation_id": 21515,
+      "raw_title": "Retinol Serum",
+      "raw_brand": "Kolagra",
+      "source_url": "https://sourcebeauty.com/products/kolagra-retinol-serum",
+      "status": "fetched",
+      "pages": 1
+    },
+    {
+      "canonical_id": 65715,
+      "observation_id": 17791,
+      "raw_title": "Eye Balm",
+      "raw_brand": "Raw African",
+      "source_url": "https://sourcebeauty.com/products/eye-balm",
+      "status": "fetched",
+      "pages": 1
+    },
+    {
+      "canonical_id": 65726,
+      "observation_id": 19509,
+      "raw_title": "Centella Blemish Cream",
+      "raw_brand": "Cosrx",
+      "source_url": "https://sourcebeauty.com/products/cosrx-centella-blemish-cream",
+      "status": "fetched",
+      "pages": 1
+    },
+    {
+      "canonical_id": 65824,
+      "observation_id": 21495,
+      "raw_title": "Oily Skin Cleanser",
+      "raw_brand": "Kolagra",
+      "source_url": "https://sourcebeauty.com/products/kolagra-oily-skin-cleanser",
+      "status": "fetched",
+      "pages": 1
+    },
+    {
+      "canonical_id": 65827,
+      "observation_id": 21025,
+      "raw_title": "Clear Skin Cleanser",
+      "raw_brand": "Argento",
+      "source_url": "https://sourcebeauty.com/products/facial-cleanser-skin-cleanser-200ml",
+      "status": "fetched",
+      "pages": 1
+    },
+    {
+      "canonical_id": 65861,
+      "observation_id": 18071,
+      "raw_title": "Niacinamide Serum",
+      "raw_brand": "Kolagra",
+      "source_url": "https://sourcebeauty.com/products/niacinamide-serum",
+      "status": "fetched",
+      "pages": 1
+    },
+    {
+      "canonical_id": 65881,
+      "observation_id": 22069,
+      "raw_title": "Hyaluronic Acid Lip Serum",
+      "raw_brand": "Rhea Beauty",
+      "source_url": "https://sourcebeauty.com/products/lip-plumping-serum",
+      "status": "fetched",
+      "pages": 1
+    },
+    {
+      "canonical_id": 65890,
+      "observation_id": 19658,
+      "raw_title": "Hyaluronic Acid Water Sleeping Mask",
+      "raw_brand": "Isntree",
+      "source_url": "https://sourcebeauty.com/products/isntree-hyaluronic-acid-water-sleeping-mask",
+      "status": "fetched",
+      "pages": 1
+    },
+    {
+      "canonical_id": 65891,
+      "observation_id": 20159,
+      "raw_title": "Ceramic Cream - Light",
+      "raw_brand": "TIRTIR",
+      "source_url": "https://sourcebeauty.com/products/tirtir-ceramic-cream",
+      "status": "fetched",
+      "pages": 1
+    },
+    {
+      "canonical_id": 65934,
+      "observation_id": 15612,
+      "raw_title": "Perfect Brightening Tone Up Cream",
+      "raw_brand": "TENZERO",
+      "source_url": "https://sourcebeauty.com/products/tenzero-tenzero-tone-up-cream-perfect-brightening-50g",
+      "status": "fetched",
+      "pages": 1
+    }
+  ],
+  "last_canonical_id": 65934,
+  "more_candidates_in_selection": true
+}

@@ -1,0 +1,13 @@
+{
+  "applied": true,
+  "backup_path": "/mnt/windows/Users/AmrAlfayoumy/Downloads/skincare/repo/api/backups/catalog/catalog-20261026T005355Z-1e453a6f.sqlite3",
+  "results": [
+    {
+      "canonical_product_id": 68556,
+      "evidence_id": 1149,
+      "withdrawn": true,
+      "review_id": 8701
+    }
+  ],
+  "reason": "Published retailer declaration omits the explicitly named benzoyl peroxide 4% drug active; retained inactive ingredients cannot establish a complete formulation."
+}

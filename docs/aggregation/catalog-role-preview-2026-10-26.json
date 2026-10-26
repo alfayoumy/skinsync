@@ -1,0 +1,275 @@
+{
+  "applied": false,
+  "backup_path": null,
+  "before": 1091,
+  "after": 1085,
+  "result": {
+    "uncertain_preserved": 995,
+    "superseded_evidence_preserved": 76,
+    "resolved": 6,
+    "cluster_conflict_preserved": 14
+  },
+  "canonical_projection": {
+    "counts": {
+      "specific_hair_type_preserved": 237,
+      "updated": 19,
+      "uncertain_preserved": 996,
+      "specific_category_preserved": 1
+    },
+    "changes": [
+      {
+        "canonical_id": 63430,
+        "title": "Kinetics Grapeseed Nail Serum - 15ml",
+        "before": "Serum",
+        "after": "Nail Care",
+        "is_skincare": false,
+        "evidence": [
+          {
+            "source": "title",
+            "match": "\\bnails? (?:cream|treatment|lotion|serum|booster|rescue|growth|guard)\\b"
+          }
+        ]
+      },
+      {
+        "canonical_id": 63930,
+        "title": "Capixy Lashes Treatment Serum - 10ml",
+        "before": "Serum",
+        "after": "Makeup",
+        "is_skincare": false,
+        "evidence": [
+          {
+            "source": "title",
+            "match": "\\b(?:eyelash(?:es)?|lash (?:and )?brow|browlash|brow serum|lashes? (?:growth |treatment )?serum)\\b"
+          }
+        ]
+      },
+      {
+        "canonical_id": 64128,
+        "title": "Seropipe Extreme Lashes Serum - 10ml",
+        "before": "Serum",
+        "after": "Makeup",
+        "is_skincare": false,
+        "evidence": [
+          {
+            "source": "title",
+            "match": "\\b(?:eyelash(?:es)?|lash (?:and )?brow|browlash|brow serum|lashes? (?:growth |treatment )?serum)\\b"
+          }
+        ]
+      },
+      {
+        "canonical_id": 64315,
+        "title": "Raw African Nail Booster Lotion - 20ml",
+        "before": "Serum",
+        "after": "Nail Care",
+        "is_skincare": false,
+        "evidence": [
+          {
+            "source": "title",
+            "match": "\\bnails? (?:cream|treatment|lotion|serum|booster|rescue|growth|guard)\\b"
+          }
+        ]
+      },
+      {
+        "canonical_id": 64876,
+        "title": "Kolagra Anastream Lashes Growth Serum 10Ml",
+        "before": "Serum",
+        "after": "Makeup",
+        "is_skincare": false,
+        "evidence": [
+          {
+            "source": "title",
+            "match": "\\b(?:eyelash(?:es)?|lash (?:and )?brow|browlash|brow serum|lashes? (?:growth |treatment )?serum)\\b"
+          }
+        ]
+      },
+      {
+        "canonical_id": 65196,
+        "title": "Nawah Nail Serum 5Ml",
+        "before": "Serum",
+        "after": "Nail Care",
+        "is_skincare": false,
+        "evidence": [
+          {
+            "source": "title",
+            "match": "\\bnails? (?:cream|treatment|lotion|serum|booster|rescue|growth|guard)\\b"
+          }
+        ]
+      },
+      {
+        "canonical_id": 65283,
+        "title": "Vee Allure Nails Lotion",
+        "before": "Moisturizer",
+        "after": "Nail Care",
+        "is_skincare": false,
+        "evidence": [
+          {
+            "source": "title",
+            "match": "\\bnails? (?:cream|treatment|lotion|serum|booster|rescue|growth|guard)\\b"
+          }
+        ]
+      },
+      {
+        "canonical_id": 65405,
+        "title": "Jamira Nail Serum 15Ml",
+        "before": "Serum",
+        "after": "Nail Care",
+        "is_skincare": false,
+        "evidence": [
+          {
+            "source": "title",
+            "match": "\\bnails? (?:cream|treatment|lotion|serum|booster|rescue|growth|guard)\\b"
+          }
+        ]
+      },
+      {
+        "canonical_id": 65427,
+        "title": "Totian Nail Serum 30Ml",
+        "before": "Serum",
+        "after": "Nail Care",
+        "is_skincare": false,
+        "evidence": [
+          {
+            "source": "title",
+            "match": "\\bnails? (?:cream|treatment|lotion|serum|booster|rescue|growth|guard)\\b"
+          }
+        ]
+      },
+      {
+        "canonical_id": 65548,
+        "title": "Go Long Nail Serum 5Ml",
+        "before": "Serum",
+        "after": "Nail Care",
+        "is_skincare": false,
+        "evidence": [
+          {
+            "source": "title",
+            "match": "\\bnails? (?:cream|treatment|lotion|serum|booster|rescue|growth|guard)\\b"
+          }
+        ]
+      },
+      {
+        "canonical_id": 65592,
+        "title": "Leylak Eye Lashes Serum 10Ml",
+        "before": "Serum",
+        "after": "Makeup",
+        "is_skincare": false,
+        "evidence": [
+          {
+            "source": "title",
+            "match": "\\b(?:eyelash(?:es)?|lash (?:and )?brow|browlash|brow serum|lashes? (?:growth |treatment )?serum)\\b"
+          }
+        ]
+      },
+      {
+        "canonical_id": 65996,
+        "title": "Telofill Nail Serum 4ml",
+        "before": "Serum",
+        "after": "Nail Care",
+        "is_skincare": false,
+        "evidence": [
+          {
+            "source": "title",
+            "match": "\\bnails? (?:cream|treatment|lotion|serum|booster|rescue|growth|guard)\\b"
+          }
+        ]
+      },
+      {
+        "canonical_id": 67036,
+        "title": "Nail Serum",
+        "before": "Serum",
+        "after": "Nail Care",
+        "is_skincare": false,
+        "evidence": [
+          {
+            "source": "title",
+            "match": "\\bnails? (?:cream|treatment|lotion|serum|booster|rescue|growth|guard)\\b"
+          }
+        ]
+      },
+      {
+        "canonical_id": 67195,
+        "title": "Nail Serum",
+        "before": "Serum",
+        "after": "Nail Care",
+        "is_skincare": false,
+        "evidence": [
+          {
+            "source": "title",
+            "match": "\\bnails? (?:cream|treatment|lotion|serum|booster|rescue|growth|guard)\\b"
+          }
+        ]
+      },
+      {
+        "canonical_id": 67520,
+        "title": "Best Nails - Ever Nail Serum",
+        "before": "Serum",
+        "after": "Nail Care",
+        "is_skincare": false,
+        "evidence": [
+          {
+            "source": "title",
+            "match": "\\bnails? (?:cream|treatment|lotion|serum|booster|rescue|growth|guard)\\b"
+          }
+        ]
+      },
+      {
+        "canonical_id": 67608,
+        "title": "Nail Serum",
+        "before": "Serum",
+        "after": "Nail Care",
+        "is_skincare": false,
+        "evidence": [
+          {
+            "source": "title",
+            "match": "\\bnails? (?:cream|treatment|lotion|serum|booster|rescue|growth|guard)\\b"
+          }
+        ]
+      },
+      {
+        "canonical_id": 69707,
+        "title": "Seropipe Lashes Serum 10Ml",
+        "before": "Serum",
+        "after": "Makeup",
+        "is_skincare": false,
+        "evidence": [
+          {
+            "source": "title",
+            "match": "\\b(?:eyelash(?:es)?|lash (?:and )?brow|browlash|brow serum|lashes? (?:growth |treatment )?serum)\\b"
+          }
+        ]
+      },
+      {
+        "canonical_id": 69708,
+        "title": "Leaves Nail Serum 5Ml",
+        "before": "Serum",
+        "after": "Nail Care",
+        "is_skincare": false,
+        "evidence": [
+          {
+            "source": "title",
+            "match": "\\bnails? (?:cream|treatment|lotion|serum|booster|rescue|growth|guard)\\b"
+          }
+        ]
+      },
+      {
+        "canonical_id": 70429,
+        "title": "Telofill Nail Serum 4Ml 1+1",
+        "before": "Serum",
+        "after": "Nail Care",
+        "is_skincare": false,
+        "evidence": [
+          {
+            "source": "title",
+            "match": "\\bnails? (?:cream|treatment|lotion|serum|booster|rescue|growth|guard)\\b"
+          }
+        ]
+      }
+    ]
+  },
+  "explicit_hair_types": {
+    "counts": {
+      "specific_role_conflict_preserved": 2
+    },
+    "changes": []
+  }
+}

@@ -1,0 +1,277 @@
+{
+  "applied": true,
+  "backup_path": "/mnt/windows/Users/AmrAlfayoumy/Downloads/skincare/repo/api/backups/catalog/catalog-20261025T221341Z-c84e153d.sqlite3",
+  "model_calls": 0,
+  "results": [
+    {
+      "url": "https://sourcebeauty.com/products/nutshell-macadamia-rose-water-body-lotion",
+      "status": "published",
+      "canonical_id": 63579,
+      "original_observation_id": 21329,
+      "observation_id": 22800,
+      "evidence_id": 976,
+      "ingredient_count": 29
+    },
+    {
+      "url": "https://sourcebeauty.com/products/nutshell-shea-butter-coconut-body-lotion",
+      "status": "published",
+      "canonical_id": 63580,
+      "original_observation_id": 21325,
+      "observation_id": 22801,
+      "evidence_id": 978,
+      "ingredient_count": 23
+    },
+    {
+      "url": "https://sourcebeauty.com/products/arencia-retinal-booster-shot",
+      "status": "evidence_only",
+      "canonical_id": 63600,
+      "original_observation_id": 15706,
+      "observation_id": 22802,
+      "evidence_id": 980,
+      "ingredient_count": 4
+    },
+    {
+      "url": "https://sourcebeauty.com/products/some-by-mi-retinol-intense-reactivating-serum",
+      "status": "published",
+      "canonical_id": 63610,
+      "original_observation_id": 20096,
+      "observation_id": 22803,
+      "evidence_id": 981,
+      "ingredient_count": 65
+    },
+    {
+      "url": "https://sourcebeauty.com/products/axis-y-dark-spot-correcting-glow-cream",
+      "status": "published",
+      "canonical_id": 63616,
+      "original_observation_id": 20190,
+      "observation_id": 22804,
+      "evidence_id": 983,
+      "ingredient_count": 68
+    },
+    {
+      "url": "https://sourcebeauty.com/products/mood-tahiti-body-milk",
+      "status": "evidence_only",
+      "canonical_id": 63619,
+      "original_observation_id": 20810,
+      "observation_id": 22805,
+      "evidence_id": 985,
+      "ingredient_count": 4
+    },
+    {
+      "url": "https://sourcebeauty.com/products/soul-more-mint-attack-plumping-lip-oil",
+      "status": "evidence_only",
+      "canonical_id": 63633,
+      "original_observation_id": 17076,
+      "observation_id": 22806,
+      "evidence_id": 986,
+      "ingredient_count": 8
+    },
+    {
+      "url": "https://sourcebeauty.com/products/skinify-mattify-omega-fatty-acids-light-weight-face-cream",
+      "status": "published",
+      "canonical_id": 63680,
+      "original_observation_id": 18490,
+      "observation_id": 22807,
+      "evidence_id": 987,
+      "ingredient_count": 20
+    },
+    {
+      "url": "https://sourcebeauty.com/products/cupcake-hand-body-lotion",
+      "status": "published",
+      "canonical_id": 63689,
+      "original_observation_id": 15926,
+      "observation_id": 22808,
+      "evidence_id": 989,
+      "ingredient_count": 11
+    },
+    {
+      "url": "https://sourcebeauty.com/products/vitamin-c-serum-1",
+      "status": "published",
+      "canonical_id": 63692,
+      "original_observation_id": 21757,
+      "observation_id": 22809,
+      "evidence_id": 991,
+      "ingredient_count": 32
+    },
+    {
+      "url": "https://sourcebeauty.com/products/parkville-hand-cream",
+      "status": "evidence_only",
+      "canonical_id": 63693,
+      "original_observation_id": 21604,
+      "observation_id": 22810,
+      "evidence_id": 993,
+      "ingredient_count": 1
+    },
+    {
+      "url": "https://sourcebeauty.com/products/hydrating-facial-mist",
+      "status": "published",
+      "canonical_id": 63725,
+      "original_observation_id": 21524,
+      "observation_id": 22811,
+      "evidence_id": 994,
+      "ingredient_count": 9
+    },
+    {
+      "url": "https://sourcebeauty.com/products/looq-gummy-yummy-body-wash",
+      "status": "published",
+      "canonical_id": 63737,
+      "original_observation_id": 17376,
+      "observation_id": 22812,
+      "evidence_id": 996,
+      "ingredient_count": 14
+    },
+    {
+      "url": "https://sourcebeauty.com/products/looq-strawberry-fluff-body-wash",
+      "status": "published",
+      "canonical_id": 63738,
+      "original_observation_id": 17375,
+      "observation_id": 22813,
+      "evidence_id": 998,
+      "ingredient_count": 14
+    },
+    {
+      "url": "https://sourcebeauty.com/products/looq-velvet-rush-body-wash",
+      "status": "published",
+      "canonical_id": 63739,
+      "original_observation_id": 17373,
+      "observation_id": 22814,
+      "evidence_id": 1000,
+      "ingredient_count": 14
+    },
+    {
+      "url": "https://sourcebeauty.com/products/cosrx-salicylic-acid-daily-gentle-cleanser",
+      "status": "evidence_only",
+      "canonical_id": 63812,
+      "original_observation_id": 20468,
+      "observation_id": 22815,
+      "evidence_id": 1002,
+      "ingredient_count": 2
+    },
+    {
+      "url": "https://sourcebeauty.com/products/cerave-oil-control-moisturising-gel-cream",
+      "status": "published",
+      "canonical_id": 63872,
+      "original_observation_id": 15392,
+      "observation_id": 22816,
+      "evidence_id": 1003,
+      "ingredient_count": 29
+    },
+    {
+      "url": "https://sourcebeauty.com/products/richie-vitamin-c-12-serum",
+      "status": "evidence_only",
+      "canonical_id": 63890,
+      "original_observation_id": 15229,
+      "observation_id": 22817,
+      "evidence_id": 1005,
+      "ingredient_count": 2
+    },
+    {
+      "url": "https://sourcebeauty.com/products/richie-vegan-retinol-serum",
+      "status": "evidence_only",
+      "canonical_id": 63892,
+      "original_observation_id": 15230,
+      "observation_id": 22818,
+      "evidence_id": 1006,
+      "ingredient_count": 6
+    },
+    {
+      "url": "https://sourcebeauty.com/products/shaan-urea-10-body-moisturizer",
+      "status": "evidence_only",
+      "canonical_id": 63900,
+      "original_observation_id": 17409,
+      "observation_id": 22819,
+      "evidence_id": 1007,
+      "ingredient_count": 7
+    },
+    {
+      "url": "https://sourcebeauty.com/products/bobai-sunscreen-mist-spray-spf-50",
+      "status": "evidence_only",
+      "canonical_id": 63903,
+      "original_observation_id": 16638,
+      "observation_id": 22820,
+      "evidence_id": 1008,
+      "ingredient_count": 13
+    },
+    {
+      "url": "https://sourcebeauty.com/products/bright-glow-cleanser",
+      "status": "evidence_only",
+      "canonical_id": 63910,
+      "original_observation_id": 20913,
+      "observation_id": 22821,
+      "evidence_id": 1009,
+      "ingredient_count": 5
+    },
+    {
+      "url": "https://sourcebeauty.com/products/sun-kiss-deep-tanning-oil",
+      "status": "evidence_only",
+      "canonical_id": 63915,
+      "original_observation_id": 17803,
+      "observation_id": 22822,
+      "evidence_id": 1010,
+      "ingredient_count": 6
+    },
+    {
+      "url": "https://sourcebeauty.com/products/capixy-lashes-treatment-serum",
+      "status": "evidence_only",
+      "canonical_id": 63930,
+      "original_observation_id": 21480,
+      "observation_id": 22823,
+      "evidence_id": 1011,
+      "ingredient_count": 6
+    },
+    {
+      "url": "https://sourcebeauty.com/products/c-through-vitamin-c-serum",
+      "status": "published",
+      "canonical_id": 63942,
+      "original_observation_id": 21912,
+      "observation_id": 22824,
+      "evidence_id": 1012,
+      "ingredient_count": 25
+    },
+    {
+      "url": "https://sourcebeauty.com/products/milk-shake-sun-more-sunscreen-invisible-spray-spf-50",
+      "status": "evidence_only",
+      "canonical_id": 63951,
+      "original_observation_id": 15282,
+      "observation_id": 22825,
+      "evidence_id": 1014,
+      "ingredient_count": 2
+    },
+    {
+      "url": "https://sourcebeauty.com/products/mood-vienna-hand-cream",
+      "status": "published",
+      "canonical_id": 63974,
+      "original_observation_id": 20794,
+      "observation_id": 22826,
+      "evidence_id": 1015,
+      "ingredient_count": 10
+    },
+    {
+      "url": "https://sourcebeauty.com/products/anua-heartleaf-quercetinol-pore-deep-cleansing-foam",
+      "status": "published",
+      "canonical_id": 63981,
+      "original_observation_id": 20075,
+      "observation_id": 22827,
+      "evidence_id": 1017,
+      "ingredient_count": 39
+    },
+    {
+      "url": "https://sourcebeauty.com/products/besame-strawberry-lip-balm",
+      "status": "evidence_only",
+      "canonical_id": 63986,
+      "original_observation_id": 21968,
+      "observation_id": 22828,
+      "evidence_id": 1019,
+      "ingredient_count": 10
+    },
+    {
+      "url": "https://sourcebeauty.com/products/skinify-protect-sun-lotion-spf-50",
+      "status": "published",
+      "canonical_id": 63994,
+      "original_observation_id": 18507,
+      "observation_id": 22829,
+      "evidence_id": 1020,
+      "ingredient_count": 18
+    }
+  ]
+}

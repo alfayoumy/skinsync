@@ -1,0 +1,18 @@
+{
+  "revision": 0,
+  "triggers": [
+    "catalog_revision_v1_canonical_products_insert",
+    "catalog_revision_v1_canonical_products_delete",
+    "catalog_revision_v1_canonical_products_update",
+    "catalog_revision_v1_products_insert",
+    "catalog_revision_v1_products_delete",
+    "catalog_revision_v1_products_update",
+    "catalog_revision_v1_product_offers_insert",
+    "catalog_revision_v1_product_offers_delete",
+    "catalog_revision_v1_product_offers_update",
+    "catalog_revision_v1_sources_insert",
+    "catalog_revision_v1_sources_delete",
+    "catalog_revision_v1_sources_update"
+  ],
+  "canonical_rows_changed": 0
+}

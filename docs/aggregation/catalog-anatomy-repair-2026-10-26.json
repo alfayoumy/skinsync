@@ -1,0 +1,472 @@
+{
+  "applied": true,
+  "backup_path": "/mnt/windows/Users/AmrAlfayoumy/Downloads/skincare/repo/api/backups/catalog/catalog-20261026T005942Z-a8b69273.sqlite3",
+  "before": 855,
+  "after": 855,
+  "result": {
+    "uncertain_preserved": 766,
+    "superseded_evidence_preserved": 76,
+    "cluster_conflict_preserved": 13
+  },
+  "canonical_projection": {
+    "counts": {
+      "specific_hair_type_preserved": 237,
+      "updated": 28,
+      "uncertain_preserved": 808,
+      "human_approved_preserved": 2,
+      "specific_category_preserved": 1
+    },
+    "changes": [
+      {
+        "canonical_id": 63645,
+        "title": "Eva Tropical Foot Scrub \u2013 60ml",
+        "before": "Exfoliator",
+        "after": "Body Care",
+        "is_skincare": true,
+        "evidence": [
+          {
+            "source": "title",
+            "category": "Body Care",
+            "match": "foot scrub",
+            "weight": 4
+          },
+          {
+            "source": "title",
+            "category": "Exfoliator",
+            "match": "scrub",
+            "weight": 4
+          }
+        ]
+      },
+      {
+        "canonical_id": 64278,
+        "title": "Callista Dreamy Matte Cream Lipgloss - 4ml",
+        "before": "Moisturizer",
+        "after": "Makeup",
+        "is_skincare": false,
+        "evidence": [
+          {
+            "source": "title",
+            "match": "\\b(?:lip liner|lip ?gloss|brow pomade|brow pencil|eye pencil|color corrector|setting spray|bb (?:cream|skin editor))\\b"
+          }
+        ]
+      },
+      {
+        "canonical_id": 64279,
+        "title": "Callista Dreamy Matte Cream Lipgloss - 4ml",
+        "before": "Moisturizer",
+        "after": "Makeup",
+        "is_skincare": false,
+        "evidence": [
+          {
+            "source": "title",
+            "match": "\\b(?:lip liner|lip ?gloss|brow pomade|brow pencil|eye pencil|color corrector|setting spray|bb (?:cream|skin editor))\\b"
+          }
+        ]
+      },
+      {
+        "canonical_id": 64280,
+        "title": "Callista Dreamy Matte Cream Lipgloss - 4ml",
+        "before": "Moisturizer",
+        "after": "Makeup",
+        "is_skincare": false,
+        "evidence": [
+          {
+            "source": "title",
+            "match": "\\b(?:lip liner|lip ?gloss|brow pomade|brow pencil|eye pencil|color corrector|setting spray|bb (?:cream|skin editor))\\b"
+          }
+        ]
+      },
+      {
+        "canonical_id": 64293,
+        "title": "Essence Juicy Bomb Shiny Lipgloss - 10ml",
+        "before": "Toner",
+        "after": "Makeup",
+        "is_skincare": false,
+        "evidence": [
+          {
+            "source": "title",
+            "match": "\\b(?:lip liner|lip ?gloss|brow pomade|brow pencil|eye pencil|color corrector|setting spray|bb (?:cream|skin editor))\\b"
+          }
+        ]
+      },
+      {
+        "canonical_id": 64294,
+        "title": "Essence Juicy Bomb Shiny Lipgloss - 10ml",
+        "before": "Toner",
+        "after": "Makeup",
+        "is_skincare": false,
+        "evidence": [
+          {
+            "source": "title",
+            "match": "\\b(?:lip liner|lip ?gloss|brow pomade|brow pencil|eye pencil|color corrector|setting spray|bb (?:cream|skin editor))\\b"
+          }
+        ]
+      },
+      {
+        "canonical_id": 64295,
+        "title": "Essence Juicy Bomb Shiny Lipgloss - 10ml",
+        "before": "Toner",
+        "after": "Makeup",
+        "is_skincare": false,
+        "evidence": [
+          {
+            "source": "title",
+            "match": "\\b(?:lip liner|lip ?gloss|brow pomade|brow pencil|eye pencil|color corrector|setting spray|bb (?:cream|skin editor))\\b"
+          }
+        ]
+      },
+      {
+        "canonical_id": 64296,
+        "title": "Essence Juicy Bomb Shiny Lipgloss - 10ml",
+        "before": "Toner",
+        "after": "Makeup",
+        "is_skincare": false,
+        "evidence": [
+          {
+            "source": "title",
+            "match": "\\b(?:lip liner|lip ?gloss|brow pomade|brow pencil|eye pencil|color corrector|setting spray|bb (?:cream|skin editor))\\b"
+          }
+        ]
+      },
+      {
+        "canonical_id": 64297,
+        "title": "Essence Juicy Bomb Shiny Lipgloss - 10ml",
+        "before": "Toner",
+        "after": "Makeup",
+        "is_skincare": false,
+        "evidence": [
+          {
+            "source": "title",
+            "match": "\\b(?:lip liner|lip ?gloss|brow pomade|brow pencil|eye pencil|color corrector|setting spray|bb (?:cream|skin editor))\\b"
+          }
+        ]
+      },
+      {
+        "canonical_id": 64298,
+        "title": "Essence Juicy Bomb Shiny Lipgloss - 10ml",
+        "before": "Toner",
+        "after": "Makeup",
+        "is_skincare": false,
+        "evidence": [
+          {
+            "source": "title",
+            "match": "\\b(?:lip liner|lip ?gloss|brow pomade|brow pencil|eye pencil|color corrector|setting spray|bb (?:cream|skin editor))\\b"
+          }
+        ]
+      },
+      {
+        "canonical_id": 64299,
+        "title": "Essence Juicy Bomb Shiny Lipgloss - 10ml",
+        "before": "Toner",
+        "after": "Makeup",
+        "is_skincare": false,
+        "evidence": [
+          {
+            "source": "title",
+            "match": "\\b(?:lip liner|lip ?gloss|brow pomade|brow pencil|eye pencil|color corrector|setting spray|bb (?:cream|skin editor))\\b"
+          }
+        ]
+      },
+      {
+        "canonical_id": 64300,
+        "title": "Essence Juicy Bomb Shiny Lipgloss - 10ml",
+        "before": "Toner",
+        "after": "Makeup",
+        "is_skincare": false,
+        "evidence": [
+          {
+            "source": "title",
+            "match": "\\b(?:lip liner|lip ?gloss|brow pomade|brow pencil|eye pencil|color corrector|setting spray|bb (?:cream|skin editor))\\b"
+          }
+        ]
+      },
+      {
+        "canonical_id": 64301,
+        "title": "Essence Juicy Bomb Shiny Lipgloss - 10ml",
+        "before": "Toner",
+        "after": "Makeup",
+        "is_skincare": false,
+        "evidence": [
+          {
+            "source": "title",
+            "match": "\\b(?:lip liner|lip ?gloss|brow pomade|brow pencil|eye pencil|color corrector|setting spray|bb (?:cream|skin editor))\\b"
+          }
+        ]
+      },
+      {
+        "canonical_id": 65160,
+        "title": "Essence Extreme Shine Volume Lipgloss 01 Crystal Clear.",
+        "before": "Toner",
+        "after": "Makeup",
+        "is_skincare": false,
+        "evidence": [
+          {
+            "source": "title",
+            "match": "\\b(?:lip liner|lip ?gloss|brow pomade|brow pencil|eye pencil|color corrector|setting spray|bb (?:cream|skin editor))\\b"
+          }
+        ]
+      },
+      {
+        "canonical_id": 65192,
+        "title": "Infinity Naturals Foot Scrub Sea Salt Lavender & Peppermint Essential Oils",
+        "before": "Exfoliator",
+        "after": "Body Care",
+        "is_skincare": true,
+        "evidence": [
+          {
+            "source": "title",
+            "category": "Body Care",
+            "match": "foot scrub",
+            "weight": 4
+          },
+          {
+            "source": "title",
+            "category": "Exfoliator",
+            "match": "scrub",
+            "weight": 4
+          }
+        ]
+      },
+      {
+        "canonical_id": 65811,
+        "title": "Glysolid Body Musk Lotion 200Ml",
+        "before": "Moisturizer",
+        "after": "Body Care",
+        "is_skincare": true,
+        "evidence": [
+          {
+            "source": "title",
+            "category": "Body Care",
+            "match": "body musk lotion",
+            "weight": 4
+          },
+          {
+            "source": "title",
+            "category": "Moisturizer",
+            "match": "lotion",
+            "weight": 4
+          }
+        ]
+      },
+      {
+        "canonical_id": 65949,
+        "title": "Essence Juicy Bomb Shiny Lipgloss",
+        "before": "Toner",
+        "after": "Makeup",
+        "is_skincare": false,
+        "evidence": [
+          {
+            "source": "title",
+            "match": "\\b(?:lip liner|lip ?gloss|brow pomade|brow pencil|eye pencil|color corrector|setting spray|bb (?:cream|skin editor))\\b"
+          }
+        ]
+      },
+      {
+        "canonical_id": 65950,
+        "title": "Essence Juicy Bomb Shiny Lipgloss",
+        "before": "Toner",
+        "after": "Makeup",
+        "is_skincare": false,
+        "evidence": [
+          {
+            "source": "title",
+            "match": "\\b(?:lip liner|lip ?gloss|brow pomade|brow pencil|eye pencil|color corrector|setting spray|bb (?:cream|skin editor))\\b"
+          }
+        ]
+      },
+      {
+        "canonical_id": 66349,
+        "title": "Bioderma Atoderm Hands Repairing Cream 50ml",
+        "before": "Moisturizer",
+        "after": "Body Care",
+        "is_skincare": true,
+        "evidence": [
+          {
+            "source": "title",
+            "category": "Body Care",
+            "match": "hands repairing cream",
+            "weight": 4
+          },
+          {
+            "source": "title",
+            "category": "Moisturizer",
+            "match": "cream",
+            "weight": 4
+          }
+        ]
+      },
+      {
+        "canonical_id": 66394,
+        "title": "Avene Cicalfate Hand Repairing Barrier Cream 100ml",
+        "before": "Moisturizer",
+        "after": "Body Care",
+        "is_skincare": true,
+        "evidence": [
+          {
+            "source": "title",
+            "category": "Body Care",
+            "match": "hand repairing barrier cream",
+            "weight": 4
+          },
+          {
+            "source": "title",
+            "category": "Moisturizer",
+            "match": "cream",
+            "weight": 4
+          }
+        ]
+      },
+      {
+        "canonical_id": 67105,
+        "title": "Tropical Foot Scrub",
+        "before": "Exfoliator",
+        "after": "Body Care",
+        "is_skincare": true,
+        "evidence": [
+          {
+            "source": "title",
+            "category": "Body Care",
+            "match": "foot scrub",
+            "weight": 4
+          },
+          {
+            "source": "title",
+            "category": "Exfoliator",
+            "match": "scrub",
+            "weight": 4
+          }
+        ]
+      },
+      {
+        "canonical_id": 67139,
+        "title": "Foot Scrub Sea Salt Lavender & Peppermint Essential Oils",
+        "before": "Exfoliator",
+        "after": "Body Care",
+        "is_skincare": true,
+        "evidence": [
+          {
+            "source": "title",
+            "category": "Body Care",
+            "match": "foot scrub",
+            "weight": 4
+          },
+          {
+            "source": "title",
+            "category": "Exfoliator",
+            "match": "scrub",
+            "weight": 4
+          }
+        ]
+      },
+      {
+        "canonical_id": 67978,
+        "title": "Joviality Cool Peppermint Foot Balm - 30gm",
+        "before": "Moisturizer",
+        "after": "Body Care",
+        "is_skincare": true,
+        "evidence": [
+          {
+            "source": "title",
+            "category": "Body Care",
+            "match": "foot balm",
+            "weight": 4
+          },
+          {
+            "source": "title",
+            "category": "Moisturizer",
+            "match": "balm",
+            "weight": 4
+          }
+        ]
+      },
+      {
+        "canonical_id": 69288,
+        "title": "Eva Foot Scrub Passion - 60ml",
+        "before": "Exfoliator",
+        "after": "Body Care",
+        "is_skincare": true,
+        "evidence": [
+          {
+            "source": "title",
+            "category": "Body Care",
+            "match": "foot scrub",
+            "weight": 4
+          },
+          {
+            "source": "title",
+            "category": "Exfoliator",
+            "match": "scrub",
+            "weight": 4
+          }
+        ]
+      },
+      {
+        "canonical_id": 69549,
+        "title": "Essence Extreme Shine Volume Lip Gloss 11 Power Of Nude.",
+        "before": "Toner",
+        "after": "Makeup",
+        "is_skincare": false,
+        "evidence": [
+          {
+            "source": "title",
+            "match": "\\b(?:lip liner|lip ?gloss|brow pomade|brow pencil|eye pencil|color corrector|setting spray|bb (?:cream|skin editor))\\b"
+          }
+        ]
+      },
+      {
+        "canonical_id": 69619,
+        "title": "Essence Extreme Shine Volume Lipgloss 102 Sweet Dreams.",
+        "before": "Toner",
+        "after": "Makeup",
+        "is_skincare": false,
+        "evidence": [
+          {
+            "source": "title",
+            "match": "\\b(?:lip liner|lip ?gloss|brow pomade|brow pencil|eye pencil|color corrector|setting spray|bb (?:cream|skin editor))\\b"
+          }
+        ]
+      },
+      {
+        "canonical_id": 69620,
+        "title": "Essence Extreme Shine Volume Lipgloss 13 Glazed Berry.",
+        "before": "Toner",
+        "after": "Makeup",
+        "is_skincare": false,
+        "evidence": [
+          {
+            "source": "title",
+            "match": "\\b(?:lip liner|lip ?gloss|brow pomade|brow pencil|eye pencil|color corrector|setting spray|bb (?:cream|skin editor))\\b"
+          }
+        ]
+      },
+      {
+        "canonical_id": 70345,
+        "title": "Passion Foot Scrub",
+        "before": "Exfoliator",
+        "after": "Body Care",
+        "is_skincare": true,
+        "evidence": [
+          {
+            "source": "title",
+            "category": "Body Care",
+            "match": "foot scrub",
+            "weight": 4
+          },
+          {
+            "source": "title",
+            "category": "Exfoliator",
+            "match": "scrub",
+            "weight": 4
+          }
+        ]
+      }
+    ]
+  },
+  "explicit_hair_types": {
+    "counts": {
+      "specific_role_conflict_preserved": 2
+    },
+    "changes": []
+  }
+}

@@ -1,0 +1,58 @@
+{
+  "applied": false,
+  "backup_path": null,
+  "model_calls": 0,
+  "preview_scope": "consistent_isolated_snapshot",
+  "results": [
+    {
+      "url": "https://drdawoodstore.com/products/acti-glow-eye-contour-color-perfector-15ml",
+      "status": "preserved",
+      "reason": "Product heading and verified brand do not identify the retained source product."
+    },
+    {
+      "url": "https://drdawoodstore.com/products/acm-depiwhite-eye-contour-gel-15ml",
+      "status": "preserved",
+      "reason": "Product heading and verified brand do not identify the retained source product."
+    },
+    {
+      "url": "https://drdawoodstore.com/products/uriage-hyseac-cleansing-gel-150ml",
+      "status": "preserved",
+      "reason": "Product heading and verified brand do not identify the retained source product."
+    },
+    {
+      "url": "https://drdawoodstore.com/products/age-lift-peel-night-cream-50ml",
+      "status": "preserved",
+      "reason": "Product heading and verified brand do not identify the retained source product."
+    },
+    {
+      "url": "https://drdawoodstore.com/products/acm-depiwhite-body-milk-200ml",
+      "status": "preserved",
+      "reason": "Product heading and verified brand do not identify the retained source product."
+    },
+    {
+      "url": "https://drdawoodstore.com/products/da-acti-repair-lip-balm-15-ml",
+      "status": "preserved",
+      "reason": "Product heading and verified brand do not identify the retained source product."
+    },
+    {
+      "url": "https://drdawoodstore.com/products/dermactive-acti-repair-hand-cream-60-ml",
+      "status": "preserved",
+      "reason": "Product heading and verified brand do not identify the retained source product."
+    },
+    {
+      "url": "https://drdawoodstore.com/products/bio-oil-body-lotion-175ml",
+      "status": "preserved",
+      "reason": "Product heading and verified brand do not identify the retained source product."
+    },
+    {
+      "url": "https://drdawoodstore.com/products/bionnex-whitexpert-eye-contour-cream-15ml",
+      "status": "preserved",
+      "reason": "Product heading and verified brand do not identify the retained source product."
+    },
+    {
+      "url": "https://drdawoodstore.com/products/dermactive-acti-clear-global-ac-cream-gel-50ml",
+      "status": "preserved",
+      "reason": "Product heading and verified brand do not identify the retained source product."
+    }
+  ]
+}

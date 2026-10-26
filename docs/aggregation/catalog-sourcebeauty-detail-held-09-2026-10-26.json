@@ -1,0 +1,128 @@
+{
+  "applied": true,
+  "backup_path": "/mnt/windows/Users/AmrAlfayoumy/Downloads/skincare/repo/api/backups/catalog/catalog-20261026T195740Z-eb627423.sqlite3",
+  "model_calls": 0,
+  "results": [
+    {
+      "status": "held_for_review",
+      "canonical_id": 65466,
+      "original_observation_id": 21015,
+      "observation_id": 22973,
+      "evidence_id": 1240,
+      "ingredient_count": 27,
+      "review_id": 8710,
+      "source_url": "https://sourcebeauty.com/products/farm-stay-oil-free-uv-defence-sun-cream",
+      "review_reason": "Malformed chemical naming in retained retailer declaration; exact INCI requires corroboration."
+    },
+    {
+      "status": "held_for_review",
+      "canonical_id": 65537,
+      "original_observation_id": 19114,
+      "observation_id": 22974,
+      "evidence_id": 1241,
+      "ingredient_count": 54,
+      "review_id": 8711,
+      "source_url": "https://sourcebeauty.com/products/starville-acne-prone-skin-lotion",
+      "review_reason": "OCR damage in multiple chemical names; preserve literal evidence without reconstructing names."
+    },
+    {
+      "status": "held_for_review",
+      "canonical_id": 65538,
+      "original_observation_id": 21489,
+      "observation_id": 22975,
+      "evidence_id": 1242,
+      "ingredient_count": 31,
+      "review_id": 8712,
+      "source_url": "https://sourcebeauty.com/products/parkville-whitening-gel-spf-50",
+      "review_reason": "Nonspecific trade-name/active summary and malformed chemical names do not establish exact complete INCI."
+    },
+    {
+      "status": "held_for_review",
+      "canonical_id": 65627,
+      "original_observation_id": 16858,
+      "observation_id": 22976,
+      "evidence_id": 1243,
+      "ingredient_count": 18,
+      "review_id": 8713,
+      "source_url": "https://sourcebeauty.com/products/nano-24k-gold-night-cream",
+      "review_reason": "Nonspecific liposomal vitamin summary; complete chemically identified declaration not established."
+    },
+    {
+      "status": "held_for_review",
+      "canonical_id": 65628,
+      "original_observation_id": 16856,
+      "observation_id": 22977,
+      "evidence_id": 1244,
+      "ingredient_count": 18,
+      "review_id": 8714,
+      "source_url": "https://sourcebeauty.com/products/nano-24k-gold-eye",
+      "review_reason": "Nonspecific liposomal vitamin summary; complete chemically identified declaration not established."
+    },
+    {
+      "status": "held_for_review",
+      "canonical_id": 65684,
+      "original_observation_id": 16282,
+      "observation_id": 22978,
+      "evidence_id": 1245,
+      "ingredient_count": 15,
+      "review_id": 8715,
+      "source_url": "https://sourcebeauty.com/products/bubblzz-white-musk-ultra-rich-body-lotion",
+      "review_reason": "Long key-ingredient summary conflicts with the advertised panthenol/water-based lotion evidence; complete formulation not established."
+    },
+    {
+      "status": "held_for_review",
+      "canonical_id": 65715,
+      "original_observation_id": 17791,
+      "observation_id": 22979,
+      "evidence_id": 1246,
+      "ingredient_count": 11,
+      "review_id": 8716,
+      "source_url": "https://sourcebeauty.com/products/eye-balm",
+      "review_reason": "Nonspecific ingredient classes and misspellings require exact label/manufacturer evidence."
+    },
+    {
+      "status": "held_for_review",
+      "canonical_id": 65861,
+      "original_observation_id": 18071,
+      "observation_id": 22980,
+      "evidence_id": 1247,
+      "ingredient_count": 16,
+      "review_id": 8717,
+      "source_url": "https://sourcebeauty.com/products/niacinamide-serum",
+      "review_reason": "Generic vitamin/trade-name summary requires an exact complete INCI declaration."
+    },
+    {
+      "status": "held_for_review",
+      "canonical_id": 65881,
+      "original_observation_id": 22069,
+      "observation_id": 22981,
+      "evidence_id": 1248,
+      "ingredient_count": 10,
+      "review_id": 8718,
+      "source_url": "https://sourcebeauty.com/products/lip-plumping-serum",
+      "review_reason": "Broken compound names and concatenated fragments; do not invent chemical corrections."
+    },
+    {
+      "status": "held_for_review",
+      "canonical_id": 65890,
+      "original_observation_id": 19658,
+      "observation_id": 22982,
+      "evidence_id": 1249,
+      "ingredient_count": 38,
+      "review_id": 8719,
+      "source_url": "https://sourcebeauty.com/products/isntree-hyaluronic-acid-water-sleeping-mask",
+      "review_reason": "Ingredient footnotes and malformed names require an exact verified declaration before publication."
+    },
+    {
+      "status": "held_for_review",
+      "canonical_id": 65891,
+      "original_observation_id": 20159,
+      "observation_id": 22983,
+      "evidence_id": 1250,
+      "ingredient_count": 31,
+      "review_id": 8720,
+      "source_url": "https://sourcebeauty.com/products/tirtir-ceramic-cream",
+      "review_reason": "Retailer formula materially differs from the manufacturer Ceramic Cream declaration; regional/revision identity must be checked."
+    }
+  ]
+}

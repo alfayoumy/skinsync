@@ -1,0 +1,100 @@
+{
+  "source_id": "sourcebeauty",
+  "model_calls": 0,
+  "read_only": true,
+  "selected": 10,
+  "results": [
+    {
+      "canonical_id": 63366,
+      "observation_id": 21483,
+      "raw_title": "Vanilla Sugar Shower Gel",
+      "raw_brand": "Essentials",
+      "source_url": "https://sourcebeauty.com/products/essentials-vanilla-sugar-shower-gel",
+      "status": "fetched",
+      "pages": 1
+    },
+    {
+      "canonical_id": 63367,
+      "observation_id": 21097,
+      "raw_title": "Watermelon Breeze Shower Cream",
+      "raw_brand": "Essentials",
+      "source_url": "https://sourcebeauty.com/products/watermelon-breeze-shower-cream",
+      "status": "fetched",
+      "pages": 1
+    },
+    {
+      "canonical_id": 63394,
+      "observation_id": 15722,
+      "raw_title": "Glossy Lip Balm - Cola",
+      "raw_brand": "Soul & More",
+      "source_url": "https://sourcebeauty.com/products/soul-more-glossy-lip-balm-cola",
+      "status": "fetched",
+      "pages": 1
+    },
+    {
+      "canonical_id": 63395,
+      "observation_id": 15721,
+      "raw_title": "Lip Oil - Cola",
+      "raw_brand": "Soul & More",
+      "source_url": "https://sourcebeauty.com/products/soul-more-lip-oil-cola",
+      "status": "fetched",
+      "pages": 1
+    },
+    {
+      "canonical_id": 63400,
+      "observation_id": 17410,
+      "raw_title": "Oily Matte Cream-Gel",
+      "raw_brand": "Shaan",
+      "source_url": "https://sourcebeauty.com/products/shaan-oily-matte-cream-gel",
+      "status": "fetched",
+      "pages": 1
+    },
+    {
+      "canonical_id": 63407,
+      "observation_id": 18795,
+      "raw_title": "Coffee & Coconut Body Butter",
+      "raw_brand": "Soul & More",
+      "source_url": "https://sourcebeauty.com/products/soul-more-coffee-coconut-body-butter-whipped",
+      "status": "fetched",
+      "pages": 1
+    },
+    {
+      "canonical_id": 63409,
+      "observation_id": 17165,
+      "raw_title": "Coffee & Coconut Hand Cream",
+      "raw_brand": "Soul & More",
+      "source_url": "https://sourcebeauty.com/products/soul-more-coffee-coconut-hand-cream",
+      "status": "fetched",
+      "pages": 1
+    },
+    {
+      "canonical_id": 63412,
+      "observation_id": 15991,
+      "raw_title": "Red Forest Body Lotion",
+      "raw_brand": "Soul & More",
+      "source_url": "https://sourcebeauty.com/products/red-forest-body-lotion",
+      "status": "fetched",
+      "pages": 1
+    },
+    {
+      "canonical_id": 63417,
+      "observation_id": 21002,
+      "raw_title": "Dynasty Cream",
+      "raw_brand": "Beauty Of Joseon",
+      "source_url": "https://sourcebeauty.com/products/beauty-of-joseon-dynasty-cream",
+      "status": "fetched",
+      "pages": 1
+    },
+    {
+      "canonical_id": 63425,
+      "observation_id": 21096,
+      "raw_title": "Strawberry Vanilla Shower Cream",
+      "raw_brand": "Essentials",
+      "source_url": "https://sourcebeauty.com/products/strawberry-vanilla-shower-cream",
+      "status": "fetched",
+      "pages": 1
+    }
+  ],
+  "last_canonical_id": 63425,
+  "more_candidates_in_selection": true
+}

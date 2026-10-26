@@ -1,0 +1,9 @@
+{
+  "task_id": "task_20261025_210322_6d2594fe",
+  "result": {
+    "status": "failed",
+    "pair_rejections": 264,
+    "auto_resolved": 72,
+    "needs_manual": 32
+  }
+}

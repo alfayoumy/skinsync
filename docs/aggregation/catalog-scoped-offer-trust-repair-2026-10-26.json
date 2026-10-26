@@ -1,0 +1,15 @@
+{
+  "applied": true,
+  "backup_path": "/mnt/windows/Users/AmrAlfayoumy/Downloads/skincare/repo/api/backups/catalog/catalog-20261026T203618Z-142629bc.sqlite3",
+  "backfill": {
+    "backfilled": 9575,
+    "scoped": 1072,
+    "invalid_metadata": 0
+  },
+  "exact_scoped_verified_offers_restored": 1072,
+  "public_skincare_without_verified_eligible_offers": 0,
+  "identity_links_modified": 0,
+  "prices_stock_ingredients_modified": false,
+  "model_calls": 0,
+  "correction": "The earlier root-only audit misclassified 1,072 already-approved scoped variant associations. Every key here is derived from the offer exact retained observation/variant, not borrowed from a sibling shade."
+}

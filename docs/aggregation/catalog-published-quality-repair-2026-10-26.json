@@ -1,0 +1,38 @@
+{
+  "applied": true,
+  "backup_path": "/mnt/windows/Users/AmrAlfayoumy/Downloads/skincare/repo/api/backups/catalog/catalog-20261026T191849Z-1a72e14a.sqlite3",
+  "model_calls": 0,
+  "results": [
+    {
+      "canonical_id": 64415,
+      "title": "La Roche-Posay Anthelios Uvmune 400 Oil Control Tinted Gel-Cream SPF50+ - 50ml",
+      "status": "withdrawn",
+      "withdrawal": {
+        "canonical_product_id": 64415,
+        "evidence_id": 1181,
+        "withdrawn": true
+      },
+      "reason": "Reviewed published declaration fails current completeness checks: {\"partial_reason\": \"non_specific_or_contaminated_declaration\"}. Preserve original evidence; do not infer or reconstruct missing chemical names.",
+      "review_id": 8703
+    },
+    {
+      "canonical_id": 65115,
+      "title": "Eqqualberry Vitamin Illuminating Cream 50 Ml.",
+      "status": "corrected_from_retained_page",
+      "withdrawal": {
+        "canonical_product_id": 65115,
+        "evidence_id": 1182,
+        "withdrawn": true
+      },
+      "reason": "Reviewed published declaration fails current completeness checks: {\"partial_reason\": \"non_specific_or_contaminated_declaration\"}. Preserve original evidence; do not infer or reconstruct missing chemical names.",
+      "correction": {
+        "status": "published",
+        "canonical_id": 65115,
+        "original_observation_id": 22896,
+        "observation_id": 22931,
+        "evidence_id": 1183,
+        "ingredient_count": 59
+      }
+    }
+  ]
+}

@@ -1,0 +1,72 @@
+{
+  "reviewed_page_indices": [
+    81,
+    82,
+    83,
+    84,
+    85,
+    86,
+    87,
+    88,
+    89,
+    90,
+    91
+  ],
+  "decisions": [
+    {
+      "url": "https://sourcebeauty.com/products/bubblegum-shower-gel-copy",
+      "decision": "hold",
+      "reason": "No usable section, broken chemical names, nonchemical trademark tokens or implausible ingredient order requiring manufacturer confirmation."
+    },
+    {
+      "url": "https://sourcebeauty.com/products/medicube-psrn-pink-peptide-serum-30ml",
+      "decision": "hold",
+      "reason": "No usable section, broken chemical names, nonchemical trademark tokens or implausible ingredient order requiring manufacturer confirmation."
+    },
+    {
+      "url": "https://sourcebeauty.com/products/essentials-wild-berries-hand-cream",
+      "decision": "hold",
+      "reason": "No usable section, broken chemical names, nonchemical trademark tokens or implausible ingredient order requiring manufacturer confirmation."
+    },
+    {
+      "url": "https://sourcebeauty.com/products/essentials-tropical-paradise-hand-cream",
+      "decision": "hold",
+      "reason": "No usable section, broken chemical names, nonchemical trademark tokens or implausible ingredient order requiring manufacturer confirmation."
+    },
+    {
+      "url": "https://sourcebeauty.com/products/arencia-pdrn-booster-shot",
+      "decision": "apply_if_fresh_validation_passes",
+      "reason": "Reviewed complete source declaration; fresh identity and completeness checks required."
+    },
+    {
+      "url": "https://sourcebeauty.com/products/favelin-sunkissed-honey-body-butter-1",
+      "decision": "hold",
+      "reason": "No usable section, broken chemical names, nonchemical trademark tokens or implausible ingredient order requiring manufacturer confirmation."
+    },
+    {
+      "url": "https://sourcebeauty.com/products/cerave-foaming-cleanser",
+      "decision": "apply_if_fresh_validation_passes",
+      "reason": "Reviewed complete source declaration; fresh identity and completeness checks required."
+    },
+    {
+      "url": "https://sourcebeauty.com/products/mood-khaliji-hand-cream",
+      "decision": "hold",
+      "reason": "No usable section, broken chemical names, nonchemical trademark tokens or implausible ingredient order requiring manufacturer confirmation."
+    },
+    {
+      "url": "https://sourcebeauty.com/products/delicious-body-lotion",
+      "decision": "hold",
+      "reason": "No usable section, broken chemical names, nonchemical trademark tokens or implausible ingredient order requiring manufacturer confirmation."
+    },
+    {
+      "url": "https://sourcebeauty.com/products/favelin-violet-twist-body-lotion-1",
+      "decision": "hold",
+      "reason": "No usable section, broken chemical names, nonchemical trademark tokens or implausible ingredient order requiring manufacturer confirmation."
+    },
+    {
+      "url": "https://sourcebeauty.com/products/vaseline-lip-therapy-rosy-mini",
+      "decision": "hold",
+      "reason": "No usable section, broken chemical names, nonchemical trademark tokens or implausible ingredient order requiring manufacturer confirmation."
+    }
+  ]
+}

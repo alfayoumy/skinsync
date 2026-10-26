@@ -1,0 +1,27 @@
+{
+  "applied": true,
+  "backup_path": "/mnt/windows/Users/AmrAlfayoumy/Downloads/skincare/repo/api/backups/catalog/catalog-20261026T005411Z-5a0b8fc8.sqlite3",
+  "before": 856,
+  "after": 855,
+  "result": {
+    "uncertain_preserved": 766,
+    "superseded_evidence_preserved": 76,
+    "cluster_conflict_preserved": 13,
+    "resolved": 1
+  },
+  "canonical_projection": {
+    "counts": {
+      "specific_hair_type_preserved": 237,
+      "uncertain_preserved": 811,
+      "specific_category_preserved": 1,
+      "cluster_conflict_preserved": 1
+    },
+    "changes": []
+  },
+  "explicit_hair_types": {
+    "counts": {
+      "specific_role_conflict_preserved": 2
+    },
+    "changes": []
+  }
+}

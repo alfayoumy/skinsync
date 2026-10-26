@@ -1,0 +1,175 @@
+{
+  "source_id": "drdawood",
+  "model_calls": 0,
+  "read_only": true,
+  "selected": 10,
+  "results": [
+    {
+      "canonical_id": 63220,
+      "observation_id": 4072,
+      "raw_title": "Dermactive Acti-Glow Eye Contour Color Perfector 15Ml",
+      "raw_brand": "Dermactive",
+      "source_url": "https://drdawoodstore.com/products/acti-glow-eye-contour-color-perfector-15ml",
+      "status": "fetched",
+      "pages": 1
+    },
+    {
+      "canonical_id": 63238,
+      "observation_id": 5938,
+      "raw_title": "Acm Depiwhite Eye Contour Gel 15Ml",
+      "raw_brand": "ACM",
+      "source_url": "https://drdawoodstore.com/products/acm-depiwhite-eye-contour-gel-15ml",
+      "status": "fetched",
+      "pages": 1
+    },
+    {
+      "canonical_id": 63239,
+      "observation_id": 5083,
+      "raw_title": "Uriage Hys\u00e9ac Cleansing Gel 150Ml",
+      "raw_brand": "Uriage",
+      "source_url": "https://drdawoodstore.com/products/uriage-hyseac-cleansing-gel-150ml",
+      "status": "fetched",
+      "pages": 1
+    },
+    {
+      "canonical_id": 63246,
+      "observation_id": 5199,
+      "raw_title": "Uriage Age Lift Peel Night Cream 50Ml",
+      "raw_brand": "Uriage",
+      "source_url": "https://drdawoodstore.com/products/age-lift-peel-night-cream-50ml",
+      "status": "fetched",
+      "pages": 1
+    },
+    {
+      "canonical_id": 63247,
+      "observation_id": 5530,
+      "raw_title": "Acm Depiwhite Body Milk 200Ml",
+      "raw_brand": "ACM",
+      "source_url": "https://drdawoodstore.com/products/acm-depiwhite-body-milk-200ml",
+      "status": "fetched",
+      "pages": 1
+    },
+    {
+      "canonical_id": 63250,
+      "observation_id": 4068,
+      "raw_title": "Dermactive Acti-Repair Lip Balm 15 Ml",
+      "raw_brand": "Dermactive",
+      "source_url": "https://drdawoodstore.com/products/da-acti-repair-lip-balm-15-ml",
+      "status": "fetched",
+      "pages": 1
+    },
+    {
+      "canonical_id": 63260,
+      "observation_id": 5010,
+      "raw_title": "Dermactive Acti-Repair Hand Cream 60 Ml",
+      "raw_brand": "Dermactive",
+      "source_url": "https://drdawoodstore.com/products/dermactive-acti-repair-hand-cream-60-ml",
+      "status": "fetched",
+      "pages": 1
+    },
+    {
+      "canonical_id": 63285,
+      "observation_id": 5456,
+      "raw_title": "Bio-Oil Body Lotion 175Ml",
+      "raw_brand": "Bio-Oil",
+      "source_url": "https://drdawoodstore.com/products/bio-oil-body-lotion-175ml",
+      "status": "fetched",
+      "pages": 1
+    },
+    {
+      "canonical_id": 63297,
+      "observation_id": 5687,
+      "raw_title": "Bionnex Whitexpert Eye Contour Cream 15Ml",
+      "raw_brand": "Bionnex",
+      "source_url": "https://drdawoodstore.com/products/bionnex-whitexpert-eye-contour-cream-15ml",
+      "status": "fetched",
+      "pages": 1
+    },
+    {
+      "canonical_id": 63300,
+      "observation_id": 5122,
+      "raw_title": "Dermactive Acti-Clear Global Ac Cream Gel 50Ml",
+      "raw_brand": "Dermactive",
+      "source_url": "https://drdawoodstore.com/products/dermactive-acti-clear-global-ac-cream-gel-50ml",
+      "status": "fetched",
+      "pages": 1
+    }
+  ],
+  "last_canonical_id": 63300,
+  "more_candidates_in_selection": true,
+  "status": "completed",
+  "selected_products": [
+    {
+      "canonical_id": 63220,
+      "observation_id": 4072,
+      "raw_title": "Dermactive Acti-Glow Eye Contour Color Perfector 15Ml",
+      "raw_brand": "Dermactive",
+      "source_url": "https://drdawoodstore.com/products/acti-glow-eye-contour-color-perfector-15ml"
+    },
+    {
+      "canonical_id": 63238,
+      "observation_id": 5938,
+      "raw_title": "Acm Depiwhite Eye Contour Gel 15Ml",
+      "raw_brand": "ACM",
+      "source_url": "https://drdawoodstore.com/products/acm-depiwhite-eye-contour-gel-15ml"
+    },
+    {
+      "canonical_id": 63239,
+      "observation_id": 5083,
+      "raw_title": "Uriage Hys\u00e9ac Cleansing Gel 150Ml",
+      "raw_brand": "Uriage",
+      "source_url": "https://drdawoodstore.com/products/uriage-hyseac-cleansing-gel-150ml"
+    },
+    {
+      "canonical_id": 63246,
+      "observation_id": 5199,
+      "raw_title": "Uriage Age Lift Peel Night Cream 50Ml",
+      "raw_brand": "Uriage",
+      "source_url": "https://drdawoodstore.com/products/age-lift-peel-night-cream-50ml"
+    },
+    {
+      "canonical_id": 63247,
+      "observation_id": 5530,
+      "raw_title": "Acm Depiwhite Body Milk 200Ml",
+      "raw_brand": "ACM",
+      "source_url": "https://drdawoodstore.com/products/acm-depiwhite-body-milk-200ml"
+    },
+    {
+      "canonical_id": 63250,
+      "observation_id": 4068,
+      "raw_title": "Dermactive Acti-Repair Lip Balm 15 Ml",
+      "raw_brand": "Dermactive",
+      "source_url": "https://drdawoodstore.com/products/da-acti-repair-lip-balm-15-ml"
+    },
+    {
+      "canonical_id": 63260,
+      "observation_id": 5010,
+      "raw_title": "Dermactive Acti-Repair Hand Cream 60 Ml",
+      "raw_brand": "Dermactive",
+      "source_url": "https://drdawoodstore.com/products/dermactive-acti-repair-hand-cream-60-ml"
+    },
+    {
+      "canonical_id": 63285,
+      "observation_id": 5456,
+      "raw_title": "Bio-Oil Body Lotion 175Ml",
+      "raw_brand": "Bio-Oil",
+      "source_url": "https://drdawoodstore.com/products/bio-oil-body-lotion-175ml"
+    },
+    {
+      "canonical_id": 63297,
+      "observation_id": 5687,
+      "raw_title": "Bionnex Whitexpert Eye Contour Cream 15Ml",
+      "raw_brand": "Bionnex",
+      "source_url": "https://drdawoodstore.com/products/bionnex-whitexpert-eye-contour-cream-15ml"
+    },
+    {
+      "canonical_id": 63300,
+      "observation_id": 5122,
+      "raw_title": "Dermactive Acti-Clear Global Ac Cream Gel 50Ml",
+      "raw_brand": "Dermactive",
+      "source_url": "https://drdawoodstore.com/products/dermactive-acti-clear-global-ac-cream-gel-50ml"
+    }
+  ],
+  "pages_output": "/mnt/windows/Users/AmrAlfayoumy/Downloads/skincare/repo/data/catalog-repair/drdawood-pages-01-2026-10-26.json",
+  "pages_sha256": "4e2d08ff870b5c9b5aa381be6b7cb8da1ff0ed0f0267b4f7d9ac2eb50209ff1e"
+}

@@ -1,0 +1,280 @@
+{
+  "source_id": "sourcebeauty",
+  "model_calls": 0,
+  "read_only": true,
+  "selected": 30,
+  "results": [
+    {
+      "canonical_id": 64010,
+      "observation_id": 21326,
+      "raw_title": "Pistachio & Magnolia Shower Cream",
+      "raw_brand": "Nutshell",
+      "source_url": "https://sourcebeauty.com/products/nutshell-pistachio-magnolia-shower-cream",
+      "status": "fetched",
+      "pages": 1
+    },
+    {
+      "canonical_id": 64027,
+      "observation_id": 17327,
+      "raw_title": "Collagen Jelly Cream",
+      "raw_brand": "medicube",
+      "source_url": "https://sourcebeauty.com/products/medicube-collagen-jelly-cream",
+      "status": "fetched",
+      "pages": 1
+    },
+    {
+      "canonical_id": 64031,
+      "observation_id": 21762,
+      "raw_title": "Acne Prone Skin Cream",
+      "raw_brand": "Starville",
+      "source_url": "https://sourcebeauty.com/products/acne-prone-skin-cream",
+      "status": "fetched",
+      "pages": 1
+    },
+    {
+      "canonical_id": 64100,
+      "observation_id": 21327,
+      "raw_title": "Macadamia & Rose Water Shower Cream",
+      "raw_brand": "Nutshell",
+      "source_url": "https://sourcebeauty.com/products/nutshell-macadamia-rose-water-shower-cream",
+      "status": "fetched",
+      "pages": 1
+    },
+    {
+      "canonical_id": 64111,
+      "observation_id": 16712,
+      "raw_title": "Antiseptic Healing Cream",
+      "raw_brand": "Sudocrem",
+      "source_url": "https://sourcebeauty.com/products/sudocrem-cream-antiseptic-healing-cream",
+      "status": "fetched",
+      "pages": 1
+    },
+    {
+      "canonical_id": 64128,
+      "observation_id": 17214,
+      "raw_title": "Extreme Lashes Serum",
+      "raw_brand": "Seropipe",
+      "source_url": "https://sourcebeauty.com/products/seropipe-extreme-lashes-serum",
+      "status": "fetched",
+      "pages": 1
+    },
+    {
+      "canonical_id": 64150,
+      "observation_id": 17745,
+      "raw_title": "Lip Balm",
+      "raw_brand": "Helmaderm",
+      "source_url": "https://sourcebeauty.com/products/helmaderm-lip-balm",
+      "status": "fetched",
+      "pages": 1
+    },
+    {
+      "canonical_id": 64166,
+      "observation_id": 21898,
+      "raw_title": "Ready In Action Anti-Aging Serum",
+      "raw_brand": "SESH",
+      "source_url": "https://sourcebeauty.com/products/ready-in-action-anti-aging-serum",
+      "status": "fetched",
+      "pages": 1
+    },
+    {
+      "canonical_id": 64177,
+      "observation_id": 20643,
+      "raw_title": "Nail Strengthening & Nourishing Serum",
+      "raw_brand": "Leaves",
+      "source_url": "https://sourcebeauty.com/products/leaves-nail-treatment-serum",
+      "status": "fetched",
+      "pages": 1
+    },
+    {
+      "canonical_id": 64183,
+      "observation_id": 15332,
+      "raw_title": "Even Pigment Perfector Night Cream",
+      "raw_brand": "Eucerin",
+      "source_url": "https://sourcebeauty.com/products/eucerin-pig-perfect-night-cream",
+      "status": "fetched",
+      "pages": 1
+    },
+    {
+      "canonical_id": 64261,
+      "observation_id": 19487,
+      "raw_title": "Kaktus Kiss Lip Oil",
+      "raw_brand": "Blumin' Kaktus",
+      "source_url": "https://sourcebeauty.com/products/blumin-kaktus-kaktus-kiss-lip-oil",
+      "status": "fetched",
+      "pages": 1
+    },
+    {
+      "canonical_id": 64262,
+      "observation_id": 19489,
+      "raw_title": "Cocoa Drip Lip Oil",
+      "raw_brand": "Blumin' Kaktus",
+      "source_url": "https://sourcebeauty.com/products/blumin-kaktus-cocoa-drip-lip-oil",
+      "status": "fetched",
+      "pages": 1
+    },
+    {
+      "canonical_id": 64263,
+      "observation_id": 19488,
+      "raw_title": "Honey Haze Lip Oil",
+      "raw_brand": "Blumin' Kaktus",
+      "source_url": "https://sourcebeauty.com/products/blumin-kaktus-honey-haze-lip-oil",
+      "status": "fetched",
+      "pages": 1
+    },
+    {
+      "canonical_id": 64304,
+      "observation_id": 21910,
+      "raw_title": "Holy Grail Hyaluronic Acid Hydrating Serum",
+      "raw_brand": "Godly Pride",
+      "source_url": "https://sourcebeauty.com/products/holy-grail-hyaluronic-acid-hydrating-serum",
+      "status": "fetched",
+      "pages": 1
+    },
+    {
+      "canonical_id": 64305,
+      "observation_id": 15285,
+      "raw_title": "Sun & More Sunscreen Milk SPF 30",
+      "raw_brand": "Milk Shake",
+      "source_url": "https://sourcebeauty.com/products/milk-shake-sun-more-sunscreen-milk-spf-30",
+      "status": "fetched",
+      "pages": 1
+    },
+    {
+      "canonical_id": 64306,
+      "observation_id": 15281,
+      "raw_title": "Sun & More Sensual Lotion",
+      "raw_brand": "Milk Shake",
+      "source_url": "https://sourcebeauty.com/products/milk-shake-sun-more-sensual-lotion",
+      "status": "fetched",
+      "pages": 1
+    },
+    {
+      "canonical_id": 64312,
+      "observation_id": 17207,
+      "raw_title": "Tanning Oil",
+      "raw_brand": "Bobai",
+      "source_url": "https://sourcebeauty.com/products/bobai-tanning-oil",
+      "status": "fetched",
+      "pages": 1
+    },
+    {
+      "canonical_id": 64315,
+      "observation_id": 17934,
+      "raw_title": "Nail Booster Lotion",
+      "raw_brand": "Raw African",
+      "source_url": "https://sourcebeauty.com/products/raw-african-nail-lotion-booster",
+      "status": "fetched",
+      "pages": 1
+    },
+    {
+      "canonical_id": 64327,
+      "observation_id": 19655,
+      "raw_title": "Hyper Retinol Ex 1.0 Serum",
+      "raw_brand": "Isntree",
+      "source_url": "https://sourcebeauty.com/products/isntree-hyper-retinol-ex-10-serum",
+      "status": "fetched",
+      "pages": 1
+    },
+    {
+      "canonical_id": 64328,
+      "observation_id": 19525,
+      "raw_title": "Bean Essence",
+      "raw_brand": "mixsoon",
+      "source_url": "https://sourcebeauty.com/products/mixsoon-bean-essence",
+      "status": "fetched",
+      "pages": 1
+    },
+    {
+      "canonical_id": 64341,
+      "observation_id": 17574,
+      "raw_title": "Jelly Cleanser",
+      "raw_brand": "Skin 101",
+      "source_url": "https://sourcebeauty.com/products/jelly-cleanser",
+      "status": "fetched",
+      "pages": 1
+    },
+    {
+      "canonical_id": 64371,
+      "observation_id": 21319,
+      "raw_title": "In the Wilds Body Lotion",
+      "raw_brand": "Favelin",
+      "source_url": "https://sourcebeauty.com/products/favelin-in-the-wilds-body-lotion-1",
+      "status": "fetched",
+      "pages": 1
+    },
+    {
+      "canonical_id": 64387,
+      "observation_id": 15322,
+      "raw_title": "Hyaluron-Filler Day Cream SPF 15 for Dry Skin",
+      "raw_brand": "Eucerin",
+      "source_url": "https://sourcebeauty.com/products/eucerin-hyal-flr-day-cream-spf15",
+      "status": "fetched",
+      "pages": 1
+    },
+    {
+      "canonical_id": 64399,
+      "observation_id": 17404,
+      "raw_title": "Sunscreen Lotion for Kids SPF30",
+      "raw_brand": "Bobai",
+      "source_url": "https://sourcebeauty.com/products/bobai-sunscreen-lotion-for-kids-spf30",
+      "status": "fetched",
+      "pages": 1
+    },
+    {
+      "canonical_id": 64400,
+      "observation_id": 21758,
+      "raw_title": "Whitening Cream",
+      "raw_brand": "Starville",
+      "source_url": "https://sourcebeauty.com/products/whitening-cream-1",
+      "status": "fetched",
+      "pages": 1
+    },
+    {
+      "canonical_id": 64417,
+      "observation_id": 15444,
+      "raw_title": "Hyalu B5 Serum",
+      "raw_brand": "La Roche Posay",
+      "source_url": "https://sourcebeauty.com/products/laroch-posay-hyalu-b5-serum",
+      "status": "fetched",
+      "pages": 1
+    },
+    {
+      "canonical_id": 64418,
+      "observation_id": 15324,
+      "raw_title": "DermoPurifyer Oil Control Cleansing Gel",
+      "raw_brand": "Eucerin",
+      "source_url": "https://sourcebeauty.com/products/eucerin-derm-purifyer-cleansing-gel",
+      "status": "fetched",
+      "pages": 1
+    },
+    {
+      "canonical_id": 64505,
+      "observation_id": 19909,
+      "raw_title": "Super C Brightening & Moisturizing Face Cream",
+      "raw_brand": "NUT Botanicals",
+      "source_url": "https://sourcebeauty.com/products/nut-botanicals-super-c-brightening-and-moisturizing-face-cream",
+      "status": "fetched",
+      "pages": 1
+    },
+    {
+      "canonical_id": 64549,
+      "observation_id": 15525,
+      "raw_title": "Acne Prone Skin Moisturizer Cream Gel",
+      "raw_brand": "Soralone",
+      "source_url": "https://sourcebeauty.com/products/soralone-acne-prone-skin-moisturizer-cream-gel",
+      "status": "fetched",
+      "pages": 1
+    },
+    {
+      "canonical_id": 64569,
+      "observation_id": 18780,
+      "raw_title": "Dry Skin Cleanser",
+      "raw_brand": "BG",
+      "source_url": "https://sourcebeauty.com/products/bg-dry-skin-cleanser",
+      "status": "fetched",
+      "pages": 1
+    }
+  ],
+  "last_canonical_id": 64569,
+  "more_candidates_in_selection": true
+}

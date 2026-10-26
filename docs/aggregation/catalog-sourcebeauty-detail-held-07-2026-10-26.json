@@ -1,0 +1,27 @@
+{
+  "applied": true,
+  "backup_path": "/mnt/windows/Users/AmrAlfayoumy/Downloads/skincare/repo/api/backups/catalog/catalog-20261026T005006Z-ce82c5bc.sqlite3",
+  "model_calls": 0,
+  "results": [
+    {
+      "status": "held_for_review",
+      "canonical_id": 65183,
+      "original_observation_id": 16263,
+      "observation_id": 22906,
+      "evidence_id": 1147,
+      "ingredient_count": 9,
+      "reason": "Non-specific ingredient names including gum and liposomal vitamin descriptions; a complete INCI declaration is not established.",
+      "review_id": 8699
+    },
+    {
+      "status": "held_for_review",
+      "canonical_id": 65185,
+      "original_observation_id": 16855,
+      "observation_id": 22907,
+      "evidence_id": 1148,
+      "ingredient_count": 22,
+      "reason": "Facial serum listing includes a largely hair-oriented vitamin/oil summary; exact complete formulation is not established.",
+      "review_id": 8700
+    }
+  ]
+}

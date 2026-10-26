@@ -1,0 +1,57 @@
+{
+  "applied": true,
+  "backup_path": "/mnt/windows/Users/AmrAlfayoumy/Downloads/skincare/repo/api/backups/catalog/catalog-20261026T205546Z-66f9eae3.sqlite3",
+  "preview_scope": null,
+  "before": 835,
+  "after": 708,
+  "result": {
+    "uncertain_preserved": 627,
+    "resolved": 127,
+    "superseded_evidence_preserved": 76,
+    "cluster_conflict_preserved": 5
+  },
+  "canonical_projection": {
+    "counts": {
+      "specific_hair_type_preserved": 228,
+      "uncertain_preserved": 775,
+      "human_approved_preserved": 8,
+      "specific_category_preserved": 1
+    },
+    "changes": []
+  },
+  "explicit_hair_types": {
+    "counts": {
+      "specific_role_conflict_preserved": 2,
+      "updated": 3
+    },
+    "changes": [
+      {
+        "canonical_id": 69206,
+        "title": "Farmstay Ceramide Damage Clinic Hair Filler 13ml-10pcs",
+        "before": "Serum",
+        "after": "Hair Care",
+        "observation_ids": [
+          22644
+        ]
+      },
+      {
+        "canonical_id": 69208,
+        "title": "Farmstay Hyaluronic Acid Super Aqua Hair Filler 13ml-10pcs",
+        "before": "Moisturizer",
+        "after": "Hair Care",
+        "observation_ids": [
+          22646
+        ]
+      },
+      {
+        "canonical_id": 70272,
+        "title": "Go Thick Serum for Beard Growth",
+        "before": "Serum",
+        "after": "Hair Care",
+        "observation_ids": [
+          20602
+        ]
+      }
+    ]
+  }
+}

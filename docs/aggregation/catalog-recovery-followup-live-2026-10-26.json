@@ -1,0 +1,19 @@
+{
+  "catalog_vitals": {
+    "total_store_listings": 22155,
+    "canonical_entities": 7415,
+    "multi_store_clusters": 1144,
+    "active_skincare_products": 4163,
+    "suppressed_non_skincare": 1650,
+    "products_with_ingredients": 195,
+    "inci_matched_products": 0,
+    "inci_reference_products": 53017,
+    "skinsafe_reference_products": 50969,
+    "ai_verified_products": 0,
+    "verified_identities": 696,
+    "skincare_canonical_products": 5765,
+    "coverage_percent": 3.4
+  },
+  "frontend_http": 200,
+  "backend_http": 200
+}

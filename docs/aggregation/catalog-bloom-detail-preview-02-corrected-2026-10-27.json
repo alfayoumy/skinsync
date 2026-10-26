@@ -1,0 +1,69 @@
+{
+  "applied": false,
+  "backup_path": null,
+  "model_calls": 0,
+  "preview_scope": "consistent_isolated_snapshot",
+  "results": [
+    {
+      "url": "https://www.bloompharmacy.com/products/isis-pharma-neotone-radiance-spf50-30ml",
+      "status": "preserved",
+      "reason": "Product heading and verified brand do not identify the retained source product."
+    },
+    {
+      "url": "https://www.bloompharmacy.com/products/svr-topialyse-cream-200ml",
+      "status": "staged",
+      "canonical_id": 63212,
+      "original_observation_id": 6521,
+      "observation_id": 23010,
+      "evidence_id": 1300,
+      "ingredient_count": 21
+    },
+    {
+      "url": "https://www.bloompharmacy.com/products/dermactive-acti-repair-cica-cream-50ml",
+      "status": "no_full_declaration",
+      "canonical_id": 63219,
+      "observation_id": 10546
+    },
+    {
+      "url": "https://www.bloompharmacy.com/products/dermactive-acti-white-depigmenting-cream-50ml",
+      "status": "no_full_declaration",
+      "canonical_id": 63225,
+      "observation_id": 6584
+    },
+    {
+      "url": "https://www.bloompharmacy.com/products/bionnex-whitexpert-sensitive-area-whitening-cream-50ml",
+      "status": "no_full_declaration",
+      "canonical_id": 63228,
+      "observation_id": 6981
+    },
+    {
+      "url": "https://www.bloompharmacy.com/products/acm-depiwhite-eye-contour-gel-15ml",
+      "status": "evidence_only",
+      "canonical_id": 63238,
+      "original_observation_id": 8853,
+      "observation_id": 23011,
+      "evidence_id": 1301,
+      "ingredient_count": 4
+    },
+    {
+      "url": "https://www.bloompharmacy.com/products/uriage-hyseac-cleansing-gel",
+      "status": "preserved",
+      "reason": "Product heading and verified brand do not identify the retained source product."
+    },
+    {
+      "url": "https://www.bloompharmacy.com/products/uriage-age-lift-peel-new-skin-night-cream-50ml",
+      "status": "no_full_declaration",
+      "canonical_id": 63246,
+      "observation_id": 6978
+    },
+    {
+      "url": "https://www.bloompharmacy.com/products/eucerin-even-pigment-perfector-illuminating-serum-30ml",
+      "status": "evidence_only",
+      "canonical_id": 63258,
+      "original_observation_id": 9966,
+      "observation_id": 23012,
+      "evidence_id": 1302,
+      "ingredient_count": 3
+    }
+  ]
+}

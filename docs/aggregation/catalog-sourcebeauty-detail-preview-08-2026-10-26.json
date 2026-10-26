@@ -1,0 +1,229 @@
+{
+  "applied": false,
+  "backup_path": null,
+  "model_calls": 0,
+  "results": [
+    {
+      "url": "https://sourcebeauty.com/products/medinza-kolanog-foaming-cleanser",
+      "status": "evidence_only",
+      "canonical_id": 65269,
+      "original_observation_id": 17316,
+      "observation_id": 22908,
+      "evidence_id": 1149,
+      "ingredient_count": 3
+    },
+    {
+      "url": "https://sourcebeauty.com/products/medinza-granya-skin-emollient-cream",
+      "status": "evidence_only",
+      "canonical_id": 65271,
+      "original_observation_id": 17319,
+      "observation_id": 22909,
+      "evidence_id": 1150,
+      "ingredient_count": 6
+    },
+    {
+      "url": "https://sourcebeauty.com/products/kolagra-vitamin-c-whitening-cream",
+      "status": "evidence_only",
+      "canonical_id": 65272,
+      "original_observation_id": 20373,
+      "observation_id": 22910,
+      "evidence_id": 1151,
+      "ingredient_count": 5
+    },
+    {
+      "url": "https://sourcebeauty.com/products/veexia-vee-allure-vitamin-c-serum",
+      "status": "evidence_only",
+      "canonical_id": 65284,
+      "original_observation_id": 17083,
+      "observation_id": 22911,
+      "evidence_id": 1152,
+      "ingredient_count": 11
+    },
+    {
+      "url": "https://sourcebeauty.com/products/medicube-pdrn-pink-collagen-toning-gel-toner-pads",
+      "status": "published",
+      "canonical_id": 65297,
+      "original_observation_id": 18908,
+      "observation_id": 22912,
+      "evidence_id": 1153,
+      "ingredient_count": 59
+    },
+    {
+      "url": "https://sourcebeauty.com/products/hepta-panthenol-shower-gel",
+      "status": "evidence_only",
+      "canonical_id": 65312,
+      "original_observation_id": 15732,
+      "observation_id": 22913,
+      "evidence_id": 1155,
+      "ingredient_count": 5
+    },
+    {
+      "url": "https://sourcebeauty.com/products/mary-may-spicule-retinol-pdrn-cream",
+      "status": "published",
+      "canonical_id": 65319,
+      "original_observation_id": 17485,
+      "observation_id": 22914,
+      "evidence_id": 1156,
+      "ingredient_count": 52
+    },
+    {
+      "url": "https://sourcebeauty.com/products/brightening-facial-serum",
+      "status": "published",
+      "canonical_id": 65328,
+      "original_observation_id": 21104,
+      "observation_id": 22915,
+      "evidence_id": 1158,
+      "ingredient_count": 15
+    },
+    {
+      "url": "https://sourcebeauty.com/products/vitamin-c-facial-moisturizer",
+      "status": "published",
+      "canonical_id": 65329,
+      "original_observation_id": 21106,
+      "observation_id": 22916,
+      "evidence_id": 1160,
+      "ingredient_count": 17
+    },
+    {
+      "url": "https://sourcebeauty.com/products/ultra-hydrate-serum-2",
+      "status": "published",
+      "canonical_id": 65332,
+      "original_observation_id": 21108,
+      "observation_id": 22917,
+      "evidence_id": 1162,
+      "ingredient_count": 19
+    },
+    {
+      "url": "https://sourcebeauty.com/products/ultra-hydrate-serum",
+      "status": "published",
+      "canonical_id": 65333,
+      "original_observation_id": 21109,
+      "observation_id": 22918,
+      "evidence_id": 1164,
+      "ingredient_count": 17
+    },
+    {
+      "url": "https://sourcebeauty.com/products/kolagra-anti-shine-face-toner",
+      "status": "evidence_only",
+      "canonical_id": 65339,
+      "original_observation_id": 18291,
+      "observation_id": 22919,
+      "evidence_id": 1166,
+      "ingredient_count": 9
+    },
+    {
+      "url": "https://sourcebeauty.com/products/isntree-ultralow-molecular-hyaluronic-acid-serum",
+      "status": "published",
+      "canonical_id": 65343,
+      "original_observation_id": 17891,
+      "observation_id": 22920,
+      "evidence_id": 1167,
+      "ingredient_count": 23
+    },
+    {
+      "url": "https://sourcebeauty.com/products/medicube-deep-vita-a-retinol-serum",
+      "status": "published",
+      "canonical_id": 65344,
+      "original_observation_id": 20464,
+      "observation_id": 22921,
+      "evidence_id": 1169,
+      "ingredient_count": 65
+    },
+    {
+      "url": "https://sourcebeauty.com/products/axis-y-dark-spot-correcting-glow-toner",
+      "status": "published",
+      "canonical_id": 65347,
+      "original_observation_id": 20188,
+      "observation_id": 22922,
+      "evidence_id": 1171,
+      "ingredient_count": 65
+    },
+    {
+      "url": "https://sourcebeauty.com/products/dermaelle-hyalurepair-cica-lotion",
+      "status": "evidence_only",
+      "canonical_id": 65348,
+      "original_observation_id": 15975,
+      "observation_id": 22923,
+      "evidence_id": 1173,
+      "ingredient_count": 7
+    },
+    {
+      "url": "https://sourcebeauty.com/products/dermaelle-hyalurepair-cica-facial-cleanser",
+      "status": "evidence_only",
+      "canonical_id": 65349,
+      "original_observation_id": 15976,
+      "observation_id": 22924,
+      "evidence_id": 1174,
+      "ingredient_count": 4
+    },
+    {
+      "url": "https://sourcebeauty.com/products/dermaelle-hyalurepair-cica-cream",
+      "status": "evidence_only",
+      "canonical_id": 65350,
+      "original_observation_id": 15977,
+      "observation_id": 22925,
+      "evidence_id": 1175,
+      "ingredient_count": 6
+    },
+    {
+      "url": "https://sourcebeauty.com/products/dermaelle-hyalubalance-sebum-control-cleansing-gel",
+      "status": "evidence_only",
+      "canonical_id": 65359,
+      "original_observation_id": 15970,
+      "observation_id": 22926,
+      "evidence_id": 1176,
+      "ingredient_count": 7
+    },
+    {
+      "url": "https://sourcebeauty.com/products/tirtir-collagen-lifting-eye-cream",
+      "status": "published",
+      "canonical_id": 65362,
+      "original_observation_id": 20158,
+      "observation_id": 22927,
+      "evidence_id": 1177,
+      "ingredient_count": 55
+    },
+    {
+      "url": "https://sourcebeauty.com/products/dermaelle-hyaluserum-advanced-hyaluronic-acid-serum",
+      "status": "evidence_only",
+      "canonical_id": 65367,
+      "original_observation_id": 20736,
+      "observation_id": 22928,
+      "evidence_id": 1179,
+      "ingredient_count": 4
+    },
+    {
+      "url": "https://sourcebeauty.com/products/dermaelle-glycotoner-glycolic-acid-toner",
+      "status": "preserved",
+      "reason": "Incomplete page cannot establish that no ingredient declaration exists."
+    },
+    {
+      "url": "https://sourcebeauty.com/products/dermaelle-skin-booster-microneedling-serum",
+      "status": "preserved",
+      "reason": "Incomplete page cannot establish that no ingredient declaration exists."
+    },
+    {
+      "url": "https://sourcebeauty.com/products/dermaelle-advanced-vitamin-c-serum",
+      "status": "preserved",
+      "reason": "Incomplete page cannot establish that no ingredient declaration exists."
+    },
+    {
+      "url": "https://sourcebeauty.com/products/dermaelle-hyaluwhite-all-in-one-exfoliating-cleanser",
+      "status": "evidence_only",
+      "canonical_id": 65372,
+      "original_observation_id": 20760,
+      "observation_id": 22929,
+      "evidence_id": 1180,
+      "ingredient_count": 4
+    },
+    {
+      "url": "https://sourcebeauty.com/products/dermaelle-hyaluwhite-face-neck-cream",
+      "status": "evidence_only",
+      "canonical_id": 65373,
+      "original_observation_id": 20763,
+      "observation_id": 22930,
+      "evidence_id": 1181,
+      "ingredient_count": 3
+    }
+  ]
+}

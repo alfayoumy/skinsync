@@ -1,0 +1,175 @@
+{
+  "source_id": "feel22",
+  "model_calls": 0,
+  "read_only": true,
+  "selected": 10,
+  "results": [
+    {
+      "canonical_id": 63159,
+      "observation_id": 12940,
+      "raw_title": "SVR Sun Secure Easy Stick SPF50+",
+      "raw_brand": "SVR",
+      "source_url": "https://eg.feel22.com/products/svr-sun-secure-easy-stick-spf50",
+      "status": "fetched",
+      "pages": 1
+    },
+    {
+      "canonical_id": 63161,
+      "observation_id": 12415,
+      "raw_title": "Dermactive Acti-Solaire Ultra Fluid SPF50+ Instant Dry",
+      "raw_brand": "Dermactive",
+      "source_url": "https://eg.feel22.com/products/dermactive-acti-solaire-ultra-fluid-spf50-instant-dry",
+      "status": "fetched",
+      "pages": 1
+    },
+    {
+      "canonical_id": 63202,
+      "observation_id": 12931,
+      "raw_title": "Anivagene Lighten Eye Intense Eye Care Cream",
+      "raw_brand": "Anivagene",
+      "source_url": "https://eg.feel22.com/products/anivagene-lighten-eye-intense-eye-care-cream",
+      "status": "fetched",
+      "pages": 1
+    },
+    {
+      "canonical_id": 63203,
+      "observation_id": 12932,
+      "raw_title": "Anivagene Oxy-C-Gen Antioxidant Cream",
+      "raw_brand": "Anivagene",
+      "source_url": "https://eg.feel22.com/products/anivagene-oxy-c-gen-antioxidant-cream",
+      "status": "fetched",
+      "pages": 1
+    },
+    {
+      "canonical_id": 63217,
+      "observation_id": 12024,
+      "raw_title": "Dermactive Acti-White Foaming Cleansing Gel 200ml",
+      "raw_brand": "Dermactive",
+      "source_url": "https://eg.feel22.com/products/dermactive-acti-white-foaming-cleansing-gel-200ml",
+      "status": "fetched",
+      "pages": 1
+    },
+    {
+      "canonical_id": 63219,
+      "observation_id": 22465,
+      "raw_title": "Dermactive Acti-Repair Cica Cream 50ml",
+      "raw_brand": "Dermactive",
+      "source_url": "https://eg.feel22.com/products/dermactive-acti-repair-cica-cream-50ml",
+      "status": "fetched",
+      "pages": 1
+    },
+    {
+      "canonical_id": 63225,
+      "observation_id": 11316,
+      "raw_title": "Dermactive Acti-White Depigmenting Cream 50ml",
+      "raw_brand": "Dermactive",
+      "source_url": "https://eg.feel22.com/products/dermactive-acti-white-depigmenting-cream-50ml",
+      "status": "fetched",
+      "pages": 1
+    },
+    {
+      "canonical_id": 63228,
+      "observation_id": 11317,
+      "raw_title": "Bionnex Whitexpert Whitening Cream for Sensitive Area 50ml",
+      "raw_brand": "Bionnex",
+      "source_url": "https://eg.feel22.com/products/bionnex-whitexpert-whitening-cream-for-sensitive-area-50ml",
+      "status": "fetched",
+      "pages": 1
+    },
+    {
+      "canonical_id": 63238,
+      "observation_id": 12567,
+      "raw_title": "ACM Depiwhite Eye Contour Gel 15ml",
+      "raw_brand": "ACM",
+      "source_url": "https://eg.feel22.com/products/acm-depiwhite-eye-contour-gel-15ml",
+      "status": "fetched",
+      "pages": 1
+    },
+    {
+      "canonical_id": 63239,
+      "observation_id": 13535,
+      "raw_title": "Uriage Hyseac Cleansing Gel",
+      "raw_brand": "Uriage",
+      "source_url": "https://eg.feel22.com/products/uriage-hyseac-cleansing-gel",
+      "status": "error",
+      "error_type": "ExceptionGroup"
+    }
+  ],
+  "last_canonical_id": 63239,
+  "more_candidates_in_selection": true,
+  "status": "completed",
+  "selected_products": [
+    {
+      "canonical_id": 63159,
+      "observation_id": 12940,
+      "raw_title": "SVR Sun Secure Easy Stick SPF50+",
+      "raw_brand": "SVR",
+      "source_url": "https://eg.feel22.com/products/svr-sun-secure-easy-stick-spf50"
+    },
+    {
+      "canonical_id": 63161,
+      "observation_id": 12415,
+      "raw_title": "Dermactive Acti-Solaire Ultra Fluid SPF50+ Instant Dry",
+      "raw_brand": "Dermactive",
+      "source_url": "https://eg.feel22.com/products/dermactive-acti-solaire-ultra-fluid-spf50-instant-dry"
+    },
+    {
+      "canonical_id": 63202,
+      "observation_id": 12931,
+      "raw_title": "Anivagene Lighten Eye Intense Eye Care Cream",
+      "raw_brand": "Anivagene",
+      "source_url": "https://eg.feel22.com/products/anivagene-lighten-eye-intense-eye-care-cream"
+    },
+    {
+      "canonical_id": 63203,
+      "observation_id": 12932,
+      "raw_title": "Anivagene Oxy-C-Gen Antioxidant Cream",
+      "raw_brand": "Anivagene",
+      "source_url": "https://eg.feel22.com/products/anivagene-oxy-c-gen-antioxidant-cream"
+    },
+    {
+      "canonical_id": 63217,
+      "observation_id": 12024,
+      "raw_title": "Dermactive Acti-White Foaming Cleansing Gel 200ml",
+      "raw_brand": "Dermactive",
+      "source_url": "https://eg.feel22.com/products/dermactive-acti-white-foaming-cleansing-gel-200ml"
+    },
+    {
+      "canonical_id": 63219,
+      "observation_id": 22465,
+      "raw_title": "Dermactive Acti-Repair Cica Cream 50ml",
+      "raw_brand": "Dermactive",
+      "source_url": "https://eg.feel22.com/products/dermactive-acti-repair-cica-cream-50ml"
+    },
+    {
+      "canonical_id": 63225,
+      "observation_id": 11316,
+      "raw_title": "Dermactive Acti-White Depigmenting Cream 50ml",
+      "raw_brand": "Dermactive",
+      "source_url": "https://eg.feel22.com/products/dermactive-acti-white-depigmenting-cream-50ml"
+    },
+    {
+      "canonical_id": 63228,
+      "observation_id": 11317,
+      "raw_title": "Bionnex Whitexpert Whitening Cream for Sensitive Area 50ml",
+      "raw_brand": "Bionnex",
+      "source_url": "https://eg.feel22.com/products/bionnex-whitexpert-whitening-cream-for-sensitive-area-50ml"
+    },
+    {
+      "canonical_id": 63238,
+      "observation_id": 12567,
+      "raw_title": "ACM Depiwhite Eye Contour Gel 15ml",
+      "raw_brand": "ACM",
+      "source_url": "https://eg.feel22.com/products/acm-depiwhite-eye-contour-gel-15ml"
+    },
+    {
+      "canonical_id": 63239,
+      "observation_id": 13535,
+      "raw_title": "Uriage Hyseac Cleansing Gel",
+      "raw_brand": "Uriage",
+      "source_url": "https://eg.feel22.com/products/uriage-hyseac-cleansing-gel"
+    }
+  ],
+  "pages_output": "/mnt/windows/Users/AmrAlfayoumy/Downloads/skincare/repo/data/catalog-repair/feel22-pages-01-2026-10-27.json",
+  "pages_sha256": "48c4057eddfdad3b53784aa04fe6df94b16ef176316026c96253ce07f2e12caa"
+}

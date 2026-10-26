@@ -1,0 +1,66 @@
+{
+  "reviewed_page_indices": [
+    71,
+    72,
+    73,
+    74,
+    75,
+    76,
+    77,
+    78,
+    79,
+    80
+  ],
+  "decisions": [
+    {
+      "url": "https://sourcebeauty.com/products/beesline-radiant-bright-silky-touch-underarm-serum",
+      "decision": "apply_if_fresh_validation_passes",
+      "reason": "Retain short or generic ingredient summary as partial evidence."
+    },
+    {
+      "url": "https://sourcebeauty.com/products/bubblzz-coconut-shower-gel",
+      "decision": "apply_if_fresh_validation_passes",
+      "reason": "Retain short or generic ingredient summary as partial evidence."
+    },
+    {
+      "url": "https://sourcebeauty.com/products/favelin-in-the-wilds-moisturizing-shower-gel-1",
+      "decision": "hold",
+      "reason": "Implausible vitamin E second position and duplicated vitamin E/tocopheryl acetate require ordered label confirmation."
+    },
+    {
+      "url": "https://sourcebeauty.com/products/favelin-violet-twist-moisturizing-shower-gel-1",
+      "decision": "hold",
+      "reason": "Implausible vitamin E second position and duplicated vitamin E/tocopheryl acetate require ordered label confirmation."
+    },
+    {
+      "url": "https://sourcebeauty.com/products/arencia-vitamin-c-booster-shot",
+      "decision": "apply_if_fresh_validation_passes",
+      "reason": "Retain short or generic ingredient summary as partial evidence."
+    },
+    {
+      "url": "https://sourcebeauty.com/products/isis-uveblock-spf-50-fluid",
+      "decision": "apply_if_fresh_validation_passes",
+      "reason": "Reviewed literal full ordered declaration; fresh source and conflict checks required."
+    },
+    {
+      "url": "https://sourcebeauty.com/products/beesline-radiant-bright-underarm-jouri-rose-serum",
+      "decision": "apply_if_fresh_validation_passes",
+      "reason": "Retain short or generic ingredient summary as partial evidence."
+    },
+    {
+      "url": "https://sourcebeauty.com/products/beesline-radiant-bright-underarm-delays-shaving-serum",
+      "decision": "apply_if_fresh_validation_passes",
+      "reason": "Retain short or generic ingredient summary as partial evidence."
+    },
+    {
+      "url": "https://sourcebeauty.com/products/dark-tanning-oil",
+      "decision": "apply_if_fresh_validation_passes",
+      "reason": "Retain short or generic ingredient summary as partial evidence."
+    },
+    {
+      "url": "https://sourcebeauty.com/products/glamy-lab-whitening-foam-cleanser",
+      "decision": "apply_if_fresh_validation_passes",
+      "reason": "Reviewed literal full ordered declaration; fresh source and conflict checks required."
+    }
+  ]
+}

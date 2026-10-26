@@ -1,0 +1,9 @@
+{
+  "task_id": "task_20261025_221104_1ec1b5a6",
+  "result": {
+    "status": "failed",
+    "error": "Gemini returned HTTP 429 (daily provider quota); unfinished pairs remain queued.",
+    "api_calls": 1,
+    "products_per_request": 2
+  }
+}
