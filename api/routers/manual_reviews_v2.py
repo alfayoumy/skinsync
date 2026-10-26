@@ -158,7 +158,7 @@ def _identity_pair(conn, row):
         from pipeline.brand_registry import resolve_brand
         lb=resolve_brand(left["brand"],conn)
         rb=resolve_brand(right["brand"],conn)
-        if not lb or not rb or lb["id"]!=rb["id"]:
+        if not lb or not rb or not lb.get("id") or not rb.get("id") or lb["id"]!=rb["id"]:
             conflicts.append("Brand identities disagree.")
     if left.get("gtin") and right.get("gtin") and left["gtin"]!=right["gtin"]:
         conflicts.append("GTIN identifiers disagree.")
