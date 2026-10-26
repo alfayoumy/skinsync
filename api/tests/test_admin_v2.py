@@ -116,6 +116,22 @@ class AdminV2Tests(unittest.TestCase):
         self.assertEqual(state(job["task_id"])["effective_state"],"completed")
         self.assertEqual(state(job["task_id"])["next_page"],3)
 
+
+    def test_batch_presets_can_be_saved_and_deleted_without_execution(self):
+        created=self.client.post("/admin/v2/batch-presets",json={
+            "name":"Regression bounded Jev","operation":"jev",
+            "limit":20,"batch_size":5})
+        self.assertEqual(created.status_code,200,created.text)
+        preset_id=created.json()["id"]
+        listed=self.client.get("/admin/v2/batch-presets")
+        self.assertEqual(listed.status_code,200,listed.text)
+        self.assertIn(preset_id,[r["id"] for r in listed.json()["presets"]])
+        deleted=self.client.delete("/admin/v2/batch-presets/"+preset_id)
+        self.assertEqual(deleted.status_code,200,deleted.text)
+        invalid=self.client.post("/admin/v2/batch-presets",json={
+            "name":"Invalid","operation":"random","limit":0,"batch_size":999})
+        self.assertEqual(invalid.status_code,422)
+
     def test_operations_overview(self):
         r = self.client.get("/admin/v2/operations")
         self.assertEqual(r.status_code, 200, r.text)
