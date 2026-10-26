@@ -1,41 +1,59 @@
 # Catalog repair: completed changes and remaining work
 
-> **Latest follow-up:** [evening repairs, current counts and revised next actions](catalog-repair-evening-progress-2026-10-26.md). The table and runtime observation below are the earlier 21:00 snapshot. Both published P0 declaration problems recorded here have since been corrected or withdrawn.
+Updated **27 October 2026, approximately 00:27 Cairo**. This handoff supersedes the earlier 21:00 and 23:58 count summaries. Current evidence: [fresh database, runtime and backup reconciliation](catalog-handoff-update-state-2026-10-27.json). Earlier dated reports remain historical checkpoints.
 
-Updated 26 October 2026. Database snapshot checked at approximately **21:00 Cairo / 18:00 UTC**. This is the consolidated handoff for the catalog recovery work across 25–26 October, replacing earlier checkpoint counts.
-
-**The entire catalog is not fixed.** The matching architecture, many categories, ingredient acquisition, dashboard projections and several integrity failures have been repaired. Ingredient coverage remains low, historical matches are not fully audited, and, at this checkpoint, two problematic declarations still required correction; the evening follow-up records their resolution. Source-code changes, applied database changes and a running deployment are separate states.
+**The catalog is not fixed. Ingredient publication has regressed substantially against the pre-remediation backup.** Matching, category, extraction and projection fixes are real, but they do not compensate for incomplete recovery of existing catalog data. Recovering the historical ingredient evidence and reconciling missing mappings is now the first priority. Source edits, applied database repairs, acquired pages, staged evidence and published formulas are distinct states.
 
 ## 1. Current authoritative state
 
-Source: [handoff database audit](catalog-handoff-state-2026-10-26.json). Counts below come from the current SQLite database, not dashboard placeholders.
+Counts come from a consistent SQLite snapshot. Frontend, backend health and authenticated admin overview returned HTTP 200 during this update; the overview agrees with the publication and visible-product counts below.
 
 | Measure | Current state |
 | --- | ---: |
-| All canonical records, including historical redirects | 7,349 |
-| Active canonical products | 7,343 |
-| Active skincare canonicals, including hidden records | 5,816 |
-| Visible skincare canonicals | 4,245 |
-| Verified canonical identities | 693 |
-| Canonicals with published ingredient text | 163 |
-| Skincare canonicals with published ingredient text | 159 |
-| Known published declarations failing the newest quality checks | **2 — immediate follow-up required** |
-| Distinct retailer source products with retained ingredient text, including partial lists | 1,153 |
+| All canonical records, including historical redirects | 7,422 |
+| Active canonical products | 7,416 |
+| Active skincare canonicals, including hidden records | 5,766 |
+| Visible skincare canonicals | 4,164 |
+| Hidden skincare canonicals | 1,602 |
+| Verified canonical identities, all product types | 697 |
+| Canonicals with published ingredient text | 213 |
+| Skincare canonicals with published ingredient text | 209 |
+| Published declarations failing the current structural completeness scanner | 0 |
+| Distinct source products with retained ingredient text, including partial lists | 1,256 |
 | Original retailer rows | 22,155 |
-| Original retailer rows with copied raw ingredients | 0 — intentionally canonical-owned |
-| Pending identity reviews | 973 |
-| Pending category reviews | 855 |
-| Pending formulation reviews | 4 |
-| Gemini queue: auto-resolved / needs manual / queued | 749 / 34 / 939 |
-| Prepared two-product comparisons | 4,400 |
-| Completed pair verdicts | 327 |
-| Prepared comparisons without a verdict | 4,073 |
+| Pending identity / category / formulation reviews | 863 / 708 / 16 |
+| Prepared two-product comparison rows | 4,416 |
+| Completed pair verdict rows | 826 |
+| Prepared comparison rows without a verdict | 3,590 |
 | Saved pair payloads containing anything other than two products | 0 |
-| SQLite integrity / foreign-key violations | ok / 0 |
+| INCI reference library entries / SkinSAFE entries | 53,017 / 50,969 |
+| SQLite integrity / foreign-key violations / processing reviews | ok / 0 / 0 |
 
-The 163/159 figures are **stored publication counts**, not proof that every declaration is chemically correct or manufacturer-corroborated. Approximately 2.7% of active skincare canonicals currently have published ingredient text. The latest scanner identifies two published records requiring correction, detailed below.
+Coverage is **3.6% of 5,766 skincare canonicals**. A structurally complete string is not proof of manufacturer accuracy, correct regional formula or correct historical identity. The visible skincare count includes provisional identities and must not be described as 4,164 verified products.
 
-**Runtime:** localhost:8000 was unreachable during this handoff check, and no uvicorn process was found. Earlier successful API verification is retained in [live safety verification](catalog-live-safety-verification-2026-10-26.json), but it is a historical checkpoint. Do not describe the dashboard as currently live or claim the most recent source edits are loaded until the configured backend is started and checked again.
+### Backup reconciliation: the coverage regression is real
+
+The on-disk `api/skincare_backup_pre_remediation.db` contains:
+
+| Measure | Backup | Current |
+| --- | ---: | ---: |
+| Skincare retailer listings | 8,573 | Different scope from the visible-canonical card |
+| Skincare canonical records | 5,351 | 5,766 active |
+| Skincare canonical records with ingredient text | **1,665** | **209 published** |
+| Skincare retailer listings with ingredient text | **6,672** | Ingredient ownership now canonical; legacy raw fields empty |
+| Skincare retailer listings with a stored reference ID | 712 | Current reference-link count is a separate metric |
+
+The old 8,573 figure counted retailer listings, including several stores selling the same product. Comparing it directly with 4,164 visible canonicals overstates product loss. **That denominator change does not explain or excuse the ingredient regression.** The reset history records removal of the old product/canonical tables and replay of 22,155 retained observations; the old ingredient assignments were not recovered into current published formulas. The backup retains the original data.
+
+Exact-URL reconciliation of all 8,573 old skincare listings now shows:
+
+- **4,947** map to visible skincare entities.
+- **1,625** map to hidden skincare entities.
+- **1,272** retain their retailer URL but lack a canonical mapping in the current product/offer tables.
+- **612** old URLs are absent from current listings. Investigate changed handles, discontinued listings and missing ingestion before calling these deleted products.
+- **117** map to other product types. Review their classification evidence rather than assuming all exclusions are correct.
+
+Historical provenance labels include scraped retailer text, SkinSAFE matches, whitelist-description extraction, OpenBeauty and cluster propagation. Those labels alone prove neither correctness nor invalidity. Recover original text and lineage first, then review identity, full-list completeness, formula conflicts and market applicability. **No broad historical formula restoration has been applied.** The previously discussed full recovery-inventory artifact is not present in the current worktree; regenerate and persist it from the backup before treating it as an available deliverable. The fresh reconciliation above is persisted in the linked state JSON.
 
 ## 2. Matching fixes completed
 
@@ -56,7 +74,7 @@ The 163/159 figures are **stored publication counts**, not proof that every decl
 - Confident negative pairs reject individual wrong candidates without requiring a positive match elsewhere. Multiple positive canonical candidates remain a duplicate conflict.
 - Positive source matches materialize source offers and eligible legacy mappings, with explicit safeguards for brand, formulation attributes, competing candidates, identity evidence and previous decisions.
 - Preserved previous explicit human decisions and conflicting formulations. Model confidence is not used as permission to merge everything.
-- The first bounded queue run completed 319 comparisons, resolved 72 review cases and applied 264 negative candidate links before a provider failure. The current database contains 327 completed pair verdicts in total.
+- The first bounded queue run completed 319 comparisons, resolved 72 review cases and applied 264 negative candidate links before a provider failure. That was an early checkpoint; the current database contains 826 completed pair verdict rows.
 - Provider errors now report credential-free status and distinguish daily quota from minute-rate failures. Successful earlier applications are not presented as lost because a later request failed.
 
 ### White Musk case and historical wrong merge
@@ -67,6 +85,16 @@ The 163/159 figures are **stored publication counts**, not proof that every decl
 - Split the body scrub from canonical #65192 into #70501 using the audited split workflow; rebound its own source association, rejected the old association, retained a cannot-link constraint and preserved price/stock/observation history. The new source-owned identity was explicitly reviewed and published. No ingredient formula was copied or approved by that split.
 
 Evidence: [pairwise matching](pairwise-matching-2026-10-25.md), [White Musk payloads and outcomes](pairwise-white-musk-2026-10-25.json), [queue run](catalog-pairs-2026-10-26-batch-01.json), [historical link screening](catalog-historical-gemini-link-audit-2026-10-26.json), [Infinity split and backup](catalog-infinity-scrub-split-2026-10-26.json).
+
+
+### Subsequent applied matching corrections
+
+- Corrected the older brand gate to honor curated aliases such as PURITO Seoul/PURITO and Dermacy Labs/Dermacy, while rejecting unapproved brand prefixes. Unicode brand labels are no longer silently erased by ASCII-only comparison.
+- Recognized declared sun-stick/Photoderm functions, face-and-eye anatomy and lipgloss spacing without relaxing explicit SPF mismatches or dedicated eye/lip conflicts.
+- Corrected a proven saved-Gemini mistake: **Tocobo Cotton Airy Sun Stick** was linked to **Cotton Soft**. Reviewed manufacturer/regulatory evidence supports separate marketed formulations. Moved the exact Dr Dawood listing into **#70574**, rejected its old #63687 association, retained a cannot-link constraint and published the reviewed identity without copying any formula.
+- Added a manufacturer-specific gate against repeating the Cotton Airy/Cotton Soft mismatch. [Audited split and evidence URLs](catalog-tocobo-airy-split-repair-2026-10-27.json).
+- Split operations now revoke the moved listing's exact title alias on the old entity, preserving its audit row. Corrected stale aliases after both the Tocobo and earlier Infinity splits. [Infinity alias correction](catalog-infinity-split-alias-correction-2026-10-27.json).
+- Refreshed **15 explicit unresolved pairwise cases** after new rivals appeared: **16 new pairs prepared, 37 completed answers retained**, zero provider calls. Old aggregates/source snapshots were archived; unrelated cases and paid pair answers were retained. [Applied refresh](catalog-targeted-pair-refresh-repair-2026-10-27.json). Do not reset the entire queue to refresh these cases.
 
 ## 3. Category fixes completed
 
@@ -81,9 +109,11 @@ Evidence: [pairwise matching](pairwise-matching-2026-10-25.md), [White Musk payl
 - Bounded modifiers no longer hide anatomical roles such as hand repairing barrier cream, body musk lotion and foot scrub. A regression check prevents “The Body Shop” from turning its facial cream into body care.
 - Preserved approved classifications, genuinely conflicting clusters and superseded observations instead of relabeling them to reduce the queue count.
 
-Pending category cases fell from **4,258 at the initial repair baseline to 855 now**. Recorded successive reductions include 2,012, 798, 72, 265, 20, 6, 229 and 1 cases. Canonical projections were also repaired separately; those counts must not be added together as unique products, because later passes can revisit a record.
+Pending category cases fell from **4,258 at the initial repair baseline to 708 now**. Recorded successive reductions include 2,012, 798, 72, 265, 20, 6, 229 and 1 cases. Canonical projections were also repaired separately; those counts must not be added together as unique products, because later passes can revisit a record.
 
 Recent applied projection passes corrected 19 nail/lash roles, 84 merchandise/makeup classifications, and 28 anatomical/lipgloss classifications. Earlier passes include 171, 49 and 21 projection corrections. See the dated category, hair-type, role, merchandise, creamy-wash and anatomy JSON reports for exact changes and backups.
+
+Further repairs stripped leading brand names from function classification (notably Essence), corrected explicitly reviewed makeup products, and added bounded exact retailer types for mists, exfoliators, treatments, accessories and other roles. The latest applied pass resolved **127 category reviews (835 → 708)** and corrected three hair/beard canonicals. Explicit title functions still outrank retailer types; broad Face Gel, Oils and Body Spray departments remain insufficient. [Applied exact-type repair](catalog-specific-types-repair-2026-10-26.json).
 
 ## 4. Identity trust, brands and duplicate repairs completed
 
@@ -113,7 +143,7 @@ The empty original retailer ingredient fields were partly a dashboard read-path 
 - Repaired installed MCP SDK compatibility with snake_case fields; exact known URLs no longer depend on a successful search, and search timeout does not discard them.
 - Removed a content filter that hid ingredient tabs. Bounded continuation reads preserve chunk metadata and reject redirects, missing continuation metadata and incomplete ingredient tails. Extraction receives the retained bounded page rather than a silent short prefix.
 
-The applied pilot plus detail batches 01–08 published **88 declarations** and retained **63 additional evidence-only lists**. Three further lists were explicitly held with durable formulation reviews. These publication totals describe applied operations, not current correctness certification. One published list was subsequently withdrawn, and additional quality findings remain open.
+The applied pilot plus detail batches 01–08 published **88 declarations** and retained **63 additional evidence-only lists**. Three further lists were explicitly held with durable formulation reviews. These publication totals describe applied operations, not current correctness certification. Subsequent corrections and withdrawals are recorded below; current structural scanning finds no failing publication, while manufacturer/market verification remains incomplete.
 
 ### Added withdrawal and quality protections
 
@@ -128,6 +158,17 @@ The applied pilot plus detail batches 01–08 published **88 declarations** and 
 
 Evidence: numbered source-detail repair reports, [held batch 07](catalog-sourcebeauty-detail-held-07-2026-10-26.json), [held batch 08](catalog-sourcebeauty-detail-held-08-2026-10-26.json), [PanOxyl withdrawal](catalog-incomplete-drug-declaration-repair-2026-10-26.json).
 
+### Later ingredient recovery and quality fixes
+
+- Batch 09 is **applied**: 14 publications, 27 evidence-only lists and eight preserved cases; eleven other pages were held separately. [Applied batch 09](catalog-sourcebeauty-detail-repair-09-2026-10-26.json).
+- Batch 10 acquisition is **terminal/completed**, not still running: 100 selected products, 92 retained pages and eight fetch errors. Reviewed selections across its six apply reports produced **36 publications, 15 partial evidence records and one preserved attempt**. Unselected questionable pages remain held acquisition/review artifacts, not approved formulas.
+- The Bloom pilot published one reviewed SVR Topialyse declaration. [Applied Bloom repair](catalog-bloom-detail-repair-02-2026-10-27.json). The ten-page Dr Dawood pilot yielded no usable full declaration and made no ingredient writes.
+- Fixed extraction boundaries so plain Brand, Size, delivery, payment and return metadata cannot be appended to ingredient declarations. Existing published formulas were also screened for these metadata patterns with no findings at that checkpoint.
+- Blocked concatenated, separately labelled T-zone/U-zone formulas from publication as one ordered formula. Retained whole fetched pages and review reasons for malformed lists, suspicious product copy/paste and uncertain ordering.
+- Known retailer-page extraction can now stage source evidence without Gemini. This is not automatic publication. Research review rechecks current observations and verified source association; namespaced research IDs prevent collisions with legacy evidence IDs.
+- Acquisition now includes products with nonempty feed summaries when no detail declaration has yet been retained. Short feed callouts must not block fetching a full page. Already retained detail declarations are not repeatedly fetched by default.
+- La Roche-Posay #64415's malformed formula was withdrawn; Eqqualberry #65115's trailing Share text was corrected with retained evidence and version history. PanOxyl #68556 remains without a replacement full declaration.
+
 ## 6. Admin dashboard, public cache and price fixes completed
 
 - Admin overview ingredient coverage counts canonical skincare formulations once, instead of counting empty or duplicated retailer fields.
@@ -140,76 +181,55 @@ Evidence: numbered source-detail repair reports, [held batch 07](catalog-sourceb
 - Health output now includes public products with ingredient text, with its public-index scope distinguished from all canonical counts.
 - Price comparison now requires verified accepted source associations for both legacy and variant offers. Old canonical pointers alone no longer supply same-product offers.
 - Rejected/unverified variants cannot suppress a valid legacy offer. Empty trusted-offer sets do not fall back to stale canonical price aggregates. Listing-to-canonical price resolution also checks its association.
-- Price-deal results are recomputed from eligible verified offers rather than trusting historical canonical aggregates. An audited screen found 21 mapped legacy listings and 1,072 variant offers without verified links; those counts do not prove every such listing was a wrong product.
+- Price-deal results are recomputed from eligible verified offers rather than trusting historical canonical aggregates. Correction: the earlier screen incorrectly flagged 1,072 variant offers by checking root links instead of their approved hashed variant scopes. All 1,072 had verified scoped links. The migration restored those exact approvals in the projection; it did not invent new identity decisions. The 21 legacy root listings remain a separate audit concern.
 - Added tests for revoked links, false cheapest offers and stale advertised savings. API dispatch tests now mock external refresh workers while checking dispatch, instead of scraping retailers during an endpoint test.
 
 Evidence: [admin live verification](catalog-admin-live-verification-2026-10-26.json), [cache live verification](catalog-cache-live-verification-2026-10-26.json), [cache query timings](catalog-cache-query-2026-10-26.json), [later live checkpoint](catalog-live-safety-verification-2026-10-26.json).
 
+The reference card now counts the actual **53,017-row library**, including **50,969 SkinSAFE entries**, rather than displaying the zero linked-match count as an empty library. Library inventory, linked matches and published formulas remain separate. “Multi-store products” means listed at two or more retailers; the 1,144 count is not evidence of 1,144 savings opportunities. Variant offer trust follows the exact hashed scope, and revision triggers include identity-link changes.
+
 ## 7. Work in progress: not applied or not fully validated
 
-1. **Source Beauty batch 09 is fetched but unapplied.** All 60 selected pages were fetched; cursor ends at canonical #65934. Original preview: 25 proposed publications, 27 evidence-only, eight preserved. Twelve proposed publications were subsequently withheld for review. The reviewed preview has 13 proposed publications, 27 evidence-only and eight preserved. No batch-09 apply report exists.
-2. The twelve held pages remain acquisition/preview artifacts, not an applied durable held-evidence batch. Several have uncertain chemical naming, footnotes/UI contamination or suspicious ingredient content. They need individual evidence handling, not blanket approval.
-3. [TIRTIR's own Ceramic Cream page](https://tirtir.global/products/ceramic-cream?variant=45772633735387) materially differs from the Source Beauty list for #65891. Manufacturer evidence must be retained and regional/revision compatibility checked before replacing the retailer candidate. A syntactically plausible list is not sufficient identity/formulation proof.
-4. The historical link audit predates the Infinity split and the last anatomical fixes. Re-run it; its eight initial flags are not eight currently proven mismatches.
-5. The latest quality, Share-cleanup and anatomical source edits require a fresh configured API start and endpoint verification. Earlier successful live checks cannot prove the stopped backend has loaded them.
-
-Batch evidence: [fetch 09](catalog-sourcebeauty-detail-fetch-09-2026-10-26.json), [original preview](catalog-sourcebeauty-detail-preview-09-2026-10-26.json), [reviewed preview](catalog-sourcebeauty-detail-preview-09-reviewed-2026-10-26.json).
+1. **Historical backup recovery is not applied.** The backup comparison is verified, but a complete recoverable inventory and durable source-to-current mapping must be regenerated. Do not imply the earlier 1,665 canonical ingredient records have been restored.
+2. Source Beauty batch-10 held pages and fetch failures require explicit evidence handling/retries. Several lists contain malformed chemicals, trade-name summaries, absent named ingredients or apparent wrong-product text. A full-looking list alone is insufficient.
+3. TIRTIR #65891 and other regional/revision conflicts still need corroboration; no indiscriminate manufacturer-list substitution was applied.
+4. The Feel22 ten-page acquisition report exists; pages have not been reviewed/applied as a publication batch. Inspect its terminal report and retained pages before restarting collection.
+5. Historical saved-Gemini matches remain incompletely audited. Legacy audit findings include candidate screens and false positives; the Tocobo and Infinity corrections do not establish correctness of every other match.
+6. Provider daily-quota HTTP 429 was observed on the last matching run. No new provider-availability test was made for this documentation update. Refreshed pairs are prepared, not completed.
+7. Frontend and backend are reachable. Later source edits still require a configured backend reload and endpoint checks before claiming that every current matching/extraction/split code change is loaded. Do not infer deployment from database changes or test results.
 
 ## 8. Prioritized remaining fixes
 
-### P0 — correct currently published bad declarations
+### P0 — recover the existing catalog before rebuilding more evidence from scratch
 
-- [ ] **#64415 La Roche-Posay Anthelios UVMune Oil Control Tinted Gel-Cream:** currently published text includes split chemical names and unrelated Arabic marketing/instructions. Withdraw or quarantine it with the new audited withdrawal operation. Obtain an exact product/region/revision declaration; do not silently reconstruct the chemicals or assume another Anthelios variant is equivalent.
-- [ ] **#65115 Eqqualberry Vitamin Illuminating Cream:** current raw publication ends with Share UI text. Correct from the retained literal source using the narrow cleanup, record new evidence/publication, and preserve the old audit. This correction has not been applied.
-- [ ] Re-run the quality scan over every published formulation after corrections. Zero syntax findings still does not prove chemical accuracy; audit wrong-product and active-only lists against better evidence.
+- [ ] Regenerate and persist a complete historical ingredient recovery inventory from `api/skincare_backup_pre_remediation.db`, including raw text, old source/reference IDs, product URLs, old canonical ownership and current mappings. Preserve unresolved records instead of dropping them.
+- [ ] Reconcile old full-looking ingredient records against already verified current identities, beginning with exact retailer-source evidence and independently corroborated formulas. Keep partial or disputed records as recoverable evidence; do not blindly publish old matches or dismiss them all as unsafe.
+- [ ] Investigate the **1,272 retained old skincare URLs lacking current canonical mappings** and **612 absent URLs**, including changed handles and missing/discontinued listings.
+- [ ] Account explicitly for publication regression: recovered evidence, correctly mapped records, published full formulas, partial declarations and unresolved conflicts. Restore demonstrably correct old assignments in backed-up, reviewable batches.
+- [ ] Maintain a per-record disposition for the old 8,573 skincare listings and 1,665 canonical ingredient records so future counts can be reconciled rather than explained only through changed definitions.
 
-### P0 — restore and verify the configured runtime
+### P1 — finish identity, category and formulation recovery
 
-- [ ] Establish which backend instance/environment should serve the dashboard. The local API was unreachable at handoff; do not start duplicate workers or treat a stale process file as a running server.
-- [ ] Check pending restore/reset state and real running workers before starting the configured API. Preserve secrets and deployment environment.
-- [ ] Recheck health, admin overview, product ingredient filters/telemetry, pair details, price comparisons and price deals. Verify new canonical #70501 and separated scrub offers.
-- [ ] Confirm latest source edits and frontend build are actually loaded; repeat a visual dashboard check when running.
+- [ ] Resolve the **863 identity, 708 category and 16 formulation reviews** from current evidence. Preserve explicit human decisions, scoped variants, real rival candidates and competing formulas.
+- [ ] Run/resume actual two-product comparisons with a bounded physical-request budget when provider availability permits. Preserve completed answers; the current 3,590 verdict-free rows are not 3,590 completed matches.
+- [ ] Audit historical applied group-based Gemini mappings beyond title-only screens. Revalidate ingredients, offers, aliases, scopes and prices after each proven wrong-link correction.
+- [ ] Review hidden skincare identities and verify that other-type exclusions are supported. Visible provisional records must not be presented as verified identities.
+- [ ] Obtain replacement full declarations for PanOxyl and La Roche-Posay and resolve TIRTIR/other product-region conflicts. Review remaining acquired pages and record durable no-declaration/fetch-failure checkpoints with explicit retry policies.
+- [ ] Validate manufacturer product identity, chemical naming, declaration order, named actives, shade/component ownership and regional/revision applicability throughout the catalog. Structural completeness alone cannot certify accuracy.
 
-### P1 — complete evidence-backed ingredient recovery
+### P2 — finish runtime, dashboard and delivery verification
 
-- [ ] Individually review/apply supported batch-09 pages and durably retain its held/rejected evidence. TIRTIR and other suspicious lists need manufacturer or exact package corroboration, not approval based on list length.
-- [ ] Continue known Source Beauty URLs after #65934. Revisit earlier fetch errors and incomplete/no-declaration pages: advancing a cursor must not silently skip unresolved products.
-- [ ] Expand the same verified, provenance-preserving acquisition to the other enabled retailers and useful official sources. Most skincare products still lack a complete published formulation: 5,657 active skincare records have no published ingredient text at this snapshot.
-- [ ] Integrate deterministic exact-source ingredient extraction into the normal admin research workflow. It currently exists primarily in repair CLIs; normal research still depends on Gemini extraction after fetching pages.
-- [ ] Record durable no-declaration/fetch-failure checkpoints and explicit retries, so absence, incomplete fetch and exhausted selection cannot be confused.
-- [ ] Review unverified single-source identities through an explicit source-owned identity workflow or additional corroboration. Do not remove independent evidence checks merely to raise publication coverage.
-- [ ] Audit source section parsing, generic vitamin/trade-name summaries, OCR/typos, active-versus-inactive drug sections, comments/footnotes and regional formula revisions throughout the existing publications.
-
-### P1 — finish matching and historical repair
-
-- [ ] Resume the 4,073 unfinished pairs with a bounded request budget after checking provider availability. The last actual provider check returned daily-quota HTTP 429; that is historical evidence, not proof the quota remains exhausted at handoff time. Reuse completed pairs and count physical requests.
-- [ ] Resolve the remaining 973 identity cases from current evidence. Queued cases and genuine human ambiguity must remain distinguishable.
-- [ ] Audit all historical applied group-based matches, not only the 607 links screened by title attributes. Verify current source identity, variant, formulation, candidate competition, prices and copied associations. Apply reversible corrections for proven mistakes.
-- [ ] Revisit White Musk Travel versus Ultra Rich using exact product evidence. The 85% negative pair is not a confident accepted match.
-- [ ] Review remaining brand splits, including Infinity versus Infinity Naturals and other candidate aliases, using authoritative evidence. The two Infinity foot-scrub canonicals (#65192 and #67139) must not be merged merely on spelling before brand identity is resolved.
-- [ ] Resolve real duplicate groups with audited pairwise review. Preserve distinct scents, SPF, active strengths, shades, regions and product roles.
-- [ ] Review bundles/multipacks separately from single-unit comparisons. Dermatique #67027 includes a source set whose handle says “2 for special price” but whose offer pack_count is 1; verify its actual contents/quantity before presenting savings or normalizing unit price.
-
-### P2 — complete categories and downstream consistency
-
-- [ ] Resolve the 855 remaining category cases, including unclear names, old observations and contradictory retailer clusters. Re-fetch or review evidence rather than inventing a role.
-- [ ] Inspect remaining bundle/function inconsistencies, including Skin1004 Double Cleansing Duo versus Duo Set. Distinguish multi-product sets from actual single formulations.
-- [ ] Review canonical #69743 Hepta Panthenol Rich Lotion against its body-lotion listings; generic title classification still creates a function mismatch.
-- [ ] Audit public search/recommendation image, URL, stock and price projections for remaining reliance on unverified legacy pointers. The price service fix does not prove every public-cache field or admin sibling-offer query has been corrected.
-- [ ] Ensure identity-link trust changes themselves invalidate any cache that starts depending on those links; the existing revision triggers primarily watch canonical, product, offer and source fields.
-- [ ] Audit package normalization and same-size savings. Historical gram-to-milliliter equivalences and overall cross-size price ranges need evidence and must not imply equal density or equal package contents.
-- [ ] Finish admin workflow explanations and progress/error states against the running dashboard, including stale/queued/uncertain confidence, genuinely unsupported cases and precise coverage denominators.
-
-### P2 — finish recovery delivery and verification
-
-- [ ] Keep pre-change backups and reasoned audit records for all remaining mutations. Retain reverse-operation safety against intervening changes.
-- [ ] Review the complete dirty worktree, including the database that was already dirty at task start. Do not revert unrelated work, commit/push or deploy implicitly.
-- [ ] Extend meaningful regression checks for newly discovered failures; re-run required backend checks and frontend build for further UI changes.
-- [ ] Verify the whole catalog against an explicit completion checklist: supported identities or honest unresolved states, correct categories, source-backed complete formulas or explicit missing evidence, trustworthy offers, accurate dashboard projections, resumable queues and preserved history. Green unit tests alone cannot establish full-catalog correctness.
+- [ ] Reload the configured API with the latest source edits and recheck actual paired matching, extraction boundaries, split aliases, ingredient telemetry, prices and current canonical offers. Preserve environment and avoid duplicate workers.
+- [ ] Audit package size/unit normalization and same-size savings; never imply grams equal milliliters or that every multi-store cluster is a deal.
+- [ ] Finish queue explanations and honest workflow states for old evidence, pending comparisons, provider failures, review ambiguity and missing formulas.
+- [ ] Keep pre-change backups and reasoned audits for all mutations. Review the entire dirty worktree; do not revert unrelated edits, commit/push or deploy implicitly.
+- [ ] Verify catalog-wide completion against correct identities/categories, recoverable old data, supported formulas or explicit missing evidence, trustworthy offers, accurate counts and preserved history. Passing tests or lower queue counts alone do not establish completion.
 
 ## 9. Validation, files and operational entry points
 
-The fresh full regression run passed **488 tests in 59.876 seconds**, using an isolated consistent SQLite backup. It includes the latest anatomical, declaration-quality and Share-cleanup changes. All local handoff links, snapshot count checks and git diff whitespace checks pass. See [handoff validation](catalog-handoff-validation-2026-10-26.json). The frontend production build passed at earlier repair checkpoints; it was not rebuilt for this documentation-only handoff. The current backend was unreachable, so this test result is not a live deployment check or proof of complete catalog correctness.
+The latest full regression log records **508 passing tests in 75.497 seconds** on an isolated SQLite backup (`/tmp/catalog-identity-boundary-final-tests.log`). Later focused checks include **31 passing pair/refresh tests**, **52 split/aggregation tests**, and **16 identity-review tests**. These runs cover their respective code checkpoints; they are not a new full-suite run for this documentation edit. The reference-counter frontend build and focused admin tests passed at the preceding UI checkpoint.
+
+This documentation update rechecked SQLite integrity, foreign keys, pair payload cardinality, publication structural completeness, both HTTP services and live overview counts. It does not publish formulas, repair mappings, restart services or certify all historical records. See [fresh handoff evidence](catalog-handoff-update-state-2026-10-27.json).
 
 Key implementation files:
 
@@ -234,10 +254,5 @@ python3 api/scripts/consolidate_reviewed_brand.py --help
 
 For backend regressions, first create a consistent SQLite backup and set SKINSYNC_DB_PATH to that backup. Importing the app against the live database can collide with its instance lock; pointing at a missing temporary file can create an empty database and invalidate the test setup. Never run mutating integration tests against production by default.
 
-All applied repair JSONs include the relevant backup paths; retained backups are under api/backups/catalog/. Dated reports describe their own checkpoint, not current telemetry. The handoff-state JSON is the current snapshot for this document.
+Applied repair JSONs record relevant backup paths; retained backups are under api/backups/catalog/. Dated reports describe their own checkpoint, not current telemetry. `catalog-handoff-update-state-2026-10-27.json` is the current snapshot for this document.
 
-
-Correction: the earlier 1,072 variant offers flagged as unverified actually had verified hashed-scope links. The projection now uses those exact approvals. See the correction in `catalog-repair-evening-progress-2026-10-26.md`.
-
-
-Latest follow-up snapshot (23:58 Cairo): **195 published skincare formulas; 708 pending category reviews; 863 pending identity reviews; 16 pending formulation reviews**. See `catalog-recovery-followup-state-2026-10-26.json` and the evening progress document for the 23 newly published declarations, reference inventory, and corrected variant-scope audit. Earlier snapshots are historical.

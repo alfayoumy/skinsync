@@ -1,0 +1,191 @@
+{
+  "canonical_products": 7422,
+  "active_canonical_products": 7416,
+  "active_skincare_products": 5766,
+  "verified_identities": 697,
+  "published_inci": 213,
+  "published_skincare_inci": 209,
+  "observed_products_with_inci": 1256,
+  "pending_reviews": {
+    "category": 708,
+    "formulation": 16,
+    "identity": 863
+  },
+  "pending_identity_reviews": 863,
+  "pending_category_reviews": 708,
+  "awaiting_evidence": 0,
+  "sources": [
+    {
+      "id": "bashrety",
+      "name": "Bashrety",
+      "enabled": 1,
+      "publish_enabled": 0
+    },
+    {
+      "id": "bloompharmacy",
+      "name": "Bloom Pharmacy",
+      "enabled": 1,
+      "publish_enabled": 0
+    },
+    {
+      "id": "drdawood",
+      "name": "Dr Dawood",
+      "enabled": 1,
+      "publish_enabled": 0
+    },
+    {
+      "id": "feel22",
+      "name": "Feel22 Egypt",
+      "enabled": 1,
+      "publish_enabled": 0
+    },
+    {
+      "id": "rawafrican",
+      "name": "Raw African",
+      "enabled": 1,
+      "publish_enabled": 0
+    },
+    {
+      "id": "sourcebeauty",
+      "name": "Source Beauty",
+      "enabled": 1,
+      "publish_enabled": 0
+    }
+  ],
+  "formula_evidence": [
+    {
+      "completeness": "full",
+      "order_verified": 1,
+      "count": 491
+    },
+    {
+      "completeness": "partial",
+      "order_verified": 0,
+      "count": 157
+    },
+    {
+      "completeness": "unverified",
+      "order_verified": 0,
+      "count": 86
+    },
+    {
+      "completeness": "unverified",
+      "order_verified": 1,
+      "count": 37
+    }
+  ],
+  "gemini_results": [
+    {
+      "status": "auto_resolved",
+      "verdict": "different_product",
+      "count": 199
+    },
+    {
+      "status": "auto_resolved",
+      "verdict": "same_product",
+      "count": 660
+    },
+    {
+      "status": "needs_manual",
+      "verdict": null,
+      "count": 2
+    },
+    {
+      "status": "needs_manual",
+      "verdict": "different_product",
+      "count": 5
+    },
+    {
+      "status": "needs_manual",
+      "verdict": "same_product",
+      "count": 1
+    },
+    {
+      "status": "needs_manual",
+      "verdict": "uncertain",
+      "count": 78
+    },
+    {
+      "status": "queued",
+      "verdict": null,
+      "count": 15
+    },
+    {
+      "status": "queued",
+      "verdict": "different_product",
+      "count": 147
+    },
+    {
+      "status": "queued",
+      "verdict": "same_product",
+      "count": 156
+    },
+    {
+      "status": "queued",
+      "verdict": "uncertain",
+      "count": 459
+    }
+  ],
+  "captured_at_utc": "2026-10-26T21:26:44.212175+00:00",
+  "scope": "consistent_sqlite_snapshot",
+  "visible_skincare_canonicals": 4164,
+  "retailer_listings": 22155,
+  "inci_reference_entries": 53017,
+  "skinsafe_reference_entries": 50969,
+  "pair_rows": 4416,
+  "completed_pair_rows": 826,
+  "non_two_product_pair_rows": 0,
+  "integrity_check": "ok",
+  "foreign_key_violations": 0,
+  "processing_reviews": 0,
+  "published_structural_failures": [],
+  "runtime": {
+    "frontend_http": 200,
+    "backend_http": 200,
+    "catalog_vitals": {
+      "total_store_listings": 22155,
+      "canonical_entities": 7416,
+      "multi_store_clusters": 1144,
+      "active_skincare_products": 4164,
+      "suppressed_non_skincare": 1650,
+      "products_with_ingredients": 209,
+      "inci_matched_products": 0,
+      "inci_reference_products": 53017,
+      "skinsafe_reference_products": 50969,
+      "ai_verified_products": 0,
+      "verified_identities": 697,
+      "skincare_canonical_products": 5766,
+      "coverage_percent": 3.6
+    }
+  },
+  "backup_reconciliation": {
+    "backup": "api/skincare_backup_pre_remediation.db",
+    "old_skincare_listings": 8573,
+    "old_skincare_canonicals": 5351,
+    "old_skincare_listing_ingredient_records": 6672,
+    "old_skincare_canonical_ingredient_records": 1665,
+    "old_skincare_reference_ids": 712,
+    "dispositions": [
+      {
+        "disposition": "URL absent",
+        "listings": 612
+      },
+      {
+        "disposition": "hidden skincare",
+        "listings": 1625
+      },
+      {
+        "disposition": "other product type",
+        "listings": 117
+      },
+      {
+        "disposition": "retained URL without canonical mapping",
+        "listings": 1272
+      },
+      {
+        "disposition": "visible skincare",
+        "listings": 4947
+      }
+    ]
+  }
+}
